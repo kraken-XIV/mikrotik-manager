@@ -36,6 +36,15 @@ A disciplined fork of [2GT-Media-Group-LLC/mikrotik-manager](https://github.com/
 - CI and CodeQL run for both `main` and `fork/main`; CI also supports manual dispatch.
 - Branch protection JSON is stored at the repository root; the helper resolves that path.
 
+### Phase 3 — security scanning floor — 2026-10-19
+
+- `fork/phase3-security` adds four scanners alongside CodeQL and the audit lane: gitleaks (secrets, weekly full-history sweep), Trivy (HIGH/CRITICAL fixed vulnerabilities in the lockfiles, Dockerfile and compose misconfigurations), dependency-review (PR diff gate) and OpenSSF Scorecard (advisory, published). Response runbook: `docs/security-scanning.md`.
+- Baselines are ratchets, not blanket silence: the `.gitleaks.toml` allowlist entries and the single `.trivyignore` entry each carry a written justification and must be deleted together with the code they explain.
+- The dependency-review action moved from the `github` org to `actions` (the old path 404s); the workflow pins the new location.
+- `protection-integration.json` now also requires "Secrets — gitleaks", "Trivy — vuln & misconfig" and "Dependency Review" on `fork/main` (ten contexts in total). Scorecard is deliberately not required.
+- Image scanning before the GHCR push is intentionally deferred: `publish.yml` builds and pushes in one step, and restructuring it is an upstream conversation.
+- Conflict-zone addition: if upstream later ships its own security workflows, prefer upstream's versions upstream-side and drop the fork copies during sync, keeping only fork-specific deltas.
+
 ## Sync policy
 
 ```bash
