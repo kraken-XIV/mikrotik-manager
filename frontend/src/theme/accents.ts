@@ -37,8 +37,6 @@ export interface AccentVars {
 export interface AccentPreset {
   id: AccentId;
   label: string;
-  /** Representative hex for picker swatches. */
-  swatch: string;
   light: AccentVars;
   dark: AccentVars;
 }
@@ -47,7 +45,6 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   {
     id: 'blue',
     label: 'Blue',
-    swatch: '#2563eb',
     light: { accent: '#2563eb', accent2: '#1d4ed8', accentSoft: '#eff6ff', accentFg: '#ffffff' },
     dark: {
       accent: '#60a5fa',
@@ -59,7 +56,6 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   {
     id: 'violet',
     label: 'Violet',
-    swatch: '#7c3aed',
     light: { accent: '#7c3aed', accent2: '#6d28d9', accentSoft: '#f5f3ff', accentFg: '#ffffff' },
     dark: {
       accent: '#a78bfa',
@@ -71,7 +67,6 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   {
     id: 'emerald',
     label: 'Emerald',
-    swatch: '#047857',
     light: { accent: '#047857', accent2: '#065f46', accentSoft: '#ecfdf5', accentFg: '#ffffff' },
     dark: {
       accent: '#34d399',
@@ -83,7 +78,6 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   {
     id: 'rose',
     label: 'Rose',
-    swatch: '#e11d48',
     light: { accent: '#e11d48', accent2: '#be123c', accentSoft: '#fff1f2', accentFg: '#ffffff' },
     dark: {
       accent: '#fb7185',
@@ -95,7 +89,6 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   {
     id: 'amber',
     label: 'Amber',
-    swatch: '#b45309',
     light: { accent: '#b45309', accent2: '#92400e', accentSoft: '#fffbeb', accentFg: '#ffffff' },
     dark: {
       accent: '#fbbf24',
@@ -107,7 +100,6 @@ export const ACCENT_PRESETS: AccentPreset[] = [
   {
     id: 'teal',
     label: 'Teal',
-    swatch: '#0f766e',
     light: { accent: '#0f766e', accent2: '#115e59', accentSoft: '#f0fdfa', accentFg: '#ffffff' },
     dark: {
       accent: '#2dd4bf',
