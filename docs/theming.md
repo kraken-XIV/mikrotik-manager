@@ -35,6 +35,24 @@ four CSS custom properties on `<html>` — `--accent`, `--accent-2`,
 theme store at the same moment the scheme itself is applied. There is therefore
 no flash of the old accent while the page loads.
 
+## Contrast and surface schemes
+
+Alongside the accent, **Settings → General → Appearance** offers three surface
+schemes, stored with the rest of the theme preferences:
+
+- **Default** — the standard palette; no attribute is written at all.
+- **High contrast** — stronger ink and border tokens in _both_ colour schemes,
+  for low-vision and bright-environment readability.
+- **Midnight** — deepens dark mode's surfaces further. It is a dark-mode
+  scheme by definition: the attribute is a no-op until dark is active, and
+  applies automatically whenever it is (including under _System_).
+
+Schemes are orthogonal to accents: schemes change the neutrals, the accent
+changes the brand colour, and any combination is valid. Mechanically a scheme
+is a single `data-scheme` attribute on `<html>`, and each scheme is one token
+override block in `frontend/src/index.css` — components never learn a scheme
+exists.
+
 ## How the themes work
 
 Both schemes and all accents are built from the design tokens in

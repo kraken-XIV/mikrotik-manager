@@ -2,10 +2,10 @@
 // This suite exercises real DOM behaviour (the `.dark` class, inline custom
 // properties, localStorage), so it runs in jsdom via the per-file pragma —
 // the rest of the suite stays on the fast node environment.
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAccentPreset } from '../theme/accents';
-import { initThemeFromStorage,resolveEffectiveTheme, useThemeStore } from './themeStore';
+import { initThemeFromStorage, resolveEffectiveTheme, useThemeStore } from './themeStore';
 
 /** jsdom has no matchMedia; the store must both detect its absence and use it when present. */
 function stubMatchMedia(matches: boolean): { calls: number; listeners: Set<() => void> } {
@@ -27,8 +27,9 @@ function stubMatchMedia(matches: boolean): { calls: number; listeners: Set<() =>
 function resetDom(): void {
   document.documentElement.className = '';
   document.documentElement.removeAttribute('style');
+  document.documentElement.removeAttribute('data-scheme');
   localStorage.clear();
-  useThemeStore.setState({ theme: 'light', accent: 'blue' });
+  useThemeStore.setState({ theme: 'light', accent: 'blue', scheme: 'default' });
 }
 
 beforeEach(() => {
@@ -189,5 +190,51 @@ describe('rehydration on a fresh module instance', () => {
         getAccentPreset('emerald').dark.accent,
       );
     });
+  });
+});
+
+describe('surface schemes (data-scheme on <html>)', () => {
+  it("setScheme writes the attribute; 'default' removes it entirely", () => {
+    useThemeStore.getState().setScheme('midnight');
+    expect(document.documentElement.getAttribute('data-scheme')).toBe('midnight');
+    useThemeStore.getState().setScheme('high-contrast');
+    expect(document.documentElement.getAttribute('data-scheme')).toBe('high-contrast');
+    useThemeStore.getState().setScheme('default');
+    expect(document.documentElement.hasAttribute('data-scheme')).toBe(false);
+  });
+
+  it('the scheme survives theme and accent changes — all three apply together', () => {
+    useThemeStore.getState().setScheme('midnight');
+    useThemeStore.getState().setTheme('dark');
+    useThemeStore.getState().setAccent('violet');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(document.documentElement.getAttribute('data-scheme')).toBe('midnight');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+      getAccentPreset('violet').dark.accent,
+    );
+  });
+
+  it('the scheme persists under the historical key and rehydrates in a fresh module', async () => {
+    useThemeStore.getState().setScheme('high-contrast');
+    const raw = JSON.parse(localStorage.getItem('mikrotik-theme') ?? '{}');
+    expect(raw.state.scheme).toBe('high-contrast');
+
+    vi.resetModules();
+    document.documentElement.removeAttribute('data-scheme');
+    const { useThemeStore: reloaded } = await import('./themeStore');
+    await vi.waitFor(() => {
+      expect(reloaded.getState().scheme).toBe('high-contrast');
+      expect(document.documentElement.getAttribute('data-scheme')).toBe('high-contrast');
+    });
+  });
+
+  it('a tampered scheme value falls back to default at boot', () => {
+    localStorage.setItem(
+      'mikrotik-theme',
+      JSON.stringify({ state: { theme: 'dark', scheme: 'banana' } }),
+    );
+    expect(() => initThemeFromStorage()).not.toThrow();
+    expect(document.documentElement.hasAttribute('data-scheme')).toBe(false);
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 });

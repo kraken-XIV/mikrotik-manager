@@ -332,3 +332,38 @@
 .chart-accent-stop {
   stop-color: var(--accent);
 }
+
+/* ── Surface schemes ─────────────────────────────────────────────────────────
+   data-scheme on <html>, written by the theme store. 'high-contrast'
+   strengthens ink and borders in both colour schemes; 'midnight' deepens the
+   dark surfaces further. Only tokens are overridden — components never learn
+   a scheme exists, and 'default' removes the attribute entirely so the
+   stylesheet defaults stay untouched. */
+html[data-scheme='high-contrast'] {
+  --ink: #000000;
+  --ink-2: #26251f;
+  --ink-3: #494740;
+  --ink-4: #6d6a61;
+  --line: #a9a599;
+  --line-soft: #bcb8ac;
+}
+
+html.dark[data-scheme='high-contrast'] {
+  --ink: #ffffff;
+  --ink-2: #d8d5cc;
+  --ink-3: #a8a59b;
+  --ink-4: #7d7a71;
+  --line: #3d434e;
+  --line-soft: #2e333c;
+}
+
+/* Midnight is a dark-mode scheme by definition: in light mode the attribute
+   is a no-op until the scheme itself is dark. */
+html.dark[data-scheme='midnight'] {
+  --bg: #050609;
+  --surface: #0b0d11;
+  --surface-2: #101318;
+  --surface-3: #171b22;
+  --line: #232730;
+  --line-soft: #1a1d25;
+}

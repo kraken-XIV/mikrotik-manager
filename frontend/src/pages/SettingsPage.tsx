@@ -99,7 +99,7 @@ interface EditUserState {
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme, scheme, setScheme } = useThemeStore();
   const isAdmin = user?.role === 'admin';
   const canWrite = user?.role !== 'viewer';
   // Timezone for scheduled work. The browser's zone is offered as a shortcut
@@ -668,6 +668,38 @@ export default function SettingsPage() {
                     </p>
                   </div>
                   <AccentSwatches />
+                </div>
+                <div className="flex items-center justify-between mt-4">
+                  <div>
+                    <label className="text-sm font-medium text-ink-2">
+                      Contrast &amp; surfaces
+                    </label>
+                    <p className="text-xs text-ink-3">
+                      High contrast strengthens text and borders; Midnight deepens dark mode (it
+                      applies whenever dark is active)
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    {(['default', 'high-contrast', 'midnight'] as const).map((sc) => (
+                      <button
+                        key={sc}
+                        onClick={() => setScheme(sc)}
+                        aria-pressed={scheme === sc}
+                        className={clsx(
+                          'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors capitalize',
+                          scheme === sc
+                            ? 'bg-accent text-accent-fg border-accent'
+                            : 'border-line text-ink-2',
+                        )}
+                      >
+                        {sc === 'default'
+                          ? 'Default'
+                          : sc === 'high-contrast'
+                            ? 'High contrast'
+                            : 'Midnight'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
