@@ -69,7 +69,7 @@ export default function EdgeMenu({
   const top = Math.min(at.y + 8, window.innerHeight - (hand ? 420 : 320));
   const picker = (name: string, value: Side | null, set: (v: Side | null) => void) => (
     <label className="flex items-center justify-between gap-3 text-xs">
-      <span className="truncate text-gray-600 dark:text-slate-300" title={name}>
+      <span className="truncate text-ink-2" title={name}>
         {name}
       </span>
       <select
@@ -92,19 +92,19 @@ export default function EdgeMenu({
       <div className="fixed z-50 card p-3 w-72 space-y-2 shadow-lg" style={{ left, top }}>
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{title}</p>
-            {ports && <p className="text-[11px] font-mono text-gray-400 truncate">{ports}</p>}
+            <p className="text-sm font-medium text-ink truncate">{title}</p>
+            {ports && <p className="text-[11px] font-mono text-ink-4 truncate">{ports}</p>}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-[11px] text-gray-400">Attach at</p>
+        <p className="text-[11px] text-ink-4">Attach at</p>
         {picker(sourceName, sourceSide, (v) => onSides(v, targetSide))}
         {picker(targetName, targetSide, (v) => onSides(sourceSide, v))}
         {onColor && (
           <div>
-            <p className="text-[11px] text-gray-400 mb-1">Colour</p>
+            <p className="text-[11px] text-ink-4 mb-1">Colour</p>
             <div className="flex items-center gap-1.5">
               {LINK_COLORS.map((c) => (
                 <button
@@ -113,7 +113,7 @@ export default function EdgeMenu({
                   title={c.label}
                   disabled={!canWrite}
                   onClick={() => onColor(c.color)}
-                  className={`w-5 h-5 rounded-full border ${(color ?? null) === c.color ? 'ring-2 ring-offset-1 ring-blue-500' : ''}`}
+                  className={`w-5 h-5 rounded-full border ${(color ?? null) === c.color ? 'ring-2 ring-offset-1 ring-accent' : ''}`}
                   style={
                     c.color
                       ? { background: c.color, borderColor: c.color }
@@ -126,7 +126,7 @@ export default function EdgeMenu({
         )}
         {hand && onSaveHand && canWrite && (
           <div className="space-y-1.5 pt-1">
-            <p className="text-[11px] text-gray-400">Ports and label</p>
+            <p className="text-[11px] text-ink-4">Ports and label</p>
             <div className="grid grid-cols-2 gap-1.5">
               <input
                 className="input py-0.5 text-xs"
@@ -157,7 +157,7 @@ export default function EdgeMenu({
         )}
         {onHide && canWrite && (
           <button
-            className="block text-xs text-red-600 hover:underline pt-1"
+            className="block text-xs text-bad hover:underline pt-1"
             onClick={onHide}
             title="For a link discovery reports that isn't a real cable. It can be shown again from the list below the map."
           >
@@ -165,7 +165,7 @@ export default function EdgeMenu({
           </button>
         )}
         {onRemove && canWrite && (
-          <button className="text-xs text-red-600 hover:underline pt-1" onClick={onRemove}>
+          <button className="text-xs text-bad hover:underline pt-1" onClick={onRemove}>
             Remove this hand-drawn link
           </button>
         )}

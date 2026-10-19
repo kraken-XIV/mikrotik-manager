@@ -64,8 +64,8 @@ function SpectrumBandRow({ band, radios }: { band: RfBandRange; radios: RfChanne
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1">
-        <div className="text-xs font-medium text-gray-500 dark:text-slate-400">{band.label}</div>
-        <div className="text-[10px] text-gray-400">
+        <div className="text-xs font-medium text-ink-3">{band.label}</div>
+        <div className="text-[10px] text-ink-4">
           {radios.length === 0
             ? 'no radios'
             : `${radios.length} radio${radios.length !== 1 ? 's' : ''}`}
@@ -125,7 +125,7 @@ function SpectrumBandRow({ band, radios }: { band: RfBandRange; radios: RfChanne
           return (
             <span
               key={f}
-              className="absolute text-[9px] leading-none text-gray-400 dark:text-slate-500"
+              className="absolute text-[9px] leading-none text-ink-3"
               style={{ left: `${at}%`, transform: anchor }}
             >
               {band.band === '2.4' ? (channelOf(f) ?? f) : f}
@@ -169,8 +169,8 @@ export function ChannelMap({ deviceId }: { deviceId?: number }) {
     <div className="card p-4">
       <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
         <div className="flex items-center gap-2">
-          <Radio className="w-4 h-4 text-blue-500" />
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Channel Usage</h2>
+          <Radio className="w-4 h-4 text-accent" />
+          <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">Channel Usage</h2>
         </div>
         {/* Channel planning is per physical location — two APs on channel 6 in
             different buildings are not a conflict (issue #97). */}
@@ -191,7 +191,7 @@ export function ChannelMap({ deviceId }: { deviceId?: number }) {
       </div>
 
       {radios.length === 0 ? (
-        <div className="py-6 text-center text-xs text-gray-400">
+        <div className="py-6 text-center text-xs text-ink-4">
           No active radios reporting a channel.
         </div>
       ) : (
@@ -206,7 +206,7 @@ export function ChannelMap({ deviceId }: { deviceId?: number }) {
             ))}
           </div>
 
-          <div className="mt-3 flex items-center gap-4 flex-wrap text-[11px] text-gray-500 dark:text-slate-400">
+          <div className="mt-3 flex items-center gap-4 flex-wrap text-[11px] text-ink-3">
             {(['clear', 'co-channel', 'partial'] as RfOverlapKind[]).map((k) => (
               <span key={k} className="flex items-center gap-1.5">
                 <span
@@ -218,7 +218,7 @@ export function ChannelMap({ deviceId }: { deviceId?: number }) {
             ))}
           </div>
 
-          <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-400">
+          <p className="mt-2 text-[11px] text-ink-3">
             {partial > 0
               ? `${partial} radio${partial !== 1 ? 's' : ''} overlap the edge of a neighbour's channel — the carriers collide rather than taking turns, which costs more than sharing a channel outright.`
               : coChannel > 0
@@ -263,23 +263,21 @@ export function RssiDensity({ deviceId }: { deviceId?: number }) {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Signal className="w-4 h-4 text-emerald-500" />
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-          AP Deployment Density
-        </h2>
-        <span className="ml-auto text-[11px] text-gray-400 dark:text-slate-500">
+        <Signal className="w-4 h-4 text-good" />
+        <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">AP Deployment Density</h2>
+        <span className="ml-auto text-[11px] text-ink-3">
           {signals.length} client{signals.length !== 1 ? 's' : ''} by signal (dBm)
         </span>
       </div>
 
       {signals.length === 0 ? (
-        <div className="py-6 text-center text-sm text-gray-400 dark:text-slate-500">
+        <div className="py-6 text-center text-sm text-ink-3">
           No connected wireless clients to plot.
         </div>
       ) : (
         <>
           {needsImprovement && (
-            <div className="flex items-start gap-2 mb-3 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+            <div className="flex items-start gap-2 mb-3 text-xs text-warn bg-warn-bg rounded-lg px-3 py-2">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
               <span>
                 AP deployment density may need improvement — {weak} of {signals.length} clients are
@@ -325,7 +323,7 @@ export function RssiDensity({ deviceId }: { deviceId?: number }) {
                     '',
                     `Click to list ${zone.label.toLowerCase()}-signal clients`,
                   ].join('\n')}
-                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shadow ring-2 ring-white dark:ring-slate-800 hover:ring-blue-400 transition-shadow cursor-pointer"
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shadow ring-2 ring-white dark:ring-slate-800 hover:ring-accent transition-shadow cursor-pointer"
                   style={{
                     left: `${pos(bin)}%`,
                     width: size,
@@ -343,7 +341,7 @@ export function RssiDensity({ deviceId }: { deviceId?: number }) {
             {RSSI_TICKS.map((t) => (
               <span
                 key={t}
-                className="absolute -translate-x-1/2 text-[10px] text-gray-400 dark:text-slate-500"
+                className="absolute -translate-x-1/2 text-[10px] text-ink-3"
                 style={{ left: `${pos(t)}%` }}
               >
                 {t}
@@ -375,10 +373,8 @@ export function TxRetries({ deviceId }: { deviceId?: number }) {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Activity className="w-4 h-4 text-violet-500" />
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-          AP Radio TX Retries
-        </h2>
+        <Activity className="w-4 h-4 text-violet" />
+        <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">AP Radio TX Retries</h2>
         <div className="ml-auto flex gap-1">
           {ALL_BANDS.map((b) => (
             <button
@@ -386,9 +382,7 @@ export function TxRetries({ deviceId }: { deviceId?: number }) {
               onClick={() => setBand(b)}
               className={clsx(
                 'px-2 py-0.5 rounded-md text-xs font-medium transition-colors',
-                band === b
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
+                band === b ? 'bg-accent text-accent-fg' : 'text-ink-3 hover:bg-surface-3',
               )}
             >
               {BAND_LABEL[b]}
@@ -398,7 +392,7 @@ export function TxRetries({ deviceId }: { deviceId?: number }) {
       </div>
 
       {radios.length === 0 ? (
-        <div className="py-6 text-center text-sm text-gray-400 dark:text-slate-500">
+        <div className="py-6 text-center text-sm text-ink-3">
           No TX-retry data. This is derived from per-client CCQ, which the legacy
           <span className="font-mono"> wireless</span> driver reports; Wi-Fi 6/7 (
           <span className="font-mono">wifi</span>) radios don&apos;t expose it.
@@ -417,15 +411,13 @@ export function TxRetries({ deviceId }: { deviceId?: number }) {
                         : 'var(--color-border, #e5e7eb)',
                   }}
                 >
-                  <span className={clsx(b.count === 0 && 'text-gray-400 dark:text-slate-600')}>
-                    {b.count || ''}
-                  </span>
+                  <span className={clsx(b.count === 0 && 'text-ink-4')}>{b.count || ''}</span>
                 </div>
-                <div className="text-[10px] text-gray-400 dark:text-slate-500 mt-1">{b.label}</div>
+                <div className="text-[10px] text-ink-3 mt-1">{b.label}</div>
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-3">
+          <p className="text-[11px] text-ink-3 mt-3">
             Radios bucketed by transmit-retry rate over the last 6h ({inBand.length} on{' '}
             {BAND_LABEL[band]}). Lower is better.
           </p>
@@ -449,15 +441,15 @@ export function DhcpPoolUsage() {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-1">
-        <ShieldCheck className="w-4 h-4 text-green-500" />
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">DHCP pool usage</h2>
+        <ShieldCheck className="w-4 h-4 text-good" />
+        <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">DHCP pool usage</h2>
       </div>
-      <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
+      <p className="text-xs text-ink-3 mb-3">
         How full each address pool is. When one runs out, clients connect but get no address. Yellow
         from 80%, red from 95%; read every 5 minutes.
       </p>
       {isLoading ? null : pools.length === 0 ? (
-        <p className="py-4 text-center text-sm text-gray-400 dark:text-slate-500">
+        <p className="py-4 text-center text-sm text-ink-3">
           No address pools on the devices in view.
         </p>
       ) : (
@@ -470,8 +462,8 @@ export function DhcpPoolUsage() {
               <div key={`${p.device_id}-${p.name}`}>
                 <div className="flex items-center justify-between gap-3 text-xs mb-1">
                   <span className="truncate">
-                    <span className="font-medium text-gray-800 dark:text-slate-200">{p.name}</span>
-                    <span className="text-gray-400 dark:text-slate-500">
+                    <span className="font-medium text-ink">{p.name}</span>
+                    <span className="text-ink-3">
                       {' '}
                       · {p.device_name}
                       {p.ranges ? ` · ${p.ranges}` : ''}
@@ -486,7 +478,7 @@ export function DhcpPoolUsage() {
                     {pct !== null ? ` (${pct}%)` : ''}
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
+                <div className="h-1.5 rounded-full bg-surface-3 overflow-hidden">
                   <div
                     className="h-full rounded-full"
                     style={{ width: `${pct ?? 0}%`, background: color }}

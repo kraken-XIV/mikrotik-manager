@@ -66,10 +66,10 @@ export default function DevicePicker({
   const showHeaders = groups.length > 1;
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
+    <div className="rounded-lg border border-line overflow-hidden">
       {devices.length > 10 && (
-        <div className="relative border-b border-gray-200 dark:border-slate-700">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="relative border-b border-line">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-4" />
           <input
             className="w-full bg-transparent pl-8 pr-3 py-1.5 text-xs outline-none"
             placeholder="Search devices or tags"
@@ -81,16 +81,14 @@ export default function DevicePicker({
       )}
       <div className={`${maxHeight} overflow-y-auto`}>
         {groups.length === 0 && (
-          <div className="px-3 py-3 text-xs text-gray-400 dark:text-slate-500">
-            No devices match.
-          </div>
+          <div className="px-3 py-3 text-xs text-ink-3">No devices match.</div>
         )}
         {groups.map((g) => {
           const inGroup = g.list.filter((d) => chosen.has(d.id)).length;
           return (
             <div key={g.id ?? 'none'}>
               {showHeaders && (
-                <label className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-slate-800/60 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 cursor-pointer select-none">
+                <label className="flex items-center gap-2 px-3 py-1.5 bg-surface-2/60 text-[11px] font-semibold uppercase tracking-wide text-ink-3 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={inGroup === g.list.length}
@@ -110,7 +108,7 @@ export default function DevicePicker({
                 {g.list.map((d) => (
                   <label
                     key={d.id}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/40 min-w-0"
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer hover:bg-surface-2/40 min-w-0"
                   >
                     <input
                       type="checkbox"
@@ -118,12 +116,10 @@ export default function DevicePicker({
                       onChange={() => toggle(d.id)}
                     />
                     <DeviceTypePill type={d.device_type} />
-                    <span className="truncate text-gray-900 dark:text-white font-medium">
-                      {d.name.trim()}
-                    </span>
+                    <span className="truncate text-ink font-medium">{d.name.trim()}</span>
                     <TagChips tags={d.tags} />
                     {d.status !== 'online' && (
-                      <span className="text-[10px] text-gray-400">offline</span>
+                      <span className="text-[10px] text-ink-4">offline</span>
                     )}
                   </label>
                 ))}

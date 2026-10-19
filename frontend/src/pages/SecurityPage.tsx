@@ -38,21 +38,21 @@ interface DevicePosture {
 }
 
 function scoreColor(score: number | null) {
-  if (score === null) return 'text-gray-400';
-  if (score >= 85) return 'text-green-600 dark:text-green-400';
-  if (score >= 60) return 'text-amber-600 dark:text-amber-400';
-  return 'text-red-600 dark:text-red-400';
+  if (score === null) return 'text-ink-4';
+  if (score >= 85) return 'text-good';
+  if (score >= 60) return 'text-warn';
+  return 'text-bad';
 }
 
 const SEV_BADGE: Record<string, string> = {
-  high: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-  medium: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
-  low: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+  high: 'bg-bad-bg text-bad dark:text-bad',
+  medium: 'bg-warn-bg dark:bg-warn-bg text-warn',
+  low: 'bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent',
 };
 const SEV_DOT: Record<string, string> = {
-  high: 'bg-red-500',
-  medium: 'bg-amber-500',
-  low: 'bg-blue-500',
+  high: 'bg-bad',
+  medium: 'bg-warn',
+  low: 'bg-accent',
 };
 const SEV_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2, ok: 3 };
 
@@ -80,13 +80,8 @@ function Kpi({
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0">
-        <div className="text-xs text-gray-400 dark:text-slate-500 truncate">{label}</div>
-        <div
-          className={clsx(
-            'text-2xl font-bold leading-tight',
-            valueClass ?? 'text-gray-900 dark:text-white',
-          )}
-        >
+        <div className="text-xs text-ink-3 truncate">{label}</div>
+        <div className={clsx('text-2xl font-bold leading-tight', valueClass ?? 'text-ink')}>
           {value}
         </div>
       </div>
@@ -314,17 +309,15 @@ export default function SecurityPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-500" /> Security
+          <h1 className="text-xl font-bold text-ink flex items-center gap-2">
+            <Shield className="w-5 h-5 text-accent" /> Security
           </h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
-            Fleet-wide firewall posture and access control
-          </p>
+          <p className="text-sm text-ink-3">Fleet-wide firewall posture and access control</p>
         </div>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-sm text-ink-2 hover:bg-surface-3 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={clsx('w-3.5 h-3.5', isFetching && 'animate-spin')} /> Re-scan fleet
         </button>
@@ -335,18 +328,18 @@ export default function SecurityPage() {
         <Kpi
           icon={Gauge}
           label="Avg hardening score"
-          accent="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+          accent="bg-accent-soft text-accent"
           value={avgScore ?? '—'}
           valueClass={scoreColor(avgScore)}
         />
         <Kpi
           icon={Server}
           label="Devices scanned"
-          accent="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+          accent="bg-info-bg dark:bg-info-bg text-info dark:text-info"
           value={
             <>
               {scored.length}
-              <span className="text-sm font-normal text-gray-400">/{online.length}</span>
+              <span className="text-sm font-normal text-ink-4">/{online.length}</span>
             </>
           }
         />
@@ -355,12 +348,12 @@ export default function SecurityPage() {
         <Kpi
           icon={ShieldAlert}
           label="Total findings"
-          accent="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
+          accent="bg-warn-bg text-warn"
           value={
             <>
               {totalFindings}
               {totalMuted > 0 && (
-                <span className="text-sm font-normal text-gray-400"> +{totalMuted} muted</span>
+                <span className="text-sm font-normal text-ink-4"> +{totalMuted} muted</span>
               )}
             </>
           }
@@ -368,15 +361,9 @@ export default function SecurityPage() {
         <Kpi
           icon={AlertTriangle}
           label="High severity"
-          accent={
-            highCount > 0
-              ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-              : 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-          }
+          accent={highCount > 0 ? 'bg-bad-bg text-bad' : 'bg-good-bg text-good'}
           value={highCount}
-          valueClass={
-            highCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
-          }
+          valueClass={highCount > 0 ? 'text-bad' : 'text-good'}
         />
       </div>
 
@@ -391,37 +378,37 @@ export default function SecurityPage() {
       <div className="space-y-6">
         {/* Fleet posture */}
         <div className="card overflow-hidden flex flex-col max-h-[560px]">
-          <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2 shrink-0">
-            <ShieldCheck className="w-4 h-4 text-green-500" />
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+          <div className="px-5 py-3 border-b border-line flex items-center gap-2 shrink-0">
+            <ShieldCheck className="w-4 h-4 text-good" />
+            <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">
               Fleet Security Posture
             </h2>
           </div>
           {isLoading ? (
-            <div className="p-8 text-center text-sm text-gray-400">
+            <div className="p-8 text-center text-sm text-ink-4">
               <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
               Auditing devices…
             </div>
           ) : online.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-400">No online devices to scan.</div>
+            <div className="p-8 text-center text-sm text-ink-4">No online devices to scan.</div>
           ) : (
-            <div className="divide-y divide-gray-100 dark:divide-slate-700 flex-1 min-h-0 overflow-y-auto">
+            <div className="divide-y divide-line flex-1 min-h-0 overflow-y-auto">
               {fleet.map((f) => {
                 const open = expanded === f.id;
                 const { high: highs, medium: meds, low: lows } = countFindings(f.checks);
                 const muted = mutedCount(f.checks);
                 return (
                   <div key={f.id}>
-                    <div className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                    <div className="flex items-center gap-3 px-5 py-3 hover:bg-surface-2/30">
                       <button
                         onClick={() => setExpanded(open ? null : f.id)}
                         className="flex items-center gap-3 flex-1 min-w-0 text-left"
                       >
                         {f.checks.length > 0 ? (
                           open ? (
-                            <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <ChevronDown className="w-4 h-4 text-ink-4 flex-shrink-0" />
                           ) : (
-                            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <ChevronRight className="w-4 h-4 text-ink-4 flex-shrink-0" />
                           )
                         ) : (
                           <span className="w-4 flex-shrink-0" />
@@ -435,18 +422,16 @@ export default function SecurityPage() {
                           {f.score ?? '—'}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {f.name}
-                          </div>
-                          <div className="text-xs text-gray-400 font-mono">{f.ip_address}</div>
+                          <div className="text-sm font-medium text-ink truncate">{f.name}</div>
+                          <div className="text-xs text-ink-4 font-mono">{f.ip_address}</div>
                         </div>
                         {f.error ? (
-                          <span className="text-xs text-red-500">{f.error}</span>
+                          <span className="text-xs text-bad">{f.error}</span>
                         ) : highs + meds + lows === 0 ? (
                           // Clean means nothing *counts*, not nothing exists. A
                           // device whose only findings are muted used to show
                           // badges for them (#157).
-                          <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                          <span className="inline-flex items-center gap-1 text-xs text-good">
                             <ShieldCheck className="w-3.5 h-3.5" /> Clean
                             {muted > 0 ? ` · ${muted} muted` : ''}
                           </span>
@@ -495,7 +480,7 @@ export default function SecurityPage() {
                       </button>
                       <button
                         onClick={() => goManage(f.id)}
-                        className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex-shrink-0 ml-1"
+                        className="text-xs font-medium text-accent hover:underline flex-shrink-0 ml-1"
                       >
                         Manage →
                       </button>
@@ -508,19 +493,15 @@ export default function SecurityPage() {
                               className={clsx(
                                 'w-3.5 h-3.5 flex-shrink-0 mt-0.5',
                                 c.severity === 'high'
-                                  ? 'text-red-500'
+                                  ? 'text-bad'
                                   : c.severity === 'medium'
-                                    ? 'text-amber-500'
-                                    : 'text-blue-500',
+                                    ? 'text-warn'
+                                    : 'text-accent',
                               )}
                             />
                             <div>
-                              <span className="font-medium text-gray-800 dark:text-slate-200">
-                                {c.title}
-                              </span>{' '}
-                              <span className="text-gray-500 dark:text-slate-400">
-                                — {c.detail}
-                              </span>
+                              <span className="font-medium text-ink">{c.title}</span>{' '}
+                              <span className="text-ink-3">— {c.detail}</span>
                             </div>
                           </div>
                         ))}
@@ -535,45 +516,43 @@ export default function SecurityPage() {
 
         {/* Common findings across the fleet */}
         <div className="card overflow-hidden flex flex-col max-h-[560px]">
-          <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2 shrink-0">
-            <ListChecks className="w-4 h-4 text-indigo-500" />
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-              Common Findings
-            </h2>
+          <div className="px-5 py-3 border-b border-line flex items-center gap-2 shrink-0">
+            <ListChecks className="w-4 h-4 text-info" />
+            <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">Common Findings</h2>
           </div>
           {fleetError ? (
             <LoadError what="the fleet's security checks" error={fleetErr} />
           ) : commonFindings.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-400">
+            <div className="p-8 text-center text-sm text-ink-4">
               {/* "No issues" only when every online device was actually checked (U5). */}
               {isLoading ? (
                 'Scanning…'
               ) : scored.length < online.length ? (
-                <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                <span className="inline-flex items-center gap-1.5 text-warn">
                   <ShieldCheck className="w-4 h-4" /> No common issues among the {scored.length}{' '}
                   device{scored.length === 1 ? '' : 's'} checked; {online.length - scored.length}{' '}
                   could not be checked
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                <span className="inline-flex items-center gap-1.5 text-good">
                   <ShieldCheck className="w-4 h-4" /> No issues across the fleet
                 </span>
               )}
             </div>
           ) : (
-            <div className="divide-y divide-gray-100 dark:divide-slate-700 flex-1 min-h-0 overflow-y-auto">
+            <div className="divide-y divide-line flex-1 min-h-0 overflow-y-auto">
               {commonFindings.map((c) => {
                 const open = expandedFinding === c.title;
                 return (
                   <div key={c.title}>
                     <button
                       onClick={() => setExpandedFinding(open ? null : c.title)}
-                      className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-700/30 text-left"
+                      className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-surface-2/30 text-left"
                     >
                       {open ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        <ChevronDown className="w-3.5 h-3.5 text-ink-4 flex-shrink-0" />
                       ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        <ChevronRight className="w-3.5 h-3.5 text-ink-4 flex-shrink-0" />
                       )}
                       <span
                         className={clsx(
@@ -581,10 +560,8 @@ export default function SecurityPage() {
                           SEV_DOT[c.severity],
                         )}
                       />
-                      <span className="text-sm text-gray-700 dark:text-slate-300 flex-1 min-w-0">
-                        {c.title}
-                      </span>
-                      <span className="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
+                      <span className="text-sm text-ink-2 flex-1 min-w-0">{c.title}</span>
+                      <span className="text-xs text-ink-3 flex-shrink-0">
                         {c.devices.length} {c.devices.length === 1 ? 'device' : 'devices'}
                       </span>
                     </button>
@@ -606,12 +583,7 @@ export default function SecurityPage() {
                           apiOffRun.results.map((r, i) => (
                             <p
                               key={i}
-                              className={clsx(
-                                'text-xs',
-                                r.ok
-                                  ? 'text-green-700 dark:text-green-400'
-                                  : 'text-amber-700 dark:text-amber-400',
-                              )}
+                              className={clsx('text-xs', r.ok ? 'text-good' : 'text-warn')}
                             >
                               {r.name}: {r.message}
                             </p>
@@ -636,12 +608,7 @@ export default function SecurityPage() {
                           romonRun.results.map((r, i) => (
                             <p
                               key={i}
-                              className={clsx(
-                                'text-xs',
-                                r.ok
-                                  ? 'text-green-700 dark:text-green-400'
-                                  : 'text-amber-700 dark:text-amber-400',
-                              )}
+                              className={clsx('text-xs', r.ok ? 'text-good' : 'text-warn')}
                             >
                               {r.name}: {r.message}
                             </p>
@@ -667,12 +634,7 @@ export default function SecurityPage() {
                           httpsRun.results.map((r, i) => (
                             <p
                               key={i}
-                              className={clsx(
-                                'text-xs',
-                                r.ok
-                                  ? 'text-green-700 dark:text-green-400'
-                                  : 'text-amber-700 dark:text-amber-400',
-                              )}
+                              className={clsx('text-xs', r.ok ? 'text-good' : 'text-warn')}
                             >
                               {r.name}: {r.message}
                             </p>
@@ -703,11 +665,11 @@ export default function SecurityPage() {
       {/* Certificates across the fleet (#143): the full width, because it's a
           table; in a third of the page its columns were crushed. */}
       <div className="card overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2 flex-wrap">
-          <KeyRound className="w-4 h-4 text-indigo-500" />
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Certificates</h2>
+        <div className="px-5 py-3 border-b border-line flex items-center gap-2 flex-wrap">
+          <KeyRound className="w-4 h-4 text-info" />
+          <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">Certificates</h2>
           {certData && (
-            <span className="text-xs text-gray-400 dark:text-slate-500">
+            <span className="text-xs text-ink-3">
               {certData.certificates.length} across the fleet
               {certData.alertingEnabled
                 ? ` · alerting ${certData.warnDays} days ahead`
@@ -717,14 +679,12 @@ export default function SecurityPage() {
           {/* Counted, not just listed: "two expiring" is the number worth seeing
                 without reading every row. */}
           {certData && badCount > 0 && (
-            <span className="ml-auto text-xs font-medium text-amber-600 dark:text-amber-400">
-              {badCount} need attention
-            </span>
+            <span className="ml-auto text-xs font-medium text-warn">{badCount} need attention</span>
           )}
         </div>
         <div className="p-2">
           {certLoading ? (
-            <p className="p-6 text-center text-sm text-gray-400">Loading…</p>
+            <p className="p-6 text-center text-sm text-ink-4">Loading…</p>
           ) : certError ? (
             <LoadError what="certificates" error={certErr} />
           ) : (

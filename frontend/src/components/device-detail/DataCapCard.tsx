@@ -109,12 +109,12 @@ export default function DataCapCard({
   const pct = cap > 0 ? Math.min(100, (used / cap) * 100) : 0;
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 space-y-4">
+    <div className="bg-surface rounded-lg border border-line p-4 space-y-4">
       <div className="flex items-start gap-3">
-        <MessageSquare className="w-5 h-5 mt-0.5 text-gray-400 dark:text-slate-500" />
+        <MessageSquare className="w-5 h-5 mt-0.5 text-ink-3" />
         <div className="min-w-0">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Data-cap reset SMS</h3>
-          <p className="text-sm text-gray-600 dark:text-slate-300 mt-0.5">
+          <h3 className="font-semibold text-ink">Data-cap reset SMS</h3>
+          <p className="text-sm text-ink-2 mt-0.5">
             Some carriers throttle an “unlimited” plan past a daily allowance and lift it when you
             text a short code. This tracks usage on{' '}
             <span className="font-mono text-xs">{interfaceName}</span> and can send that message for
@@ -127,20 +127,20 @@ export default function DataCapCard({
       {rule && (
         <div>
           <div className="flex items-baseline justify-between text-xs mb-1">
-            <span className="text-gray-500 dark:text-slate-400">
+            <span className="text-ink-3">
               Counted this period{rule.period_key ? ` (${rule.period_key})` : ''}
             </span>
-            <span className="tabular-nums text-gray-900 dark:text-white">
+            <span className="tabular-nums text-ink">
               {fmtGB(used)} / {form.thresholdGB} GB
             </span>
           </div>
-          <div className="h-2 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
+          <div className="h-2 rounded-full bg-surface-3 overflow-hidden">
             <div
-              className={`h-full rounded-full ${used >= firesAt ? 'bg-amber-500' : 'bg-blue-500'}`}
+              className={`h-full rounded-full ${used >= firesAt ? 'bg-warn' : 'bg-accent'}`}
               style={{ width: `${Math.max(1, pct)}%` }}
             />
           </div>
-          <p className="mt-1 text-[11px] text-gray-400 dark:text-slate-500">
+          <p className="mt-1 text-[11px] text-ink-3">
             Counted from polling, so it reads low — traffic during a reboot or before this device
             was added is invisible to us. Sends at {fmtGB(firesAt)} GB ({form.margin_pct}% early)
             for that reason, and restarts at zero once sent, because that is what the message does
@@ -152,7 +152,7 @@ export default function DataCapCard({
       {/* Settings */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <label className="text-xs">
-          <span className="text-gray-500 dark:text-slate-400">Send to</span>
+          <span className="text-ink-3">Send to</span>
           <input
             className="input mt-1 w-full text-sm"
             placeholder="1237"
@@ -161,7 +161,7 @@ export default function DataCapCard({
           />
         </label>
         <label className="text-xs">
-          <span className="text-gray-500 dark:text-slate-400">Allowance (GB)</span>
+          <span className="text-ink-3">Allowance (GB)</span>
           <input
             className="input mt-1 w-full text-sm"
             type="number"
@@ -172,7 +172,7 @@ export default function DataCapCard({
           />
         </label>
         <label className="text-xs">
-          <span className="text-gray-500 dark:text-slate-400">Send early by (%)</span>
+          <span className="text-ink-3">Send early by (%)</span>
           <input
             className="input mt-1 w-full text-sm"
             type="number"
@@ -183,7 +183,7 @@ export default function DataCapCard({
           />
         </label>
         <label className="text-xs">
-          <span className="text-gray-500 dark:text-slate-400">Resets at</span>
+          <span className="text-ink-3">Resets at</span>
           <input
             className="input mt-1 w-full text-sm"
             type="time"
@@ -195,7 +195,7 @@ export default function DataCapCard({
           />
         </label>
         <label className="text-xs">
-          <span className="text-gray-500 dark:text-slate-400">Timezone</span>
+          <span className="text-ink-3">Timezone</span>
           <input
             className="input mt-1 w-full text-sm"
             value={form.timezone}
@@ -203,7 +203,7 @@ export default function DataCapCard({
           />
         </label>
         <label className="text-xs">
-          <span className="text-gray-500 dark:text-slate-400">Cooldown (min)</span>
+          <span className="text-ink-3">Cooldown (min)</span>
           <input
             className="input mt-1 w-full text-sm"
             type="number"
@@ -216,7 +216,7 @@ export default function DataCapCard({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+        <label className="flex items-center gap-2 text-sm text-ink-2">
           <input
             type="checkbox"
             checked={form.enabled}
@@ -246,16 +246,10 @@ export default function DataCapCard({
         </button>
       </div>
 
-      {result && (
-        <p
-          className={`text-xs ${result.ok ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-        >
-          {result.text}
-        </p>
-      )}
+      {result && <p className={`text-xs ${result.ok ? 'text-good' : 'text-bad'}`}>{result.text}</p>}
 
       {!rule && (
-        <div className="flex gap-2 rounded-lg border border-gray-200 p-2 text-[11px] text-gray-500 dark:border-slate-700 dark:text-slate-400">
+        <div className="flex gap-2 rounded-lg border border-line p-2 text-[11px] text-ink-3 dark:border-line dark:text-ink-3">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
           <span>
             The modem needs SMS enabled — check <span className="font-mono">/tool/sms/print</span>{' '}
@@ -268,11 +262,11 @@ export default function DataCapCard({
 
       {sends.length > 0 && (
         <div>
-          <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-1">Recent sends</h4>
+          <h4 className="text-xs font-medium text-ink mb-1">Recent sends</h4>
           <ul className="space-y-1">
             {sends.slice(0, 5).map((s, i) => (
               <li key={i} className="text-[11px] flex flex-wrap gap-x-2">
-                <span className="text-gray-500 dark:text-slate-400">
+                <span className="text-ink-3">
                   {new Date(s.at).toLocaleString([], {
                     month: 'short',
                     day: 'numeric',
@@ -280,16 +274,14 @@ export default function DataCapCard({
                     minute: '2-digit',
                   })}
                 </span>
-                <span className="text-gray-700 dark:text-slate-300">{s.trigger}</span>
+                <span className="text-ink-2">{s.trigger}</span>
                 {s.period_bytes != null && (
-                  <span className="text-gray-400 dark:text-slate-500">
-                    at {fmtGB(Number(s.period_bytes))} GB
-                  </span>
+                  <span className="text-ink-3">at {fmtGB(Number(s.period_bytes))} GB</span>
                 )}
                 {s.ok ? (
-                  <span className="text-green-600 dark:text-green-400">sent</span>
+                  <span className="text-good">sent</span>
                 ) : (
-                  <span className="text-red-600 dark:text-red-400">failed: {s.error}</span>
+                  <span className="text-bad">failed: {s.error}</span>
                 )}
               </li>
             ))}

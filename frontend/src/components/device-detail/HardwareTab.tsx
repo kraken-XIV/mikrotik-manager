@@ -100,9 +100,9 @@ function formatBytes(bytes: number): string {
 }
 
 function diskUsageColor(pct: number): string {
-  if (pct >= 85) return 'bg-red-500';
-  if (pct >= 70) return 'bg-yellow-500';
-  return 'bg-green-500';
+  if (pct >= 85) return 'bg-bad';
+  if (pct >= 70) return 'bg-warn';
+  return 'bg-good';
 }
 
 // ─── Category helpers ─────────────────────────────────────────────────────────
@@ -130,19 +130,19 @@ function isCurrent(m: HealthMetric) {
 // ─── Color helpers ─────────────────────────────────────────────────────────────
 
 function tempColor(celsius: number): string {
-  if (celsius >= 70) return 'text-red-500 dark:text-red-400';
-  if (celsius >= 50) return 'text-yellow-500 dark:text-yellow-400';
-  return 'text-green-500 dark:text-green-400';
+  if (celsius >= 70) return 'text-bad';
+  if (celsius >= 50) return 'text-warn dark:text-warn';
+  return 'text-good dark:text-good';
 }
 
 function fanColor(rpm: number): string {
-  return rpm === 0 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400';
+  return rpm === 0 ? 'text-bad' : 'text-good dark:text-good';
 }
 
 function psuColor(state: string): string {
   const s = state.toLowerCase();
-  if (s === 'ok' || s === 'good') return 'text-green-500 dark:text-green-400';
-  return 'text-red-500 dark:text-red-400';
+  if (s === 'ok' || s === 'good') return 'text-good dark:text-good';
+  return 'text-bad';
 }
 
 // ─── Card components ──────────────────────────────────────────────────────────
@@ -161,8 +161,8 @@ function Section({
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-blue-500">{icon}</span>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <span className="text-accent">{icon}</span>
+        <h3 className="text-sm font-semibold text-ink">{title}</h3>
       </div>
       {grid ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">{children}</div>
@@ -185,13 +185,11 @@ function MetricCard({
   valueClass?: string;
 }) {
   return (
-    <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-3">
-      <div className="text-xs text-gray-500 dark:text-slate-400 mb-1">{label}</div>
-      <div className={clsx('text-lg font-bold', valueClass || 'text-gray-900 dark:text-white')}>
+    <div className="bg-surface-2 dark:bg-surface-3 rounded-lg p-3">
+      <div className="text-xs text-ink-3 mb-1">{label}</div>
+      <div className={clsx('text-lg font-bold', valueClass || 'text-ink')}>
         {value}
-        {unit && (
-          <span className="text-xs font-normal text-gray-500 dark:text-slate-400 ml-1">{unit}</span>
-        )}
+        {unit && <span className="text-xs font-normal text-ink-3 ml-1">{unit}</span>}
       </div>
     </div>
   );
@@ -211,31 +209,31 @@ function DiskCard({ disk }: { disk: Record<string, string> }) {
   const slot = disk['slot'] || '';
 
   return (
-    <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4">
+    <div className="bg-surface-2 dark:bg-surface-3 rounded-lg p-4">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <div className="font-medium text-sm text-gray-900 dark:text-white">{label}</div>
-          <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 space-x-2">
+          <div className="font-medium text-sm text-ink">{label}</div>
+          <div className="text-xs text-ink-3 mt-0.5 space-x-2">
             {type && <span className="uppercase">{type}</span>}
             {slot && <span>· {slot}</span>}
             {fs && <span>· {fs}</span>}
           </div>
         </div>
         <div className="text-right">
-          <div className="text-sm font-bold text-gray-900 dark:text-white">{pct}%</div>
-          <div className="text-xs text-gray-500 dark:text-slate-400">used</div>
+          <div className="text-sm font-bold text-ink">{pct}%</div>
+          <div className="text-xs text-ink-3">used</div>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="h-1.5 bg-gray-200 dark:bg-slate-600 rounded-full mb-2">
+      <div className="h-1.5 bg-surface-3 dark:bg-surface-3 rounded-full mb-2">
         <div
           className={clsx('h-full rounded-full transition-all', diskUsageColor(pct))}
           style={{ width: `${pct}%` }}
         />
       </div>
 
-      <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400">
+      <div className="flex justify-between text-xs text-ink-3">
         <span>{formatBytes(usedBytes)} used</span>
         <span>
           {formatBytes(freeBytes)} free / {formatBytes(totalBytes)}
@@ -243,7 +241,7 @@ function DiskCard({ disk }: { disk: Record<string, string> }) {
       </div>
 
       {(model || serial) && (
-        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-600 text-xs text-gray-400 dark:text-slate-500 space-y-0.5">
+        <div className="mt-2 pt-2 border-t border-line text-xs text-ink-3 space-y-0.5">
           {model && <div>Model: {model}</div>}
           {serial && <div>S/N: {serial}</div>}
         </div>
@@ -292,10 +290,8 @@ function ResourceChart({ deviceId }: { deviceId: number }) {
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-blue-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-            CPU & Memory Usage
-          </h3>
+          <Activity className="w-4 h-4 text-accent" />
+          <h3 className="text-sm font-semibold text-ink">CPU & Memory Usage</h3>
         </div>
         <div className="flex gap-1">
           {RESOURCE_RANGES.map((r) => (
@@ -305,8 +301,8 @@ function ResourceChart({ deviceId }: { deviceId: number }) {
               className={clsx(
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
                 range === r
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600',
+                  ? 'bg-accent text-accent-fg'
+                  : 'bg-surface-3 text-ink-2 hover:bg-surface-3 dark:hover:bg-surface-3',
               )}
             >
               {r}
@@ -316,7 +312,7 @@ function ResourceChart({ deviceId }: { deviceId: number }) {
       </div>
 
       {resourceData.length === 0 ? (
-        <div className="h-48 flex items-center justify-center text-gray-400 dark:text-slate-500 text-sm">
+        <div className="h-48 flex items-center justify-center text-ink-3 text-sm">
           No resource history available yet — data accumulates over time
         </div>
       ) : (
@@ -383,17 +379,13 @@ export default function HardwareTab({ deviceId }: { deviceId: number }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (isError) {
-    return (
-      <div className="card p-8 text-center text-gray-500 dark:text-slate-400">
-        Failed to load hardware data.
-      </div>
-    );
+    return <div className="card p-8 text-center text-ink-3">Failed to load hardware data.</div>;
   }
 
   const metrics = normalize(data?.health || []);
@@ -414,16 +406,14 @@ export default function HardwareTab({ deviceId }: { deviceId: number }) {
     <div className="space-y-4">
       <div className="flex items-center justify-end gap-3">
         {/* Temperature unit toggle */}
-        <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-slate-600 text-xs font-medium">
+        <div className="flex rounded-lg overflow-hidden border border-line text-xs font-medium">
           {(['C', 'F'] as const).map((unit) => (
             <button
               key={unit}
               onClick={() => setAndPersistUnit(unit)}
               className={clsx(
                 'px-2.5 py-1 transition-colors',
-                tempUnit === unit
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700',
+                tempUnit === unit ? 'bg-accent text-accent-fg' : 'text-ink-2 hover:bg-surface-3',
               )}
             >
               °{unit}
@@ -552,13 +542,9 @@ export default function HardwareTab({ deviceId }: { deviceId: number }) {
                       className="rounded-lg p-3"
                       style={{ background: 'var(--surface-2)' }}
                     >
-                      <div className="text-xs font-mono text-gray-500 dark:text-slate-400 mb-1">
-                        {p.port}
-                      </div>
-                      <div className="text-lg font-bold text-yellow-500">
-                        {p.watts.toFixed(1)} W
-                      </div>
-                      <div className="text-xs text-gray-400 dark:text-slate-500">
+                      <div className="text-xs font-mono text-ink-3 mb-1">{p.port}</div>
+                      <div className="text-lg font-bold text-warn">{p.watts.toFixed(1)} W</div>
+                      <div className="text-xs text-ink-3">
                         {p.voltage_v.toFixed(1)} V · {p.current_ma.toFixed(0)} mA
                       </div>
                     </div>
@@ -568,7 +554,7 @@ export default function HardwareTab({ deviceId }: { deviceId: number }) {
                     className="rounded-lg p-3 opacity-40"
                     style={{ background: 'var(--surface-2)' }}
                   >
-                    <div className="text-xs text-gray-500 dark:text-slate-400">
+                    <div className="text-xs text-ink-3">
                       {poeData.ports.filter((p) => p.watts === 0).length} port(s) inactive
                     </div>
                   </div>

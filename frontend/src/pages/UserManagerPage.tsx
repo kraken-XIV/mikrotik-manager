@@ -35,7 +35,7 @@ function Attributes({ value }: { value: string | undefined }) {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  if (attrs.length === 0) return <span className="text-gray-400 dark:text-slate-500">—</span>;
+  if (attrs.length === 0) return <span className="text-ink-3">—</span>;
   return (
     <div className="flex flex-wrap gap-1">
       {attrs.map((a, i) => {
@@ -43,12 +43,10 @@ function Attributes({ value }: { value: string | undefined }) {
         return (
           <span
             key={i}
-            className="inline-flex rounded bg-gray-100 dark:bg-slate-700/60 px-1.5 py-0.5 font-mono text-[11px]"
+            className="inline-flex rounded bg-surface-3/60 px-1.5 py-0.5 font-mono text-[11px]"
           >
-            <span className="text-gray-500 dark:text-slate-400">{at < 0 ? a : a.slice(0, at)}</span>
-            {at >= 0 && (
-              <span className="ml-1 text-gray-800 dark:text-slate-200">{a.slice(at + 1)}</span>
-            )}
+            <span className="text-ink-3">{at < 0 ? a : a.slice(0, at)}</span>
+            {at >= 0 && <span className="ml-1 text-ink">{a.slice(at + 1)}</span>}
           </span>
         );
       })}
@@ -67,11 +65,9 @@ function Section({
 }) {
   return (
     <div className="card overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 text-sm font-semibold text-gray-900 dark:text-white">
+      <div className="px-4 py-3 border-b border-line-soft text-sm font-semibold text-ink">
         {title}
-        {count !== undefined && (
-          <span className="ml-2 font-normal text-gray-500 dark:text-slate-400">{count}</span>
-        )}
+        {count !== undefined && <span className="ml-2 font-normal text-ink-3">{count}</span>}
       </div>
       <div className="overflow-x-auto">{children}</div>
     </div>
@@ -79,7 +75,7 @@ function Section({
 }
 
 const th = 'table-header px-4 py-2 text-left';
-const td = 'px-4 py-2 text-xs text-gray-700 dark:text-slate-300 align-top';
+const td = 'px-4 py-2 text-xs text-ink-2 align-top';
 
 export default function UserManagerPage() {
   const [params, setParams] = useSearchParams();
@@ -121,10 +117,7 @@ export default function UserManagerPage() {
     const r = data?.routers.find((x) => (x.row['address'] || '').split('/')[0] === ip);
     return r ? (
       r.managed_device ? (
-        <Link
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-          to={`/devices/${r.managed_device.id}`}
-        >
+        <Link className="text-accent hover:underline" to={`/devices/${r.managed_device.id}`}>
           {r.row['name']}
         </Link>
       ) : (
@@ -137,12 +130,12 @@ export default function UserManagerPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
-            <UserCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          <div className="p-2 rounded-lg bg-info-bg dark:bg-info-bg">
+            <UserCheck className="w-5 h-5 text-info dark:text-info" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">User Manager</h1>
-            <p className="text-sm text-gray-500 dark:text-slate-400">
+            <h1 className="text-xl font-bold text-ink">User Manager</h1>
+            <p className="text-sm text-ink-3">
               RADIUS logins across the network: who&apos;s logged in where, users and groups with
               their attributes, and the devices that check against it.
             </p>
@@ -174,8 +167,8 @@ export default function UserManagerPage() {
       </div>
 
       {!listLoading && servers.length === 0 && (
-        <div className="card p-6 text-sm text-gray-600 dark:text-slate-300 space-y-2">
-          <p className="font-semibold text-gray-900 dark:text-white">No device runs User Manager</p>
+        <div className="card p-6 text-sm text-ink-2 space-y-2">
+          <p className="font-semibold text-ink">No device runs User Manager</p>
           <p>
             Each device is checked once a day for User Manager (the{' '}
             <span className="font-mono">user-manager</span> package, enabled).
@@ -196,10 +189,10 @@ export default function UserManagerPage() {
       )}
 
       {isLoading && chosen != null && (
-        <div className="text-sm text-gray-400">Reading User Manager…</div>
+        <div className="text-sm text-ink-4">Reading User Manager…</div>
       )}
       {isError && (
-        <div className="card p-4 text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+        <div className="card p-4 text-sm text-bad flex items-center gap-2">
           <AlertTriangle className="w-4 h-4" />
           {errText(error, 'Couldn’t read User Manager')}
         </div>
@@ -209,24 +202,21 @@ export default function UserManagerPage() {
         <>
           <div className="card p-4 flex flex-wrap gap-x-8 gap-y-2 text-sm">
             <div>
-              <span className="text-gray-500 dark:text-slate-400">Server </span>
-              <Link
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-                to={`/devices/${data.device.id}`}
-              >
+              <span className="text-ink-3">Server </span>
+              <Link className="text-accent hover:underline" to={`/devices/${data.device.id}`}>
                 {data.device.name}
               </Link>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-slate-400">Status </span>
+              <span className="text-ink-3">Status </span>
               {isTrue(data.settings['enabled']) ? (
-                <span className="text-green-600 dark:text-green-400">enabled</span>
+                <span className="text-good">enabled</span>
               ) : (
-                <span className="text-amber-600">disabled</span>
+                <span className="text-warn">disabled</span>
               )}
             </div>
             <div>
-              <span className="text-gray-500 dark:text-slate-400">Ports </span>
+              <span className="text-ink-3">Ports </span>
               <span className="font-mono">
                 {data.settings['authentication-port'] || '1812'} /{' '}
                 {data.settings['accounting-port'] || '1813'}
@@ -234,29 +224,27 @@ export default function UserManagerPage() {
             </div>
             {data.settings['certificate'] && data.settings['certificate'] !== 'none' && (
               <div>
-                <span className="text-gray-500 dark:text-slate-400">Certificate </span>
+                <span className="text-ink-3">Certificate </span>
                 <span className="font-mono">{data.settings['certificate']}</span>
               </div>
             )}
             <div>
-              <span className="text-gray-500 dark:text-slate-400">Users </span>
+              <span className="text-ink-3">Users </span>
               {data.users.length}
             </div>
             <div>
-              <span className="text-gray-500 dark:text-slate-400">Devices </span>
+              <span className="text-ink-3">Devices </span>
               {data.routers.length}
             </div>
           </div>
 
           <Section title="Logged in now" count={data.sessions.active.length}>
             {data.sessions.active.length === 0 ? (
-              <p className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
-                No active sessions.
-              </p>
+              <p className="px-4 py-3 text-sm text-ink-3">No active sessions.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-slate-700">
+                  <tr className="border-b border-line-soft">
                     <th className={th}>User</th>
                     <th className={th}>Device</th>
                     <th className={th}>From</th>
@@ -266,13 +254,13 @@ export default function UserManagerPage() {
                     {canWrite && <th className={th} />}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                <tbody className="divide-y divide-line">
                   {data.sessions.active.map((s) => (
                     <tr key={s['.id']}>
                       <td className={clsx(td, 'font-medium')}>{s['user']}</td>
                       <td className={td}>
                         {nasName(s['nas-ip-address']) ?? s['nas-identifier'] ?? '—'}
-                        <div className="font-mono text-gray-400">{s['nas-ip-address']}</div>
+                        <div className="font-mono text-ink-4">{s['nas-ip-address']}</div>
                       </td>
                       <td className={clsx(td, 'font-mono')}>{s['calling-station-id'] || '—'}</td>
                       <td className={td}>{s['started'] || '—'}</td>
@@ -283,7 +271,7 @@ export default function UserManagerPage() {
                       {canWrite && (
                         <td className={clsx(td, 'text-right')}>
                           <button
-                            className="text-xs text-red-600 dark:text-red-400 hover:underline inline-flex items-center gap-1"
+                            className="text-xs text-bad hover:underline inline-flex items-center gap-1"
                             title="Clear a session the device never closed"
                             onClick={() => {
                               remove.reset();
@@ -301,7 +289,7 @@ export default function UserManagerPage() {
               </table>
             )}
             {confirm && (
-              <div className="m-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 text-sm space-y-2">
+              <div className="m-3 rounded-lg border border-bad dark:border-bad bg-bad-bg p-3 text-sm space-y-2">
                 <p>
                   Clear <span className="font-semibold">{confirm['user']}</span>&apos;s session from{' '}
                   {confirm['nas-ip-address'] || 'its device'}? This removes the session record in
@@ -310,20 +298,20 @@ export default function UserManagerPage() {
                 </p>
                 <div className="flex items-center gap-3">
                   <button
-                    className="btn-primary text-sm bg-red-600 hover:bg-red-700"
+                    className="btn-primary text-sm bg-bad hover:bg-bad"
                     disabled={remove.isPending}
                     onClick={() => remove.mutate(confirm['.id'])}
                   >
                     {remove.isPending ? 'Clearing…' : 'Clear session'}
                   </button>
                   <button
-                    className="text-sm text-gray-500 hover:underline"
+                    className="text-sm text-ink-3 hover:underline"
                     onClick={() => setConfirm(null)}
                   >
                     Cancel
                   </button>
                   {remove.isError && (
-                    <span className="text-xs text-red-600">
+                    <span className="text-xs text-bad">
                       {errText(remove.error, 'That didn’t work')}
                     </span>
                   )}
@@ -335,7 +323,7 @@ export default function UserManagerPage() {
           <Section title="Users" count={data.users.length}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-700">
+                <tr className="border-b border-line-soft">
                   <th className={th}>Name</th>
                   <th className={th}>Group</th>
                   <th className={th}>Shared sessions</th>
@@ -343,7 +331,7 @@ export default function UserManagerPage() {
                   <th className={th}>Comment</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+              <tbody className="divide-y divide-line">
                 {data.users.map((u) => (
                   <tr
                     key={u['.id'] || u['name']}
@@ -351,9 +339,7 @@ export default function UserManagerPage() {
                   >
                     <td className={clsx(td, 'font-medium')}>
                       {u['name']}
-                      {isTrue(u['disabled']) && (
-                        <span className="ml-2 text-gray-400">disabled</span>
-                      )}
+                      {isTrue(u['disabled']) && <span className="ml-2 text-ink-4">disabled</span>}
                     </td>
                     <td className={td}>{u['group'] || '—'}</td>
                     <td className={td}>{u['shared-users'] || '—'}</td>
@@ -370,25 +356,23 @@ export default function UserManagerPage() {
           <Section title="Groups" count={data.groups.length}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-700">
+                <tr className="border-b border-line-soft">
                   <th className={th}>Name</th>
                   <th className={th}>Attributes sent</th>
                   <th className={th}>Methods</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+              <tbody className="divide-y divide-line">
                 {data.groups.map((g) => (
                   <tr key={g['.id'] || g['name']}>
                     <td className={clsx(td, 'font-medium whitespace-nowrap')}>
                       {g['name']}
-                      {isTrue(g['default']) && <span className="ml-2 text-gray-400">built-in</span>}
+                      {isTrue(g['default']) && <span className="ml-2 text-ink-4">built-in</span>}
                     </td>
                     <td className={td}>
                       <Attributes value={g['attributes']} />
                     </td>
-                    <td className={clsx(td, 'text-gray-500 dark:text-slate-400')}>
-                      {g['outer-auths'] || '—'}
-                    </td>
+                    <td className={clsx(td, 'text-ink-3')}>{g['outer-auths'] || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -398,7 +382,7 @@ export default function UserManagerPage() {
           <Section title="Devices that authenticate against it" count={data.routers.length}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-700">
+                <tr className="border-b border-line-soft">
                   <th className={th}>Name</th>
                   <th className={th}>Address</th>
                   <th className={th}>In the manager</th>
@@ -406,7 +390,7 @@ export default function UserManagerPage() {
                   <th className={th}>CoA port</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+              <tbody className="divide-y divide-line">
                 {data.routers.map(({ row: r, managed_device: m }) => (
                   <tr
                     key={r['.id'] || r['name']}
@@ -416,14 +400,11 @@ export default function UserManagerPage() {
                     <td className={clsx(td, 'font-mono')}>{r['address']}</td>
                     <td className={td}>
                       {m ? (
-                        <Link
-                          className="text-blue-600 dark:text-blue-400 hover:underline"
-                          to={`/devices/${m.id}`}
-                        >
+                        <Link className="text-accent hover:underline" to={`/devices/${m.id}`}>
                           {m.name}
                         </Link>
                       ) : (
-                        <span className="text-gray-400">not managed</span>
+                        <span className="text-ink-4">not managed</span>
                       )}
                     </td>
                     <td className={td}>{r['protocol'] || '—'}</td>
@@ -438,7 +419,7 @@ export default function UserManagerPage() {
             <Section title="Recent sessions" count={data.sessions.recent.length}>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-slate-700">
+                  <tr className="border-b border-line-soft">
                     <th className={th}>User</th>
                     <th className={th}>Device</th>
                     <th className={th}>From</th>
@@ -447,7 +428,7 @@ export default function UserManagerPage() {
                     <th className={th}>Why</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                <tbody className="divide-y divide-line">
                   {data.sessions.recent.map((s) => (
                     <tr key={s['.id']}>
                       <td className={td}>{s['user']}</td>

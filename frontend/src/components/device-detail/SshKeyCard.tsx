@@ -54,8 +54,7 @@ export default function SshKeyCard({
   const revoke = useMutation(run(() => sshKeyApi.revoke(deviceId)));
   const busy = deploy.isPending || rotate.isPending || verify.isPending || revoke.isPending;
 
-  if (isLoading)
-    return <div className="text-sm text-gray-500 dark:text-slate-400">Loading key status…</div>;
+  if (isLoading) return <div className="text-sm text-ink-3">Loading key status…</div>;
 
   const verified = data?.status === 'verified';
   const user = data?.ssh_username || sshUsername || 'this user';
@@ -63,23 +62,23 @@ export default function SshKeyCard({
   return (
     <div className="space-y-3">
       <div className="flex items-start gap-3">
-        <KeyRound className="w-5 h-5 mt-0.5 text-gray-400 dark:text-slate-500" />
+        <KeyRound className="w-5 h-5 mt-0.5 text-ink-3" />
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-gray-900 dark:text-white">SSH key</h3>
+            <h3 className="font-semibold text-ink">SSH key</h3>
             {data && (
               <span
                 className={`px-2 py-0.5 rounded text-xs font-medium ${
                   verified
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                    ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good'
+                    : 'bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn'
                 }`}
               >
                 {data.status}
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-600 dark:text-slate-300 mt-0.5">
+          <p className="text-sm text-ink-2 mt-0.5">
             A unique keypair for this device, used for backups and config export instead of a stored
             password. The private half never leaves the server and is never shown.
           </p>
@@ -87,27 +86,25 @@ export default function SshKeyCard({
       </div>
 
       {data ? (
-        <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 text-xs space-y-1">
+        <div className="rounded-lg border border-line p-3 text-xs space-y-1">
           <div className="flex gap-2">
-            <span className="text-gray-500 dark:text-slate-400 w-24 shrink-0">Fingerprint</span>
-            <span className="font-mono text-gray-900 dark:text-white break-all">
-              {data.fingerprint}
-            </span>
+            <span className="text-ink-3 w-24 shrink-0">Fingerprint</span>
+            <span className="font-mono text-ink break-all">{data.fingerprint}</span>
           </div>
           <div className="flex gap-2">
-            <span className="text-gray-500 dark:text-slate-400 w-24 shrink-0">User</span>
-            <span className="text-gray-900 dark:text-white">{data.ssh_username}</span>
+            <span className="text-ink-3 w-24 shrink-0">User</span>
+            <span className="text-ink">{data.ssh_username}</span>
           </div>
           <div className="flex gap-2">
-            <span className="text-gray-500 dark:text-slate-400 w-24 shrink-0">Last proved</span>
-            <span className="text-gray-900 dark:text-white">
+            <span className="text-ink-3 w-24 shrink-0">Last proved</span>
+            <span className="text-ink">
               {data.last_verified_at ? new Date(data.last_verified_at).toLocaleString() : 'never'}
             </span>
           </div>
           {data.last_error && (
             <div className="flex gap-2">
-              <span className="text-gray-500 dark:text-slate-400 w-24 shrink-0">Last error</span>
-              <span className="text-red-600 dark:text-red-400 break-words">{data.last_error}</span>
+              <span className="text-ink-3 w-24 shrink-0">Last error</span>
+              <span className="text-bad break-words">{data.last_error}</span>
             </div>
           )}
         </div>
@@ -119,20 +116,12 @@ export default function SshKeyCard({
       <div
         className={`flex gap-2 rounded-lg border p-3 text-xs ${
           data
-            ? 'border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800/60'
-            : 'border-amber-300 bg-amber-50 dark:border-amber-700/60 dark:bg-amber-900/20'
+            ? 'border-line bg-surface-2 dark:border-line dark:bg-surface-2'
+            : 'border-warn bg-warn-bg dark:border-warn dark:bg-warn-bg'
         }`}
       >
-        <AlertTriangle
-          className={`w-4 h-4 shrink-0 mt-0.5 ${
-            data ? 'text-gray-400 dark:text-slate-500' : 'text-amber-600 dark:text-amber-400'
-          }`}
-        />
-        <div
-          className={
-            data ? 'text-gray-600 dark:text-slate-300' : 'text-amber-800 dark:text-amber-300'
-          }
-        >
+        <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${data ? 'text-ink-3' : 'text-warn'}`} />
+        <div className={data ? 'text-ink-2' : 'text-warn dark:text-warn'}>
           <div className="font-medium">
             {data
               ? `Password SSH is disabled for "${user}" on this device.`
@@ -160,7 +149,7 @@ export default function SshKeyCard({
       <div className="flex flex-wrap items-center gap-2">
         {!data && (
           <>
-            <label className="flex items-start gap-2 text-xs text-gray-700 dark:text-slate-300 w-full">
+            <label className="flex items-start gap-2 text-xs text-ink-2 w-full">
               <input
                 type="checkbox"
                 className="mt-0.5"
@@ -232,13 +221,7 @@ export default function SshKeyCard({
         )}
       </div>
 
-      {msg && (
-        <p
-          className={`text-xs ${msg.ok ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-        >
-          {msg.text}
-        </p>
-      )}
+      {msg && <p className={`text-xs ${msg.ok ? 'text-good' : 'text-bad'}`}>{msg.text}</p>}
     </div>
   );
 }

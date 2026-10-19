@@ -17,7 +17,10 @@ RUN npm run build
 FROM nginx:alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d
 
 # Install openssl for self-signed certificate generation
-RUN apk add --no-cache openssl
+# The pinned upstream image can lag Alpine security fixes. Upgrade the two
+# affected runtime libraries rather than suppressing their CVEs in the scanner.
+RUN apk upgrade --no-cache libexpat libx11 \
+  && apk add --no-cache openssl
 
 # Copy built frontend
 COPY --from=frontend-builder /frontend/dist /usr/share/nginx/html

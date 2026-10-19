@@ -136,7 +136,7 @@ export default function RomonCard({ sites }: { sites: Site[] }) {
         setting wins over its group&apos;s, and both over the fleet default). The Security page
         flags devices that differ and can apply the setting; nothing changes on its own.
       </p>
-      {error && <p className="px-4 pt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="px-4 pt-2 text-sm text-bad">{error}</p>}
 
       {editing && (
         <div className="px-4 py-3 space-y-3" style={{ borderBottom: '1px solid var(--line)' }}>
@@ -247,7 +247,7 @@ export default function RomonCard({ sites }: { sites: Site[] }) {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => start(t)}
-                        className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400"
+                        className="p-1.5 rounded hover:bg-surface-3 text-ink-4"
                         title="Edit"
                       >
                         <Pencil className="w-3.5 h-3.5" />
@@ -255,7 +255,7 @@ export default function RomonCard({ sites }: { sites: Site[] }) {
                       {rowFor(t) && (
                         <button
                           onClick={() => void clear(t)}
-                          className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-400 hover:text-red-500"
+                          className="p-1.5 rounded hover:bg-bad-bg dark:hover:bg-red-950/40 text-ink-4 hover:text-bad"
                           title="Remove this setting"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

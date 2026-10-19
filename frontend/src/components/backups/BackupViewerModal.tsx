@@ -58,50 +58,48 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
         className="card w-full max-w-5xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start gap-3 p-4 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex items-start gap-3 p-4 border-b border-line">
           {comparing ? (
-            <GitCompare className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+            <GitCompare className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
           ) : (
-            <FileText className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+            <FileText className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
           )}
           <div className="min-w-0 flex-1">
             {comparing ? (
               <>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                  Comparing backups
-                </h3>
+                <h3 className="text-sm font-semibold text-ink">Comparing backups</h3>
                 {pair.data && (
                   // The filename lives here rather than in the table: it is how you
                   // would refer to this file to someone else, so it belongs where
                   // you are actually looking at the file.
-                  <p className="text-xs font-mono text-gray-500 dark:text-slate-400 break-all mt-0.5">
+                  <p className="text-xs font-mono text-ink-3 break-all mt-0.5">
                     {pair.data.from.filename} → {pair.data.to.filename}
                   </p>
                 )}
               </>
             ) : (
               <>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-sm font-semibold text-ink">
                   {single.data?.device_name ?? 'Backup'}
                 </h3>
                 {single.data && (
-                  <p className="text-xs font-mono text-gray-500 dark:text-slate-400 break-all mt-0.5">
+                  <p className="text-xs font-mono text-ink-3 break-all mt-0.5">
                     {single.data.filename}
                   </p>
                 )}
               </>
             )}
             {!comparing && single.data && (
-              <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+              <p className="text-xs text-ink-3 mt-0.5">
                 {format(new Date(single.data.created_at), 'MMM d, yyyy HH:mm')}
                 {single.data.notes ? ` · ${single.data.notes}` : ''}
               </p>
             )}
             {comparing && pair.data && (
               <p className="text-xs mt-0.5">
-                <span className="text-green-600 dark:text-green-400">+{added}</span>{' '}
-                <span className="text-red-600 dark:text-red-400">−{removed}</span>
-                <span className="text-gray-400 dark:text-slate-500">
+                <span className="text-good">+{added}</span>{' '}
+                <span className="text-bad">−{removed}</span>
+                <span className="text-ink-3">
                   {' '}
                   · {format(new Date(pair.data.from.created_at), 'MMM d HH:mm')}
                   {' → '}
@@ -113,7 +111,7 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
           {!comparing && single.data && (
             <button
               onClick={() => onDownload(single.data!.id, single.data!.filename)}
-              className="p-1.5 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              className="p-1.5 rounded text-ink-4 hover:text-accent hover:bg-accent-soft dark:hover:bg-accent-soft"
               title="Download"
             >
               <Download className="w-4 h-4" />
@@ -121,7 +119,7 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
           )}
           <button
             onClick={onClose}
-            className="p-1.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+            className="p-1.5 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
           >
             <X className="w-5 h-5" />
           </button>
@@ -129,15 +127,15 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
 
         <div className="flex-1 overflow-auto p-4">
           {loading && (
-            <div className="flex items-center justify-center gap-2 py-16 text-gray-400">
+            <div className="flex items-center justify-center gap-2 py-16 text-ink-4">
               <Loader2 className="w-4 h-4 animate-spin" /> Reading…
             </div>
           )}
 
           {!loading && error && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-              <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-600 dark:text-red-400">{errorText(error)}</p>
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-bad-bg border border-bad dark:border-bad">
+              <AlertCircle className="w-4 h-4 text-bad mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-bad">{errorText(error)}</p>
             </div>
           )}
 
@@ -145,21 +143,19 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
             !error &&
             comparing &&
             (added + removed === 0 ? (
-              <p className="text-sm text-gray-400 py-8 text-center">
+              <p className="text-sm text-ink-4 py-8 text-center">
                 These two backups are identical.
               </p>
             ) : (
-              <pre className="text-xs font-mono bg-gray-50 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-lg p-3 leading-relaxed">
+              <pre className="text-xs font-mono bg-surface-2/60 border border-line rounded-lg p-3 leading-relaxed">
                 {rows.map((row, i) => (
                   <div
                     key={i}
                     className={clsx(
                       'whitespace-pre-wrap',
-                      row.type === 'add' &&
-                        'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400',
-                      row.type === 'del' &&
-                        'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
-                      row.type === 'ctx' && 'text-gray-500 dark:text-slate-400',
+                      row.type === 'add' && 'bg-good-bg text-good',
+                      row.type === 'del' && 'bg-bad-bg text-bad dark:text-bad',
+                      row.type === 'ctx' && 'text-ink-3',
                     )}
                   >
                     {row.type === 'add' ? '+' : row.type === 'del' ? '−' : ' '} {row.text}
@@ -169,7 +165,7 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
             ))}
 
           {!loading && !error && !comparing && single.data && (
-            <pre className="text-xs font-mono bg-gray-50 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-lg p-3 leading-relaxed whitespace-pre-wrap">
+            <pre className="text-xs font-mono bg-surface-2/60 border border-line rounded-lg p-3 leading-relaxed whitespace-pre-wrap">
               {single.data.content}
             </pre>
           )}

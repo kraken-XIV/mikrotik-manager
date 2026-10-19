@@ -23,7 +23,7 @@ const day = (iso: string) =>
   new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
 function Signal({ dbm }: { dbm: number | null }) {
-  if (dbm == null) return <span className="text-gray-400">—</span>;
+  if (dbm == null) return <span className="text-ink-4">—</span>;
   return (
     <span className="mono num-tab" style={{ color: rssiColor(dbm) }}>
       {dbm} dBm
@@ -41,34 +41,34 @@ function Session({ s }: { s: RoamSession }) {
       className={clsx(
         'rounded-lg border p-3',
         flapping
-          ? 'border-amber-300 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/10'
-          : 'border-gray-200 dark:border-slate-700',
+          ? 'border-warn dark:border-warn bg-amber-50/60 dark:bg-amber-900/10'
+          : 'border-line',
       )}
     >
       <button onClick={() => setOpen((o) => !o)} className="w-full text-left">
         <div className="flex items-center gap-2 flex-wrap text-xs">
-          <span className="text-gray-400">{day(s.startedAt)}</span>
-          <span className="mono text-gray-700 dark:text-slate-200">{time(s.startedAt)}</span>
-          <span className="text-gray-400">→</span>
-          <span className="mono text-gray-700 dark:text-slate-200">
+          <span className="text-ink-4">{day(s.startedAt)}</span>
+          <span className="mono text-ink-2 dark:text-ink">{time(s.startedAt)}</span>
+          <span className="text-ink-4">→</span>
+          <span className="mono text-ink-2 dark:text-ink">
             {s.endedAt ? time(s.endedAt) : 'now'}
           </span>
-          <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
+          <span className="px-1.5 py-0.5 rounded bg-surface-3 text-ink-2">
             {duration(s.durationSec)}
           </span>
-          {s.ssid && <span className="text-gray-500 dark:text-slate-400">{s.ssid}</span>}
+          {s.ssid && <span className="text-ink-3">{s.ssid}</span>}
           {s.hops.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+            <span className="px-1.5 py-0.5 rounded bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent">
               {s.hops.length} roam{s.hops.length !== 1 ? 's' : ''}
             </span>
           )}
           {flapping && (
-            <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium">
+            <span className="flex items-center gap-1 text-warn font-medium">
               <AlertTriangle className="w-3 h-3" />
               {s.roamsPerHour}/hr
             </span>
           )}
-          <span className="ml-auto text-gray-400">
+          <span className="ml-auto text-ink-4">
             {s.disconnectReason ?? (s.endedAt ? '' : 'connected')}
           </span>
         </div>
@@ -77,14 +77,12 @@ function Session({ s }: { s: RoamSession }) {
         <div className="flex items-center gap-1 flex-wrap mt-2 text-[11px]">
           {s.path.map((iface, i) => (
             <span key={`${iface}-${i}`} className="flex items-center gap-1">
-              {i > 0 && <ArrowRight className="w-3 h-3 text-gray-300 dark:text-slate-600" />}
-              <span className="mono px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300">
-                {iface}
-              </span>
+              {i > 0 && <ArrowRight className="w-3 h-3 text-ink-4" />}
+              <span className="mono px-1.5 py-0.5 rounded bg-surface-3 text-ink-2">{iface}</span>
             </span>
           ))}
           {s.signalMin != null && (
-            <span className="ml-2 text-gray-400">
+            <span className="ml-2 text-ink-4">
               signal <Signal dbm={s.signalMax} /> … <Signal dbm={s.signalMin} />
             </span>
           )}
@@ -92,25 +90,25 @@ function Session({ s }: { s: RoamSession }) {
       </button>
 
       {open && s.events.length > 0 && (
-        <div className="mt-3 pt-2 border-t border-gray-100 dark:border-slate-700 space-y-1">
+        <div className="mt-3 pt-2 border-t border-line-soft space-y-1">
           {s.events.map((e, i) => (
             <div key={i} className="flex items-center gap-2 text-[11px]">
-              <span className="mono text-gray-400 w-16 flex-shrink-0">{time(e.at)}</span>
+              <span className="mono text-ink-4 w-16 flex-shrink-0">{time(e.at)}</span>
               <span
                 className={clsx(
                   'w-20 flex-shrink-0 font-medium',
                   e.kind === 'disconnected'
-                    ? 'text-red-600 dark:text-red-400'
+                    ? 'text-bad'
                     : e.kind === 'roamed'
-                      ? 'text-blue-600 dark:text-blue-400'
+                      ? 'text-accent'
                       : e.kind === 'connected'
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-gray-500',
+                        ? 'text-good'
+                        : 'text-ink-3',
                 )}
               >
                 {e.kind}
               </span>
-              <span className="text-gray-600 dark:text-slate-300 flex-1 min-w-0 truncate">
+              <span className="text-ink-2 flex-1 min-w-0 truncate">
                 {e.kind === 'roamed'
                   ? `${e.interfaceName} → ${e.toInterface}`
                   : e.kind.startsWith('dhcp')
@@ -146,20 +144,16 @@ export default function RoamingTimeline({ mac }: { mac: string }) {
   return (
     <div className="card p-4 space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
-        <Route className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-          Roaming &amp; sessions
-        </h3>
-        <div className="ml-auto flex rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
+        <Route className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink">Roaming &amp; sessions</h3>
+        <div className="ml-auto flex rounded-lg border border-line overflow-hidden">
           {RANGES.map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               className={clsx(
                 'px-2 py-1 text-[11px] font-medium transition-colors',
-                range === r
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700',
+                range === r ? 'bg-accent text-accent-fg' : 'text-ink-3 hover:bg-surface-2',
               )}
             >
               {r}
@@ -171,15 +165,15 @@ export default function RoamingTimeline({ mac }: { mac: string }) {
       {isError ? (
         <LoadError what="roaming history" error={error} />
       ) : isLoading ? (
-        <div className="py-6 text-center text-xs text-gray-400">Reading access point logs…</div>
+        <div className="py-6 text-center text-xs text-ink-4">Reading access point logs…</div>
       ) : sessions.length === 0 ? (
-        <div className="py-6 text-center text-xs text-gray-400">
+        <div className="py-6 text-center text-xs text-ink-4">
           No wireless sessions logged in this window. Association logging must be enabled on the
           access point for this to populate.
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-4 flex-wrap text-[11px] text-gray-500 dark:text-slate-400">
+          <div className="flex items-center gap-4 flex-wrap text-[11px] text-ink-3">
             <span>
               {sessions.length} session{sessions.length !== 1 ? 's' : ''}
             </span>
@@ -198,9 +192,9 @@ export default function RoamingTimeline({ mac }: { mac: string }) {
           </div>
 
           {data!.flappingSessions > 0 && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
-              <p className="text-xs text-amber-800 dark:text-amber-300">
+            <div className="flex items-start gap-2 rounded-lg border border-warn dark:border-warn bg-warn-bg p-3">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-warn" />
+              <p className="text-xs text-warn dark:text-warn">
                 {data!.flappingSessions} session{data!.flappingSessions !== 1 ? 's' : ''} where this
                 client kept moving between radios rather than settling. That usually points at
                 roaming thresholds rather than the client — overlapping cells at similar signal give
@@ -215,7 +209,7 @@ export default function RoamingTimeline({ mac }: { mac: string }) {
             ))}
           </div>
           {sessions.length > 60 && (
-            <p className="text-[11px] text-gray-400">
+            <p className="text-[11px] text-ink-4">
               Showing the 60 most recent of {sessions.length} sessions.
             </p>
           )}

@@ -10,9 +10,12 @@
     "lint": "eslint src",
     "test": "node --no-experimental-webstorage node_modules/vitest/vitest.mjs run",
     "lint:css": "stylelint 'src/**/*.css'",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
     "test:coverage": "node --no-experimental-webstorage node_modules/vitest/vitest.mjs run --coverage",
     "coverage:ratchet": "node scripts/coverage-ratchet.mjs",
-    "postinstall": "node ../backend/scripts/harden-braces.cjs"
+    "postinstall": "node ../backend/scripts/harden-braces.cjs",
+    "e2e:check": "tsc --noEmit -p e2e/tsconfig.json"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",
@@ -35,9 +38,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.64.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/coverage-v8": "^4.1.11",
     "autoprefixer": "^10.4.17",
     "eslint": "^9.39.4",
     "eslint-plugin-jsx-a11y": "^6.10.2",
@@ -45,18 +54,14 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-security": "^4.0.0",
     "eslint-plugin-simple-import-sort": "^14.0.0",
+    "jsdom": "^26.1.0",
     "postcss": "^8.5.30",
     "stylelint": "^17.16.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.2",
     "vite": "^8.2.1",
-    "vitest": "^4.1.11",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.8",
-    "@vitest/coverage-v8": "^4.1.11",
-    "jsdom": "^26.1.0"
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "postcss-selector-parser": "^7.1.6"

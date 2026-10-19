@@ -17,3 +17,8 @@ docker-compose.ghcr.yml
 
 # Minified or vendored assets
 *.min.*
+
+# Generated browser reports and traces (not source)
+frontend/test-results/
+frontend/playwright-report/
+frontend/playwright/.cache/

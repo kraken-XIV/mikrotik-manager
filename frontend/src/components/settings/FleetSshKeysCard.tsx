@@ -114,12 +114,12 @@ export default function FleetSshKeysCard() {
   return (
     <div className="card p-5 space-y-4 max-w-3xl">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-          <KeyRound className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <div className="w-9 h-9 bg-accent-soft rounded-lg flex items-center justify-center flex-shrink-0">
+          <KeyRound className="w-4 h-4 text-accent" />
         </div>
         <div>
-          <h2 className="font-semibold text-gray-900 dark:text-white">SSH keys for the fleet</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+          <h2 className="font-semibold text-ink">SSH keys for the fleet</h2>
+          <p className="text-sm text-ink-3 mt-1">
             Installs a separate key on each device, so backups, config export and bulk commands stop
             using passwords over SSH. One device at a time, in the background. You can leave this
             page.
@@ -127,7 +127,7 @@ export default function FleetSshKeysCard() {
         </div>
       </div>
 
-      <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300">
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-warn-bg border border-warn dark:border-warn text-sm text-warn dark:text-warn">
         <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
         <div>
           Once a key is installed, RouterOS turns off <strong>password SSH for that user</strong> on
@@ -148,7 +148,7 @@ export default function FleetSshKeysCard() {
         <>
           {tags.length > 0 && (
             <div>
-              <div className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">
+              <div className="text-xs font-medium text-ink-3 mb-1.5">
                 Limit to tags (optional). The site picker at the top also applies.
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -160,8 +160,8 @@ export default function FleetSshKeysCard() {
                     className={clsx(
                       'px-2 py-0.5 rounded-full text-xs border',
                       tagIds.includes(t.id)
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300',
+                        ? 'border-accent bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent'
+                        : 'border-line text-ink-2',
                     )}
                   >
                     <span
@@ -176,20 +176,20 @@ export default function FleetSshKeysCard() {
           )}
 
           {preview.isLoading ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-ink-4">
               <Loader2 className="w-4 h-4 animate-spin" /> Checking devices…
             </div>
           ) : preview.isError ? (
-            <div className="text-sm text-red-600">Could not load the preview.</div>
+            <div className="text-sm text-bad">Could not load the preview.</div>
           ) : (
             p && (
               <>
-                <div className="text-sm text-gray-700 dark:text-slate-300">
+                <div className="text-sm text-ink-2">
                   <strong>{p.eligible.length}</strong> will get a key · {p.keyed.length} already
                   have one · {p.skipped.length} skipped
                   <button
                     onClick={() => preview.refetch()}
-                    className="ml-2 text-gray-400 hover:text-gray-600"
+                    className="ml-2 text-ink-4 hover:text-ink-2"
                     title="Refresh"
                   >
                     <RefreshCw
@@ -199,16 +199,16 @@ export default function FleetSshKeysCard() {
                 </div>
 
                 {p.accounts.length > 0 && (
-                  <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 text-sm space-y-1">
-                    <div className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                  <div className="rounded-lg border border-line p-3 text-sm space-y-1">
+                    <div className="text-xs font-medium text-ink-3">
                       Accounts that will need the key for SSH
                     </div>
                     {p.accounts.map((a) => (
-                      <div key={a.username} className="text-gray-800 dark:text-slate-200">
+                      <div key={a.username} className="text-ink">
                         <span className="mono">{a.username}</span> on {a.devices} device
                         {a.devices === 1 ? '' : 's'}
                         {a.via_api_login > 0 && (
-                          <span className="text-gray-500 dark:text-slate-400">
+                          <span className="text-ink-3">
                             {' '}
                             ({a.via_api_login === a.devices ? 'all' : a.via_api_login} using the API
                             login, as no SSH login is stored)
@@ -221,17 +221,17 @@ export default function FleetSshKeysCard() {
 
                 {p.eligible.length > 0 && (
                   <details className="text-sm">
-                    <summary className="cursor-pointer text-gray-600 dark:text-slate-300">
+                    <summary className="cursor-pointer text-ink-2">
                       Devices that will get a key ({p.eligible.length})
                     </summary>
                     <table className="w-full mt-2 text-xs">
-                      <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                      <tbody className="divide-y divide-line">
                         {p.eligible.map((d) => (
                           <tr key={d.id}>
-                            <td className="py-1 pr-2 text-gray-900 dark:text-white">{d.name}</td>
-                            <td className="py-1 pr-2 mono text-gray-500">{d.ip_address}</td>
+                            <td className="py-1 pr-2 text-ink">{d.name}</td>
+                            <td className="py-1 pr-2 mono text-ink-3">{d.ip_address}</td>
                             <td className="py-1 pr-2 mono">{d.username}</td>
-                            <td className="py-1 text-gray-500">
+                            <td className="py-1 text-ink-3">
                               {d.source === 'api' ? 'API login' : 'SSH login'}
                             </td>
                           </tr>
@@ -243,14 +243,14 @@ export default function FleetSshKeysCard() {
 
                 {p.skipped.length > 0 && (
                   <details className="text-sm">
-                    <summary className="cursor-pointer text-gray-600 dark:text-slate-300">
+                    <summary className="cursor-pointer text-ink-2">
                       Skipped ({p.skipped.length})
                     </summary>
                     <ul className="mt-2 space-y-1 text-xs">
                       {p.skipped.map((d) => (
                         <li key={d.id}>
-                          <span className="text-gray-900 dark:text-white">{d.name}</span>:{' '}
-                          <span className="text-gray-500">{d.reason}</span>
+                          <span className="text-ink">{d.name}</span>:{' '}
+                          <span className="text-ink-3">{d.reason}</span>
                         </li>
                       ))}
                     </ul>
@@ -259,7 +259,7 @@ export default function FleetSshKeysCard() {
 
                 {p.eligible.length > 0 && (
                   <div className="space-y-3 pt-1">
-                    <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+                    <label className="flex items-start gap-2 text-sm text-ink-2 cursor-pointer">
                       <input
                         type="checkbox"
                         className="mt-0.5"
@@ -273,11 +273,11 @@ export default function FleetSshKeysCard() {
                         {p.eligible.length === 1 ? '' : 's'}.
                       </span>
                     </label>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                    <p className="text-xs text-ink-3">
                       The job stops by itself after {p.halt_after} failures in a row. A device that
                       fails is left as it was.
                     </p>
-                    {startError && <div className="text-sm text-red-600">{startError}</div>}
+                    {startError && <div className="text-sm text-bad">{startError}</div>}
                     <button
                       className="btn-primary flex items-center gap-2 text-sm"
                       disabled={!acknowledged || start.isPending}
@@ -316,7 +316,7 @@ function JobView({
 }) {
   if (loading || !job) {
     return (
-      <div className="flex items-center gap-2 text-sm text-gray-400">
+      <div className="flex items-center gap-2 text-sm text-ink-4">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading job…
       </div>
     );
@@ -335,10 +335,10 @@ function JobView({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-gray-900 dark:text-white">
+        <span className="font-medium text-ink">
           {label[job.status]} · {job.processed} of {job.total}
           {job.current_name && running && (
-            <span className="text-gray-500 font-normal"> · {job.current_name}</span>
+            <span className="text-ink-3 font-normal"> · {job.current_name}</span>
           )}
         </span>
         {running ? (
@@ -351,37 +351,35 @@ function JobView({
           </button>
         )}
       </div>
-      <div className="h-2 rounded bg-gray-100 dark:bg-slate-700 overflow-hidden">
+      <div className="h-2 rounded bg-surface-3 overflow-hidden">
         <div
           className={clsx(
             'h-full',
-            job.status === 'halted' || job.status === 'failed' ? 'bg-red-500' : 'bg-blue-600',
+            job.status === 'halted' || job.status === 'failed' ? 'bg-bad' : 'bg-accent',
           )}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="text-xs text-gray-600 dark:text-slate-300">
+      <div className="text-xs text-ink-2">
         {job.keyed ?? 0} keyed · {job.failed ?? 0} failed · {job.skipped ?? 0} skipped
       </div>
-      {job.error && <div className="text-sm text-red-600">{job.error}</div>}
+      {job.error && <div className="text-sm text-bad">{job.error}</div>}
       {job.results.length > 0 && (
         <table className="w-full text-xs">
-          <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+          <tbody className="divide-y divide-line">
             {[...job.results].reverse().map((r) => (
               <tr key={r.device_id}>
                 <td className="py-1 pr-2 w-5">
                   {r.outcome === 'keyed' ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-good" />
                   ) : r.outcome === 'failed' ? (
-                    <XCircle className="w-3.5 h-3.5 text-red-500" />
+                    <XCircle className="w-3.5 h-3.5 text-bad" />
                   ) : (
-                    <MinusCircle className="w-3.5 h-3.5 text-gray-400" />
+                    <MinusCircle className="w-3.5 h-3.5 text-ink-4" />
                   )}
                 </td>
-                <td className="py-1 pr-2 text-gray-900 dark:text-white whitespace-nowrap">
-                  {r.name}
-                </td>
-                <td className="py-1 text-gray-500">{r.message}</td>
+                <td className="py-1 pr-2 text-ink whitespace-nowrap">{r.name}</td>
+                <td className="py-1 text-ink-3">{r.message}</td>
               </tr>
             ))}
           </tbody>

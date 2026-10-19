@@ -61,9 +61,9 @@ export default function RolloutPanel({
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2 flex-wrap">
-        <Rocket className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{rollout.name}</h3>
+      <div className="px-5 py-3 border-b border-line flex items-center gap-2 flex-wrap">
+        <Rocket className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink">{rollout.name}</h3>
         <span
           className={clsx(
             'px-2 py-0.5 rounded-full text-xs font-medium capitalize',
@@ -73,7 +73,7 @@ export default function RolloutPanel({
           {rollout.status}
         </span>
         {rollout.scheduled_at && rollout.status === 'pending' && (
-          <span className="text-xs text-gray-400 dark:text-slate-500 flex items-center gap-1">
+          <span className="text-xs text-ink-3 flex items-center gap-1">
             <Clock className="w-3 h-3" />
             starts {formatDistanceToNow(new Date(rollout.scheduled_at), { addSuffix: true })} (not
             after{' '}
@@ -84,12 +84,12 @@ export default function RolloutPanel({
           </span>
         )}
         {rollout.status === 'missed' && (
-          <span className="text-xs text-amber-700 dark:text-amber-400">
+          <span className="text-xs text-warn">
             Missed its start window, so it didn&apos;t run. Nothing was upgraded; schedule it again
             when it suits.
           </span>
         )}
-        <span className="ml-auto flex items-center gap-3 text-xs text-gray-400 dark:text-slate-500">
+        <span className="ml-auto flex items-center gap-3 text-xs text-ink-3">
           {rollout.pre_backup && (
             <span className="flex items-center gap-1">
               <HardDrive className="w-3 h-3" />
@@ -139,7 +139,7 @@ export default function RolloutPanel({
             <button
               onClick={() => cancelMutation.mutate()}
               disabled={cancelMutation.isPending || !!cancelNote}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-bad border border-bad dark:border-bad hover:bg-bad-bg dark:hover:bg-bad-bg transition-colors disabled:opacity-50"
             >
               <Ban className="w-3 h-3" />
               {cancelMutation.isPending ? 'Cancelling…' : cancelNote ? 'Cancelling' : 'Cancel'}
@@ -149,7 +149,7 @@ export default function RolloutPanel({
       </div>
 
       {cancelNote && (
-        <div className="px-5 py-2 flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border-b border-amber-200 dark:border-amber-900">
+        <div className="px-5 py-2 flex items-start gap-2 text-xs bg-warn-bg dark:bg-amber-950/30 text-warn dark:text-warn border-b border-warn dark:border-amber-900">
           <Ban className="w-3.5 h-3.5 mt-px flex-shrink-0" />
           <span>{cancelNote}</span>
         </div>
@@ -157,7 +157,7 @@ export default function RolloutPanel({
 
       {waves.map((w) => (
         <div key={w}>
-          <div className="px-5 py-1.5 bg-gray-50 dark:bg-slate-800/50 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
+          <div className="px-5 py-1.5 bg-surface-2/50 text-[11px] font-semibold uppercase tracking-wide text-ink-3">
             Wave {w}
             {w === 1 ? ' — canary' : ''}
           </div>
@@ -168,7 +168,7 @@ export default function RolloutPanel({
               return (
                 <div
                   key={d.id}
-                  className="px-5 py-2.5 flex items-center gap-3 border-t border-gray-100 dark:border-slate-700/60"
+                  className="px-5 py-2.5 flex items-center gap-3 border-t border-line-soft/60"
                 >
                   <span
                     className={clsx(
@@ -182,7 +182,7 @@ export default function RolloutPanel({
                     {meta.label}
                   </span>
                   <span className="cell-primary truncate">{d.device_name}</span>
-                  <span className="font-mono text-xs text-gray-400 dark:text-slate-500 flex items-center gap-1 flex-shrink-0">
+                  <span className="font-mono text-xs text-ink-3 flex items-center gap-1 flex-shrink-0">
                     {d.from_version || '—'}
                     {(d.to_version || d.status === 'success') && (
                       <>
@@ -192,7 +192,7 @@ export default function RolloutPanel({
                     )}
                   </span>
                   {d.error && (
-                    <span className="text-xs text-red-500 truncate" title={d.error}>
+                    <span className="text-xs text-bad truncate" title={d.error}>
                       {d.error}
                     </span>
                   )}
@@ -201,15 +201,13 @@ export default function RolloutPanel({
                       title={(d.post_status === 'ok' ? d.post_output : d.post_error) || undefined}
                       className={clsx(
                         'text-xs flex-shrink-0',
-                        d.post_status === 'ok'
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-500',
+                        d.post_status === 'ok' ? 'text-good' : 'text-bad',
                       )}
                     >
                       {d.post_status === 'ok' ? 'commands ran' : 'commands failed'}
                     </span>
                   )}
-                  <span className="ml-auto text-[11px] text-gray-400 dark:text-slate-500 flex-shrink-0">
+                  <span className="ml-auto text-[11px] text-ink-3 flex-shrink-0">
                     {d.finished_at
                       ? formatDistanceToNow(new Date(d.finished_at), { addSuffix: true })
                       : ''}

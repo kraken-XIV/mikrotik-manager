@@ -5,7 +5,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import CircuitBackground from '../components/CircuitBackground';
 import { authApi, signOut } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { useThemeStore } from '../store/themeStore';
+import { useEffectiveTheme } from '../store/themeStore';
 
 /**
  * First-login password change (P1-3).
@@ -20,8 +20,8 @@ export default function ChangePasswordPage() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme } = useThemeStore();
-  const isDark = theme === 'dark';
+  const effectiveTheme = useEffectiveTheme();
+  const isDark = effectiveTheme === 'dark';
 
   const carried = (location.state as { currentPassword?: string } | null)?.currentPassword ?? '';
   const [current, setCurrent] = useState(carried);
@@ -66,7 +66,7 @@ export default function ChangePasswordPage() {
       className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden"
       style={{ backgroundColor: isDark ? '#040c07' : '#e8f2f7' }}
     >
-      <CircuitBackground theme={theme} />
+      <CircuitBackground theme={effectiveTheme} />
       <div className="w-full max-w-sm relative z-10">
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">

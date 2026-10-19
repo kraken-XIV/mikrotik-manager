@@ -55,7 +55,7 @@ export default function OidcCallbackPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="flex items-center gap-3 text-slate-500">
+      <div className="flex items-center gap-3 text-ink-3">
         <span className="inline-block w-5 h-5 border-2 border-slate-400/30 border-t-slate-400 rounded-full animate-spin" />
         Signing you in…
       </div>

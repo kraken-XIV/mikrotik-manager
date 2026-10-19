@@ -28,7 +28,7 @@ export default function SecurityBanners() {
   return (
     <div>
       {hasKeyMissing && (
-        <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 px-4 py-2 text-sm text-red-800 dark:text-red-200">
+        <div className="flex items-center gap-2 bg-bad-bg border-b border-bad dark:border-bad px-4 py-2 text-sm text-bad dark:text-bad">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>
             <span className="font-semibold">Encryption key missing:</span> stored device passwords
@@ -41,7 +41,7 @@ export default function SecurityBanners() {
         </div>
       )}
       {hasSecretsNotPersisted && (
-        <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-sm text-yellow-800 dark:text-yellow-200">
+        <div className="flex items-center gap-2 bg-warn-bg border-b border-warn dark:border-yellow-800 px-4 py-2 text-sm text-warn dark:text-yellow-200">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>
             <span className="font-semibold">Security warning:</span> Auto-generated secrets could
@@ -56,7 +56,7 @@ export default function SecurityBanners() {
         </div>
       )}
       {hasAdminWarning && (
-        <div className="flex items-center justify-between gap-4 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 px-4 py-2 text-sm text-red-800 dark:text-red-200">
+        <div className="flex items-center justify-between gap-4 bg-bad-bg border-b border-bad dark:border-bad px-4 py-2 text-sm text-bad dark:text-bad">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 shrink-0" />
             <span>
@@ -67,7 +67,7 @@ export default function SecurityBanners() {
           </div>
           <Link
             to="/settings"
-            className="shrink-0 bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded font-medium"
+            className="shrink-0 bg-bad hover:bg-bad text-white text-xs px-3 py-1 rounded font-medium"
           >
             Change password
           </Link>
