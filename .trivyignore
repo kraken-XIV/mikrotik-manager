@@ -1,0 +1,15 @@
+# Ratcheted Trivy baseline. Policy:
+#   - add an entry only for a finding that cannot be fixed in the repository;
+#   - every entry carries the reason and the date it was reviewed;
+#   - an entry dies with its finding — delete it the moment the code goes.
+# Scan scope: HIGH/CRITICAL, fixed vulnerabilities only, vendored
+# node_modules skipped (see .github/workflows/trivy.yml).
+
+# DS-0002 — nginx/Dockerfile has no USER instruction. The official
+# nginx:alpine image starts the master process as root so it can bind
+# :80/:443, then drops privileges to the nginx user; the image entrypoint
+# also generates the self-signed certificate and needs write access to the
+# certificate paths. Forcing USER would break both. The backend image runs
+# as a non-root user and passes this check today.
+# Reviewed 2026-10-19 (Trivy 0.76.0).
+DS-0002

@@ -1,0 +1,46 @@
+name: Vulnerability & IaC Scan (Trivy)
+
+on:
+  push:
+    branches: [main, fork/main]
+  pull_request:
+    branches: [main, fork/main]
+  schedule:
+    # Fresh advisory databases mid-week against the current default branch.
+    - cron: '47 6 * * 4'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trivy:
+    name: Trivy — vuln & misconfig
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # What is scanned, and why each knob is set:
+      #   vuln — the three package-lock.json files; HIGH/CRITICAL advisories
+      #     that have a fix available. Unfixed dev-only chains (currently the
+      #     braces postinstall guard, docs/security-scanning.md) are not
+      #     hidden from npm audit by this — audit-ci stays the prod gate.
+      #   misconfig — our Dockerfiles and compose files. node_modules is
+      #     skipped: bundled native deps ship their own build Dockerfiles,
+      #     which are noise here (our images are digest-pinned already).
+      #   .trivyignore holds the ratcheted baseline; entries there need a
+      #     written justification and die with their finding.
+      - name: Scan lockfiles, Dockerfiles and compose files
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          scan-type: 'fs'
+          scanners: 'vuln,misconfig'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          skip-dirs: '**/node_modules/**'
+          exit-code: '1'
+          format: 'table'
+          cache: true
