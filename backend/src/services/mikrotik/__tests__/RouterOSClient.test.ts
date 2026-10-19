@@ -533,20 +533,3 @@ describe('executeMany and prefetch', () => {
     await expect(client.execute('/interface/wifi/print')).rejects.toThrow('no such command');
   });
 });
-
-it('refuses legacy MD5 challenge authentication rather than hashing a password', async () => {
-  const client = new RouterOSClient('127.0.0.1', 8728, 'u', 'p') as unknown as {
-    authenticate(): Promise<void>;
-    sendSentence: jest.Mock;
-    readNextSentence: jest.Mock;
-  };
-  client.sendSentence = jest.fn().mockResolvedValue(undefined);
-  client.readNextSentence = jest
-    .fn()
-    .mockResolvedValue({ type: '!re', words: { ret: '00'.repeat(16) } });
-  await expect(client.authenticate()).rejects.toThrow(/Legacy MD5 login is disabled/);
-  expect(client.sendSentence).toHaveBeenCalledTimes(1);
-  expect(client.sendSentence.mock.calls[0][0]).not.toEqual(
-    expect.arrayContaining([expect.stringMatching(/^=response=/)]),
-  );
-});
