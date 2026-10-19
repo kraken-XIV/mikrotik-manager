@@ -10,7 +10,7 @@ This repository is a fork of **[2GT-Media-Group-LLC/mikrotik-manager](https://gi
 ## Modifications vs upstream
 
 1. Fork governance overlay — `NOTICE`, this file, and the community files under `.github/`
-2. Theming work on branch `feat/theme-system-and-accent` (light/dark/system preference, accent engine, design-token unification) — developed for upstream contribution
+2. Theming work on branch `feat/theme-system-and-accent` (light/dark/system preference, accent engine, design-token unification) — planned for a later phase; not included in Phase 0
 3. Fork infrastructure from the improvement program (linting, testing, security-scanning lanes) as it lands
 
 ## Upstream relationship
