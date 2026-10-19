@@ -1,3 +1,7 @@
+/* stylelint-disable color-no-hex, color-named --
+   This file DEFINES the design tokens: the raw colour values live here so
+   every other stylesheet can consume them via var(--*). New CSS files must
+   not introduce raw hex or named colours — use the tokens instead. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
