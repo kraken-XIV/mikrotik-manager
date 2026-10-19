@@ -9,6 +9,7 @@ WORKDIR /app
 # npm ci installs exactly the audited lockfile, and fails if it's out of
 # step with package.json (outside review O2).
 COPY package*.json ./
+COPY scripts/harden-braces.cjs ./scripts/harden-braces.cjs
 RUN npm ci
 
 COPY . .
@@ -21,6 +22,7 @@ WORKDIR /app
 
 # Install only production dependencies
 COPY package*.json ./
+COPY scripts/harden-braces.cjs ./scripts/harden-braces.cjs
 RUN npm ci --omit=dev && npm cache clean --force
 
 # Install arp-scan for server-side MAC→IP ARP discovery.

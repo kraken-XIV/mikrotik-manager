@@ -7,7 +7,8 @@
       "Backend — Lint, Type-check, Test & Build",
       "Security Audit",
       "Analyze (javascript-typescript)",
-      "Formatting — Prettier"
+      "Formatting — Prettier",
+      "CodeQL"
     ]
   },
   "enforce_admins": false,

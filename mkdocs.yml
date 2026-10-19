@@ -67,6 +67,7 @@ nav:
       - Traffic analytics: traffic.md
       - Change Guard and Config Health: change-guard.md
       - Security page: security.md
+      - Phase 2 hardening: security-hardening.md
       - Polling and scaling: scaling.md
       - Alerting: alerting.md
       - SSH keys: ssh-keys.md
@@ -86,3 +87,4 @@ nav:
       - Single sign-on (OIDC): sso-oidc.md
   - Contributing:
       - Architecture: architecture.md
+      - Testing and the coverage ratchet: testing.md
