@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, LogOut, Menu, Moon, Sun } from 'lucide-react';
+import { BookOpen, LogOut, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { settingsApi, signOut } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { useThemeStore } from '../../store/themeStore';
 import { docsUrl } from '../../version';
+import ThemeMenu from '../common/ThemeMenu';
 import GlobalSearch from './GlobalSearch';
 
 interface TopBarProps {
@@ -20,7 +20,6 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
     staleTime: 300_000,
   });
   const docsEnabled = appSettings?.['docs_link_enabled'] !== false;
-  const { theme, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -51,15 +50,8 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Theme toggle */}
-        <button
-          onClick={toggleTheme}
-          className="p-[7px] rounded-lg transition-colors"
-          style={{ color: 'var(--ink-3)' }}
-          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-        </button>
+        {/* Theme + accent (shared with the login page) */}
+        <ThemeMenu />
 
         {/* User chip */}
         <div

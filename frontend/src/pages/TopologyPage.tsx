@@ -42,7 +42,7 @@ import TopoEdge, { type TopoEdgeData } from '../components/topology/TopoEdge';
 import { useCanWrite } from '../hooks/useCanWrite';
 import { devicesApi, sitesApi, topologyApi } from '../services/api';
 import { useSiteStore } from '../store/siteStore';
-import { useThemeStore } from '../store/themeStore';
+import { useEffectiveTheme } from '../store/themeStore';
 import type { HandLinkEnd, TopologyDevice, TopologyNode } from '../types';
 import type { BridgeInfo } from '../utils/stpRoot';
 import { nodesWithinHops } from '../utils/topologyFocus';
@@ -134,7 +134,10 @@ function toFlowEdge(
 }
 
 export default function TopologyPage() {
-  const theme = useThemeStore((s) => s.theme);
+  // React Flow needs the resolved scheme for its own `.dark` scope (its
+  // controls and minimap restyle under it), so 'system' must resolve, not pass
+  // through — otherwise a system-dark browser renders light React Flow chrome.
+  const effectiveTheme = useEffectiveTheme();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   // Discover, links, nodes and the arrangement need write access on the server (U10).
@@ -806,7 +809,7 @@ export default function TopologyPage() {
               deleteKeyCode={null}
               className={clsx(
                 'topology-reactflow h-full min-h-[400px] bg-slate-50 dark:bg-slate-800',
-                theme === 'dark' && 'dark',
+                effectiveTheme === 'dark' && 'dark',
                 connectMode && 'cursor-crosshair',
               )}
             >

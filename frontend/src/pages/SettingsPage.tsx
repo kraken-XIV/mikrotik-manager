@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
+import AccentSwatches from '../components/common/AccentSwatches';
 import AutomationSettings from '../components/settings/AutomationSettings';
 import DarkSiteCard from '../components/settings/DarkSiteCard';
 import EncryptionKeyCard from '../components/settings/EncryptionKeyCard';
@@ -646,14 +647,15 @@ export default function SettingsPage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    {(['light', 'dark'] as const).map((t) => (
+                    {(['light', 'dark', 'system'] as const).map((t) => (
                       <button
                         key={t}
                         onClick={() => setTheme(t)}
+                        aria-pressed={theme === t}
                         className={clsx(
                           'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors capitalize',
                           theme === t
-                            ? 'bg-blue-600 text-white border-blue-600'
+                            ? 'bg-accent text-accent-fg border-accent'
                             : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400',
                         )}
                       >
@@ -661,6 +663,17 @@ export default function SettingsPage() {
                       </button>
                     ))}
                   </div>
+                </div>
+                <div className="flex items-center justify-between mt-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                      Accent
+                    </label>
+                    <p className="text-xs text-gray-400 dark:text-slate-500">
+                      The colour used for buttons, links and highlights
+                    </p>
+                  </div>
+                  <AccentSwatches />
                 </div>
               </div>
 
