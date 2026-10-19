@@ -1,0 +1,10 @@
+mikrotik-manager (fork)
+
+Based on MikroTik Manager
+Copyright (c) 2GT Media Group LLC and mikrotik-manager contributors
+Upstream source: https://github.com/2GT-Media-Group-LLC/mikrotik-manager
+License: GNU Affero General Public License v3.0 — see LICENSE (kept verbatim)
+
+This fork contains modifications relative to upstream. All modifications are
+recorded in the git history and summarized in FORK.md. The upstream project
+retains all copyright over the original code.
