@@ -274,8 +274,18 @@ export default function TrafficAnalyticsPage() {
               <AreaChart data={series}>
                 <defs>
                   <linearGradient id="dl" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    <stop
+                      offset="5%"
+                      stopColor="#3b82f6"
+                      stopOpacity={0.35}
+                      className="chart-accent-stop"
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="#3b82f6"
+                      stopOpacity={0}
+                      className="chart-accent-stop"
+                    />
                   </linearGradient>
                   <linearGradient id="ul" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.35} />
@@ -319,6 +329,7 @@ export default function TrafficAnalyticsPage() {
                   stroke="#3b82f6"
                   fill="url(#dl)"
                   strokeWidth={2}
+                  className="chart-series-a"
                 />
                 <Area
                   type="monotone"

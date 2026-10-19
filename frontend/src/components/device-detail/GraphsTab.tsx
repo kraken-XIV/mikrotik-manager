@@ -171,6 +171,7 @@ export default function GraphsTab({ deviceId }: Props) {
                 name="RX (download)"
                 dot={false}
                 strokeWidth={2}
+                className="chart-series-a"
               />
               <Line
                 type="monotone"

@@ -106,9 +106,12 @@ function toFlowEdge(
       style: { stroke: '#7dd3fc', strokeWidth: 1 },
     };
   }
+  // React Flow edge `style` is an inline CSS style object, so var() resolves
+  // here (unlike SVG presentation attributes) — the STP root edge follows the
+  // accent while designated/blocked keep their fixed semantic colours.
   const look =
     e.role === 'root'
-      ? { stroke: '#3b82f6' }
+      ? { stroke: 'var(--accent)' }
       : e.role === 'designated'
         ? { stroke: '#22c55e' }
         : e.role === 'blocked'

@@ -381,7 +381,8 @@ function WirelessCharts({ deviceId, ifaces }: { deviceId: number; ifaces: Wirele
                 stroke="#3b82f6"
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 3 }}
+                activeDot={{ r: 3, fill: '#3b82f6' }}
+                className="chart-series-a"
               />
             </LineChart>
           </ResponsiveContainer>

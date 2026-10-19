@@ -825,6 +825,7 @@ function TrafficCard({ mac }: { mac: string }) {
               fill="#3b82f620"
               strokeWidth={1.5}
               dot={false}
+              className="chart-series-a chart-series-a-fill"
             />
             <Area
               type="monotone"

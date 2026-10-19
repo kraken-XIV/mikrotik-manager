@@ -535,6 +535,7 @@ export default function LteTab({ deviceId }: Props) {
                 dot={false}
                 strokeWidth={2}
                 connectNulls
+                className="chart-series-a"
               />
               <Line
                 yAxisId="dbm"

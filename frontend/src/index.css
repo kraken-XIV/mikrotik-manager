@@ -313,3 +313,22 @@
     fill-opacity: 0.92;
   }
 }
+
+/* ── Accent-following chart series ──────────────────────────────────────────
+   Recharts writes stroke/fill as SVG *presentation attributes*, and var()
+   does not resolve inside an attribute — only inside CSS. So the primary
+   ("series-a") chart series carries a class and takes the accent from here;
+   the hex attributes stay on the elements as a fallback for the default
+   blue. Second series keep their fixed colours on purpose: two series in the
+   same hue would be unreadable, and the accent is one colour by definition. */
+.chart-series-a {
+  stroke: var(--accent);
+}
+
+.chart-series-a-fill {
+  fill: var(--accent-soft);
+}
+
+.chart-accent-stop {
+  stop-color: var(--accent);
+}
