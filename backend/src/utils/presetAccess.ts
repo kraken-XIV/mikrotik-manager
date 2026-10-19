@@ -23,9 +23,12 @@ export interface PresetRowLike {
   allow_operator_use: boolean | null;
 }
 
-export function presetCaller(user: { role?: string; siteRoles?: Record<number | string, string> } | undefined): PresetCaller {
+export function presetCaller(
+  user: { role?: string; siteRoles?: Record<number | string, string> } | undefined,
+): PresetCaller {
   if (!user) return { fleetAdmin: false, adminSites: [], memberSites: [] };
-  if (!user.siteRoles) return { fleetAdmin: user.role === 'admin', adminSites: [], memberSites: null };
+  if (!user.siteRoles)
+    return { fleetAdmin: user.role === 'admin', adminSites: [], memberSites: null };
   const entries = Object.entries(user.siteRoles);
   return {
     fleetAdmin: false,
@@ -35,7 +38,8 @@ export function presetCaller(user: { role?: string; siteRoles?: Record<number | 
 }
 
 const operatorUse = (row: PresetRowLike) => row.allow_operator_use !== false;
-const adminOf = (c: PresetCaller, site: number | null) => site != null && c.adminSites.includes(site);
+const adminOf = (c: PresetCaller, site: number | null) =>
+  site != null && c.adminSites.includes(site);
 
 /** Can this account create, change or delete a preset for `siteId` (null = fleet-wide)? */
 export function canManagePresetSite(c: PresetCaller, siteId: number | null): boolean {
@@ -50,7 +54,11 @@ export function canSeePreset(c: PresetCaller, row: PresetRowLike): boolean {
 }
 
 /** Can this account apply the preset to a device in `deviceSiteId`? A reason when not. */
-export function presetUseRefusal(c: PresetCaller, row: PresetRowLike, deviceSiteId: number | null): string | null {
+export function presetUseRefusal(
+  c: PresetCaller,
+  row: PresetRowLike,
+  deviceSiteId: number | null,
+): string | null {
   if (row.site_id != null && row.site_id !== deviceSiteId) {
     return 'This credential preset belongs to another site, so it can only be used on devices there';
   }

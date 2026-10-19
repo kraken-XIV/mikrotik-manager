@@ -8,7 +8,16 @@ describe('alert channel targets', () => {
   });
 
   it('refuses loopback, link-local (cloud metadata), multicast and unspecified', () => {
-    for (const ip of ['127.0.0.1', '169.254.169.254', '0.0.0.0', '224.0.0.1', '::1', 'fe80::1', '::ffff:127.0.0.1', 'ff02::1']) {
+    for (const ip of [
+      '127.0.0.1',
+      '169.254.169.254',
+      '0.0.0.0',
+      '224.0.0.1',
+      '::1',
+      'fe80::1',
+      '::ffff:127.0.0.1',
+      'ff02::1',
+    ]) {
       expect(isInternalOnlyAddress(ip)).toBe(true);
     }
   });

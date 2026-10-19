@@ -33,7 +33,11 @@ export function runPollJob<T>(fn: () => Promise<T>): { promise: Promise<T>; abor
     abortJob: () => {
       ctx.aborted = true;
       for (const s of ctx.sessions) {
-        try { s.abort(); } catch { /* already closed */ }
+        try {
+          s.abort();
+        } catch {
+          /* already closed */
+        }
       }
     },
   };

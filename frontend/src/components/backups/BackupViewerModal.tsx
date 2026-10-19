@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { X, FileText, GitCompare, Download, Loader2, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
 import clsx from 'clsx';
+import { format } from 'date-fns';
+import { AlertCircle, Download, FileText, GitCompare, Loader2, X } from 'lucide-react';
+
 import { backupsApi } from '../../services/api';
 import { lineDiff } from '../../utils/lineDiff';
 
@@ -58,9 +59,11 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3 p-4 border-b border-gray-200 dark:border-slate-700">
-          {comparing
-            ? <GitCompare className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-            : <FileText className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />}
+          {comparing ? (
+            <GitCompare className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+          ) : (
+            <FileText className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+          )}
           <div className="min-w-0 flex-1">
             {comparing ? (
               <>
@@ -99,8 +102,10 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
                 <span className="text-green-600 dark:text-green-400">+{added}</span>{' '}
                 <span className="text-red-600 dark:text-red-400">−{removed}</span>
                 <span className="text-gray-400 dark:text-slate-500">
-                  {' '}· {format(new Date(pair.data.from.created_at), 'MMM d HH:mm')}
-                  {' → '}{format(new Date(pair.data.to.created_at), 'MMM d HH:mm')}
+                  {' '}
+                  · {format(new Date(pair.data.from.created_at), 'MMM d HH:mm')}
+                  {' → '}
+                  {format(new Date(pair.data.to.created_at), 'MMM d HH:mm')}
                 </span>
               </p>
             )}
@@ -136,8 +141,10 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
             </div>
           )}
 
-          {!loading && !error && comparing && (
-            added + removed === 0 ? (
+          {!loading &&
+            !error &&
+            comparing &&
+            (added + removed === 0 ? (
               <p className="text-sm text-gray-400 py-8 text-center">
                 These two backups are identical.
               </p>
@@ -148,17 +155,18 @@ export default function BackupViewerModal({ ids, onClose, onDownload }: Props) {
                     key={i}
                     className={clsx(
                       'whitespace-pre-wrap',
-                      row.type === 'add' && 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400',
-                      row.type === 'del' && 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
-                      row.type === 'ctx' && 'text-gray-500 dark:text-slate-400'
+                      row.type === 'add' &&
+                        'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400',
+                      row.type === 'del' &&
+                        'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
+                      row.type === 'ctx' && 'text-gray-500 dark:text-slate-400',
                     )}
                   >
                     {row.type === 'add' ? '+' : row.type === 'del' ? '−' : ' '} {row.text}
                   </div>
                 ))}
               </pre>
-            )
-          )}
+            ))}
 
           {!loading && !error && !comparing && single.data && (
             <pre className="text-xs font-mono bg-gray-50 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-lg p-3 leading-relaxed whitespace-pre-wrap">

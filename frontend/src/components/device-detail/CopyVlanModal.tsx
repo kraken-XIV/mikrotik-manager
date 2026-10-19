@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, ChevronRight, Copy, AlertTriangle, Check, RefreshCw, Info } from 'lucide-react';
-import { devicesApi } from '../../services/api';
-import { useGuardedWrite, GuardedWriteUi } from '../ChangeGuardDialog';
-import type { Device, Vlan, SwitchPort } from '../../types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import { AlertTriangle, Check, ChevronRight, Copy, Info, RefreshCw, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+import { devicesApi } from '../../services/api';
+import type { Device, SwitchPort, Vlan } from '../../types';
+import { GuardedWriteUi, useGuardedWrite } from '../ChangeGuardDialog';
 import DevicePicker from '../common/DevicePicker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -15,7 +16,8 @@ type ConflictChoice = 'skip' | 'overwrite';
 type OpStatus = 'add' | 'identical' | 'conflict';
 
 /** A VLAN's identity: its bridge and id together (U14). */
-const vkey = (v: { bridge?: string | null; vlan_id: number }): string => `${v.bridge ?? ''}|${v.vlan_id}`;
+const vkey = (v: { bridge?: string | null; vlan_id: number }): string =>
+  `${v.bridge ?? ''}|${v.vlan_id}`;
 
 interface AnalyzedOp {
   sourceVlan: Vlan;
@@ -48,18 +50,24 @@ function StepIndicator({ step }: { step: Step }) {
     <div className="flex items-center gap-0 px-5 py-3 border-b border-gray-200 dark:border-slate-700 shrink-0">
       {labels.map((label, i) => (
         <div key={i} className="flex items-center">
-          <span className={clsx(
-            'flex items-center gap-1.5 text-xs font-medium',
-            step === i + 1 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'
-          )}>
-            <span className={clsx(
-              'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
-              step > i + 1
-                ? 'bg-blue-500 text-white'
-                : step === i + 1
-                  ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
-                  : 'bg-gray-100 text-gray-400 dark:bg-slate-700 dark:text-slate-500'
-            )}>
+          <span
+            className={clsx(
+              'flex items-center gap-1.5 text-xs font-medium',
+              step === i + 1
+                ? 'text-blue-600 dark:text-blue-400'
+                : 'text-gray-400 dark:text-slate-500',
+            )}
+          >
+            <span
+              className={clsx(
+                'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
+                step > i + 1
+                  ? 'bg-blue-500 text-white'
+                  : step === i + 1
+                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400'
+                    : 'bg-gray-100 text-gray-400 dark:bg-slate-700 dark:text-slate-500',
+              )}
+            >
               {step > i + 1 ? '✓' : i + 1}
             </span>
             {label}
@@ -117,8 +125,8 @@ function PortChip({
         assignment === 'none'
           ? 'Click to set Tagged'
           : assignment === 'tagged'
-          ? 'Click to set Untagged'
-          : 'Click to remove'
+            ? 'Click to set Untagged'
+            : 'Click to remove'
       }
       className={clsx(
         'inline-flex items-center gap-1 px-2 py-1 rounded font-mono text-xs transition-all select-none',
@@ -127,15 +135,19 @@ function PortChip({
         assignment === 'tagged' &&
           'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 ring-1 ring-blue-400 dark:ring-blue-500',
         assignment === 'untagged' &&
-          'bg-slate-200 text-slate-700 dark:bg-slate-600 dark:text-slate-200 ring-1 ring-slate-400 dark:ring-slate-500'
+          'bg-slate-200 text-slate-700 dark:bg-slate-600 dark:text-slate-200 ring-1 ring-slate-400 dark:ring-slate-500',
       )}
     >
       {name}
       {assignment === 'tagged' && (
-        <span className="text-[9px] font-bold leading-none bg-blue-500 text-white rounded px-0.5">T</span>
+        <span className="text-[9px] font-bold leading-none bg-blue-500 text-white rounded px-0.5">
+          T
+        </span>
       )}
       {assignment === 'untagged' && (
-        <span className="text-[9px] font-bold leading-none bg-slate-500 text-white rounded px-0.5">U</span>
+        <span className="text-[9px] font-bold leading-none bg-slate-500 text-white rounded px-0.5">
+          U
+        </span>
       )}
     </button>
   );
@@ -169,7 +181,9 @@ export default function CopyVlanModal({
 
   // ── Step 2 user assignments ──
   // portAssignments[vlan_id][portName] = 'tagged' | 'untagged' | 'none'
-  const [portAssignments, setPortAssignments] = useState<Record<string, Record<string, PortAssignment>>>({});
+  const [portAssignments, setPortAssignments] = useState<
+    Record<string, Record<string, PortAssignment>>
+  >({});
   const [bridgeOverrides, setBridgeOverrides] = useState<Record<string, string>>({});
   const [conflictChoices, setConflictChoices] = useState<Record<string, ConflictChoice>>({});
 
@@ -185,7 +199,7 @@ export default function CopyVlanModal({
     queryFn: () => devicesApi.list().then((r) => r.data),
   });
   const switchDevices = (allDevices as Device[]).filter(
-    (d) => d.device_type === 'switch' && d.id !== deviceId
+    (d) => d.device_type === 'switch' && d.id !== deviceId,
   );
 
   const { data: sourceVlans = [], isLoading: loadingSource } = useQuery({
@@ -203,14 +217,15 @@ export default function CopyVlanModal({
     queryKey: ['ports', deviceId],
     queryFn: () => devicesApi.getPorts(deviceId).then((r) => r.data),
   });
-  const targetPorts = useMemo<SwitchPort[]>(
-    () => targetPortsData?.ports ?? [],
-    [targetPortsData]
-  );
+  const targetPorts = useMemo<SwitchPort[]>(() => targetPortsData?.ports ?? [], [targetPortsData]);
 
   const targetBridgeNames = useMemo(
-    () => targetPorts.filter((p) => p.type === 'bridge').map((p) => p.name).sort(naturalSort),
-    [targetPorts]
+    () =>
+      targetPorts
+        .filter((p) => p.type === 'bridge')
+        .map((p) => p.name)
+        .sort(naturalSort),
+    [targetPorts],
   );
 
   // Ports available for assignment: everything except VLAN-type interfaces
@@ -220,7 +235,7 @@ export default function CopyVlanModal({
         .filter((p) => p.type !== 'vlan')
         .map((p) => p.name)
         .sort(naturalSort),
-    [targetPorts]
+    [targetPorts],
   );
 
   // ── Side-effects ───────────────────────────────────────────────────────────
@@ -235,9 +250,7 @@ export default function CopyVlanModal({
   // Auto-select all except VLAN 1 when source VLANs load
   useEffect(() => {
     if ((sourceVlans as Vlan[]).length > 0) {
-      setSelectedVlanIds(
-        new Set((sourceVlans as Vlan[]).filter((v) => v.vlan_id !== 1).map(vkey))
-      );
+      setSelectedVlanIds(new Set((sourceVlans as Vlan[]).filter((v) => v.vlan_id !== 1).map(vkey)));
     }
   }, [sourceVlans]);
 
@@ -258,8 +271,14 @@ export default function CopyVlanModal({
   const getEffective = (vlanId: string) => {
     const entries = Object.entries(portAssignments[vlanId] ?? {});
     return {
-      tagged: entries.filter(([, v]) => v === 'tagged').map(([k]) => k).sort(naturalSort),
-      untagged: entries.filter(([, v]) => v === 'untagged').map(([k]) => k).sort(naturalSort),
+      tagged: entries
+        .filter(([, v]) => v === 'tagged')
+        .map(([k]) => k)
+        .sort(naturalSort),
+      untagged: entries
+        .filter(([, v]) => v === 'untagged')
+        .map(([k]) => k)
+        .sort(naturalSort),
     };
   };
 
@@ -274,13 +293,15 @@ export default function CopyVlanModal({
           bridgeOverrides[vkey(sv)] ??
           (targetBridgeNames.includes(sourceBridge)
             ? sourceBridge
-            : targetBridgeNames[0] ?? sourceBridge);
+            : (targetBridgeNames[0] ?? sourceBridge));
         const bridgeExistsOnTarget = targetBridgeNames.includes(targetBridge);
 
         const { tagged: effectiveTagged, untagged: effectiveUntagged } = getEffective(vkey(sv));
 
         // The same VLAN on the same bridge of the target, not any bridge's.
-        const existingVlan = (targetVlans as Vlan[]).find((v) => v.vlan_id === sv.vlan_id && (v.bridge ?? '') === targetBridge);
+        const existingVlan = (targetVlans as Vlan[]).find(
+          (v) => v.vlan_id === sv.vlan_id && (v.bridge ?? '') === targetBridge,
+        );
         let status: OpStatus;
         if (!existingVlan) {
           status = 'add';
@@ -303,11 +324,19 @@ export default function CopyVlanModal({
           conflictChoice: conflictChoices[vkey(sv)] ?? 'skip',
         };
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceVlans, selectedVlanIds, targetVlans, targetBridgeNames, bridgeOverrides, conflictChoices, portAssignments]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    sourceVlans,
+    selectedVlanIds,
+    targetVlans,
+    targetBridgeNames,
+    bridgeOverrides,
+    conflictChoices,
+    portAssignments,
+  ]);
 
   const toApply = analyzedOps.filter(
-    (op) => op.status === 'add' || (op.status === 'conflict' && op.conflictChoice === 'overwrite')
+    (op) => op.status === 'add' || (op.status === 'conflict' && op.conflictChoice === 'overwrite'),
   );
 
   const hasVlan1Selected = [...selectedVlanIds].some((k) => k.endsWith('|1'));
@@ -335,21 +364,30 @@ export default function CopyVlanModal({
       queryClient.invalidateQueries({ queryKey: ['vlans', deviceId] });
     },
   });
-  const apply = () => applyMutation.mutate(false, {
-    onError: guard.onError(() => applyMutation.mutate(true), () => { /* shown below */ }),
-  });
+  const apply = () =>
+    applyMutation.mutate(false, {
+      onError: guard.onError(
+        () => applyMutation.mutate(true),
+        () => {
+          /* shown below */
+        },
+      ),
+    });
 
   // ── Toggle helpers ─────────────────────────────────────────────────────────
 
   const toggleVlan = (vlanId: string) =>
     setSelectedVlanIds((prev) => {
       const next = new Set(prev);
-      if (next.has(vlanId)) { next.delete(vlanId); } else { next.add(vlanId); }
+      if (next.has(vlanId)) {
+        next.delete(vlanId);
+      } else {
+        next.add(vlanId);
+      }
       return next;
     });
 
-  const selectAll = () =>
-    setSelectedVlanIds(new Set((sourceVlans as Vlan[]).map(vkey)));
+  const selectAll = () => setSelectedVlanIds(new Set((sourceVlans as Vlan[]).map(vkey)));
 
   const selectNone = () => setSelectedVlanIds(new Set());
 
@@ -360,7 +398,9 @@ export default function CopyVlanModal({
       <div>
         <label className="label">Source switch</label>
         <DevicePicker
-          devices={switchDevices} placeholder="Select a switch…" aria-label="Source switch"
+          devices={switchDevices}
+          placeholder="Select a switch…"
+          aria-label="Source switch"
           value={sourceDeviceId ?? null}
           onChange={(id) => setSourceDeviceId(id)}
         />
@@ -381,11 +421,17 @@ export default function CopyVlanModal({
             </span>
             {!loadingSource && (sourceVlans as Vlan[]).length > 0 && (
               <div className="flex gap-2">
-                <button onClick={selectAll} className="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">
+                <button
+                  onClick={selectAll}
+                  className="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300"
+                >
                   Select all
                 </button>
                 <span className="text-gray-300 dark:text-slate-600">·</span>
-                <button onClick={selectNone} className="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">
+                <button
+                  onClick={selectNone}
+                  className="text-xs text-blue-500 hover:text-blue-700 dark:hover:text-blue-300"
+                >
                   Deselect all
                 </button>
               </div>
@@ -414,7 +460,7 @@ export default function CopyVlanModal({
                       'flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors select-none',
                       checked
                         ? 'bg-blue-50 dark:bg-blue-900/10'
-                        : 'hover:bg-gray-50 dark:hover:bg-slate-700/30'
+                        : 'hover:bg-gray-50 dark:hover:bg-slate-700/30',
                     )}
                   >
                     <input
@@ -429,7 +475,9 @@ export default function CopyVlanModal({
                           VLAN {vlan.vlan_id}
                         </span>
                         {vlan.name && (
-                          <span className="text-sm text-gray-700 dark:text-slate-300">{vlan.name}</span>
+                          <span className="text-sm text-gray-700 dark:text-slate-300">
+                            {vlan.name}
+                          </span>
                         )}
                         {vlan.bridge && (
                           <span className="text-xs text-gray-400 font-mono">{vlan.bridge}</span>
@@ -454,8 +502,8 @@ export default function CopyVlanModal({
             <div className="flex items-start gap-2 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
-                <strong>VLAN 1 is selected.</strong> This is often the default management VLAN.
-                Take care when assigning ports to avoid losing device reachability.
+                <strong>VLAN 1 is selected.</strong> This is often the default management VLAN. Take
+                care when assigning ports to avoid losing device reachability.
               </span>
             </div>
           )}
@@ -471,15 +519,16 @@ export default function CopyVlanModal({
       <div className="flex items-start gap-2 text-sm text-gray-500 dark:text-slate-400">
         <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
         <span>
-          For each VLAN, choose which interfaces on <strong>{deviceName}</strong> should participate and how.
-          Click a port to cycle: <span className="font-medium text-gray-600 dark:text-slate-300">None</span>
+          For each VLAN, choose which interfaces on <strong>{deviceName}</strong> should participate
+          and how. Click a port to cycle:{' '}
+          <span className="font-medium text-gray-600 dark:text-slate-300">None</span>
           {' → '}
           <span className="font-medium text-blue-600 dark:text-blue-400">Tagged</span>
           {' → '}
           <span className="font-medium text-slate-600 dark:text-slate-300">Untagged</span>
           {' → '}
-          <span className="font-medium text-gray-400">None</span>.
-          You can also leave all ports unassigned and configure them later.
+          <span className="font-medium text-gray-400">None</span>. You can also leave all ports
+          unassigned and configure them later.
         </span>
       </div>
 
@@ -506,7 +555,7 @@ export default function CopyVlanModal({
               'rounded-lg border p-4 space-y-3',
               op.status === 'add' && 'border-green-200 dark:border-green-800/60',
               op.status === 'conflict' && 'border-amber-200 dark:border-amber-700/50',
-              op.status === 'identical' && 'border-gray-200 dark:border-slate-700 opacity-60'
+              op.status === 'identical' && 'border-gray-200 dark:border-slate-700 opacity-60',
             )}
           >
             {/* Header */}
@@ -516,7 +565,9 @@ export default function CopyVlanModal({
                   VLAN {op.sourceVlan.vlan_id}
                 </span>
                 {op.sourceVlan.name && (
-                  <span className="text-sm text-gray-700 dark:text-slate-300">{op.sourceVlan.name}</span>
+                  <span className="text-sm text-gray-700 dark:text-slate-300">
+                    {op.sourceVlan.name}
+                  </span>
                 )}
               </div>
               <StatusBadge op={op} />
@@ -558,7 +609,10 @@ export default function CopyVlanModal({
                       name={`conflict-${vkey(op.sourceVlan)}`}
                       checked={op.conflictChoice === 'overwrite'}
                       onChange={() =>
-                        setConflictChoices((prev) => ({ ...prev, [vkey(op.sourceVlan)]: 'overwrite' }))
+                        setConflictChoices((prev) => ({
+                          ...prev,
+                          [vkey(op.sourceVlan)]: 'overwrite',
+                        }))
                       }
                     />
                     Overwrite with my assignments below
@@ -569,7 +623,9 @@ export default function CopyVlanModal({
 
             {/* Bridge picker */}
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-500 dark:text-slate-400 text-xs w-12 shrink-0">Bridge</span>
+              <span className="text-gray-500 dark:text-slate-400 text-xs w-12 shrink-0">
+                Bridge
+              </span>
               {targetBridgeNames.length > 0 ? (
                 <select
                   className="input py-1 text-xs font-mono max-w-[180px]"
@@ -583,7 +639,9 @@ export default function CopyVlanModal({
                   }
                 >
                   {targetBridgeNames.map((b) => (
-                    <option key={b} value={b}>{b}</option>
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
                   ))}
                 </select>
               ) : (
@@ -655,7 +713,9 @@ export default function CopyVlanModal({
                   )}
                   {effUntagged.length > 0 && (
                     <span className="text-gray-500 dark:text-slate-400">
-                      <span className="font-medium text-slate-600 dark:text-slate-300">Untagged:</span>{' '}
+                      <span className="font-medium text-slate-600 dark:text-slate-300">
+                        Untagged:
+                      </span>{' '}
                       {effUntagged.join(', ')}
                     </span>
                   )}
@@ -687,9 +747,14 @@ export default function CopyVlanModal({
                 {succeeded.length} VLAN{succeeded.length !== 1 ? 's' : ''} applied successfully
               </p>
               {succeeded.map((r, i) => (
-                <div key={`${r.vlan_id}-${i}`} className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500">
+                <div
+                  key={`${r.vlan_id}-${i}`}
+                  className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500"
+                >
                   <Check className="w-3.5 h-3.5 shrink-0" />
-                  <span>VLAN {r.vlan_id} — {r.action === 'add' ? 'added' : 'updated'}</span>
+                  <span>
+                    VLAN {r.vlan_id} — {r.action === 'add' ? 'added' : 'updated'}
+                  </span>
                 </div>
               ))}
             </div>
@@ -713,8 +778,7 @@ export default function CopyVlanModal({
 
     const skipped = analyzedOps.filter(
       (op) =>
-        op.status === 'identical' ||
-        (op.status === 'conflict' && op.conflictChoice === 'skip')
+        op.status === 'identical' || (op.status === 'conflict' && op.conflictChoice === 'skip'),
     );
 
     return (
@@ -722,10 +786,13 @@ export default function CopyVlanModal({
         <p className="text-sm text-gray-600 dark:text-slate-400">
           {toApply.length > 0 ? (
             <>
-              <strong>{toApply.length}</strong> VLAN{toApply.length !== 1 ? 's' : ''} will be applied to{' '}
-              <strong>{deviceName}</strong>.
+              <strong>{toApply.length}</strong> VLAN{toApply.length !== 1 ? 's' : ''} will be
+              applied to <strong>{deviceName}</strong>.
               {skipped.length > 0 && (
-                <> <strong>{skipped.length}</strong> will be skipped.</>
+                <>
+                  {' '}
+                  <strong>{skipped.length}</strong> will be skipped.
+                </>
               )}
             </>
           ) : (
@@ -743,7 +810,7 @@ export default function CopyVlanModal({
                 <div
                   className={clsx(
                     'mt-1 w-2 h-2 rounded-full shrink-0',
-                    willApply ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-600'
+                    willApply ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-600',
                   )}
                 />
                 <div className="flex-1 min-w-0 space-y-1">
@@ -788,7 +855,9 @@ export default function CopyVlanModal({
                     <p className="text-xs text-gray-400">Conflict — you chose to skip</p>
                   )}
                   {op.status === 'identical' && (
-                    <p className="text-xs text-gray-400">Already configured identically — skipped</p>
+                    <p className="text-xs text-gray-400">
+                      Already configured identically — skipped
+                    </p>
                   )}
                 </div>
               </div>
@@ -799,11 +868,18 @@ export default function CopyVlanModal({
         {applyMutation.isError && !guard.lockout && (
           <div className="text-sm text-red-500">
             Failed to apply:{' '}
-            {(applyMutation.error as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error
-              ?? (applyMutation.error as { message?: string })?.message ?? 'Unknown error'}
+            {(applyMutation.error as { response?: { data?: { error?: string } }; message?: string })
+              ?.response?.data?.error ??
+              (applyMutation.error as { message?: string })?.message ??
+              'Unknown error'}
           </div>
         )}
-        <GuardedWriteUi state={guard} deviceId={deviceId} deviceName={deviceName} pending={applyMutation.isPending} />
+        <GuardedWriteUi
+          state={guard}
+          deviceId={deviceId}
+          deviceName={deviceName}
+          pending={applyMutation.isPending}
+        />
       </div>
     );
   };

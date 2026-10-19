@@ -3,7 +3,10 @@ import request from 'supertest';
 
 const inserted: unknown[][] = [];
 jest.mock('../../config/database', () => ({
-  query: jest.fn((_sql: string, params: unknown[]) => { inserted.push(params); return Promise.resolve([]); }),
+  query: jest.fn((_sql: string, params: unknown[]) => {
+    inserted.push(params);
+    return Promise.resolve([]);
+  }),
 }));
 
 import { auditMiddleware } from '../auditMiddleware';
@@ -13,7 +16,9 @@ describe('auditMiddleware', () => {
     const app = express();
     app.use(auditMiddleware);
     const devices = express.Router();
-    devices.post('/:id/sync', (_req, res) => { res.json({ ok: true }); });
+    devices.post('/:id/sync', (_req, res) => {
+      res.json({ ok: true });
+    });
     app.use('/api/devices', devices);
 
     await request(app).post('/api/devices/8/sync?x=1');

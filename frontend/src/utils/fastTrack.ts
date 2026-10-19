@@ -6,6 +6,7 @@ export type FilterRule = Record<string, string | undefined>;
 
 /** The enabled FastTrack rules in a device's IPv4 filter table. */
 export function activeFastTrackRules(rules: FilterRule[] | undefined): FilterRule[] {
-  return (rules ?? []).filter((r) =>
-    r.action === 'fasttrack-connection' && r.disabled !== 'true' && r.invalid !== 'true');
+  return (rules ?? []).filter(
+    (r) => r.action === 'fasttrack-connection' && r.disabled !== 'true' && r.invalid !== 'true',
+  );
 }

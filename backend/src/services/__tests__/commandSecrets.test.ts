@@ -1,11 +1,22 @@
 jest.mock('../../config/database', () => ({ query: jest.fn() }));
-jest.mock('../../utils/crypto', () => ({ encrypt: (s: string) => `enc(${s})`, decrypt: (s: string) => s.replace(/^enc\((.*)\)$/, '$1') }));
+jest.mock('../../utils/crypto', () => ({
+  encrypt: (s: string) => `enc(${s})`,
+  decrypt: (s: string) => s.replace(/^enc\((.*)\)$/, '$1'),
+}));
 
 import { query } from '../../config/database';
-import { secretNames, fillSecrets, maskSecrets, generateSecret, missingSecrets, MASK } from '../commandSecrets';
 import { refuseSecrets } from '../../utils/secretAccess';
+import {
+  fillSecrets,
+  generateSecret,
+  MASK,
+  maskSecrets,
+  missingSecrets,
+  secretNames,
+} from '../commandSecrets';
 
-const cmd = '/user add name=mtm group=full password="{{secret:mtm_pw}}" address={{ secret:mgmt_net }}; :log info "{{secret:mtm_pw}}"';
+const cmd =
+  '/user add name=mtm group=full password="{{secret:mtm_pw}}" address={{ secret:mgmt_net }}; :log info "{{secret:mtm_pw}}"';
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -21,7 +32,9 @@ describe('commandSecrets (#259)', () => {
       { name: 'mgmt_net', value_encrypted: 'enc(10.0.0.0/24)' },
     ]);
     const f = await fillSecrets(cmd);
-    expect(f.text).toBe('/user add name=mtm group=full password="s3cretValue" address=10.0.0.0/24; :log info "s3cretValue"');
+    expect(f.text).toBe(
+      '/user add name=mtm group=full password="s3cretValue" address=10.0.0.0/24; :log info "s3cretValue"',
+    );
     expect(f.values.sort()).toEqual(['10.0.0.0/24', 's3cretValue']);
   });
 
@@ -33,7 +46,9 @@ describe('commandSecrets (#259)', () => {
   });
 
   it('masks a value the device echoes, longest first', () => {
-    expect(maskSecrets('failure: bad password s3cretValue', ['s3cret', 's3cretValue'])).toBe(`failure: bad password ${MASK}`);
+    expect(maskSecrets('failure: bad password s3cretValue', ['s3cret', 's3cretValue'])).toBe(
+      `failure: bad password ${MASK}`,
+    );
     expect(maskSecrets(null, ['x'])).toBeNull();
   });
 
@@ -52,12 +67,17 @@ describe('refuseSecrets', () => {
   });
   it('allows only a fleet admin to use them', async () => {
     expect(await refuseSecrets(req({ role: 'operator' }), cmd)).toMatchObject({ status: 403 });
-    expect(await refuseSecrets(req({ role: 'admin', siteRoles: { 3: 'admin' } }), cmd)).toMatchObject({ status: 403 });
+    expect(
+      await refuseSecrets(req({ role: 'admin', siteRoles: { 3: 'admin' } }), cmd),
+    ).toMatchObject({ status: 403 });
     (query as jest.Mock).mockResolvedValue([{ name: 'mtm_pw' }, { name: 'mgmt_net' }]);
     expect(await refuseSecrets(req({ role: 'admin' }), cmd)).toBeNull();
   });
   it('names the secrets that are missing', async () => {
     (query as jest.Mock).mockResolvedValue([{ name: 'mtm_pw' }]);
-    expect(await refuseSecrets(req({ role: 'admin' }), cmd)).toMatchObject({ status: 400, error: expect.stringMatching(/mgmt_net/) });
+    expect(await refuseSecrets(req({ role: 'admin' }), cmd)).toMatchObject({
+      status: 400,
+      error: expect.stringMatching(/mgmt_net/),
+    });
   });
 });

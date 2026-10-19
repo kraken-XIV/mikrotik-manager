@@ -1,8 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  chunkRows, staggerBlocks, columnsForWidth, resolveColumns,
-  DENSITY_OPTIONS, parseDensity,
-  TILE_PX, TILE_GAP_PX,
+  chunkRows,
+  columnsForWidth,
+  DENSITY_OPTIONS,
+  parseDensity,
+  resolveColumns,
+  staggerBlocks,
+  TILE_GAP_PX,
+  TILE_PX,
 } from './faceplateLayout';
 
 describe('columnsForWidth', () => {
@@ -28,13 +34,14 @@ describe('columnsForWidth', () => {
 describe('chunkRows', () => {
   it('wraps a group that previously could not wrap at all', () => {
     // BOND and BRIDGE had no flexWrap; twelve bonds meant twelve columns.
-    expect(chunkRows([1,2,3,4,5,6,7,8,9,10,11,12], 8)).toEqual([
-      [1,2,3,4,5,6,7,8], [9,10,11,12],
+    expect(chunkRows([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 8)).toEqual([
+      [1, 2, 3, 4, 5, 6, 7, 8],
+      [9, 10, 11, 12],
     ]);
   });
 
   it('leaves a short group on one row', () => {
-    expect(chunkRows([1,2,3], 8)).toEqual([[1,2,3]]);
+    expect(chunkRows([1, 2, 3], 8)).toEqual([[1, 2, 3]]);
   });
 
   it('handles an empty group', () => {
@@ -42,7 +49,7 @@ describe('chunkRows', () => {
   });
 
   it('survives a nonsense column count rather than looping forever', () => {
-    expect(chunkRows([1,2], 0)).toEqual([[1],[2]]);
+    expect(chunkRows([1, 2], 0)).toEqual([[1], [2]]);
   });
 });
 
@@ -50,19 +57,19 @@ describe('staggerBlocks', () => {
   const ports = Array.from({ length: 24 }, (_, i) => i + 1);
 
   it('keeps a small switch on a single row', () => {
-    expect(staggerBlocks([1,2,3,4], 8)).toEqual([{ top: [1,2,3,4], bottom: [] }]);
+    expect(staggerBlocks([1, 2, 3, 4], 8)).toEqual([{ top: [1, 2, 3, 4], bottom: [] }]);
   });
 
   it('staggers odd above even, as the hardware is laid out', () => {
-    const [bank] = staggerBlocks([1,2,3,4,5,6,7,8,9,10], 8);
-    expect(bank.top).toEqual([1,3,5,7,9]);
-    expect(bank.bottom).toEqual([2,4,6,8,10]);
+    const [bank] = staggerBlocks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 8);
+    expect(bank.top).toEqual([1, 3, 5, 7, 9]);
+    expect(bank.bottom).toEqual([2, 4, 6, 8, 10]);
   });
 
   it('puts even ports on top for models wired that way (#277)', () => {
-    const [bank] = staggerBlocks([1,2,3,4,5,6,7,8], 4, true);
-    expect(bank.top).toEqual([2,4,6,8]);
-    expect(bank.bottom).toEqual([1,3,5,7]);
+    const [bank] = staggerBlocks([1, 2, 3, 4, 5, 6, 7, 8], 4, true);
+    expect(bank.top).toEqual([2, 4, 6, 8]);
+    expect(bank.bottom).toEqual([1, 3, 5, 7]);
   });
 
   it('repeats the stagger in banks instead of running on forever', () => {
@@ -70,15 +77,18 @@ describe('staggerBlocks', () => {
     // no matter how little room there was.
     const blocks = staggerBlocks(ports, 6);
     expect(blocks).toHaveLength(2);
-    expect(blocks[0].top).toEqual([1,3,5,7,9,11]);
-    expect(blocks[0].bottom).toEqual([2,4,6,8,10,12]);
-    expect(blocks[1].top).toEqual([13,15,17,19,21,23]);
-    expect(blocks[1].bottom).toEqual([14,16,18,20,22,24]);
+    expect(blocks[0].top).toEqual([1, 3, 5, 7, 9, 11]);
+    expect(blocks[0].bottom).toEqual([2, 4, 6, 8, 10, 12]);
+    expect(blocks[1].top).toEqual([13, 15, 17, 19, 21, 23]);
+    expect(blocks[1].bottom).toEqual([14, 16, 18, 20, 22, 24]);
   });
 
   it('never exceeds the column budget on any row', () => {
     for (const cols of [4, 6, 8, 12, 16]) {
-      for (const blk of staggerBlocks(Array.from({ length: 48 }, (_, i) => i), cols)) {
+      for (const blk of staggerBlocks(
+        Array.from({ length: 48 }, (_, i) => i),
+        cols,
+      )) {
         expect(blk.top.length).toBeLessThanOrEqual(cols);
         expect(blk.bottom.length).toBeLessThanOrEqual(cols);
       }
@@ -86,7 +96,10 @@ describe('staggerBlocks', () => {
   });
 
   it('loses no ports, including on an odd count', () => {
-    const blocks = staggerBlocks(Array.from({ length: 47 }, (_, i) => i), 8);
+    const blocks = staggerBlocks(
+      Array.from({ length: 47 }, (_, i) => i),
+      8,
+    );
     const seen = blocks.flatMap((b) => [...b.top, ...b.bottom]).sort((a, b) => a - b);
     expect(seen).toEqual(Array.from({ length: 47 }, (_, i) => i));
   });
@@ -158,13 +171,39 @@ describe('real board widths', () => {
   const per = TILE_PX + TILE_GAP_PX;
 
   /** Widest row the new layout can produce for a given board. */
-  function widestRow(b: { copper: number; sfp: number; bridges: number; bonds: number }, cols: number) {
+  function widestRow(
+    b: { copper: number; sfp: number; bridges: number; bonds: number },
+    cols: number,
+  ) {
     const groups = [
-      Math.max(...staggerBlocks(Array.from({ length: b.copper }, (_, i) => i), cols)
-        .flatMap((k) => [k.top.length, k.bottom.length]), 0),
-      Math.max(...chunkRows(Array.from({ length: b.sfp }, (_, i) => i), cols).map((r) => r.length), 0),
-      Math.max(...chunkRows(Array.from({ length: b.bridges }, (_, i) => i), cols).map((r) => r.length), 0),
-      Math.max(...chunkRows(Array.from({ length: b.bonds }, (_, i) => i), cols).map((r) => r.length), 0),
+      Math.max(
+        ...staggerBlocks(
+          Array.from({ length: b.copper }, (_, i) => i),
+          cols,
+        ).flatMap((k) => [k.top.length, k.bottom.length]),
+        0,
+      ),
+      Math.max(
+        ...chunkRows(
+          Array.from({ length: b.sfp }, (_, i) => i),
+          cols,
+        ).map((r) => r.length),
+        0,
+      ),
+      Math.max(
+        ...chunkRows(
+          Array.from({ length: b.bridges }, (_, i) => i),
+          cols,
+        ).map((r) => r.length),
+        0,
+      ),
+      Math.max(
+        ...chunkRows(
+          Array.from({ length: b.bonds }, (_, i) => i),
+          cols,
+        ).map((r) => r.length),
+        0,
+      ),
     ];
     return Math.max(...groups) * per;
   }
@@ -176,10 +215,10 @@ describe('real board widths', () => {
   }
 
   const boards = {
-    'wAP ax':            { copper: 2,  sfp: 0,  bridges: 1, bonds: 0 },
-    'CRS510-8XS-2XQ':    { copper: 1,  sfp: 8,  bridges: 1, bonds: 1 },
-    'CCR2216-12XS-2XQ':  { copper: 1,  sfp: 12, bridges: 1, bonds: 0 },
-    'CRS310-8G+2S+':     { copper: 8,  sfp: 2,  bridges: 1, bonds: 0 },
+    'wAP ax': { copper: 2, sfp: 0, bridges: 1, bonds: 0 },
+    'CRS510-8XS-2XQ': { copper: 1, sfp: 8, bridges: 1, bonds: 1 },
+    'CCR2216-12XS-2XQ': { copper: 1, sfp: 12, bridges: 1, bonds: 0 },
+    'CRS310-8G+2S+': { copper: 8, sfp: 2, bridges: 1, bonds: 0 },
     // The shape the request described: many ports *and* bonds.
     'CRS354-48G + bonds': { copper: 48, sfp: 4, bridges: 1, bonds: 8 },
   };
@@ -208,7 +247,8 @@ describe('real board widths', () => {
 
   it('a tighter setting is narrower than a looser one for the same board', () => {
     const dense = boards['CRS354-48G + bonds'];
-    expect(widestRow(dense, resolveColumns(8, 1200)))
-      .toBeLessThan(widestRow(dense, resolveColumns(24, 1200)));
+    expect(widestRow(dense, resolveColumns(8, 1200))).toBeLessThan(
+      widestRow(dense, resolveColumns(24, 1200)),
+    );
   });
 });

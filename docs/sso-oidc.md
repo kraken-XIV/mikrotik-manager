@@ -33,21 +33,21 @@ typing.
 
 As an admin, go to **Settings → SSO / OIDC**.
 
-| Field | Purpose |
-|---|---|
-| **Issuer URL** | Your provider's base URL. **Test discovery** verifies it is reachable before you save. |
-| **Client ID / Secret** | From step 1. The secret is write-only — leave it blank to keep the existing one. |
-| **Scopes** | Default `openid profile email`. Add a groups scope if your IdP needs one to emit group membership. |
-| **Username claim** | Default `preferred_username` |
-| **Email claim** | Default `email` |
-| **Groups claim** | Default `groups` |
-| **Group → role mapping** | Map IdP groups to admin / operator / viewer, e.g. `net-admins → admin`. Highest-privilege match wins. |
-| **Default role** | For users matching no mapping. Defaults to **viewer**. |
-| **Auto-provision** | Create a local user automatically on first sign-in. |
-| **Link by verified email** | Attach an SSO identity to an existing local account when the IdP's `email_verified` matches. |
-| **Allowed email domains** | Optional allowlist restricting who may sign in. |
-| **Public base URL** | Pin the redirect URI when your external URL differs from what the backend sees. |
-| **Button label** | Text on the login button, e.g. "Sign in with Okta". |
+| Field                      | Purpose                                                                                               |
+| -------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Issuer URL**             | Your provider's base URL. **Test discovery** verifies it is reachable before you save.                |
+| **Client ID / Secret**     | From step 1. The secret is write-only — leave it blank to keep the existing one.                      |
+| **Scopes**                 | Default `openid profile email`. Add a groups scope if your IdP needs one to emit group membership.    |
+| **Username claim**         | Default `preferred_username`                                                                          |
+| **Email claim**            | Default `email`                                                                                       |
+| **Groups claim**           | Default `groups`                                                                                      |
+| **Group → role mapping**   | Map IdP groups to admin / operator / viewer, e.g. `net-admins → admin`. Highest-privilege match wins. |
+| **Default role**           | For users matching no mapping. Defaults to **viewer**.                                                |
+| **Auto-provision**         | Create a local user automatically on first sign-in.                                                   |
+| **Link by verified email** | Attach an SSO identity to an existing local account when the IdP's `email_verified` matches.          |
+| **Allowed email domains**  | Optional allowlist restricting who may sign in.                                                       |
+| **Public base URL**        | Pin the redirect URI when your external URL differs from what the backend sees.                       |
+| **Button label**           | Text on the login button, e.g. "Sign in with Okta".                                                   |
 
 Enable it and save. A **Sign in with SSO** button appears on the login page.
 

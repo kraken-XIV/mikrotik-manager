@@ -1,8 +1,8 @@
 import { query } from '../config/database';
-import { siteScopeDevices, type SiteScope } from '../utils/siteScope';
-import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 import { effectiveLocation } from '../utils/effectiveLocation';
-import { fieldToWrite, unknownVariables, type SnmpDeviceVars } from '../utils/snmpTemplate';
+import { type SiteScope, siteScopeDevices } from '../utils/siteScope';
+import { fieldToWrite, type SnmpDeviceVars, unknownVariables } from '../utils/snmpTemplate';
+import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 
 /**
  * Applying SNMP settings to every online router or switch in scope.
@@ -40,28 +40,34 @@ export class SnmpInputError extends Error {}
 /** Throws SnmpInputError on anything that should be rejected before touching a device. */
 export function validateSnmpInput(config: SnmpConfigInput): void {
   const changesSomething =
-    typeof config.enabled === 'boolean' || !!config.community_name?.trim() || !!config.version ||
-    !!config.contact?.trim() || !!config.location?.trim() || !!config.trap_target?.trim();
-  if (!changesSomething) throw new SnmpInputError('Nothing to change: pick at least one setting to apply');
+    typeof config.enabled === 'boolean' ||
+    !!config.community_name?.trim() ||
+    !!config.version ||
+    !!config.contact?.trim() ||
+    !!config.location?.trim() ||
+    !!config.trap_target?.trim();
+  if (!changesSomething)
+    throw new SnmpInputError('Nothing to change: pick at least one setting to apply');
   if (config.version && !['v1', 'v2c', 'v3'].includes(config.version)) {
     throw new SnmpInputError('version must be v1, v2c or v3');
   }
   if (config.version === 'v3' && !config.community_name?.trim()) {
     throw new SnmpInputError('SNMPv3 needs the user name to set it up on');
   }
-  const bad = [config.contact, config.location, config.trap_target]
-    .flatMap((v) => (v ? unknownVariables(v) : []));
+  const bad = [config.contact, config.location, config.trap_target].flatMap((v) =>
+    v ? unknownVariables(v) : [],
+  );
   if (bad.length) {
     throw new SnmpInputError(
-      `Unknown variable ${bad.join(', ')}. Available: {identity}, {name}, {ip}, {model}, {serial}, {site}, {location}.`
+      `Unknown variable ${bad.join(', ')}. Available: {identity}, {name}, {ip}, {model}, {serial}, {site}, {location}.`,
     );
   }
 }
 
 /** Which devices a change goes to. Always explicit: there is no "everything" default. */
 export type SnmpTarget =
-  | { deviceIds: number[] }                 // the devices the operator picked
-  | { all: true; deviceTypes?: string[] };  // every online device in the site (optionally of some types)
+  | { deviceIds: number[] } // the devices the operator picked
+  | { all: true; deviceTypes?: string[] }; // every online device in the site (optionally of some types)
 
 /**
  * Apply SNMP settings to the chosen online devices in the active site, of any
@@ -71,7 +77,7 @@ export type SnmpTarget =
 export async function applySnmpConfig(
   target: SnmpTarget,
   config: SnmpConfigInput,
-  siteId: SiteScope | undefined
+  siteId: SiteScope | undefined,
 ) {
   validateSnmpInput(config);
   if ('deviceIds' in target && target.deviceIds.length === 0) {
@@ -90,19 +96,23 @@ export async function applySnmpConfig(
   }
   if (siteFilter) where.push(siteFilter);
 
-  const devices = await query<DeviceRow & {
-    site_name: string | null; site_address: string | null; site_lat: string | null; site_lng: string | null;
-  }>(
+  const devices = await query<
+    DeviceRow & {
+      site_name: string | null;
+      site_address: string | null;
+      site_lat: string | null;
+      site_lng: string | null;
+    }
+  >(
     `SELECT d.*, s.name AS site_name, s.address AS site_address,
             s.location_lat AS site_lat, s.location_lng AS site_lng
        FROM devices d LEFT JOIN sites s ON s.id = d.site_id
       WHERE ${where.join(' AND ')}
       ORDER BY d.name`,
-    params
+    params,
   );
-  const skipped = 'deviceIds' in target
-    ? target.deviceIds.filter((id) => !devices.some((d) => d.id === id))
-    : [];
+  const skipped =
+    'deviceIds' in target ? target.deviceIds.filter((id) => !devices.some((d) => d.id === id)) : [];
 
   const results = await Promise.allSettled(
     devices.map(async (d) => {
@@ -120,10 +130,12 @@ export async function applySnmpConfig(
           serial: (d as { serial_number?: string | null }).serial_number ?? null,
           site: d.site_name,
           // The device's own location, or its site's when it has none (#167).
-          location: effectiveLocation(
-            d as { location_address?: string | null },
-            { address: d.site_address, location_lat: d.site_lat, location_lng: d.site_lng }
-          )?.address ?? null,
+          location:
+            effectiveLocation(d as { location_address?: string | null }, {
+              address: d.site_address,
+              location_lat: d.site_lat,
+              location_lng: d.site_lng,
+            })?.address ?? null,
         };
         await collector.setSnmpConfig({
           ...config,
@@ -135,16 +147,24 @@ export async function applySnmpConfig(
       } finally {
         collector.disconnect();
       }
-    })
+    }),
   );
 
   const statuses = results.map((r, i) =>
     r.status === 'fulfilled'
       ? r.value
-      : { id: devices[i].id, name: devices[i].name, success: false, error: (r.reason as Error).message }
+      : {
+          id: devices[i].id,
+          name: devices[i].name,
+          success: false,
+          error: (r.reason as Error).message,
+        },
   );
   const applied = statuses.filter((s) => s.success).length;
-  if (applied > 0) await saveSnmpTemplates(config).catch(() => { /* remembering is a convenience */ });
+  if (applied > 0)
+    await saveSnmpTemplates(config).catch(() => {
+      /* remembering is a convenience */
+    });
   return { applied, total: devices.length, results: statuses, skipped };
 }
 
@@ -157,7 +177,9 @@ export type SnmpTemplates = Partial<Record<'contact' | 'location' | 'trap_target
 const TEMPLATES_KEY = 'snmp_field_templates';
 
 export async function getSnmpTemplates(): Promise<SnmpTemplates> {
-  const [row] = await query<{ value: unknown }>(`SELECT value FROM app_settings WHERE key = $1`, [TEMPLATES_KEY]);
+  const [row] = await query<{ value: unknown }>(`SELECT value FROM app_settings WHERE key = $1`, [
+    TEMPLATES_KEY,
+  ]);
   const v = row?.value;
   return v && typeof v === 'object' ? (v as SnmpTemplates) : {};
 }
@@ -173,7 +195,7 @@ async function saveSnmpTemplates(config: SnmpConfigInput): Promise<void> {
   await query(
     `INSERT INTO app_settings (key, value, updated_at) VALUES ($1, $2, NOW())
      ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
-    [TEMPLATES_KEY, JSON.stringify(merged)]
+    [TEMPLATES_KEY, JSON.stringify(merged)],
   );
 }
 
@@ -182,10 +204,14 @@ export async function getSnmpStatuses(siteId: SiteScope | undefined, deviceTypes
   const siteFilter = siteScopeDevices(siteId ?? null);
   const params: unknown[] = [];
   const where = [`status = 'online'`, 'NOT ssh_only'];
-  if (deviceTypes?.length) { params.push(deviceTypes); where.push(`device_type = ANY($1::text[])`); }
+  if (deviceTypes?.length) {
+    params.push(deviceTypes);
+    where.push(`device_type = ANY($1::text[])`);
+  }
   if (siteFilter) where.push(siteFilter);
   const devices = await query<DeviceRow>(
-    `SELECT * FROM devices WHERE ${where.join(' AND ')} ORDER BY name`, params
+    `SELECT * FROM devices WHERE ${where.join(' AND ')} ORDER BY name`,
+    params,
   );
   const results = await Promise.allSettled(
     devices.map(async (d) => {
@@ -193,18 +219,28 @@ export async function getSnmpStatuses(siteId: SiteScope | undefined, deviceTypes
       try {
         await collector.connect();
         const snmp = await collector.getSnmpConfig();
-        return { id: d.id, name: d.name, ip_address: d.ip_address, device_type: d.device_type, ...snmp };
+        return {
+          id: d.id,
+          name: d.name,
+          ip_address: d.ip_address,
+          device_type: d.device_type,
+          ...snmp,
+        };
       } finally {
         collector.disconnect();
       }
-    })
+    }),
   );
   return results.map((r, i) =>
     r.status === 'fulfilled'
       ? r.value
       : {
-          id: devices[i].id, name: devices[i].name, ip_address: devices[i].ip_address,
-          device_type: devices[i].device_type, enabled: null as boolean | null, error: (r.reason as Error).message,
-        }
+          id: devices[i].id,
+          name: devices[i].name,
+          ip_address: devices[i].ip_address,
+          device_type: devices[i].device_type,
+          enabled: null as boolean | null,
+          error: (r.reason as Error).message,
+        },
   );
 }

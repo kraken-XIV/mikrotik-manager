@@ -28,7 +28,10 @@ export function allowedFrom(row: ServiceRow): string[] {
 }
 
 function splitList(v: string): string[] {
-  return v.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+  return v
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 function isAddressOrPrefix(entry: string): boolean {
@@ -43,7 +46,8 @@ function isAddressOrPrefix(entry: string): boolean {
 
 /** Validate an allowed-addresses list typed by an operator. Empty means any. */
 export function parseAllowedList(input: unknown): { list: string[] } | { error: string } {
-  if (typeof input !== 'string') return { error: 'allowed_from must be a string (empty means any address).' };
+  if (typeof input !== 'string')
+    return { error: 'allowed_from must be a string (empty means any address).' };
   const list = splitList(input);
   if (list.length > 64) return { error: 'At most 64 entries.' };
   const bad = list.filter((e) => !isAddressOrPrefix(e));
@@ -53,7 +57,8 @@ export function parseAllowedList(input: unknown): { list: string[] } | { error: 
 
 function toBigInt(ip: string): { family: 4 | 6; value: bigint } | null {
   const family = net.isIP(ip);
-  if (family === 4) return { family, value: ip.split('.').reduce((a, o) => (a << 8n) + BigInt(Number(o)), 0n) };
+  if (family === 4)
+    return { family, value: ip.split('.').reduce((a, o) => (a << 8n) + BigInt(Number(o)), 0n) };
   if (family !== 6) return null;
   const v4tail = /^(.*:)(\d+\.\d+\.\d+\.\d+)$/.exec(ip);
   let text = ip.toLowerCase();
@@ -64,9 +69,14 @@ function toBigInt(ip: string): { family: 4 | 6; value: bigint } | null {
   const [head, tail = ''] = text.split('::');
   const h = head ? head.split(':') : [];
   const t = text.includes('::') ? (tail ? tail.split(':') : []) : [];
-  const groups = text.includes('::') ? [...h, ...Array(8 - h.length - t.length).fill('0'), ...t] : h;
+  const groups = text.includes('::')
+    ? [...h, ...Array(8 - h.length - t.length).fill('0'), ...t]
+    : h;
   if (groups.length !== 8) return null;
-  return { family, value: groups.reduce((a, g) => (a << 16n) + BigInt(parseInt(g || '0', 16)), 0n) };
+  return {
+    family,
+    value: groups.reduce((a, g) => (a << 16n) + BigInt(parseInt(g || '0', 16)), 0n),
+  };
 }
 
 /** Is `ip` allowed by `list`? An empty list allows everything. */
@@ -82,7 +92,7 @@ export function addressAllowed(ip: string, list: string[]): boolean {
     const bits = addr.family === 4 ? 32 : 128;
     const prefix = len === undefined ? bits : Number(len);
     const shift = BigInt(bits - prefix);
-    return (addr.value >> shift) === (b.value >> shift);
+    return addr.value >> shift === b.value >> shift;
   });
 }
 
@@ -91,7 +101,11 @@ export function addressAllowed(ip: string, list: string[]): boolean {
  * connection rows of `service`. With several connections, the one from our own
  * local port is ours; failing that, only an unambiguous single address counts.
  */
-export function managerPeer(rows: ServiceRow[], service: string, localPort?: number): string | null {
+export function managerPeer(
+  rows: ServiceRow[],
+  service: string,
+  localPort?: number,
+): string | null {
   const peers = rows
     .filter((r) => r['dynamic'] === 'true' && r['name'] === service && r['remote'])
     .map((r) => {

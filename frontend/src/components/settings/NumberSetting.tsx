@@ -1,4 +1,4 @@
-import { useState, type InputHTMLAttributes } from 'react';
+import { type InputHTMLAttributes, useState } from 'react';
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'> & {
   value: number | string | null | undefined;
@@ -39,7 +39,12 @@ export default function NumberSetting({ value, onCommit, min, max, className, ..
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       // Enter commits this field only; inside a form it would also submit it (#261).
-      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
     />
   );
 }

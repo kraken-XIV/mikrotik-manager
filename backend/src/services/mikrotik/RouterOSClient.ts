@@ -1,9 +1,10 @@
-import * as net from 'net';
-import * as tls from 'tls';
 import * as crypto from 'crypto';
 import { EventEmitter } from 'events';
-import { previewContext, type PreviewContext } from '../../utils/previewContext';
-import { isReadCommand, targetQuery, describeWrite } from '../../utils/changePreview';
+import * as net from 'net';
+import * as tls from 'tls';
+
+import { describeWrite, isReadCommand, targetQuery } from '../../utils/changePreview';
+import { type PreviewContext, previewContext } from '../../utils/previewContext';
 
 /**
  * Key under which repeated attributes from one sentence are preserved as JSON.
@@ -24,7 +25,6 @@ const MAX_BUFFER_BYTES = 32 * 1024 * 1024;
 /** The device sent something the API protocol does not allow. */
 class ProtocolError extends Error {}
 
-
 export interface RouterOSSentence {
   type: string;
   words: Record<string, string>;
@@ -32,7 +32,10 @@ export interface RouterOSSentence {
 }
 
 export class RouterOSError extends Error {
-  constructor(message: string, public readonly code?: string) {
+  constructor(
+    message: string,
+    public readonly code?: string,
+  ) {
     super(message);
     this.name = 'RouterOSError';
   }
@@ -60,7 +63,11 @@ export interface ReadSpec {
 
 /** The same read, whatever order its parameters were given in. */
 function readKey(command: string, params: Record<string, string>, queries: string[]): string {
-  return JSON.stringify([command, Object.entries(params).sort(([a], [b]) => a.localeCompare(b)), queries]);
+  return JSON.stringify([
+    command,
+    Object.entries(params).sort(([a], [b]) => a.localeCompare(b)),
+    queries,
+  ]);
 }
 
 export class RouterOSClient extends EventEmitter {
@@ -109,7 +116,7 @@ export class RouterOSClient extends EventEmitter {
     private readonly password: string,
     private readonly connectTimeoutMs: number = 15000,
     private readonly readTimeoutMs: number = 30000,
-    useTls?: boolean
+    useTls?: boolean,
   ) {
     super();
     // api-ssl runs on 8729 by RouterOS convention (the same heuristic the
@@ -121,7 +128,8 @@ export class RouterOSClient extends EventEmitter {
    * Checks the certificate a device presents on API-SSL, before any login is
    * sent. Registered once at startup (index.ts); throws to refuse the device.
    */
-  static tlsVerifier: ((host: string, port: number, fingerprint: string, raw: Buffer) => Promise<void>) | null = null;
+  static tlsVerifier:
+    ((host: string, port: number, fingerprint: string, raw: Buffer) => Promise<void>) | null = null;
 
   /** SHA-256 fingerprint of the certificate seen on the last TLS connect, lowercase hex. */
   tlsFingerprint: string | null = null;
@@ -185,7 +193,12 @@ export class RouterOSClient extends EventEmitter {
                 if (!fp) throw new RouterOSError('The device presented no certificate on API-SSL');
                 this.tlsFingerprint = fp.replace(/:/g, '').toLowerCase();
                 if (RouterOSClient.tlsVerifier) {
-                  await RouterOSClient.tlsVerifier(this.host, this.port, this.tlsFingerprint, cert.raw);
+                  await RouterOSClient.tlsVerifier(
+                    this.host,
+                    this.port,
+                    this.tlsFingerprint,
+                    cert.raw,
+                  );
                 }
               } catch (err) {
                 clearTimeout(timer);
@@ -195,12 +208,14 @@ export class RouterOSClient extends EventEmitter {
               }
               await onReady();
             })();
-          }
+          },
         );
         this.socket = tlsSocket;
       } else {
         this.socket = net.createConnection({ host: this.host, port: this.port });
-        this.socket.on('connect', () => { void onReady(); });
+        this.socket.on('connect', () => {
+          void onReady();
+        });
       }
       // A session kept open between polls (#301) must survive NAT and
       // firewall idle timeouts between them.
@@ -264,7 +279,7 @@ export class RouterOSClient extends EventEmitter {
     command: string,
     params: Record<string, string> = {},
     queries: string[] = [],
-    opts: { timeoutMs?: number } = {}
+    opts: { timeoutMs?: number } = {},
   ): Promise<Record<string, string>[]> {
     // "Review changes" (#255): while a preview runs, a write is recorded with
     // the item it would change, and nothing is sent. Reads still go to the
@@ -279,7 +294,10 @@ export class RouterOSClient extends EventEmitter {
         const hit = this.prefetched.get(readKey(command, params, queries));
         if (hit?.error) throw hit.error;
         // Each caller gets its own rows, as from the device.
-        if (hit?.rows) return hit.rows.map((r) => Object.assign(Object.create(null) as Record<string, string>, r));
+        if (hit?.rows)
+          return hit.rows.map((r) =>
+            Object.assign(Object.create(null) as Record<string, string>, r),
+          );
       }
     }
 
@@ -290,7 +308,11 @@ export class RouterOSClient extends EventEmitter {
       this.operationChain = this.operationChain.then(async () => {
         try {
           const t = Date.now();
-          try { result = await this._executeRaw(command, params, queries, opts.timeoutMs); } finally { this.waitedMs += Date.now() - t; }
+          try {
+            result = await this._executeRaw(command, params, queries, opts.timeoutMs);
+          } finally {
+            this.waitedMs += Date.now() - t;
+          }
         } catch (err) {
           error = err as Error;
         }
@@ -312,10 +334,11 @@ export class RouterOSClient extends EventEmitter {
    */
   async executeMany(
     reads: ReadSpec[],
-    opts: { timeoutMs?: number } = {}
+    opts: { timeoutMs?: number } = {},
   ): Promise<Array<{ rows?: Record<string, string>[]; error?: Error }>> {
     for (const r of reads) {
-      if (!isReadCommand(r.command, r.params ?? {})) throw new RouterOSError(`executeMany is for reads only: ${r.command}`);
+      if (!isReadCommand(r.command, r.params ?? {}))
+        throw new RouterOSError(`executeMany is for reads only: ${r.command}`);
     }
     if (reads.length === 0) return [];
     let result!: Array<{ rows?: Record<string, string>[]; error?: Error }>;
@@ -324,7 +347,11 @@ export class RouterOSClient extends EventEmitter {
       this.operationChain = this.operationChain.then(async () => {
         try {
           const t = Date.now();
-          try { result = await this._executeManyRaw(reads, opts.timeoutMs); } finally { this.waitedMs += Date.now() - t; }
+          try {
+            result = await this._executeManyRaw(reads, opts.timeoutMs);
+          } finally {
+            this.waitedMs += Date.now() - t;
+          }
         } catch (err) {
           error = err as Error;
         }
@@ -337,7 +364,7 @@ export class RouterOSClient extends EventEmitter {
 
   private async _executeManyRaw(
     reads: ReadSpec[],
-    timeoutMs?: number
+    timeoutMs?: number,
   ): Promise<Array<{ rows?: Record<string, string>[]; error?: Error }>> {
     if (!this.socket || !this.connected) throw new RouterOSError('Not connected');
     const tags = reads.map(() => String(++this.tagCounter));
@@ -350,7 +377,11 @@ export class RouterOSClient extends EventEmitter {
       await this.sendSentence(words);
     }
     const index = new Map(tags.map((t, i) => [t, i]));
-    const out = reads.map(() => ({ rows: [] as Record<string, string>[], error: undefined as Error | undefined, done: false }));
+    const out = reads.map(() => ({
+      rows: [] as Record<string, string>[],
+      error: undefined as Error | undefined,
+      done: false,
+    }));
     let remaining = reads.length;
     while (remaining > 0) {
       const sentence = await this.readNextSentence(timeoutMs);
@@ -368,7 +399,9 @@ export class RouterOSClient extends EventEmitter {
       else if (sentence.type === '!trap') {
         // The first trap's message, as execute() reports it; !done follows.
         o.error ??= new RouterOSTrapError(
-          sentence.words['message'] || `Command failed: ${reads[i].command}`, sentence.words['category']);
+          sentence.words['message'] || `Command failed: ${reads[i].command}`,
+          sentence.words['category'],
+        );
       } else if (sentence.type === '!done') {
         o.done = true;
         remaining--;
@@ -386,7 +419,9 @@ export class RouterOSClient extends EventEmitter {
    */
   async prefetch(reads: ReadSpec[], opts: { timeoutMs?: number } = {}): Promise<void> {
     const results = await this.executeMany(reads, opts);
-    this.prefetched = new Map(reads.map((r, i) => [readKey(r.command, r.params ?? {}, r.queries ?? []), results[i]]));
+    this.prefetched = new Map(
+      reads.map((r, i) => [readKey(r.command, r.params ?? {}, r.queries ?? []), results[i]]),
+    );
   }
 
   endPrefetch(): void {
@@ -397,7 +432,7 @@ export class RouterOSClient extends EventEmitter {
   private async recordPreviewWrite(
     preview: PreviewContext,
     command: string,
-    params: Record<string, string>
+    params: Record<string, string>,
   ): Promise<Record<string, string>[]> {
     const q = targetQuery(command, params);
     let target: Record<string, string> | null = null;
@@ -413,7 +448,7 @@ export class RouterOSClient extends EventEmitter {
     command: string,
     params: Record<string, string>,
     queries: string[],
-    timeoutMs?: number
+    timeoutMs?: number,
   ): Promise<Record<string, string>[]> {
     if (!this.socket || !this.connected) {
       throw new RouterOSError('Not connected');
@@ -442,7 +477,7 @@ export class RouterOSClient extends EventEmitter {
         await this.drainUntilDone();
         throw new RouterOSTrapError(
           sentence.words['message'] || `Command failed: ${command}`,
-          sentence.words['category']
+          sentence.words['category'],
         );
       } else if (sentence.type === '!fatal') {
         this.connected = false;
@@ -467,7 +502,13 @@ export class RouterOSClient extends EventEmitter {
 
   /** Connected, logged in, and its reply stream still trusted: safe to hand to the next poll (#301). */
   isUsable(): boolean {
-    return this.connected && this.authenticated && !this.poisoned && !!this.socket && !this.socket.destroyed;
+    return (
+      this.connected &&
+      this.authenticated &&
+      !this.poisoned &&
+      !!this.socket &&
+      !this.socket.destroyed
+    );
   }
 
   // ─── RouterOS API Protocol ────────────────────────────────────────────────
@@ -494,16 +535,12 @@ export class RouterOSClient extends EventEmitter {
       md5.update(challenge);
       const responseHex = '00' + md5.digest('hex');
 
-      await this.sendSentence([
-        '/login',
-        `=name=${this.username}`,
-        `=response=${responseHex}`,
-      ]);
+      await this.sendSentence(['/login', `=name=${this.username}`, `=response=${responseHex}`]);
       const result = await this.readNextSentence();
       if (result.type !== '!done') {
         throw new RouterOSError(
           result.words['message'] || 'Authentication failed (legacy MD5)',
-          result.words['category']
+          result.words['category'],
         );
       }
       return;
@@ -512,7 +549,7 @@ export class RouterOSClient extends EventEmitter {
     if (first.type === '!trap') {
       throw new RouterOSError(
         first.words['message'] || 'Authentication failed',
-        first.words['category']
+        first.words['category'],
       );
     }
 
@@ -527,12 +564,7 @@ export class RouterOSClient extends EventEmitter {
     } else if (len < 0x200000) {
       return Buffer.from([(len >> 16) | 0xc0, (len >> 8) & 0xff, len & 0xff]);
     } else if (len < 0x10000000) {
-      return Buffer.from([
-        (len >> 24) | 0xe0,
-        (len >> 16) & 0xff,
-        (len >> 8) & 0xff,
-        len & 0xff,
-      ]);
+      return Buffer.from([(len >> 24) | 0xe0, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff]);
     } else {
       return Buffer.from([
         0xf0,
@@ -546,7 +578,7 @@ export class RouterOSClient extends EventEmitter {
 
   private decodeLength(
     buf: Buffer,
-    offset: number
+    offset: number,
   ): { length: number; bytesConsumed: number } | null {
     if (offset >= buf.length) return null;
     const b = buf[offset];
@@ -570,9 +602,10 @@ export class RouterOSClient extends EventEmitter {
       return {
         length:
           (((b & 0x0f) << 24) |
-          (buf[offset + 1] << 16) |
-          (buf[offset + 2] << 8) |
-          buf[offset + 3]) >>> 0,
+            (buf[offset + 1] << 16) |
+            (buf[offset + 2] << 8) |
+            buf[offset + 3]) >>>
+          0,
         bytesConsumed: 4,
       };
     } else if (b === 0xf0) {
@@ -583,9 +616,10 @@ export class RouterOSClient extends EventEmitter {
       return {
         length:
           ((buf[offset + 1] << 24) |
-          (buf[offset + 2] << 16) |
-          (buf[offset + 3] << 8) |
-          buf[offset + 4]) >>> 0,
+            (buf[offset + 2] << 16) |
+            (buf[offset + 3] << 8) |
+            buf[offset + 4]) >>>
+          0,
         bytesConsumed: 5,
       };
     } else {
@@ -697,9 +731,7 @@ export class RouterOSClient extends EventEmitter {
       }
 
       words.push(
-        this.buffer
-          .slice(offset + bytesConsumed, offset + bytesConsumed + length)
-          .toString('utf8')
+        this.buffer.slice(offset + bytesConsumed, offset + bytesConsumed + length).toString('utf8'),
       );
       offset += bytesConsumed + length;
     }
@@ -712,7 +744,10 @@ export class RouterOSClient extends EventEmitter {
    * whose leftovers the caller drains itself: the streaming loop waiting out
    * its deadline, which cancelStreaming() then resynchronises or poisons.
    */
-  private readNextSentence(timeoutMs = this.readTimeoutMs, poisonOnTimeout = true): Promise<RouterOSSentence> {
+  private readNextSentence(
+    timeoutMs = this.readTimeoutMs,
+    poisonOnTimeout = true,
+  ): Promise<RouterOSSentence> {
     // Check queue first
     if (this.sentenceQueue.length > 0) {
       return Promise.resolve(this.sentenceQueue.shift()!);
@@ -788,7 +823,11 @@ export class RouterOSClient extends EventEmitter {
     this.connected = false;
     this.sentenceQueue = [];
     this.buffer = Buffer.alloc(0);
-    try { this.socket?.destroy(); } catch { /* already gone */ }
+    try {
+      this.socket?.destroy();
+    } catch {
+      /* already gone */
+    }
     this.socket = null;
     this.emit('poisoned', reason);
   }
@@ -807,7 +846,8 @@ export class RouterOSClient extends EventEmitter {
      */
     opts: { maxRows?: number; queries?: string[] } = {},
   ): Promise<Record<string, string>[]> {
-    if (previewContext()) throw new RouterOSError('This action runs a tool on the device, so it can\'t be previewed');
+    if (previewContext())
+      throw new RouterOSError("This action runs a tool on the device, so it can't be previewed");
     let result!: Record<string, string>[];
     let error!: Error;
 
@@ -815,7 +855,11 @@ export class RouterOSClient extends EventEmitter {
       this.operationChain = this.operationChain.then(async () => {
         try {
           const t = Date.now();
-          try { result = await this._executeStreamingRaw(command, params, maxDurationMs, opts); } finally { this.waitedMs += Date.now() - t; }
+          try {
+            result = await this._executeStreamingRaw(command, params, maxDurationMs, opts);
+          } finally {
+            this.waitedMs += Date.now() - t;
+          }
         } catch (err) {
           error = err as Error;
         }
@@ -879,7 +923,7 @@ export class RouterOSClient extends EventEmitter {
         await this.drainUntilDone(5_000);
         throw new RouterOSTrapError(
           sentence.words['message'] || `Command failed: ${command}`,
-          sentence.words['category']
+          sentence.words['category'],
         );
       } else if (sentence.type === '!fatal') {
         this.connected = false;

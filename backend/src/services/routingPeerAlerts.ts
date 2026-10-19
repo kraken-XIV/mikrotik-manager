@@ -22,9 +22,13 @@ export interface DownPeerRow {
   down_sec: number;
 }
 
-export function peerDescription(p: Pick<DownPeerRow, 'protocol' | 'name' | 'remote_address' | 'remote_as' | 'instance'>): string {
+export function peerDescription(
+  p: Pick<DownPeerRow, 'protocol' | 'name' | 'remote_address' | 'remote_as' | 'instance'>,
+): string {
   if (p.protocol === 'bgp') {
-    const remote = [p.remote_address, p.remote_as ? `AS ${p.remote_as}` : null].filter(Boolean).join(', ');
+    const remote = [p.remote_address, p.remote_as ? `AS ${p.remote_as}` : null]
+      .filter(Boolean)
+      .join(', ');
     return `BGP peer "${p.name ?? p.remote_address ?? 'unnamed'}"${remote ? ` (${remote})` : ''}`;
   }
   return `OSPF neighbour ${p.name ?? p.remote_address ?? 'unknown'}${p.instance ? ` in ${p.instance}` : ''}`;
@@ -50,13 +54,17 @@ export async function checkRoutingPeers(): Promise<void> {
         -- Not polled for a day: the device is offline or gone, and its own
         -- offline alert covers it.
         AND r.updated_at > NOW() - INTERVAL '1 day'`,
-    [String(threshold)]
+    [String(threshold)],
   );
   for (const p of rows) {
     await alertService.dispatch(
       'routing_peer_down',
       `${peerDescription(p)} on ${p.device_name.trim()} has been down for ${humanDown(p.down_sec)}${p.state === 'down' ? '' : ` (now ${p.state})`}.`,
-      { deviceId: p.device_id, deviceName: p.device_name.trim(), cooldownKey: `routing_peer_down:${p.device_id}:${p.protocol}:${p.peer_key}` }
+      {
+        deviceId: p.device_id,
+        deviceName: p.device_name.trim(),
+        cooldownKey: `routing_peer_down:${p.device_id}:${p.protocol}:${p.peer_key}`,
+      },
     );
   }
 }

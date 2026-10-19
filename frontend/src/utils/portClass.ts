@@ -159,7 +159,11 @@ export function classifyPort(port: PortLike): PortIdentity {
 export function portSortKey(port: PortLike): [number, number, string] {
   const id = classifyPort(port);
   const rank: Record<PortKind, number> = {
-    copper: 0, sfp: 1, 'qsfp-lane': 2, qsfp: 2, virtual: 3,
+    copper: 0,
+    sfp: 1,
+    'qsfp-lane': 2,
+    qsfp: 2,
+    virtual: 3,
   };
   const digits = /(\d+)(?:-(\d+))?$/.exec(id.basis);
   // "sfp28-10" and "qsfp28-2" end in rate-port: the port is the second number,

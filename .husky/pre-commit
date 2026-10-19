@@ -1,0 +1,4 @@
+# Format and lint only the staged files. Complements scripts/claude-push-gate.sh,
+# which still gates pushes on the full local CI suite — this hook keeps every
+# commit clean without paying for a whole-tree lint on each one.
+npx lint-staged

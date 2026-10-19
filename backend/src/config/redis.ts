@@ -45,7 +45,9 @@ export function limiterRedis(): Redis {
       maxRetriesPerRequest: 1,
       enableReadyCheck: false,
     });
-    limiterConnection.on('error', () => { /* reported by the main connection */ });
+    limiterConnection.on('error', () => {
+      /* reported by the main connection */
+    });
   }
   return limiterConnection;
 }

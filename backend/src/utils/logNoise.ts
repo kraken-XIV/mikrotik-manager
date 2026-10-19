@@ -81,7 +81,10 @@ export function isOwnApiSession(
  * host is using the same account at that moment there's no telling which is
  * the manager, and nothing is learned.
  */
-export function managerAddressFromActive(rows: Record<string, string>[], apiUsername: string | null | undefined): string | null {
+export function managerAddressFromActive(
+  rows: Record<string, string>[],
+  apiUsername: string | null | undefined,
+): string | null {
   const user = (apiUsername || '').trim();
   if (!user) return null;
   const addrs = new Set(
@@ -109,7 +112,10 @@ const PUBKEY_LINE = /^publickey\s+accepted\s+for\s+user:\s*([^,\s]+)\s*,\s*finge
 
 /** "SHA256: abc=" and "SHA256:abc" are the same fingerprint. */
 export function normFingerprint(f: string | null | undefined): string {
-  return (f || '').replace(/\s+/g, '').replace(/^SHA256:/i, '').replace(/=+$/, '');
+  return (f || '')
+    .replace(/\s+/g, '')
+    .replace(/^SHA256:/i, '')
+    .replace(/=+$/, '');
 }
 
 export interface OwnSsh {
@@ -119,7 +125,11 @@ export interface OwnSsh {
   keyFingerprint?: string | null;
 }
 
-export function isOwnSshSession(line: LogLineLike, ssh: OwnSsh | undefined, managerAddresses?: ReadonlySet<string>): boolean {
+export function isOwnSshSession(
+  line: LogLineLike,
+  ssh: OwnSsh | undefined,
+  managerAddresses?: ReadonlySet<string>,
+): boolean {
   const user = (ssh?.username || '').trim();
   if (!user) return false;
   const msg = (line.message || '').trim();
@@ -131,7 +141,13 @@ export function isOwnSshSession(line: LogLineLike, ssh: OwnSsh | undefined, mana
   if (!(line.topics || '').toLowerCase().includes('account')) return false;
   const m = SSH_ACCOUNT_LINE.exec(msg);
   // Only once the manager's address is known: noise beats hiding someone.
-  return !!m && m[1] === user && !!managerAddresses && managerAddresses.size > 0 && managerAddresses.has(m[2]);
+  return (
+    !!m &&
+    m[1] === user &&
+    !!managerAddresses &&
+    managerAddresses.size > 0 &&
+    managerAddresses.has(m[2])
+  );
 }
 
 /**
@@ -146,6 +162,10 @@ export function stripOwnSessionNoise<T extends LogLineLike>(
   managerAddresses?: ReadonlySet<string>,
   ssh?: OwnSsh,
 ): { kept: T[]; dropped: number } {
-  const kept = lines.filter((l) => !isOwnApiSession(l, apiUsername, managerAddresses) && !isOwnSshSession(l, ssh, managerAddresses));
+  const kept = lines.filter(
+    (l) =>
+      !isOwnApiSession(l, apiUsername, managerAddresses) &&
+      !isOwnSshSession(l, ssh, managerAddresses),
+  );
   return { kept, dropped: lines.length - kept.length };
 }

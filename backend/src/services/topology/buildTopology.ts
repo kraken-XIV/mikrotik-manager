@@ -72,7 +72,11 @@ export interface ExternalNode {
   caps: string;
 }
 
-export interface SegConn { src: string; dst: string; port: string; }
+export interface SegConn {
+  src: string;
+  dst: string;
+  port: string;
+}
 
 export interface TopologyGraph {
   links: LinkRow[];
@@ -88,7 +92,10 @@ export interface TopologyGraph {
 const PROTO_RANK: Record<string, number> = { lldp: 0, cdp: 1, mndp: 2 };
 const protoRank = (p: string | null) => PROTO_RANK[p ?? ''] ?? 3;
 
-const stripCidr = (a: string) => { const i = a.indexOf('/'); return i === -1 ? a : a.slice(0, i); };
+const stripCidr = (a: string) => {
+  const i = a.indexOf('/');
+  return i === -1 ? a : a.slice(0, i);
+};
 const normIp = (a: string) => stripCidr(a.trim()).toLowerCase();
 const normId = (s: string) => s.trim().toLowerCase();
 
@@ -98,8 +105,10 @@ function deviceAddresses(d: TopoDevice): string[] {
   if (d.ip_address) out.push(normIp(d.ip_address));
   if (Array.isArray(d.ip_addresses_jsonb)) {
     for (const entry of d.ip_addresses_jsonb) {
-      const raw = typeof entry === 'object' && entry && 'address' in entry
-        ? String((entry as { address?: string }).address || '') : '';
+      const raw =
+        typeof entry === 'object' && entry && 'address' in entry
+          ? String((entry as { address?: string }).address || '')
+          : '';
       const k = normIp(raw);
       if (k) out.push(k);
     }
@@ -128,7 +137,7 @@ function deviceAddresses(d: TopoDevice): string[] {
  */
 export function findAmbiguousIdentifiers(
   devices: TopoDevice[],
-  links: LinkRow[]
+  links: LinkRow[],
 ): { addresses: Set<string>; identities: Set<string> } {
   const addrDevices = new Map<string, Set<number>>();
   const addrIdentities = new Map<string, Set<string>>();
@@ -189,7 +198,7 @@ export function buildTopology(
   devices: TopoDevice[],
   allLinks: LinkRow[],
   manualLinks: ManualLinkRow[],
-  deviceMacs: { device_id: number; mac_address: string }[] = []
+  deviceMacs: { device_id: number; mac_address: string }[] = [],
 ): TopologyGraph {
   // Only devices in view (a site, or a site-limited account) may be drawn.
   // A link to a device outside the view becomes an external neighbour rather
@@ -198,9 +207,16 @@ export function buildTopology(
   const inView = new Set(devices.map((d) => d.id));
   allLinks = allLinks
     .filter((l) => l.from_device_id == null || inView.has(l.from_device_id))
-    .map((l) => (l.to_device_id != null && !inView.has(l.to_device_id)
-      ? { ...l, to_device_id: null, to_device_name: null, neighbor_identity: l.neighbor_identity ?? l.to_device_name }
-      : l));
+    .map((l) =>
+      l.to_device_id != null && !inView.has(l.to_device_id)
+        ? {
+            ...l,
+            to_device_id: null,
+            to_device_name: null,
+            neighbor_identity: l.neighbor_identity ?? l.to_device_name,
+          }
+        : l,
+    );
 
   const amb = findAmbiguousIdentifiers(devices, allLinks);
   const neighborKey = makeNeighborKey();
@@ -300,10 +316,12 @@ export function buildTopology(
   }
 
   const isLldpCovered = (link: LinkRow): boolean => {
-    if ((neighboursOnPort.get(`${link.from_device_id}::${link.from_interface ?? ''}`) ?? 0) < 2) return false;
+    if ((neighboursOnPort.get(`${link.from_device_id}::${link.from_interface ?? ''}`) ?? 0) < 2)
+      return false;
     if (link.to_device_id && lldpCoveredDeviceIds.has(link.to_device_id)) return true;
     if (link.neighbor_mac && lldpCoveredMacs.has(link.neighbor_mac.toLowerCase())) return true;
-    if (link.neighbor_address && lldpCoveredAddresses.has(normIp(link.neighbor_address))) return true;
+    if (link.neighbor_address && lldpCoveredAddresses.has(normIp(link.neighbor_address)))
+      return true;
     return false;
   };
 
@@ -328,24 +346,34 @@ export function buildTopology(
       continue;
     }
     used.add(link);
-    const reverse = links.find((r) => !used.has(r) && r.link_type === 'lldp'
-      && r.from_device_id === link.to_device_id && r.to_device_id === link.from_device_id
-      && agrees(r.from_interface, link.to_interface) && agrees(r.to_interface, link.from_interface));
+    const reverse = links.find(
+      (r) =>
+        !used.has(r) &&
+        r.link_type === 'lldp' &&
+        r.from_device_id === link.to_device_id &&
+        r.to_device_id === link.from_device_id &&
+        agrees(r.from_interface, link.to_interface) &&
+        agrees(r.to_interface, link.from_interface),
+    );
     if (reverse) used.add(reverse);
 
     // The lower device id is the canonical "from", as before.
     const forward = reverse && reverse.from_device_id! < link.from_device_id! ? reverse : link;
     const other = forward === link ? reverse : link;
     const canonical = { ...forward };
-    if (!canonical.to_interface && other?.from_interface) canonical.to_interface = other.from_interface;
-    if (!canonical.from_interface && other?.to_interface) canonical.from_interface = other.to_interface;
+    if (!canonical.to_interface && other?.from_interface)
+      canonical.to_interface = other.from_interface;
+    if (!canonical.from_interface && other?.to_interface)
+      canonical.from_interface = other.to_interface;
     // The cable's spanning-tree role is the more telling of its two ends: a port
     // that blocks is on one side only, and it was lost whenever that side was
     // the one merged away, so a redundant cable showed as forwarding (#147).
     const roles = [forward.stp_role, other?.stp_role];
     const blocked = roles.find((r) => r === 'alternate' || r === 'backup');
-    if (blocked) { canonical.stp_role = blocked; canonical.stp_state = 'blocking'; }
-    else if (roles.includes('root')) canonical.stp_role = 'root';
+    if (blocked) {
+      canonical.stp_role = blocked;
+      canonical.stp_state = 'blocking';
+    } else if (roles.includes('root')) canonical.stp_role = 'root';
     else canonical.stp_role = canonical.stp_role ?? other?.stp_role ?? null;
     canonicalLldp.push(canonical);
   }
@@ -404,7 +432,8 @@ export function buildTopology(
     if (l.from_interface) facesManaged.add(`${l.from_device_id}::${portOf(l.from_interface)}`);
     if (l.to_interface) facesManaged.add(`${l.to_device_id}::${portOf(l.to_interface)}`);
   }
-  const onUplink = (l: LinkRow) => facesManaged.has(`${l.from_device_id}::${portOf(l.from_interface ?? '')}`);
+  const onUplink = (l: LinkRow) =>
+    facesManaged.has(`${l.from_device_id}::${portOf(l.from_interface ?? '')}`);
   const byNeighbourPort = new Map<string, LinkRow[]>();
   for (const l of [...lldpLinks, ...soloNonLldp]) {
     if (l.to_device_id || !l.from_device_id || !l.to_interface) continue;
@@ -424,7 +453,12 @@ export function buildTopology(
   const directNonLldp = soloNonLldp.filter((l) => !heardThrough.has(l));
 
   // Neighbours no remaining link reaches would float unconnected.
-  const reached = new Set([...directLldp, ...directNonLldp].filter((l) => !l.to_device_id).map(neighborKey).filter(Boolean) as string[]);
+  const reached = new Set(
+    [...directLldp, ...directNonLldp]
+      .filter((l) => !l.to_device_id)
+      .map(neighborKey)
+      .filter(Boolean) as string[],
+  );
 
   // ── Step 7: Manual links as synthetic rows ─────────────────────────────────
   const manualAsLinks: LinkRow[] = manualLinks.map((ml) => ({

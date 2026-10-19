@@ -1,11 +1,16 @@
-import { _sharedArpScan, _arpScanInProgress, _resetArpScanCache } from '../serverArp';
+import { _arpScanInProgress, _resetArpScanCache, _sharedArpScan } from '../serverArp';
 
 describe('shared arp-scan (#301)', () => {
   beforeEach(() => _resetArpScanCache());
 
   it('never waits for a scan: the first call starts one and returns what it has', async () => {
     let finish: (r: Record<string, string>) => void = () => {};
-    const scan = jest.fn(() => new Promise<Record<string, string>>((r) => { finish = r; }));
+    const scan = jest.fn(
+      () =>
+        new Promise<Record<string, string>>((r) => {
+          finish = r;
+        }),
+    );
     expect(_sharedArpScan(1_000_000, scan)).toEqual({});
     expect(scan).toHaveBeenCalledTimes(1);
     // A second caller while it runs neither waits nor starts another.
@@ -17,7 +22,8 @@ describe('shared arp-scan (#301)', () => {
   });
 
   it('an expired result is still used while the next scan runs', async () => {
-    const scan = jest.fn()
+    const scan = jest
+      .fn()
       .mockResolvedValueOnce({ m1: '10.0.0.1' })
       .mockReturnValueOnce(new Promise(() => {}));
     _sharedArpScan(0 + 400_000, scan);
@@ -27,7 +33,8 @@ describe('shared arp-scan (#301)', () => {
   });
 
   it('a failed scan keeps the last result', async () => {
-    const scan = jest.fn()
+    const scan = jest
+      .fn()
       .mockResolvedValueOnce({ m1: '10.0.0.1' })
       .mockRejectedValueOnce(new Error('no NET_RAW'));
     _sharedArpScan(400_000, scan);

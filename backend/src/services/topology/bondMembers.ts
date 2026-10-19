@@ -8,11 +8,14 @@ import { query } from '../../config/database';
 
 export async function loadBondMembers(): Promise<Map<string, string[]>> {
   const rows = await query<{ device_id: number; name: string; slaves: string | null }>(
-    `SELECT device_id, name, config_json->>'slaves' AS slaves FROM interfaces WHERE type = 'bond'`
+    `SELECT device_id, name, config_json->>'slaves' AS slaves FROM interfaces WHERE type = 'bond'`,
   ).catch(() => []);
   const out = new Map<string, string[]>();
   for (const r of rows) {
-    const members = (r.slaves ?? '').split(',').map((m) => m.trim()).filter(Boolean);
+    const members = (r.slaves ?? '')
+      .split(',')
+      .map((m) => m.trim())
+      .filter(Boolean);
     if (members.length > 0) out.set(`${r.device_id} ${r.name}`, members);
   }
   return out;

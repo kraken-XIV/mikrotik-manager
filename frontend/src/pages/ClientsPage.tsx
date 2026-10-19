@@ -1,30 +1,47 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import LoadError from '../components/common/LoadError';
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Wifi, Network, Users, X, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, ListChecks,
-  ChevronLeft, ChevronRight, RefreshCw,
-} from 'lucide-react';
-import { CATEGORY_META } from '../utils/clientCategories';
-import { RSSI_ZONES } from '../utils/wifiChannels';
-import { clientsApi, devicesApi } from '../services/api';
-import type { Client } from '../types';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { useSocket } from '../hooks/useSocket';
-import { formatDistanceToNow } from 'date-fns';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { FilterBar, FilterSearch, FilterSelect, FilterSegment, FilterDivider } from '../components/common/FilterBar';
-import { formatRate, formatRatePair } from '../utils/wifiRate';
+import { formatDistanceToNow } from 'date-fns';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  ChevronUp,
+  ListChecks,
+  Network,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  Users,
+  Wifi,
+  X,
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import ClientAddressLists from '../components/clients/ClientAddressLists';
 import DevicePicker from '../components/common/DevicePicker';
-
+import {
+  FilterBar,
+  FilterDivider,
+  FilterSearch,
+  FilterSegment,
+  FilterSelect,
+} from '../components/common/FilterBar';
+import LoadError from '../components/common/LoadError';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { useSocket } from '../hooks/useSocket';
+import { clientsApi, devicesApi } from '../services/api';
+import type { Client } from '../types';
+import { CATEGORY_META } from '../utils/clientCategories';
+import { RSSI_ZONES } from '../utils/wifiChannels';
+import { formatRate, formatRatePair } from '../utils/wifiRate';
 
 const REFRESH_OPTIONS = [
   { label: 'Not Updating', value: null },
-  { label: '30 seconds',   value: 30_000 },
-  { label: '1 minute',     value: 60_000 },
-  { label: '3 minutes',    value: 180_000 },
+  { label: '30 seconds', value: 30_000 },
+  { label: '1 minute', value: 60_000 },
+  { label: '3 minutes', value: 180_000 },
 ] as const;
 
 const STORAGE_KEY = 'clients-refresh-interval';
@@ -95,13 +112,7 @@ function readStoredInterval(): number | null {
   return REFRESH_OPTIONS.some((o) => o.value === n) ? n : 30_000;
 }
 
-function ClientModal({
-  client,
-  onClose,
-}: {
-  client: Client;
-  onClose: () => void;
-}) {
+function ClientModal({ client, onClose }: { client: Client; onClose: () => void }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(client.custom_name || '');
 
@@ -119,7 +130,10 @@ function ClientModal({
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">Edit Client</h2>
-          <button onClick={onClose} className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
+          <button
+            onClick={onClose}
+            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -144,7 +158,9 @@ function ClientModal({
           {client.interface_name && (
             <div className="flex justify-between">
               <span>Port</span>
-              <span className="font-mono text-gray-800 dark:text-white">{client.interface_name}</span>
+              <span className="font-mono text-gray-800 dark:text-white">
+                {client.interface_name}
+              </span>
             </div>
           )}
           {client.hostname && (
@@ -164,7 +180,9 @@ function ClientModal({
           placeholder={client.hostname || 'e.g. Office Printer'}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') mutation.mutate(); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') mutation.mutate();
+          }}
           autoFocus
         />
         <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
@@ -172,7 +190,9 @@ function ClientModal({
         </p>
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="btn-secondary">Cancel</button>
+          <button onClick={onClose} className="btn-secondary">
+            Cancel
+          </button>
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
@@ -181,9 +201,7 @@ function ClientModal({
             {mutation.isPending ? 'Saving…' : 'Save'}
           </button>
         </div>
-        {mutation.isError && (
-          <p className="mt-2 text-xs text-red-500">Failed to save name.</p>
-        )}
+        {mutation.isError && <p className="mt-2 text-xs text-red-500">Failed to save name.</p>}
       </div>
     </div>
   );
@@ -202,11 +220,15 @@ export default function ClientsPage() {
   const typeFilter: 'wired' | 'wireless' | null =
     rawType === 'wired' || rawType === 'wireless' ? rawType : null;
   const setTypeFilter = (t: 'wired' | 'wireless' | null) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      if (t) next.set('type', t); else next.delete('type');
-      return next;
-    }, { replace: true });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (t) next.set('type', t);
+        else next.delete('type');
+        return next;
+      },
+      { replace: true },
+    );
     setPage(0);
   };
   const isWireless = typeFilter === 'wireless';
@@ -226,18 +248,24 @@ export default function ClientsPage() {
   const signalMin = urlNum('smin');
   const signalMax = urlNum('smax');
   const setUrlFilter = (patch: Record<string, string | null>) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      for (const [k, v] of Object.entries(patch)) {
-        if (v == null || v === '') next.delete(k); else next.set(k, v);
-      }
-      return next;
-    }, { replace: true });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        for (const [k, v] of Object.entries(patch)) {
+          if (v == null || v === '') next.delete(k);
+          else next.set(k, v);
+        }
+        return next;
+      },
+      { replace: true },
+    );
     setPage(0);
   };
   // The device clients are connected to (#222).
   const deviceFilter = urlNum('device');
-  const activeFilterCount = [vlanFilter, signalMin ?? signalMax, deviceFilter].filter(v => v !== undefined).length;
+  const activeFilterCount = [vlanFilter, signalMin ?? signalMax, deviceFilter].filter(
+    (v) => v !== undefined,
+  ).length;
   const [page, setPage] = useState(0);
   // Firewall address lists for one client (#145).
   const [listsFor, setListsFor] = useState<Client | null>(null);
@@ -246,7 +274,9 @@ export default function ClientsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [refreshInterval, setRefreshInterval] = useState<number | null>(readStoredInterval);
   const refreshIntervalRef = useRef(refreshInterval);
-  useEffect(() => { refreshIntervalRef.current = refreshInterval; }, [refreshInterval]);
+  useEffect(() => {
+    refreshIntervalRef.current = refreshInterval;
+  }, [refreshInterval]);
   const [pageSize, setPageSize] = useState(readStoredPageSize);
 
   const handleIntervalChange = (val: number | null) => {
@@ -264,15 +294,33 @@ export default function ClientsPage() {
   // Sorting is server-side (across the whole dataset, not just the current
   // page), so changing the sort returns to page 1 and refetches.
   const toggleSort = (col: string) => {
-    if (sortCol === col) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     // Signal is dBm: the first click shows the strongest first, which is what
     // someone sorting by signal is almost always looking for.
-    else { setSortCol(col); setSortDir(col === 'signal_strength' ? 'desc' : 'asc'); }
+    else {
+      setSortCol(col);
+      setSortDir(col === 'signal_strength' ? 'desc' : 'asc');
+    }
     setPage(0);
   };
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['clients', { search, showAll, typeFilter, vlanFilter, deviceFilter, signalMin, signalMax, page, pageSize, sortCol, sortDir }],
+    queryKey: [
+      'clients',
+      {
+        search,
+        showAll,
+        typeFilter,
+        vlanFilter,
+        deviceFilter,
+        signalMin,
+        signalMax,
+        page,
+        pageSize,
+        sortCol,
+        sortDir,
+      },
+    ],
     queryFn: () =>
       clientsApi
         .list({
@@ -283,7 +331,10 @@ export default function ClientsPage() {
           deviceId: deviceFilter,
           signal_min: signalMin,
           signal_max: signalMax,
-          limit: pageSize, offset: page * pageSize, sort: sortCol, dir: sortDir,
+          limit: pageSize,
+          offset: page * pageSize,
+          sort: sortCol,
+          dir: sortDir,
         })
         .then((r) => r.data),
     refetchInterval: refreshInterval ?? false,
@@ -298,7 +349,10 @@ export default function ClientsPage() {
     queryFn: () => devicesApi.list().then((r) => r.data),
     staleTime: 60_000,
   });
-  const deviceOptions = useMemo(() => [...allDevices].sort((a, b) => a.name.localeCompare(b.name)), [allDevices]);
+  const deviceOptions = useMemo(
+    () => [...allDevices].sort((a, b) => a.name.localeCompare(b.name)),
+    [allDevices],
+  );
 
   // Offer only VLANs the fleet actually uses, so the list never presents a
   // choice that would return nothing.
@@ -306,8 +360,8 @@ export default function ClientsPage() {
   // rows on this page (outside review U14).
   const vlanOptions = useMemo(() => {
     const seen = new Set<number>(data?.vlans ?? []);
-    for (const c of (data?.clients ?? [])) if (c.vlan_id != null) seen.add(c.vlan_id);
-    if (vlanFilter != null) seen.add(vlanFilter);   // keep the active choice selectable
+    for (const c of data?.clients ?? []) if (c.vlan_id != null) seen.add(c.vlan_id);
+    if (vlanFilter != null) seen.add(vlanFilter); // keep the active choice selectable
     return [...seen].sort((a, b) => a - b);
   }, [data, vlanFilter]);
 
@@ -344,8 +398,12 @@ export default function ClientsPage() {
   return (
     <div className="space-y-4">
       {listsFor?.ip_address && (
-        <ClientAddressLists address={listsFor.ip_address} defaultDeviceId={listsFor.device_id}
-          clientName={listsFor.custom_name || listsFor.hostname || listsFor.mac_address} onClose={() => setListsFor(null)} />
+        <ClientAddressLists
+          address={listsFor.ip_address}
+          defaultDeviceId={listsFor.device_id}
+          clientName={listsFor.custom_name || listsFor.hostname || listsFor.mac_address}
+          onClose={() => setListsFor(null)}
+        />
       )}
       {editingClient && (
         <ClientModal client={editingClient} onClose={() => setEditingClient(null)} />
@@ -363,11 +421,15 @@ export default function ClientsPage() {
           )}
         </h1>
         <div className="ml-auto flex items-center gap-2">
-          {purgeResult && <span className="text-xs text-green-600 dark:text-green-400">{purgeResult}</span>}
+          {purgeResult && (
+            <span className="text-xs text-green-600 dark:text-green-400">{purgeResult}</span>
+          )}
           {canWrite && (
             <button
               onClick={() => {
-                if (confirm('Purge all inactive clients older than the configured retention period?')) {
+                if (
+                  confirm('Purge all inactive clients older than the configured retention period?')
+                ) {
                   purgeMutation.mutate();
                 }
               }}
@@ -407,13 +469,22 @@ export default function ClientsPage() {
       </div>
 
       <FilterBar>
-        <FilterSearch value={search} onChange={(v) => { setSearch(v); setPage(0); }} placeholder="Search hostname, MAC, IP, or vendor…" />
+        <FilterSearch
+          value={search}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(0);
+          }}
+          placeholder="Search hostname, MAC, IP, or vendor…"
+        />
         {/* Signal band — the same buckets the AP density chart clusters by, which
             is what lets that chart link straight here (#99). First after the
             search, so the rest of the row doesn't move when it appears (#222). */}
         {isWireless && (
           <FilterSelect
-            value={signalMin != null || signalMax != null ? `${signalMin ?? ''}:${signalMax ?? ''}` : ''}
+            value={
+              signalMin != null || signalMax != null ? `${signalMin ?? ''}:${signalMax ?? ''}` : ''
+            }
             onChange={(v) => {
               const [lo, hi] = v.split(':');
               setUrlFilter({ smin: lo || null, smax: hi || null });
@@ -421,7 +492,7 @@ export default function ClientsPage() {
             title="Signal"
           >
             <option value="">Any signal</option>
-            {RSSI_ZONES.map(z => (
+            {RSSI_ZONES.map((z) => (
               <option key={z.label} value={`${z.min}:${z.max}`}>
                 {z.label} ({z.min} to {z.max} dBm)
               </option>
@@ -429,27 +500,48 @@ export default function ClientsPage() {
           </FilterSelect>
         )}
         <FilterSegment
-          options={[{ value: 'online', label: 'online' }, { value: 'all', label: 'all' }]}
+          options={[
+            { value: 'online', label: 'online' },
+            { value: 'all', label: 'all' },
+          ]}
           value={showAll ? 'all' : 'online'}
-          onChange={(v) => { setShowAll(v === 'all'); setPage(0); }}
+          onChange={(v) => {
+            setShowAll(v === 'all');
+            setPage(0);
+          }}
         />
         <FilterDivider />
         <FilterSegment
-          options={[{ value: '', label: 'any type' }, { value: 'wired', label: 'wired' }, { value: 'wireless', label: 'wireless' }]}
+          options={[
+            { value: '', label: 'any type' },
+            { value: 'wired', label: 'wired' },
+            { value: 'wireless', label: 'wireless' },
+          ]}
           value={typeFilter ?? ''}
           onChange={(v) => setTypeFilter((v || null) as 'wired' | 'wireless' | null)}
         />
         <DevicePicker
-          variant="filter" title="Connected to" emptyLabel="All devices" devices={deviceOptions}
+          variant="filter"
+          title="Connected to"
+          emptyLabel="All devices"
+          devices={deviceOptions}
           value={deviceFilter ?? null}
           onChange={(id) => setUrlFilter({ device: id == null ? null : String(id) })}
         />
         {/* VLAN filter — populated from what the fleet actually uses, so the
             operator picks a real VLAN rather than guessing an id (#100). */}
         {vlanOptions.length > 0 && (
-          <FilterSelect value={vlanFilter != null ? String(vlanFilter) : ''} onChange={(v) => setUrlFilter({ vlan: v || null })} title="VLAN">
+          <FilterSelect
+            value={vlanFilter != null ? String(vlanFilter) : ''}
+            onChange={(v) => setUrlFilter({ vlan: v || null })}
+            title="VLAN"
+          >
             <option value="">All VLANs</option>
-            {vlanOptions.map(v => <option key={v} value={v}>VLAN {v}</option>)}
+            {vlanOptions.map((v) => (
+              <option key={v} value={v}>
+                VLAN {v}
+              </option>
+            ))}
           </FilterSelect>
         )}
         {activeFilterCount > 0 && (
@@ -466,7 +558,9 @@ export default function ClientsPage() {
       {isLoading ? (
         <div className="flex items-center justify-center h-48 text-gray-400">Loading...</div>
       ) : isError && clients.length === 0 ? (
-        <div className="card"><LoadError what="clients" error={error} /></div>
+        <div className="card">
+          <LoadError what="clients" error={error} />
+        </div>
       ) : clients.length === 0 ? (
         <div className="card p-12 flex flex-col items-center gap-3 text-center">
           <Users className="w-12 h-12 text-gray-300 dark:text-slate-600" />
@@ -478,257 +572,308 @@ export default function ClientsPage() {
         <>
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
-            <table className="w-full text-sm table-fixed">
-              <colgroup>
-                {(isWireless
-                  ? ['18%', '10%', '10%', '10%', '12%', '8%', '5%', '10%', '8%', '9%']
-                  : isWired
-                    ? ['26%', '14%', '13%', '8%', '15%', '11%', '13%']
-                    : ['22%', '12%', '13%', '11%', '7%', '13%', '10%', '12%']
-                ).map((w, i) => <col key={i} style={{ width: w }} />)}
-                {showAll && <col style={{ width: '6%' }} />}
-              </colgroup>
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-slate-700">
-                  {([
-                    { col: 'hostname',       label: 'Host / Vendor / MAC', align: 'left'  },
-                    { col: 'ip_address',     label: 'IP Address',          align: 'left'  },
-                    // When filtered to wireless, the Type column is redundant —
-                    // show SSID + signal quality instead.
-                    ...(isWireless
-                      ? [
-                          { col: 'ssid',            label: 'SSID',   align: 'left' as const },
-                          { col: 'signal_strength', label: 'Signal', align: 'left' as const },
-                          // #252: link rates, from the access point's side (TX = to the client).
-                          { col: 'tx_rate_bps',     label: 'Rate',   align: 'left' as const },
-                        ]
-                      : isWired ? [] : [{ col: 'client_type', label: 'Type', align: 'left' as const }]),
-                    { col: 'interface_name', label: 'Port',                align: 'left'  },
-                    { col: 'vlan_id',        label: 'VLAN',                align: 'left'  },
-                    { col: 'device_name',    label: 'Device',              align: 'left'  },
-                    { col: 'traffic_today_bytes', label: 'Data (today)',   align: 'left'  },
-                    { col: 'last_seen',      label: 'Last Seen',           align: 'left'  },
-                  ] as { col: string; label: string; align: 'left' | 'right'; noSort?: boolean }[]).map(({ col, label, align, noSort }) => (
-                    <th
-                      key={col}
-                      className={clsx('table-header px-4 py-2.5 select-none whitespace-nowrap', !noSort && 'cursor-pointer', `text-${align}`)}
-                      onClick={noSort ? undefined : () => toggleSort(col)}
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        {label}
-                        {!noSort && (sortCol === col ? (
-                          sortDir === 'asc'
-                            ? <ChevronUp className="w-3 h-3 text-blue-500" />
-                            : <ChevronDown className="w-3 h-3 text-blue-500" />
-                        ) : (
-                          <ChevronsUpDown className="w-3 h-3 text-gray-300 dark:text-slate-600" />
-                        ))}
-                      </span>
-                    </th>
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  {(isWireless
+                    ? ['18%', '10%', '10%', '10%', '12%', '8%', '5%', '10%', '8%', '9%']
+                    : isWired
+                      ? ['26%', '14%', '13%', '8%', '15%', '11%', '13%']
+                      : ['22%', '12%', '13%', '11%', '7%', '13%', '10%', '12%']
+                  ).map((w, i) => (
+                    <col key={i} style={{ width: w }} />
                   ))}
-                  {showAll && (
-                    <th className="table-header px-4 py-2.5 text-center">Active</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
-                {clients.map((client) => (
-                  <tr
-                    key={client.id}
-                    className="hover:bg-gray-50 dark:hover:bg-slate-700/30"
-                  >
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <CategoryIcon category={client.device_category} />
-                        <button
-                          onClick={() => navigate(`/clients/${encodeURIComponent(client.mac_address)}`)}
-                          className="font-medium text-blue-600 dark:text-blue-400 hover:underline text-left truncate"
-                        >
-                          {client.custom_name || client.hostname || (
-                            <span className="text-gray-400 dark:text-slate-500 italic">No hostname</span>
-                          )}
-                        </button>
-                        {client.custom_name && (
-                          <span className="text-xs text-blue-500 dark:text-blue-400 ml-1 flex-shrink-0">custom</span>
+                  {showAll && <col style={{ width: '6%' }} />}
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-slate-700">
+                    {(
+                      [
+                        { col: 'hostname', label: 'Host / Vendor / MAC', align: 'left' },
+                        { col: 'ip_address', label: 'IP Address', align: 'left' },
+                        // When filtered to wireless, the Type column is redundant —
+                        // show SSID + signal quality instead.
+                        ...(isWireless
+                          ? [
+                              { col: 'ssid', label: 'SSID', align: 'left' as const },
+                              { col: 'signal_strength', label: 'Signal', align: 'left' as const },
+                              // #252: link rates, from the access point's side (TX = to the client).
+                              { col: 'tx_rate_bps', label: 'Rate', align: 'left' as const },
+                            ]
+                          : isWired
+                            ? []
+                            : [{ col: 'client_type', label: 'Type', align: 'left' as const }]),
+                        { col: 'interface_name', label: 'Port', align: 'left' },
+                        { col: 'vlan_id', label: 'VLAN', align: 'left' },
+                        { col: 'device_name', label: 'Device', align: 'left' },
+                        { col: 'traffic_today_bytes', label: 'Data (today)', align: 'left' },
+                        { col: 'last_seen', label: 'Last Seen', align: 'left' },
+                      ] as {
+                        col: string;
+                        label: string;
+                        align: 'left' | 'right';
+                        noSort?: boolean;
+                      }[]
+                    ).map(({ col, label, align, noSort }) => (
+                      <th
+                        key={col}
+                        className={clsx(
+                          'table-header px-4 py-2.5 select-none whitespace-nowrap',
+                          !noSort && 'cursor-pointer',
+                          `text-${align}`,
                         )}
-                        {canWrite && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setEditingClient(client); }}
-                            className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 flex-shrink-0"
-                            title="Edit name"
-                          >
-                            <Pencil className="w-3 h-3 text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400" />
-                          </button>
-                        )}
-                        {canWrite && client.ip_address && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setListsFor(client); }}
-                            className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 flex-shrink-0"
-                            title="Firewall address lists for this client's address"
-                          >
-                            <ListChecks className="w-3 h-3 text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400" />
-                          </button>
-                        )}
-                      </div>
-                      {client.vendor && (
-                        <div className="text-xs text-gray-400 dark:text-slate-500 truncate">{client.vendor}</div>
-                      )}
-                      <div className="text-xs font-mono text-gray-400 dark:text-slate-500 truncate">
-                        {client.mac_address}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 font-mono text-gray-600 dark:text-slate-400 truncate">
-                      {client.ip_address || '—'}
-                    </td>
-                    {isWireless ? (
-                      <>
-                        <td className="px-4 py-2.5 text-xs text-gray-600 dark:text-slate-400 truncate">
-                          {(client as Client & { ssid?: string }).ssid || '—'}
-                        </td>
-                        <td className="px-4 py-2.5 text-xs whitespace-nowrap">
-                          {client.signal_strength != null ? (
-                            <span className={clsx('font-medium', signalColor(client.signal_strength))}>
-                              {client.signal_strength} dBm
-                              <span className="ml-1 font-normal opacity-75">({signalLabel(client.signal_strength)})</span>
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 dark:text-slate-500">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5 text-xs whitespace-nowrap text-gray-600 dark:text-slate-400"
-                          title="Link rate from the access point's side: TX is towards the client, RX from it">
-                          {formatRatePair(client.tx_rate_bps, client.rx_rate_bps) ? (
-                            <>
-                              <div>TX {formatRate(client.tx_rate_bps) ?? '—'}</div>
-                              <div>RX {formatRate(client.rx_rate_bps) ?? '—'}</div>
-                            </>
-                          ) : <span className="text-gray-400 dark:text-slate-500">—</span>}
-                        </td>
-                      </>
-                    ) : isWired ? null : (
-                      <td className="px-4 py-2.5">
-                        <span
-                          className={clsx(
-                            'inline-flex items-center gap-1 text-xs font-medium',
-                            client.client_type === 'wireless'
-                              ? 'text-purple-600 dark:text-purple-400'
-                              : 'text-blue-600 dark:text-blue-400'
-                          )}
-                        >
-                          {client.client_type === 'wireless' ? (
-                            <Wifi className="w-3 h-3" />
-                          ) : (
-                            <Network className="w-3 h-3" />
-                          )}
-                          {client.client_type}
-                          {client.signal_strength != null && (
-                            <span className="text-gray-400 ml-1">({client.signal_strength} dBm)</span>
-                          )}
+                        onClick={noSort ? undefined : () => toggleSort(col)}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {label}
+                          {!noSort &&
+                            (sortCol === col ? (
+                              sortDir === 'asc' ? (
+                                <ChevronUp className="w-3 h-3 text-blue-500" />
+                              ) : (
+                                <ChevronDown className="w-3 h-3 text-blue-500" />
+                              )
+                            ) : (
+                              <ChevronsUpDown className="w-3 h-3 text-gray-300 dark:text-slate-600" />
+                            ))}
                         </span>
-                      </td>
-                    )}
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400 truncate">
-                      {client.interface_name || '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">
-                      {client.vlan_id != null
-                        ? <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded font-mono">{client.vlan_id}</span>
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 truncate">
-                      {client.device_name || '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
-                      {client.traffic_today_bytes ? formatDataBytes(client.traffic_today_bytes) : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">
-                      {client.last_seen
-                        ? formatDistanceToNow(new Date(client.last_seen), { addSuffix: true })
-                        : '—'}
-                    </td>
-                    {showAll && (
-                      <td className="px-4 py-2.5 text-center">
-                        <span
-                          className={clsx(
-                            'w-2 h-2 rounded-full inline-block',
-                            client.active ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-600'
-                          )}
-                        />
-                      </td>
-                    )}
+                      </th>
+                    ))}
+                    {showAll && <th className="table-header px-4 py-2.5 text-center">Active</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+                  {clients.map((client) => (
+                    <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <CategoryIcon category={client.device_category} />
+                          <button
+                            onClick={() =>
+                              navigate(`/clients/${encodeURIComponent(client.mac_address)}`)
+                            }
+                            className="font-medium text-blue-600 dark:text-blue-400 hover:underline text-left truncate"
+                          >
+                            {client.custom_name || client.hostname || (
+                              <span className="text-gray-400 dark:text-slate-500 italic">
+                                No hostname
+                              </span>
+                            )}
+                          </button>
+                          {client.custom_name && (
+                            <span className="text-xs text-blue-500 dark:text-blue-400 ml-1 flex-shrink-0">
+                              custom
+                            </span>
+                          )}
+                          {canWrite && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingClient(client);
+                              }}
+                              className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 flex-shrink-0"
+                              title="Edit name"
+                            >
+                              <Pencil className="w-3 h-3 text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400" />
+                            </button>
+                          )}
+                          {canWrite && client.ip_address && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setListsFor(client);
+                              }}
+                              className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 flex-shrink-0"
+                              title="Firewall address lists for this client's address"
+                            >
+                              <ListChecks className="w-3 h-3 text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400" />
+                            </button>
+                          )}
+                        </div>
+                        {client.vendor && (
+                          <div className="text-xs text-gray-400 dark:text-slate-500 truncate">
+                            {client.vendor}
+                          </div>
+                        )}
+                        <div className="text-xs font-mono text-gray-400 dark:text-slate-500 truncate">
+                          {client.mac_address}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-gray-600 dark:text-slate-400 truncate">
+                        {client.ip_address || '—'}
+                      </td>
+                      {isWireless ? (
+                        <>
+                          <td className="px-4 py-2.5 text-xs text-gray-600 dark:text-slate-400 truncate">
+                            {(client as Client & { ssid?: string }).ssid || '—'}
+                          </td>
+                          <td className="px-4 py-2.5 text-xs whitespace-nowrap">
+                            {client.signal_strength != null ? (
+                              <span
+                                className={clsx('font-medium', signalColor(client.signal_strength))}
+                              >
+                                {client.signal_strength} dBm
+                                <span className="ml-1 font-normal opacity-75">
+                                  ({signalLabel(client.signal_strength)})
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-slate-500">—</span>
+                            )}
+                          </td>
+                          <td
+                            className="px-4 py-2.5 text-xs whitespace-nowrap text-gray-600 dark:text-slate-400"
+                            title="Link rate from the access point's side: TX is towards the client, RX from it"
+                          >
+                            {formatRatePair(client.tx_rate_bps, client.rx_rate_bps) ? (
+                              <>
+                                <div>TX {formatRate(client.tx_rate_bps) ?? '—'}</div>
+                                <div>RX {formatRate(client.rx_rate_bps) ?? '—'}</div>
+                              </>
+                            ) : (
+                              <span className="text-gray-400 dark:text-slate-500">—</span>
+                            )}
+                          </td>
+                        </>
+                      ) : isWired ? null : (
+                        <td className="px-4 py-2.5">
+                          <span
+                            className={clsx(
+                              'inline-flex items-center gap-1 text-xs font-medium',
+                              client.client_type === 'wireless'
+                                ? 'text-purple-600 dark:text-purple-400'
+                                : 'text-blue-600 dark:text-blue-400',
+                            )}
+                          >
+                            {client.client_type === 'wireless' ? (
+                              <Wifi className="w-3 h-3" />
+                            ) : (
+                              <Network className="w-3 h-3" />
+                            )}
+                            {client.client_type}
+                            {client.signal_strength != null && (
+                              <span className="text-gray-400 ml-1">
+                                ({client.signal_strength} dBm)
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                      )}
+                      <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400 truncate">
+                        {client.interface_name || '—'}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">
+                        {client.vlan_id != null ? (
+                          <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded font-mono">
+                            {client.vlan_id}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 truncate">
+                        {client.device_name || '—'}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
+                        {client.traffic_today_bytes
+                          ? formatDataBytes(client.traffic_today_bytes)
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">
+                        {client.last_seen
+                          ? formatDistanceToNow(new Date(client.last_seen), { addSuffix: true })
+                          : '—'}
+                      </td>
+                      {showAll && (
+                        <td className="px-4 py-2.5 text-center">
+                          <span
+                            className={clsx(
+                              'w-2 h-2 rounded-full inline-block',
+                              client.active ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-600',
+                            )}
+                          />
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
           {/* Pagination */}
-          {total > 0 && (() => {
-            const totalPages = Math.max(1, Math.ceil(total / pageSize));
-            return (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
-                {/* Entries-per-page + range summary */}
-                <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
-                  <span>Show</span>
-                  <select
-                    value={pageSize}
-                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                    className="text-sm rounded-lg border border-line bg-surface-2 text-ink px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
-                  >
-                    {PAGE_SIZE_OPTIONS.map((n) => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
-                  </select>
-                  <span>entries</span>
-                  <span className="ml-1 hidden sm:inline">
-                    ({page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} of {total})
-                  </span>
-                </div>
-
-                {/* Numbered page selection */}
-                {totalPages > 1 && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setPage((p) => Math.max(0, p - 1))}
-                      disabled={page === 0}
-                      aria-label="Previous page"
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          {total > 0 &&
+            (() => {
+              const totalPages = Math.max(1, Math.ceil(total / pageSize));
+              return (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+                  {/* Entries-per-page + range summary */}
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
+                    <span>Show</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                      className="text-sm rounded-lg border border-line bg-surface-2 text-ink px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
                     >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    {getPageList(page, totalPages).map((item, i) =>
-                      item === 'ellipsis' ? (
-                        <span key={`e${i}`} className="px-1.5 text-gray-400 dark:text-slate-500 select-none">…</span>
-                      ) : (
-                        <button
-                          key={item}
-                          onClick={() => setPage(item - 1)}
-                          aria-current={item - 1 === page ? 'page' : undefined}
-                          className={clsx(
-                            'inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-lg text-sm font-medium transition-colors',
-                            item - 1 === page
-                              ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                          )}
-                        >
-                          {item}
-                        </button>
-                      )
-                    )}
-                    <button
-                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                      disabled={page >= totalPages - 1}
-                      aria-label="Next page"
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                      {PAGE_SIZE_OPTIONS.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                    <span>entries</span>
+                    <span className="ml-1 hidden sm:inline">
+                      ({page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} of {total})
+                    </span>
                   </div>
-                )}
-              </div>
-            );
-          })()}
+
+                  {/* Numbered page selection */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        disabled={page === 0}
+                        aria-label="Previous page"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      {getPageList(page, totalPages).map((item, i) =>
+                        item === 'ellipsis' ? (
+                          <span
+                            key={`e${i}`}
+                            className="px-1.5 text-gray-400 dark:text-slate-500 select-none"
+                          >
+                            …
+                          </span>
+                        ) : (
+                          <button
+                            key={item}
+                            onClick={() => setPage(item - 1)}
+                            aria-current={item - 1 === page ? 'page' : undefined}
+                            className={clsx(
+                              'inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-lg text-sm font-medium transition-colors',
+                              item - 1 === page
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700',
+                            )}
+                          >
+                            {item}
+                          </button>
+                        ),
+                      )}
+                      <button
+                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                        disabled={page >= totalPages - 1}
+                        aria-label="Next page"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
         </>
       )}
     </div>

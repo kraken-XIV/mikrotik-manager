@@ -9,7 +9,8 @@
  */
 
 const IPV4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-const HOSTNAME = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i;
+const HOSTNAME =
+  /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i;
 // A bare IPv6 literal always has at least two colons; used to tell
 // "2001:db8::1" apart from "host:port" and from a hostname.
 const IPV6_SHAPE = /^[0-9a-f:]+$/i;

@@ -8,11 +8,12 @@ jest.mock('../../services/ProxyUsageService', () => ({
   useProxySourcesTable: jest.fn(),
 }));
 
-import request from 'supertest';
 import express from 'express';
-import proxyRoutes from '../proxy';
+import request from 'supertest';
+
 import { query } from '../../config/database';
-import { useProxyUsageRollup, useProxySourcesTable } from '../../services/ProxyUsageService';
+import { useProxySourcesTable, useProxyUsageRollup } from '../../services/ProxyUsageService';
+import proxyRoutes from '../proxy';
 
 const mockedQuery = jest.mocked(query);
 const mockedUse = jest.mocked(useProxyUsageRollup);
@@ -31,7 +32,14 @@ describe('GET /api/proxy/top', () => {
     mockedQuery.mockReset();
     mockedUse.mockReset();
     mockedQuery.mockResolvedValue([
-      { key: '10.1.0.1', requests: '12', bytes_out: '5', bytes_in: '7', distinct_peers: 3, last_seen: '2026-10-03T00:00:00Z' },
+      {
+        key: '10.1.0.1',
+        requests: '12',
+        bytes_out: '5',
+        bytes_in: '7',
+        distinct_peers: 3,
+        last_seen: '2026-10-03T00:00:00Z',
+      },
     ] as never);
   });
 
@@ -42,7 +50,16 @@ describe('GET /api/proxy/top', () => {
     expect(lastSql()).toContain('FROM proxy_usage_hourly');
     expect(lastParams()).toEqual([2, '24 hours', 5]);
     // bigint sums come back as strings from pg and are returned as numbers.
-    expect(res.body).toEqual([{ key: '10.1.0.1', requests: 12, bytes_in: 7, bytes_out: 5, distinct_peers: 3, last_seen: '2026-10-03T00:00:00Z' }]);
+    expect(res.body).toEqual([
+      {
+        key: '10.1.0.1',
+        requests: 12,
+        bytes_in: 7,
+        bytes_out: 5,
+        distinct_peers: 3,
+        last_seen: '2026-10-03T00:00:00Z',
+      },
+    ]);
   });
 
   it('keeps 1h on the raw rows so it is exact to the minute', async () => {
@@ -60,7 +77,9 @@ describe('GET /api/proxy/top', () => {
 
   it('applies the instance and device filters to the rollup', async () => {
     mockedUse.mockResolvedValue(true);
-    await request(makeApp()).get('/api/proxy/top?by=destination&range=30d&source=3proxy&port=3128&deviceId=4&limit=10');
+    await request(makeApp()).get(
+      '/api/proxy/top?by=destination&range=30d&source=3proxy&port=3128&deviceId=4&limit=10',
+    );
     expect(lastSql()).toContain('source = $3');
     expect(lastSql()).toContain('proxy_port = $4');
     expect(lastSql()).toContain('device_id = $5');
@@ -74,7 +93,11 @@ describe('GET /api/proxy/top', () => {
 });
 
 describe('GET /api/proxy/sources', () => {
-  beforeEach(() => { mockedQuery.mockReset(); mockedSourcesTable.mockReset(); mockedQuery.mockResolvedValue([] as never); });
+  beforeEach(() => {
+    mockedQuery.mockReset();
+    mockedSourcesTable.mockReset();
+    mockedQuery.mockResolvedValue([] as never);
+  });
 
   it('reads the small proxy_sources table once it has been filled', async () => {
     mockedSourcesTable.mockResolvedValue(true);

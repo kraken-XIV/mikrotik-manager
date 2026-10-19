@@ -1,5 +1,6 @@
-import { useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
+import { type ClipboardEvent, type KeyboardEvent, useState } from 'react';
+
 import { splitList } from '../../utils/ipPrefix';
 
 /**
@@ -9,7 +10,12 @@ import { splitList } from '../../utils/ipPrefix';
  * the box with the reason shown, so nothing is silently dropped.
  */
 export default function ListInput({
-  value, onChange, validate, placeholder, disabled, ariaLabel,
+  value,
+  onChange,
+  validate,
+  placeholder,
+  disabled,
+  ariaLabel,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
@@ -40,8 +46,10 @@ export default function ListInput({
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
-      if (draft.trim()) { e.preventDefault(); add(draft); }
-      else if (e.key !== 'Enter') e.preventDefault();
+      if (draft.trim()) {
+        e.preventDefault();
+        add(draft);
+      } else if (e.key !== 'Enter') e.preventDefault();
     } else if (e.key === 'Backspace' && !draft && value.length) {
       onChange(value.slice(0, -1));
     }
@@ -49,18 +57,32 @@ export default function ListInput({
 
   const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
     const text = e.clipboardData.getData('text');
-    if (/[\s,;]/.test(text.trim())) { e.preventDefault(); add(`${draft} ${text}`); }
+    if (/[\s,;]/.test(text.trim())) {
+      e.preventDefault();
+      add(`${draft} ${text}`);
+    }
   };
 
   return (
     <div>
-      <div className={`input w-full flex flex-wrap items-center gap-1 min-h-[2.25rem] py-1 ${disabled ? 'opacity-60' : ''}`}>
+      <div
+        className={`input w-full flex flex-wrap items-center gap-1 min-h-[2.25rem] py-1 ${disabled ? 'opacity-60' : ''}`}
+      >
         {value.map((entry) => (
-          <span key={entry} className="inline-flex items-center gap-1 rounded bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 font-mono text-xs text-gray-800 dark:text-slate-200">
+          <span
+            key={entry}
+            className="inline-flex items-center gap-1 rounded bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 font-mono text-xs text-gray-800 dark:text-slate-200"
+          >
             {entry}
             {!disabled && (
-              <button type="button" aria-label={`Remove ${entry}`} onClick={() => onChange(value.filter((v) => v !== entry))}
-                className="text-gray-400 hover:text-red-500"><X className="w-3 h-3" /></button>
+              <button
+                type="button"
+                aria-label={`Remove ${entry}`}
+                onClick={() => onChange(value.filter((v) => v !== entry))}
+                className="text-gray-400 hover:text-red-500"
+              >
+                <X className="w-3 h-3" />
+              </button>
             )}
           </span>
         ))}
@@ -70,14 +92,18 @@ export default function ListInput({
           className="flex-1 min-w-[8rem] bg-transparent outline-none font-mono text-xs py-0.5"
           value={draft}
           placeholder={value.length ? '' : placeholder}
-          onChange={(e) => { setDraft(e.target.value); setError(''); }}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setError('');
+          }}
           onKeyDown={onKeyDown}
           onPaste={onPaste}
-          onBlur={() => { if (draft.trim()) add(draft); }}
+          onBlur={() => {
+            if (draft.trim()) add(draft);
+          }}
         />
       </div>
       {error && <p className="mt-0.5 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
-

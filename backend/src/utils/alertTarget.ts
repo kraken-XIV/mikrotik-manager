@@ -12,14 +12,21 @@ import { isIP, isIPv4, isIPv6 } from 'net';
  * multicast addresses, and the other containers of this stack by name.
  */
 
-const STACK_SERVICE_NAMES = new Set(['localhost', 'postgres', 'redis', 'influxdb', 'backend', 'nginx']);
+const STACK_SERVICE_NAMES = new Set([
+  'localhost',
+  'postgres',
+  'redis',
+  'influxdb',
+  'backend',
+  'nginx',
+]);
 
 export function isInternalOnlyAddress(ip: string): boolean {
   if (isIPv4(ip)) {
     const [a, b] = ip.split('.').map(Number);
-    if (a === 0 || a === 127) return true;          // this-net, loopback
-    if (a === 169 && b === 254) return true;        // link-local, cloud metadata
-    if (a >= 224) return true;                      // multicast, reserved, broadcast
+    if (a === 0 || a === 127) return true; // this-net, loopback
+    if (a === 169 && b === 254) return true; // link-local, cloud metadata
+    if (a >= 224) return true; // multicast, reserved, broadcast
     return false;
   }
   if (isIPv6(ip)) {
@@ -28,8 +35,8 @@ export function isInternalOnlyAddress(ip: string): boolean {
     const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
     if (mapped) return isInternalOnlyAddress(mapped[1]);
     const head = lower.split(':')[0];
-    if (/^fe[89ab]/.test(head)) return true;        // fe80::/10 link-local
-    if (head.startsWith('ff')) return true;         // multicast
+    if (/^fe[89ab]/.test(head)) return true; // fe80::/10 link-local
+    if (head.startsWith('ff')) return true; // multicast
     return false;
   }
   return true;
@@ -46,7 +53,8 @@ export async function resolveAlertTarget(hostname: string): Promise<string> {
     throw new Error('That address is inside the manager itself and cannot receive alerts');
   }
   if (isIP(host)) {
-    if (isInternalOnlyAddress(host)) throw new Error('That address is inside the manager itself and cannot receive alerts');
+    if (isInternalOnlyAddress(host))
+      throw new Error('That address is inside the manager itself and cannot receive alerts');
     return host;
   }
   const results = await dns.promises.lookup(host, { all: true }).catch(() => {

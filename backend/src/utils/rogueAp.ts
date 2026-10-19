@@ -7,11 +7,18 @@
 //  - neighbor: any other foreign AP — inventory, ranked by signal
 
 export interface ScannedEntry {
-  bssid: string; vendor?: string; signal: number; freq?: number;
-  band?: string; channel_width?: string;
+  bssid: string;
+  vendor?: string;
+  signal: number;
+  freq?: number;
+  band?: string;
+  channel_width?: string;
 }
 export interface ScannedNetwork {
-  ssid: string; security?: string; hidden?: boolean; entries: ScannedEntry[];
+  ssid: string;
+  security?: string;
+  hidden?: boolean;
+  entries: ScannedEntry[];
 }
 export interface ScanRecord {
   deviceName: string;
@@ -22,8 +29,13 @@ export interface ScanRecord {
 }
 
 export interface RogueAp {
-  ssid: string; bssid: string; vendor: string; signal: number; band: string;
-  seenBy: string; scannedAt: string;
+  ssid: string;
+  bssid: string;
+  vendor: string;
+  signal: number;
+  band: string;
+  seenBy: string;
+  scannedAt: string;
   /**
    * 'ssid': a foreign BSSID broadcasting one of the site's SSIDs.
    * 'bssid': one of our own BSSIDs heard on a channel that radio isn't on, so
@@ -32,8 +44,14 @@ export interface RogueAp {
   reason?: 'ssid' | 'bssid';
 }
 export interface NeighborAp {
-  ssid: string; bssid: string; vendor: string; signal: number; band: string;
-  security: string; seenBy: string; scannedAt: string;
+  ssid: string;
+  bssid: string;
+  vendor: string;
+  signal: number;
+  band: string;
+  security: string;
+  seenBy: string;
+  scannedAt: string;
 }
 
 export function classifyScans(
@@ -42,7 +60,7 @@ export function classifyScans(
   // site (J7), so a neighbour at one customer isn't a rogue because another
   // customer happens to use the same name.
   ownSsids: Set<string> | Map<number | null, Set<string>>,
-  ownBssids: Set<string>,  // every MAC we own (radio + interface MACs, lowercase)
+  ownBssids: Set<string>, // every MAC we own (radio + interface MACs, lowercase)
   // Where each of our radios operates (MHz), by BSSID. Our own BSSID heard
   // elsewhere is a spoofed copy, not our radio (J7).
   ownRadioFreqs: Map<string, number> = new Map(),
@@ -51,7 +69,8 @@ export function classifyScans(
   const neighborByBssid = new Map<string, NeighborAp>();
 
   for (const scan of scans) {
-    const siteSsids = ownSsids instanceof Map ? (ownSsids.get(scan.siteId ?? null) ?? new Set<string>()) : ownSsids;
+    const siteSsids =
+      ownSsids instanceof Map ? (ownSsids.get(scan.siteId ?? null) ?? new Set<string>()) : ownSsids;
     for (const net of scan.networks) {
       for (const e of net.entries) {
         const bssid = (e.bssid || '').toLowerCase();
@@ -63,8 +82,14 @@ export function classifyScans(
             const prev = rogueByBssid.get(bssid);
             if (!prev || e.signal > prev.signal) {
               rogueByBssid.set(bssid, {
-                ssid: net.ssid || '(hidden)', bssid, vendor: e.vendor || '', signal: e.signal,
-                band: e.band || '', seenBy: scan.deviceName, scannedAt: scan.scannedAt, reason: 'bssid',
+                ssid: net.ssid || '(hidden)',
+                bssid,
+                vendor: e.vendor || '',
+                signal: e.signal,
+                band: e.band || '',
+                seenBy: scan.deviceName,
+                scannedAt: scan.scannedAt,
+                reason: 'bssid',
               });
             }
           }
@@ -75,17 +100,28 @@ export function classifyScans(
           const prev = rogueByBssid.get(bssid);
           if (!prev || e.signal > prev.signal) {
             rogueByBssid.set(bssid, {
-              ssid: net.ssid, bssid, vendor: e.vendor || '', signal: e.signal,
-              band: e.band || '', seenBy: scan.deviceName, scannedAt: scan.scannedAt, reason: 'ssid',
+              ssid: net.ssid,
+              bssid,
+              vendor: e.vendor || '',
+              signal: e.signal,
+              band: e.band || '',
+              seenBy: scan.deviceName,
+              scannedAt: scan.scannedAt,
+              reason: 'ssid',
             });
           }
         } else {
           const prev = neighborByBssid.get(bssid);
           if (!prev || e.signal > prev.signal) {
             neighborByBssid.set(bssid, {
-              ssid: net.ssid || '(hidden)', bssid, vendor: e.vendor || '', signal: e.signal,
-              band: e.band || '', security: net.security || '',
-              seenBy: scan.deviceName, scannedAt: scan.scannedAt,
+              ssid: net.ssid || '(hidden)',
+              bssid,
+              vendor: e.vendor || '',
+              signal: e.signal,
+              band: e.band || '',
+              security: net.security || '',
+              seenBy: scan.deviceName,
+              scannedAt: scan.scannedAt,
             });
           }
         }

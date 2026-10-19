@@ -1,4 +1,5 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { requireAuth } from '../middleware/auth';
 
 /**
@@ -13,8 +14,9 @@ router.use(requireAuth);
 
 router.all('*', (_req: Request, res: Response) => {
   res.status(410).json({
-    error: 'Config Templates have been merged into command templates. Use /api/command-templates, '
-      + 'and run a template through /api/commands/runs. Existing Config Templates were converted automatically.',
+    error:
+      'Config Templates have been merged into command templates. Use /api/command-templates, ' +
+      'and run a template through /api/commands/runs. Existing Config Templates were converted automatically.',
   });
 });
 

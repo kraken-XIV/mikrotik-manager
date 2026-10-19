@@ -1,12 +1,24 @@
-import { query, pool } from '../config/database';
-import { internetAllowed } from '../utils/darkSite';
-import { siteScopeDevices, type SiteScope } from '../utils/siteScope';
+import { pool, query } from '../config/database';
 import {
-  parseNvdResponse, parseKevResponse, affects, fixedIn, severityRank, correctedAway, matchUncertainty,
-  type ParsedCve, type VersionRange,
+  affects,
+  correctedAway,
+  fixedIn,
+  matchUncertainty,
+  type ParsedCve,
+  parseKevResponse,
+  parseNvdResponse,
+  severityRank,
+  type VersionRange,
 } from '../utils/cveMatch';
+import { internetAllowed } from '../utils/darkSite';
 import { releaseNoteFixes } from '../utils/releaseNoteCves';
-import { refreshReleaseNotes, refreshCveDetails, storedReleaseNotes, storedCveDetails } from './releaseNotes';
+import { type SiteScope, siteScopeDevices } from '../utils/siteScope';
+import {
+  refreshCveDetails,
+  refreshReleaseNotes,
+  storedCveDetails,
+  storedReleaseNotes,
+} from './releaseNotes';
 
 /**
  * Known RouterOS vulnerabilities for the versions in the fleet (#175).
@@ -17,17 +29,22 @@ import { refreshReleaseNotes, refreshCveDetails, storedReleaseNotes, storedCveDe
  * manager, and can be turned off in Dark Site Mode.
  */
 
-const NVD_URL = 'https://services.nvd.nist.gov/rest/json/cves/2.0?virtualMatchString=cpe:2.3:o:mikrotik:routeros&resultsPerPage=2000';
-const KEV_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
+const NVD_URL =
+  'https://services.nvd.nist.gov/rest/json/cves/2.0?virtualMatchString=cpe:2.3:o:mikrotik:routeros&resultsPerPage=2000';
+const KEV_URL =
+  'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
 const FETCHED_KEY = 'cve_feed_fetched_at';
 const ERROR_KEY = 'cve_feed_last_error';
 
 async function getJson(url: string): Promise<unknown> {
-  const headers: Record<string, string> = { 'User-Agent': 'mikrotik-manager (+https://github.com/2GT-Media-Group-LLC/mikrotik-manager)' };
+  const headers: Record<string, string> = {
+    'User-Agent': 'mikrotik-manager (+https://github.com/2GT-Media-Group-LLC/mikrotik-manager)',
+  };
   // An NVD API key raises the rate limit; optional, one request a day doesn't need it.
   // Compared on the parsed host, not a string prefix, so the key can only ever
   // go to NVD itself.
-  if (new URL(url).hostname === 'services.nvd.nist.gov' && process.env.NVD_API_KEY) headers['apiKey'] = process.env.NVD_API_KEY;
+  if (new URL(url).hostname === 'services.nvd.nist.gov' && process.env.NVD_API_KEY)
+    headers['apiKey'] = process.env.NVD_API_KEY;
   const res = await fetch(url, { headers, signal: AbortSignal.timeout(90_000) });
   if (!res.ok) throw new Error(`${new URL(url).hostname} answered HTTP ${res.status}`);
   return res.json();
@@ -37,27 +54,32 @@ async function setSetting(key: string, value: unknown): Promise<void> {
   await query(
     `INSERT INTO app_settings (key, value, updated_at) VALUES ($1, $2, NOW())
      ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
-    [key, JSON.stringify(value)]
+    [key, JSON.stringify(value)],
   );
 }
 
 async function feedEnabled(): Promise<boolean> {
   const rows = await query<{ key: string; value: unknown }>(
-    `SELECT key, value FROM app_settings WHERE key = 'cve_feed_enabled'`
+    `SELECT key, value FROM app_settings WHERE key = 'cve_feed_enabled'`,
   ).catch(() => []);
   return internetAllowed(Object.fromEntries(rows.map((r) => [r.key, r.value])), 'cve_feed_enabled');
 }
 
 /** Fetch both lists and replace the stored copy. Throws on failure, and records it. */
 export async function refreshCveFeed(): Promise<{ count: number; exploited: number }> {
-  if (!(await feedEnabled())) throw new Error('The vulnerability list is turned off in Dark Site Mode');
+  if (!(await feedEnabled()))
+    throw new Error('The vulnerability list is turned off in Dark Site Mode');
   // MikroTik's release notes first (discussion #85): they name a fixed CVE long
   // before NVD lists its versions, and an NVD outage shouldn't hold them up.
-  await refreshReleaseNotes().catch((e) => console.warn(`[cveFeed] release notes: ${(e as Error).message}`));
+  await refreshReleaseNotes().catch((e) =>
+    console.warn(`[cveFeed] release notes: ${(e as Error).message}`),
+  );
   try {
     const cves = parseNvdResponse(await getJson(NVD_URL));
     // A failed KEV fetch shouldn't cost the whole list; the flags just stay off.
-    const kev = await getJson(KEV_URL).then(parseKevResponse).catch(() => new Set<string>());
+    const kev = await getJson(KEV_URL)
+      .then(parseKevResponse)
+      .catch(() => new Set<string>());
     if (!cves.length) throw new Error('NVD returned no RouterOS entries');
 
     const client = await pool.connect();
@@ -69,8 +91,19 @@ export async function refreshCveFeed(): Promise<{ count: number; exploited: numb
           `INSERT INTO ros_cves (cve_id, published, last_modified, summary, score, severity, cvss_version,
                                  ranges, unranged, hardware_specific, known_exploited)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-          [c.id, c.published || null, c.lastModified || null, c.summary, c.score, c.severity, c.cvssVersion,
-           JSON.stringify(c.ranges), c.unranged, c.hardwareSpecific, kev.has(c.id)]
+          [
+            c.id,
+            c.published || null,
+            c.lastModified || null,
+            c.summary,
+            c.score,
+            c.severity,
+            c.cvssVersion,
+            JSON.stringify(c.ranges),
+            c.unranged,
+            c.hardwareSpecific,
+            kev.has(c.id),
+          ],
         );
       }
       await client.query('COMMIT');
@@ -83,7 +116,9 @@ export async function refreshCveFeed(): Promise<{ count: number; exploited: numb
     await setSetting(FETCHED_KEY, new Date().toISOString());
     await setSetting(ERROR_KEY, null);
     // NVD's entry for CVEs only the release notes name, now ros_cves is current.
-    await refreshCveDetails().catch((e) => console.warn(`[cveFeed] CVE details: ${(e as Error).message}`));
+    await refreshCveDetails().catch((e) =>
+      console.warn(`[cveFeed] CVE details: ${(e as Error).message}`),
+    );
     return { count: cves.length, exploited: cves.filter((c) => kev.has(c.id)).length };
   } catch (err) {
     await setSetting(ERROR_KEY, (err as Error).message).catch(() => {});
@@ -92,8 +127,16 @@ export async function refreshCveFeed(): Promise<{ count: number; exploited: numb
 }
 
 interface StoredCve {
-  cve_id: string; published: string | null; summary: string; score: string | null; severity: string | null;
-  cvss_version: string | null; ranges: VersionRange[]; unranged: boolean; hardware_specific: boolean; known_exploited: boolean;
+  cve_id: string;
+  published: string | null;
+  summary: string;
+  score: string | null;
+  severity: string | null;
+  cvss_version: string | null;
+  ranges: VersionRange[];
+  unranged: boolean;
+  hardware_specific: boolean;
+  known_exploited: boolean;
 }
 
 export interface FleetCveReport {
@@ -106,8 +149,14 @@ export interface FleetCveReport {
     version: string;
     devices: { id: number; name: string }[];
     cves: {
-      id: string; severity: string | null; score: number | null; known_exploited: boolean;
-      published: string | null; summary: string; fixed_in: string | null; hardware_specific: boolean;
+      id: string;
+      severity: string | null;
+      score: number | null;
+      known_exploited: boolean;
+      published: string | null;
+      summary: string;
+      fixed_in: string | null;
+      hardware_specific: boolean;
       /** Why this match may not really apply (see matchUncertainty); null when it's listed for this line. */
       uncertain: string | null;
       /** Where the match came from: NVD's affected versions, or MikroTik's release notes. */
@@ -126,11 +175,12 @@ export async function fleetCveReport(siteId: SiteScope | undefined): Promise<Fle
   const [devices, stored, settings, enabled, notes, details] = await Promise.all([
     query<{ id: number; name: string; ros_version: string | null }>(
       `SELECT id, name, ros_version FROM devices WHERE ros_version IS NOT NULL AND ros_version <> ''
-         ${siteFilter ? `AND ${siteFilter}` : ''} ORDER BY name`
+         ${siteFilter ? `AND ${siteFilter}` : ''} ORDER BY name`,
     ),
     query<StoredCve>(`SELECT * FROM ros_cves`),
     query<{ key: string; value: unknown }>(
-      `SELECT key, value FROM app_settings WHERE key IN ($1, $2)`, [FETCHED_KEY, ERROR_KEY]
+      `SELECT key, value FROM app_settings WHERE key IN ($1, $2)`,
+      [FETCHED_KEY, ERROR_KEY],
     ),
     feedEnabled(),
     storedReleaseNotes().catch(() => []),
@@ -146,9 +196,16 @@ export async function fleetCveReport(siteId: SiteScope | undefined): Promise<Fle
   }
 
   const cves: (ParsedCve & { known_exploited: boolean })[] = stored.map((r) => ({
-    id: r.cve_id, published: r.published ?? '', lastModified: '', summary: r.summary,
-    score: r.score === null ? null : Number(r.score), severity: r.severity, cvssVersion: r.cvss_version,
-    ranges: r.ranges ?? [], unranged: r.unranged, hardwareSpecific: r.hardware_specific,
+    id: r.cve_id,
+    published: r.published ?? '',
+    lastModified: '',
+    summary: r.summary,
+    score: r.score === null ? null : Number(r.score),
+    severity: r.severity,
+    cvssVersion: r.cvss_version,
+    ranges: r.ranges ?? [],
+    unranged: r.unranged,
+    hardwareSpecific: r.hardware_specific,
     known_exploited: r.known_exploited,
   }));
 
@@ -162,8 +219,13 @@ export async function fleetCveReport(siteId: SiteScope | undefined): Promise<Fle
       .map((c) => {
         const note = fixes.get(c.id);
         return {
-          id: c.id, severity: c.severity, score: c.score, known_exploited: c.known_exploited,
-          published: c.published || null, summary: c.summary, fixed_in: fixedIn(c, version) ?? note?.fixedIn ?? null,
+          id: c.id,
+          severity: c.severity,
+          score: c.score,
+          known_exploited: c.known_exploited,
+          published: c.published || null,
+          summary: c.summary,
+          fixed_in: fixedIn(c, version) ?? note?.fixedIn ?? null,
           hardware_specific: c.hardwareSpecific,
           // An exploited CVE is never played down, however vague its range,
           // and MikroTik naming its fix for this line settles it.
@@ -196,12 +258,13 @@ export async function fleetCveReport(siteId: SiteScope | undefined): Promise<Fle
     return {
       version,
       devices: devs,
-      cves: [...fromNvd, ...fromNotes]
-        .sort((a, b) =>
-          Number(!!a.uncertain) - Number(!!b.uncertain)
-          || Number(b.known_exploited) - Number(a.known_exploited)
-          || severityRank(b.severity) - severityRank(a.severity)
-          || (b.score ?? 0) - (a.score ?? 0)),
+      cves: [...fromNvd, ...fromNotes].sort(
+        (a, b) =>
+          Number(!!a.uncertain) - Number(!!b.uncertain) ||
+          Number(b.known_exploited) - Number(a.known_exploited) ||
+          severityRank(b.severity) - severityRank(a.severity) ||
+          (b.score ?? 0) - (a.score ?? 0),
+      ),
       corrected: matched
         .filter((c) => !fixes.has(c.id))
         .map((c) => ({ id: c.id, reason: correctedAway(c.id, version) }))
@@ -212,7 +275,11 @@ export async function fleetCveReport(siteId: SiteScope | undefined): Promise<Fle
   // Uncertain matches don't count toward it.
   const worst = (v: (typeof versions)[number]) => {
     const sure = v.cves.filter((c) => !c.uncertain);
-    return (sure.some((c) => c.known_exploited) ? 100 : 0) + Math.max(0, ...sure.map((c) => severityRank(c.severity))) * 10 + Math.min(sure.length, 9);
+    return (
+      (sure.some((c) => c.known_exploited) ? 100 : 0) +
+      Math.max(0, ...sure.map((c) => severityRank(c.severity))) * 10 +
+      Math.min(sure.length, 9)
+    );
   };
   versions.sort((a, b) => worst(b) - worst(a) || a.version.localeCompare(b.version));
 

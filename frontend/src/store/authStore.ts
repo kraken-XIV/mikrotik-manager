@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
 import type { User, UserRole } from '../types';
 import { reconcileSiteSelection } from './siteStore';
 
@@ -13,7 +14,11 @@ interface AuthState {
   logout: () => void;
 }
 
-const RANK = new Map<string, number>([['viewer', 0], ['operator', 1], ['admin', 2]]);
+const RANK = new Map<string, number>([
+  ['viewer', 0],
+  ['operator', 1],
+  ['admin', 2],
+]);
 
 /**
  * A site-scoped account's role for the interface: its highest site role, but
@@ -21,7 +26,10 @@ const RANK = new Map<string, number>([['viewer', 0], ['operator', 1], ['admin', 
  * the server refuses to site admins anyway (P1-7).
  */
 function scopedRole(siteRoles: Record<string, string>): UserRole {
-  const top = Object.values(siteRoles).reduce((a, b) => ((RANK.get(b) ?? -1) > (RANK.get(a) ?? -1) ? b : a), 'viewer');
+  const top = Object.values(siteRoles).reduce(
+    (a, b) => ((RANK.get(b) ?? -1) > (RANK.get(a) ?? -1) ? b : a),
+    'viewer',
+  );
   return (top === 'admin' ? 'operator' : top) as UserRole;
 }
 
@@ -46,13 +54,20 @@ export const useAuthStore = create<AuthState>()(
         reconcileSiteSelection(user.siteRoles);
         set({ token, user: normalize(user), isAuthenticated: true });
       },
-      applyAccess: (me) => set((state) => {
-        if (!state.user) return {};
-        // null: fleet-wide. An object, even empty, limits the account (#306).
-        const siteRoles = me.siteRoles ? me.siteRoles as Record<string, UserRole> : undefined;
-        reconcileSiteSelection(siteRoles);
-        return { user: normalize({ ...state.user, role: (me.role ?? state.user.role) as UserRole, siteRoles }) };
-      }),
+      applyAccess: (me) =>
+        set((state) => {
+          if (!state.user) return {};
+          // null: fleet-wide. An object, even empty, limits the account (#306).
+          const siteRoles = me.siteRoles ? (me.siteRoles as Record<string, UserRole>) : undefined;
+          reconcileSiteSelection(siteRoles);
+          return {
+            user: normalize({
+              ...state.user,
+              role: (me.role ?? state.user.role) as UserRole,
+              siteRoles,
+            }),
+          };
+        }),
       logout: () => set({ token: null, user: null, isAuthenticated: false }),
     }),
     {
@@ -62,6 +77,6 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

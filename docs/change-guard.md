@@ -21,7 +21,7 @@ Before applying a protected change:
 5. Confirmed → the scheduler is disarmed and the restore point deleted.
    Unreachable → nothing is done, and the device restores itself.
 
-The restore point is saved *before* the scheduler is armed, so a rollback returns a
+The restore point is saved _before_ the scheduler is armed, so a rollback returns a
 configuration containing neither the scheduler nor the change. It is self-cleaning, and
 a revert loop is impossible.
 
@@ -34,26 +34,26 @@ Every write that can take a device off the network runs under Change Guard. Some
 also simulated first, so a change predicted to cut management is stopped before it is
 applied; the rest are protected by auto-revert alone.
 
-| Area | Operations | Predicted? |
-|---|---|---|
-| Firewall filter | add, edit, enable/disable, move, delete | Yes, in rule order (see [Firewall rules](#firewall-rules)) |
-| Firewall address lists | add, edit, enable/disable, remove | Yes |
-| Bridge | VLAN filtering toggle | Yes |
-| Bridge | move ports between bridges, create a bridge with the move, delete an empty bridge | Yes |
-| Ports | PVID and tagged/untagged membership | Yes |
-| Ports | enable/disable | Yes |
-| Ports | MTU, FEC, flow control, speed, PoE | Flagged when the port carries management |
-| Bridge VLANs | add, update, delete, copy from another switch | Yes |
-| Addressing | IP address add, remove | Yes |
-| Routing | static route add, remove | Yes |
-| Routing | OSPF, BGP, routing tables, route filters | No |
-| Bonding | create, edit, delete | Flagged when a member or the bond carries management |
-| Services | management service enable/disable | Yes |
-| NAT | add, edit, move, delete | No |
-| WireGuard | interface enable/disable, delete | Yes; the tunnel the manager arrives through is read-only, below |
-| WireGuard | interface edit, peers | Flagged when the tunnel carries management; the manager's own tunnel is read-only, below |
-| Wireless | interface edit, enable/disable, delete; security profile edit, delete | Enable/disable and delete predicted; edits flagged when the interface carries management |
-| Guest Wi-Fi | hotspot setup, server enable/disable, remove | Setup flagged when the chosen interface carries management |
+| Area                   | Operations                                                                        | Predicted?                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Firewall filter        | add, edit, enable/disable, move, delete                                           | Yes, in rule order (see [Firewall rules](#firewall-rules))                               |
+| Firewall address lists | add, edit, enable/disable, remove                                                 | Yes                                                                                      |
+| Bridge                 | VLAN filtering toggle                                                             | Yes                                                                                      |
+| Bridge                 | move ports between bridges, create a bridge with the move, delete an empty bridge | Yes                                                                                      |
+| Ports                  | PVID and tagged/untagged membership                                               | Yes                                                                                      |
+| Ports                  | enable/disable                                                                    | Yes                                                                                      |
+| Ports                  | MTU, FEC, flow control, speed, PoE                                                | Flagged when the port carries management                                                 |
+| Bridge VLANs           | add, update, delete, copy from another switch                                     | Yes                                                                                      |
+| Addressing             | IP address add, remove                                                            | Yes                                                                                      |
+| Routing                | static route add, remove                                                          | Yes                                                                                      |
+| Routing                | OSPF, BGP, routing tables, route filters                                          | No                                                                                       |
+| Bonding                | create, edit, delete                                                              | Flagged when a member or the bond carries management                                     |
+| Services               | management service enable/disable                                                 | Yes                                                                                      |
+| NAT                    | add, edit, move, delete                                                           | No                                                                                       |
+| WireGuard              | interface enable/disable, delete                                                  | Yes; the tunnel the manager arrives through is read-only, below                          |
+| WireGuard              | interface edit, peers                                                             | Flagged when the tunnel carries management; the manager's own tunnel is read-only, below |
+| Wireless               | interface edit, enable/disable, delete; security profile edit, delete             | Enable/disable and delete predicted; edits flagged when the interface carries management |
+| Guest Wi-Fi            | hotspot setup, server enable/disable, remove                                      | Setup flagged when the chosen interface carries management                               |
 
 "Flagged" means the change can't be simulated, but because it touches something the
 manager's connection runs through, auto-revert becomes mandatory for it (see
@@ -69,7 +69,7 @@ connection actually reached is the one looked for).
 
 - The WireGuard page marks it **Protected**, says why, and shows the interface and every
   peer on it read-only: no switching off, editing or deleting, and no adding peers. The peer
-  carrying the manager's address is marked *Manager*.
+  carrying the manager's address is marked _Manager_.
 - The API refuses any change to that interface or its peers, including moving another
   peer onto it, with the reason.
 
@@ -77,7 +77,7 @@ Change it on the device itself (WinBox or the terminal), or move management off 
 first. Other WireGuard interfaces work as before, under Change Guard.
 
 Where the device doesn't track connections, the manager can't see its own address there,
-so the peer carrying it can't be singled out (*Maybe manager* on every peer). The tunnel is
+so the peer carrying it can't be singled out (_Maybe manager_ on every peer). The tunnel is
 protected either way.
 
 Creating a bond also moves the member ports' VLAN membership onto the bond, and deleting
@@ -108,8 +108,8 @@ T+3m     device is back, change undone, scheduler and restore point gone
 ```
 
 The request returns **HTTP 200** with `guard.auto_reverting: true` and the message
-*"Contact with the device was lost while applying this change. It is restoring itself and
-should come back shortly."* — deliberately not an error.
+_"Contact with the device was lost while applying this change. It is restoring itself and
+should come back shortly."_ — deliberately not an error.
 
 This matters. The most dangerous changes sever the very connection carrying them, so the
 API call times out even though the change succeeded on the device. **Reachability, not the
@@ -131,11 +131,11 @@ it, so a lost reply can't be mistaken for a revert that has already started.
 
 Every protected change is recorded per device:
 
-| Status | Meaning |
-|---|---|
-| `committed` | Change applied, device confirmed reachable, guard disarmed and proven gone |
-| `reverted` | Contact lost; the device was left to restore itself |
-| `failed` | Change rejected by the device; nothing applied, guard disarmed |
+| Status      | Meaning                                                                                                                                                                                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `committed` | Change applied, device confirmed reachable, guard disarmed and proven gone                                                                                                                                                                                                |
+| `reverted`  | Contact lost; the device was left to restore itself                                                                                                                                                                                                                       |
+| `failed`    | Change rejected by the device; nothing applied, guard disarmed                                                                                                                                                                                                            |
 | `uncertain` | Change applied and the device is reachable, but the revert scheduler could not be confirmed removed, or was already gone, so the revert may already have run. The device may restore (or have restored) its previous configuration; the UI gives the time and says which. |
 
 Disarming is only counted once the manager has re-read the device's schedulers and seen
@@ -148,18 +148,18 @@ While a revert may still fire, the device stays locked against other protected c
 **Settings → General → Change Guard** has all three (admins only; before 0.48.0 they could only
 be set through the API).
 
-| Setting | Default | Description |
-|---|---|---|
-| `change_guard_enabled` | `true` | Master switch. When off, routine guarded changes apply with no safety net, and changes that need protection (see below) are refused. |
-| `change_guard_mode` | `binary` | See below. |
-| `change_guard_timeout_sec` | `120` | How long the device waits before rescuing itself. |
+| Setting                    | Default  | Description                                                                                                                          |
+| -------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `change_guard_enabled`     | `true`   | Master switch. When off, routine guarded changes apply with no safety net, and changes that need protection (see below) are refused. |
+| `change_guard_mode`        | `binary` | See below.                                                                                                                           |
+| `change_guard_timeout_sec` | `120`    | How long the device waits before rescuing itself.                                                                                    |
 
 **Choosing a mode:**
 
-| Mode | What the revert does | Reboots? | Login needs |
-|---|---|---|---|
-| `binary` (default) | Restores a `/system backup` taken just before the change: the whole configuration, exactly | **Yes** | the `policy` permission (the `full` group has it) |
-| `script` | Puts back only the menus the change could touch, exactly | No | the `write` group is enough |
+| Mode               | What the revert does                                                                       | Reboots? | Login needs                                       |
+| ------------------ | ------------------------------------------------------------------------------------------ | -------- | ------------------------------------------------- |
+| `binary` (default) | Restores a `/system backup` taken just before the change: the whole configuration, exactly | **Yes**  | the `policy` permission (the `full` group has it) |
+| `script`           | Puts back only the menus the change could touch, exactly                                   | No       | the `write` group is enough                       |
 
 `binary` puts everything back, whatever the change did, at the cost of a reboot when it fires.
 
@@ -262,7 +262,7 @@ tell".
 
 Deliberately awkward. The API requires `confirm_lockout: true` in the request body, and
 the UI requires typing the device name. The change then runs under Change Guard regardless,
-so an override is a decision to *rely on* auto-revert — not to bypass protection.
+so an override is a decision to _rely on_ auto-revert — not to bypass protection.
 
 ### When protection is required
 
@@ -317,12 +317,12 @@ nothing behind.
 It also establishes whether `/system history` can revert a change without a reboot.
 Measured on RouterOS 7.23 over the binary API:
 
-| Command | Result |
-|---|---|
-| `/system/history/print` | works |
-| `/system/history/undo` | no such command |
-| `/undo numbers=<id>` | unknown parameter |
-| `/undo` | works — reverts the newest action, no reboot |
+| Command                 | Result                                       |
+| ----------------------- | -------------------------------------------- |
+| `/system/history/print` | works                                        |
+| `/system/history/undo`  | no such command                              |
+| `/undo numbers=<id>`    | unknown parameter                            |
+| `/undo`                 | works — reverts the newest action, no reboot |
 
 Undo is therefore real but **untargeted**, and it cannot replace auto-revert: a dead-man
 switch has to fire once the manager has already lost contact, and issuing an undo requires
@@ -345,12 +345,13 @@ A window then shows:
 - **Change Guard's prediction**: a warning or a predicted lockout appears at the top, the same
   verdict Save would give you, without the change being refused.
 
-Passphrases, keys and passwords are shown as *(hidden)*, both as values and in the commands.
+Passphrases, keys and passwords are shown as _(hidden)_, both as values and in the commands.
 The window's apply button, labelled like the form's own (**Add VLAN**, **Save Rule**), applies
 through the normal Save, with Change Guard as usual.
 Close it to go back to the form.
 
 The review is available on:
+
 - **VLANs:** add and edit.
 - **Ports:** the port editor (link settings and VLAN role).
 - **IP addresses and routes.**
@@ -374,8 +375,8 @@ A scheduled, read-only audit for configurations RouterOS accepts without complai
 then quietly fails to honour. Each finding explains what it does to the network, how to
 fix it, how long it has been present, and links the relevant MikroTik documentation.
 
-Findings appear at the top of the device's **Config** tab and in the dashboard's *Things to
-handle*.
+Findings appear at the top of the device's **Config** tab and in the dashboard's _Things to
+handle_.
 
 ### One-click fixes
 
@@ -383,10 +384,10 @@ Findings with one clearly right fix have a **Fix it** button (#239). It shows th
 change first, then runs it under Change Guard, and the audit runs again afterwards so the
 finding clears:
 
-| Finding | Fix |
-|---|---|
-| Spanning tree off on a bridge | `/interface/bridge set <bridge> protocol-mode=rstp` |
-| Bridge running classic STP | `/interface/bridge set <bridge> protocol-mode=rstp` |
+| Finding                                               | Fix                                                                                                                                                                |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Spanning tree off on a bridge                         | `/interface/bridge set <bridge> protocol-mode=rstp`                                                                                                                |
+| Bridge running classic STP                            | `/interface/bridge set <bridge> protocol-mode=rstp`                                                                                                                |
 | VLAN interface whose VLAN the bridge is not tagged in | Adds the bridge to that VLAN's tagged ports, creating the entry if there is none. A VLAN that's part of a multi-VLAN entry is left for you to change on the device |
 
 The others have no button, and say why: most have more than one reasonable fix (move the
@@ -395,40 +396,40 @@ device-mode can only be changed at the device. Their advice is unchanged.
 
 ### What it checks
 
-| Finding | Consequence |
-|---|---|
-| IP address on a bridge slave port | The address is served by the bridge, or not at all |
-| VLAN interface on a bridge slave port | The interface receives nothing; management may be unreachable |
-| VLAN interface added as a bridge port | Forwarding loop; STP ports flap |
-| Bond slave that is also a bridge port | Undefined forwarding path; the bond silently loses members |
-| VLAN interface whose VLAN the bridge is not tagged in | The interface is up and carries nothing |
-| Management surviving only on a dynamic VLAN entry | Works today; disappears the moment a port admits only tagged frames |
-| Port in no VLAN on a filtering bridge | Links up, then every frame is dropped |
-| Multi-VLAN bridge entry with untagged ports | Ambiguous; RouterOS warns and applies it anyway |
-| PVID next to `frame-type=admit-only-vlan-tagged` | The PVID is stored but never applied |
-| Several bridges competing for hardware offload | One silently falls back to CPU forwarding |
+| Finding                                                                      | Consequence                                                                                                                                      |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| IP address on a bridge slave port                                            | The address is served by the bridge, or not at all                                                                                               |
+| VLAN interface on a bridge slave port                                        | The interface receives nothing; management may be unreachable                                                                                    |
+| VLAN interface added as a bridge port                                        | Forwarding loop; STP ports flap                                                                                                                  |
+| Bond slave that is also a bridge port                                        | Undefined forwarding path; the bond silently loses members                                                                                       |
+| VLAN interface whose VLAN the bridge is not tagged in                        | The interface is up and carries nothing                                                                                                          |
+| Management surviving only on a dynamic VLAN entry                            | Works today; disappears the moment a port admits only tagged frames                                                                              |
+| Port in no VLAN on a filtering bridge                                        | Links up, then every frame is dropped                                                                                                            |
+| Multi-VLAN bridge entry with untagged ports                                  | Ambiguous; RouterOS warns and applies it anyway                                                                                                  |
+| PVID next to `frame-type=admit-only-vlan-tagged`                             | The PVID is stored but never applied                                                                                                             |
+| Several bridges competing for hardware offload                               | One silently falls back to CPU forwarding                                                                                                        |
 | Routing between VLANs on the CPU of a switch chip that can do it in hardware | Inter-VLAN traffic runs at a fraction of the ports' speed; see [Routing between VLANs in hardware](devices.md#routing-between-vlans-in-hardware) |
-| MTU above L2MTU | Large frames dropped without error |
-| Duplicate address on two interfaces | Only one can answer; which is not stated by the config |
-| Ingress port would reject the frames management arrives in | `admit-only-vlan-tagged` on a port carrying untagged management drops it at ingress, while every VLAN row still lists the port |
-| Spanning tree off on a bridge with several active ports | Nothing stops a loop; the second cable someone plugs in becomes a broadcast storm |
-| Bridge running classic STP rather than RSTP | Convergence takes tens of seconds where RSTP takes under one |
-| Spanning tree off with switches on two or more ports (critical) | One stray cable between those switches is a loop nothing here will break |
-| Spanning-tree root chosen by lowest MAC (default priority on every bridge) | Add or replace a switch and the root can move to it; the tree reconverges around a box nobody chose |
-| An access point is the spanning-tree root over other switches | Its reboot or link flap reconverges the whole tree |
-| Device-mode blocks the scheduler | Change Guard can't arm its automatic undo, so changes that could cut off management are refused |
-| Device-mode blocks bandwidth-test, sniffer, hotspot or fetch | The bandwidth test, packet capture, Guest WiFi wizard or adopting through this device fail with "not allowed by device-mode" |
-| RouterOS has flagged the device | RouterOS found configuration it considers suspicious; device-mode can't change until it's cleared |
+| MTU above L2MTU                                                              | Large frames dropped without error                                                                                                               |
+| Duplicate address on two interfaces                                          | Only one can answer; which is not stated by the config                                                                                           |
+| Ingress port would reject the frames management arrives in                   | `admit-only-vlan-tagged` on a port carrying untagged management drops it at ingress, while every VLAN row still lists the port                   |
+| Spanning tree off on a bridge with several active ports                      | Nothing stops a loop; the second cable someone plugs in becomes a broadcast storm                                                                |
+| Bridge running classic STP rather than RSTP                                  | Convergence takes tens of seconds where RSTP takes under one                                                                                     |
+| Spanning tree off with switches on two or more ports (critical)              | One stray cable between those switches is a loop nothing here will break                                                                         |
+| Spanning-tree root chosen by lowest MAC (default priority on every bridge)   | Add or replace a switch and the root can move to it; the tree reconverges around a box nobody chose                                              |
+| An access point is the spanning-tree root over other switches                | Its reboot or link flap reconverges the whole tree                                                                                               |
+| Device-mode blocks the scheduler                                             | Change Guard can't arm its automatic undo, so changes that could cut off management are refused                                                  |
+| Device-mode blocks bandwidth-test, sniffer, hotspot or fetch                 | The bandwidth test, packet capture, Guest WiFi wizard or adopting through this device fail with "not allowed by device-mode"                     |
+| RouterOS has flagged the device                                              | RouterOS found configuration it considers suspicious; device-mode can't change until it's cleared                                                |
 
 Changing [device-mode](https://help.mikrotik.com/docs/spaces/ROS/pages/93749258/Device-mode)
 needs someone at the device: RouterOS asks for a button press or power-cycle to confirm.
 
 ### Settings
 
-| Setting | Default | Description |
-|---|---|---|
-| `config_health_enabled` | `true` | Runs the standing audit |
-| `config_health_interval_min` | `60` | Cadence per device — one read-only snapshot over the API |
+| Setting                      | Default | Description                                              |
+| ---------------------------- | ------- | -------------------------------------------------------- |
+| `config_health_enabled`      | `true`  | Runs the standing audit                                  |
+| `config_health_interval_min` | `60`    | Cadence per device — one read-only snapshot over the API |
 
 Both are under **Settings → General → Config Health**. Before 0.24.37 the scheduler never
 read them, so the audit always ran hourly whatever they said.

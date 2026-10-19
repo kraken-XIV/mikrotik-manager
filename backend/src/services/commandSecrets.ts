@@ -13,8 +13,9 @@
  * has to be someone who could see the secret anyway.
  */
 import { randomBytes } from 'crypto';
+
 import { query } from '../config/database';
-import { encrypt, decrypt } from '../utils/crypto';
+import { decrypt, encrypt } from '../utils/crypto';
 
 export const SECRET_NAME = /^[A-Za-z0-9_-]{1,64}$/;
 const SECRET_REF = /\{\{\s*secret:([A-Za-z0-9_-]{1,64})\s*\}\}/g;
@@ -29,7 +30,10 @@ export function secretNames(command: string): string[] {
 export async function missingSecrets(command: string): Promise<string[]> {
   const names = secretNames(command);
   if (!names.length) return [];
-  const rows = await query<{ name: string }>(`SELECT name FROM command_secrets WHERE name = ANY($1::text[])`, [names]);
+  const rows = await query<{ name: string }>(
+    `SELECT name FROM command_secrets WHERE name = ANY($1::text[])`,
+    [names],
+  );
   const have = new Set(rows.map((r) => r.name));
   return names.filter((n) => !have.has(n));
 }
@@ -43,10 +47,13 @@ export async function fillSecrets(command: string): Promise<{ text: string; valu
   const names = secretNames(command);
   if (!names.length) return { text: command, values: [] };
   const rows = await query<{ name: string; value_encrypted: string }>(
-    `SELECT name, value_encrypted FROM command_secrets WHERE name = ANY($1::text[])`, [names]);
+    `SELECT name, value_encrypted FROM command_secrets WHERE name = ANY($1::text[])`,
+    [names],
+  );
   const byName = new Map(rows.map((r) => [r.name, decrypt(r.value_encrypted)]));
   const missing = names.filter((n) => !byName.has(n));
-  if (missing.length) throw new Error(`Secret${missing.length === 1 ? '' : 's'} not found: ${missing.join(', ')}`);
+  if (missing.length)
+    throw new Error(`Secret${missing.length === 1 ? '' : 's'} not found: ${missing.join(', ')}`);
   const text = command.replace(SECRET_REF, (_m, n: string) => byName.get(n)!);
   return { text, values: [...byName.values()].filter((v) => v.length > 0) };
 }
@@ -68,12 +75,14 @@ export function generateSecret(length = 24): string {
 
 export async function listSecrets() {
   return query<{ id: number; name: string; created_by: string | null; updated_at: string }>(
-    `SELECT id, name, created_by, updated_at FROM command_secrets ORDER BY name`);
+    `SELECT id, name, created_by, updated_at FROM command_secrets ORDER BY name`,
+  );
 }
 
 export async function saveSecret(name: string, value: string, user: string | null): Promise<void> {
   await query(
     `INSERT INTO command_secrets (name, value_encrypted, created_by) VALUES ($1, $2, $3)
      ON CONFLICT (name) DO UPDATE SET value_encrypted = EXCLUDED.value_encrypted, updated_at = NOW()`,
-    [name, encrypt(value), user]);
+    [name, encrypt(value), user],
+  );
 }

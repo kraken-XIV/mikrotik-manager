@@ -1,14 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import clsx from 'clsx';
 import {
-  Wifi, CheckCircle, XCircle, HelpCircle, Users, RefreshCw, ExternalLink,
+  CheckCircle,
+  ExternalLink,
+  HelpCircle,
+  RefreshCw,
+  Users,
+  Wifi,
+  XCircle,
 } from 'lucide-react';
-import { wirelessApi } from '../services/api';
-import type { WirelessAP } from '../types';
+import { Link } from 'react-router-dom';
+
+import CapsmanPanel from '../components/wireless/CapsmanPanel';
 import RfHealth from '../components/wireless/RfHealth';
 import RogueApsCard from '../components/wireless/RogueApsCard';
-import CapsmanPanel from '../components/wireless/CapsmanPanel';
-import clsx from 'clsx';
+import { wirelessApi } from '../services/api';
+import type { WirelessAP } from '../types';
 
 function timeAgo(ts: string | undefined): string {
   if (!ts) return 'Never';
@@ -21,44 +28,91 @@ function timeAgo(ts: string | undefined): string {
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={clsx(
-      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-      status === 'online'  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-      status === 'offline' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                             'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400'
-    )}>
-      <span className={clsx('w-1.5 h-1.5 rounded-full',
-        status === 'online' ? 'bg-green-500' : status === 'offline' ? 'bg-red-500' : 'bg-gray-400'
-      )} />
+    <span
+      className={clsx(
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
+        status === 'online'
+          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+          : status === 'offline'
+            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+            : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400',
+      )}
+    >
+      <span
+        className={clsx(
+          'w-1.5 h-1.5 rounded-full',
+          status === 'online'
+            ? 'bg-green-500'
+            : status === 'offline'
+              ? 'bg-red-500'
+              : 'bg-gray-400',
+        )}
+      />
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
 }
 
 export default function WirelessPage() {
-  const { data: aps = [], isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: aps = [],
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ['wireless-aps'],
-    queryFn: () => wirelessApi.list().then(r => r.data as WirelessAP[]),
+    queryFn: () => wirelessApi.list().then((r) => r.data as WirelessAP[]),
     refetchInterval: 30_000,
   });
 
-  const online  = aps.filter(a => a.status === 'online').length;
-  const offline = aps.filter(a => a.status === 'offline').length;
-  const unknown = aps.filter(a => a.status !== 'online' && a.status !== 'offline').length;
+  const online = aps.filter((a) => a.status === 'online').length;
+  const offline = aps.filter((a) => a.status === 'offline').length;
+  const unknown = aps.filter((a) => a.status !== 'online' && a.status !== 'offline').length;
   const totalClients = aps.reduce((s, a) => s + (Number(a.client_count) || 0), 0);
 
   const kpis = [
-    { label: 'Total APs',       value: aps.length,    icon: Wifi,        color: 'text-blue-600 dark:text-blue-400',   bg: 'bg-blue-50 dark:bg-blue-900/20' },
-    { label: 'Online',          value: online,         icon: CheckCircle, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20' },
-    { label: 'Offline',         value: offline,        icon: XCircle,     color: 'text-red-600 dark:text-red-400',     bg: 'bg-red-50 dark:bg-red-900/20' },
-    { label: 'Unknown',         value: unknown,        icon: HelpCircle,  color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
-    { label: 'Wireless Clients', value: totalClients,  icon: Users,       color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+    {
+      label: 'Total APs',
+      value: aps.length,
+      icon: Wifi,
+      color: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-blue-50 dark:bg-blue-900/20',
+    },
+    {
+      label: 'Online',
+      value: online,
+      icon: CheckCircle,
+      color: 'text-green-600 dark:text-green-400',
+      bg: 'bg-green-50 dark:bg-green-900/20',
+    },
+    {
+      label: 'Offline',
+      value: offline,
+      icon: XCircle,
+      color: 'text-red-600 dark:text-red-400',
+      bg: 'bg-red-50 dark:bg-red-900/20',
+    },
+    {
+      label: 'Unknown',
+      value: unknown,
+      icon: HelpCircle,
+      color: 'text-yellow-600 dark:text-yellow-400',
+      bg: 'bg-yellow-50 dark:bg-yellow-900/20',
+    },
+    {
+      label: 'Wireless Clients',
+      value: totalClients,
+      icon: Users,
+      color: 'text-purple-600 dark:text-purple-400',
+      bg: 'bg-purple-50 dark:bg-purple-900/20',
+    },
   ];
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">
-        <RefreshCw className="w-5 h-5 animate-spin mr-2" />Loading wireless APs…
+        <RefreshCw className="w-5 h-5 animate-spin mr-2" />
+        Loading wireless APs…
       </div>
     );
   }
@@ -123,21 +177,42 @@ export default function WirelessPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">Name</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">Status</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">Model</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">IP Address</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-slate-400">Radios</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-slate-400">Active SSIDs</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-slate-400">Clients</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">ROS Version</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">Last Seen</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
+                    Model
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
+                    IP Address
+                  </th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-slate-400">
+                    Radios
+                  </th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-slate-400">
+                    Active SSIDs
+                  </th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-slate-400">
+                    Clients
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
+                    ROS Version
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
+                    Last Seen
+                  </th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
                 {aps.map((ap) => (
-                  <tr key={ap.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+                  <tr
+                    key={ap.id}
+                    className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors"
+                  >
                     <td className="px-4 py-3">
                       <Link
                         to={`/devices/${ap.id}`}
@@ -147,7 +222,8 @@ export default function WirelessPage() {
                       </Link>
                       {ap.rack_name && (
                         <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-                          {ap.rack_name}{ap.rack_slot ? ` / ${ap.rack_slot}` : ''}
+                          {ap.rack_name}
+                          {ap.rack_slot ? ` / ${ap.rack_slot}` : ''}
                         </div>
                       )}
                     </td>
@@ -171,12 +247,14 @@ export default function WirelessPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={clsx(
-                        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-                        Number(ap.client_count) > 0
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
-                          : 'bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400'
-                      )}>
+                      <span
+                        className={clsx(
+                          'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
+                          Number(ap.client_count) > 0
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                            : 'bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400',
+                        )}
+                      >
                         <Users className="w-3 h-3" />
                         {Number(ap.client_count) || 0}
                       </span>

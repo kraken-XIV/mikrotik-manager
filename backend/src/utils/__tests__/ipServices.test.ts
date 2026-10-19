@@ -1,11 +1,42 @@
-import { configuredServices, allowedFrom, allowedFromKey, parseAllowedList, addressAllowed, managerPeer, type ServiceRow } from '../ipServices';
+import {
+  addressAllowed,
+  allowedFrom,
+  allowedFromKey,
+  configuredServices,
+  managerPeer,
+  parseAllowedList,
+  type ServiceRow,
+} from '../ipServices';
 
 // As RouterOS 7.24 prints them (read from a CRS on the test bench): the
 // configured api-ssl, then our own live session as a dynamic row.
 const rows: ServiceRow[] = [
-  { '.id': '*7', name: 'api', port: '8728', 'available-from': '10.0.0.0/8,192.168.0.0/24', dynamic: 'false', disabled: 'false' },
-  { '.id': '*9', name: 'api-ssl', port: '8729', 'available-from': '', dynamic: 'false', disabled: 'false' },
-  { '.id': '*2CA', name: 'api-ssl', port: '8729', local: '192.168.0.51', remote: '192.168.0.76:53195', dynamic: 'true', connection: 'true', disabled: 'false' },
+  {
+    '.id': '*7',
+    name: 'api',
+    port: '8728',
+    'available-from': '10.0.0.0/8,192.168.0.0/24',
+    dynamic: 'false',
+    disabled: 'false',
+  },
+  {
+    '.id': '*9',
+    name: 'api-ssl',
+    port: '8729',
+    'available-from': '',
+    dynamic: 'false',
+    disabled: 'false',
+  },
+  {
+    '.id': '*2CA',
+    name: 'api-ssl',
+    port: '8729',
+    local: '192.168.0.51',
+    remote: '192.168.0.76:53195',
+    dynamic: 'true',
+    connection: 'true',
+    disabled: 'false',
+  },
 ];
 
 describe('ip services (#192)', () => {
@@ -19,7 +50,9 @@ describe('ip services (#192)', () => {
     expect(allowedFromKey({ name: 'api', address: '' })).toBe('address');
   });
   it('validates lists', () => {
-    expect(parseAllowedList(' 10.0.0.0/8 , 2001:db8::/32 192.168.1.5')).toEqual({ list: ['10.0.0.0/8', '2001:db8::/32', '192.168.1.5'] });
+    expect(parseAllowedList(' 10.0.0.0/8 , 2001:db8::/32 192.168.1.5')).toEqual({
+      list: ['10.0.0.0/8', '2001:db8::/32', '192.168.1.5'],
+    });
     expect(parseAllowedList('')).toEqual({ list: [] });
     expect(parseAllowedList('10.0.0.0/33')).toHaveProperty('error');
     expect(parseAllowedList('bogus,10.0.0.1')).toHaveProperty('error');

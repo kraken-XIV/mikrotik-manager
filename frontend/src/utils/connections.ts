@@ -34,20 +34,29 @@ export type ConnSortKey = 'proto' | 'src' | 'sport' | 'dst' | 'dport' | 'state' 
 /** IPv4 addresses in numeric order; anything else after, as text. */
 function ipKey(ip: string): string {
   const p = ip.split('.');
-  if (p.length === 4 && p.every((x) => /^\d{1,3}$/.test(x))) return p.map((x) => x.padStart(3, '0')).join('.');
+  if (p.length === 4 && p.every((x) => /^\d{1,3}$/.test(x)))
+    return p.map((x) => x.padStart(3, '0')).join('.');
   return `~${ip.toLowerCase()}`;
 }
 
 function value(c: Conn, key: ConnSortKey): string | number {
   switch (key) {
-    case 'proto': return (c.protocol || '').toLowerCase();
-    case 'src': return ipKey(endpoint(c, 'src').ip);
-    case 'dst': return ipKey(endpoint(c, 'dst').ip);
-    case 'sport': return Number(endpoint(c, 'src').port) || 0;
-    case 'dport': return Number(endpoint(c, 'dst').port) || 0;
-    case 'state': return (c['tcp-state'] || c.state || '').toLowerCase();
-    case 'rate': return rateBps(c['orig-rate']) + rateBps(c['repl-rate']);
-    case 'bytes': return (Number(c['orig-bytes']) || 0) + (Number(c['repl-bytes']) || 0);
+    case 'proto':
+      return (c.protocol || '').toLowerCase();
+    case 'src':
+      return ipKey(endpoint(c, 'src').ip);
+    case 'dst':
+      return ipKey(endpoint(c, 'dst').ip);
+    case 'sport':
+      return Number(endpoint(c, 'src').port) || 0;
+    case 'dport':
+      return Number(endpoint(c, 'dst').port) || 0;
+    case 'state':
+      return (c['tcp-state'] || c.state || '').toLowerCase();
+    case 'rate':
+      return rateBps(c['orig-rate']) + rateBps(c['repl-rate']);
+    case 'bytes':
+      return (Number(c['orig-bytes']) || 0) + (Number(c['repl-bytes']) || 0);
   }
 }
 

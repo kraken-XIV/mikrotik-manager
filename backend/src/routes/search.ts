@@ -1,8 +1,9 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth } from '../middleware/auth';
-import { siteScopeDevices, siteScopeByNullableDevice } from '../utils/siteScope';
 import { activeSite } from '../middleware/site';
+import { siteScopeByNullableDevice, siteScopeDevices } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);
@@ -28,7 +29,7 @@ router.get('/', async (req: Request, res: Response) => {
          ${devFilter ? `AND ${devFilter}` : ''}
        ORDER BY (status = 'online') DESC, name ASC
        LIMIT 6`,
-      [like]
+      [like],
     ),
     query(
       `SELECT c.mac_address, c.hostname, c.ip_address, c.device_id, c.active,
@@ -39,7 +40,7 @@ router.get('/', async (req: Request, res: Response) => {
          ${clientFilter ? `AND ${clientFilter}` : ''}
        ORDER BY c.active DESC, c.last_seen DESC
        LIMIT 6`,
-      [like]
+      [like],
     ),
     query(
       `SELECT e.id, e.message, e.severity, e.event_time, e.topic, e.device_id,
@@ -50,7 +51,7 @@ router.get('/', async (req: Request, res: Response) => {
          ${eventFilter ? `AND ${eventFilter}` : ''}
        ORDER BY e.event_time DESC
        LIMIT 6`,
-      [like]
+      [like],
     ),
   ]);
 

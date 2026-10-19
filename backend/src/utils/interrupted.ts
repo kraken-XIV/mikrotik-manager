@@ -22,9 +22,7 @@
  */
 
 /** Device-level states that mean work had actually begun. */
-const IN_FLIGHT = new Set([
-  'running', 'backing_up', 'upgrading', 'rebooting', 'verifying',
-]);
+const IN_FLIGHT = new Set(['running', 'backing_up', 'upgrading', 'rebooting', 'verifying']);
 
 export interface InterruptedOutcome {
   status: 'skipped' | 'failed';

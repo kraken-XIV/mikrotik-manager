@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
+
 import { DEVICE_BASE_COLUMNS } from '../deviceColumns';
 
 const SRC = join(__dirname, '..', '..');
@@ -39,8 +40,9 @@ describe('DEVICE_BASE_COLUMNS', () => {
       const payloadSelects = selects.filter((q) => {
         const cols = columnList(q);
         if (/SELECT \*/.test(cols)) return false;
-        return cols.includes('DEVICE_BASE_COLUMNS')
-          || (/\bname\b/.test(cols) && /\bstatus\b/.test(cols));
+        return (
+          cols.includes('DEVICE_BASE_COLUMNS') || (/\bname\b/.test(cols) && /\bstatus\b/.test(cols))
+        );
       });
       expect(payloadSelects.length).toBeGreaterThan(0);
       for (const q of payloadSelects) {

@@ -1,6 +1,11 @@
-import { romonChecks, romonSetParams, sendingSecret, type RomonSetting } from '../romon';
+import { romonChecks, romonSetParams, type RomonSetting, sendingSecret } from '../romon';
 
-const site = (over: Partial<RomonSetting> = {}): RomonSetting => ({ enabled: true, secret: 's3cret', source: { scope: 'site', name: 'Branch 7' }, ...over });
+const site = (over: Partial<RomonSetting> = {}): RomonSetting => ({
+  enabled: true,
+  secret: 's3cret',
+  source: { scope: 'site', name: 'Branch 7' },
+  ...over,
+});
 
 describe('RoMON checks (#311)', () => {
   it('flags RoMON off where the site wants it on', () => {
@@ -16,7 +21,9 @@ describe('RoMON checks (#311)', () => {
   });
 
   it('flags a different secret, comparing the one the device sends with', () => {
-    expect(romonChecks({ enabled: 'true', secrets: 'old,s3cret' }, site()).map((x) => x.id)).toEqual(['romon-secret']);
+    expect(
+      romonChecks({ enabled: 'true', secrets: 'old,s3cret' }, site()).map((x) => x.id),
+    ).toEqual(['romon-secret']);
     expect(romonChecks({ enabled: 'true', secrets: 's3cret,old' }, site())).toEqual([]);
   });
 
@@ -26,7 +33,9 @@ describe('RoMON checks (#311)', () => {
   });
 
   it('a setting with no secret only checks on/off, and the fix leaves secrets alone', () => {
-    expect(romonChecks({ enabled: 'true', secrets: 'anything' }, site({ secret: null }))).toEqual([]);
+    expect(romonChecks({ enabled: 'true', secrets: 'anything' }, site({ secret: null }))).toEqual(
+      [],
+    );
     expect(romonSetParams(site({ secret: null }))).toEqual({ enabled: 'yes' });
     expect(romonSetParams(site())).toEqual({ enabled: 'yes', secrets: 's3cret' });
   });

@@ -128,9 +128,10 @@ export interface CertLike {
  */
 export function describeCert(cert: CertLike, v: CertVerdict): string {
   const kind = cert.is_authority ? 'Certificate authority' : 'Certificate';
-  const named = cert.common_name && cert.common_name !== cert.name
-    ? `${cert.name} (${cert.common_name})`
-    : cert.name;
+  const named =
+    cert.common_name && cert.common_name !== cert.name
+      ? `${cert.name} (${cert.common_name})`
+      : cert.name;
 
   switch (v.state) {
     case 'revoked':

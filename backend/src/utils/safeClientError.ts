@@ -31,8 +31,10 @@ export function safeConnectionError(context: string, err: unknown): string {
       // Connected, but nothing answered in the API protocol: usually the Winbox,
       // SSH or web port rather than the API one.
       if (/read timeout waiting for api response/i.test(raw)) {
-        return 'The device accepted the connection but did not answer as the RouterOS API. '
-          + 'Check the port is the API port (8728, or 8729 for api-ssl).';
+        return (
+          'The device accepted the connection but did not answer as the RouterOS API. ' +
+          'Check the port is the API port (8728, or 8729 for api-ssl).'
+        );
       }
       // RouterOSClient's own connect-timeout has no .code, only a message.
       if (/connection timeout/i.test(raw)) {
@@ -43,8 +45,10 @@ export function safeConnectionError(context: string, err: unknown): string {
       // is IP > Services > api(-ssl) restricting "Available From" to an address
       // range (e.g. a VPN subnet) that this connection isn't part of.
       if (/connection closed/i.test(raw)) {
-        return 'The device closed the connection during login. If RouterOS\'s API service '
-          + '(IP > Services) restricts "Available From" to certain addresses, this one isn\'t on that list.';
+        return (
+          "The device closed the connection during login. If RouterOS's API service " +
+          '(IP > Services) restricts "Available From" to certain addresses, this one isn\'t on that list.'
+        );
       }
       return 'Cannot connect to device. Check the address, port, credentials, and that the API service is reachable.';
   }

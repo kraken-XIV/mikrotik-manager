@@ -1,14 +1,19 @@
-import { Router, Request, Response } from 'express';
 import { randomUUID } from 'crypto';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
-import { requireAuth, requireAdmin } from '../middleware/auth';
-import { siteScopeDevices } from '../utils/siteScope';
+import { requireAdmin, requireAuth } from '../middleware/auth';
 import { activeSite } from '../middleware/site';
-import { classifyKeyTarget } from '../utils/sshKeyCredentials';
-import { SSH_TARGET_COLS, type SshTarget } from '../services/SshKeyService';
 import {
-  enqueueFleetKeyJob, getFleetKeyJob, cancelFleetKeyJob, initFleetKeyJob, HALT_AFTER,
+  cancelFleetKeyJob,
+  enqueueFleetKeyJob,
+  getFleetKeyJob,
+  HALT_AFTER,
+  initFleetKeyJob,
 } from '../services/SshKeyFleetWorker';
+import { SSH_TARGET_COLS, type SshTarget } from '../services/SshKeyService';
+import { siteScopeDevices } from '../utils/siteScope';
+import { classifyKeyTarget } from '../utils/sshKeyCredentials';
 
 /**
  * Fleet-wide SSH key deployment: preview, then run as a background job.
@@ -47,15 +52,28 @@ router.get('/fleet/preview', async (req: Request, res: Response) => {
        FROM devices
       WHERE status != 'disabled' ${siteFilter ? `AND ${siteFilter}` : ''} ${tagFilter}
       ORDER BY name`,
-    params
+    params,
   );
 
-  const eligible: { id: number; name: string; ip_address: string; username: string; source: 'ssh' | 'api' }[] = [];
+  const eligible: {
+    id: number;
+    name: string;
+    ip_address: string;
+    username: string;
+    source: 'ssh' | 'api';
+  }[] = [];
   const keyed: { id: number; name: string }[] = [];
   const skipped: { id: number; name: string; reason: string }[] = [];
   for (const r of rows) {
     const c = classifyKeyTarget(r);
-    if (c.kind === 'eligible') eligible.push({ id: r.id, name: r.name, ip_address: r.ip_address, username: c.username, source: c.source });
+    if (c.kind === 'eligible')
+      eligible.push({
+        id: r.id,
+        name: r.name,
+        ip_address: r.ip_address,
+        username: c.username,
+        source: c.source,
+      });
     else if (c.kind === 'keyed') keyed.push({ id: r.id, name: r.name });
     else skipped.push({ id: r.id, name: r.name, reason: c.reason });
   }
@@ -70,7 +88,13 @@ router.get('/fleet/preview', async (req: Request, res: Response) => {
     accounts.set(e.username, a);
   }
 
-  return res.json({ eligible, keyed, skipped, accounts: [...accounts.values()], halt_after: HALT_AFTER });
+  return res.json({
+    eligible,
+    keyed,
+    skipped,
+    accounts: [...accounts.values()],
+    halt_after: HALT_AFTER,
+  });
 });
 
 // POST /api/ssh-keys/fleet/jobs { device_ids, confirm: true }
@@ -78,28 +102,35 @@ router.post('/fleet/jobs', async (req: Request, res: Response) => {
   const body = (req.body ?? {}) as { device_ids?: unknown; confirm?: unknown };
   if (body.confirm !== true) {
     return res.status(400).json({
-      error: 'Confirmation required. Installing a key turns off password SSH for that user on each ' +
-             'device; the API and WinBox are unaffected. Repeat with "confirm": true.',
+      error:
+        'Confirmation required. Installing a key turns off password SSH for that user on each ' +
+        'device; the API and WinBox are unaffected. Repeat with "confirm": true.',
     });
   }
   const ids = parseIds(body.device_ids);
-  if (!ids || ids.length === 0) return res.status(400).json({ error: 'device_ids must be a non-empty list of device ids' });
-  if (ids.length > MAX_DEVICES) return res.status(400).json({ error: `At most ${MAX_DEVICES} devices per run` });
+  if (!ids || ids.length === 0)
+    return res.status(400).json({ error: 'device_ids must be a non-empty list of device ids' });
+  if (ids.length > MAX_DEVICES)
+    return res.status(400).json({ error: `At most ${MAX_DEVICES} devices per run` });
 
   // Only devices in the site being viewed, in name order. Eligibility is
   // re-checked per device when the job reaches it.
   const siteFilter = siteScopeDevices(activeSite(req));
   const scoped = await query<{ id: number }>(
     `SELECT id FROM devices WHERE id = ANY($1::int[]) ${siteFilter ? `AND ${siteFilter}` : ''} ORDER BY name`,
-    [ids]
+    [ids],
   );
-  if (!scoped.length) return res.status(400).json({ error: 'None of those devices are in the current site' });
+  if (!scoped.length)
+    return res.status(400).json({ error: 'None of those devices are in the current site' });
 
   const jobId = randomUUID();
   const user = req.user!;
   await initFleetKeyJob(jobId, scoped.length, user.userId);
   await enqueueFleetKeyJob({
-    jobId, deviceIds: scoped.map((r) => r.id), userId: user.userId, username: user.username ?? null,
+    jobId,
+    deviceIds: scoped.map((r) => r.id),
+    userId: user.userId,
+    username: user.username ?? null,
   });
   return res.status(202).json({ job_id: jobId, total: scoped.length });
 });

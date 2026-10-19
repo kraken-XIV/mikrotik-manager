@@ -28,7 +28,7 @@ Choose one:
 - **Import an existing CA**, for example an intermediate from your organisation's PKI: its
   certificate and private key (PEM, the key optionally encrypted with a passphrase). The
   manager checks it's a CA, that the key matches, and that it hasn't expired. If it has
-  *name constraints* you get a warning: RouterOS 7 has been seen refusing to import a CA with
+  _name constraints_ you get a warning: RouterOS 7 has been seen refusing to import a CA with
   critical name constraints, and device certificates must fall inside them.
 
 The CA's private key is stored encrypted with the manager's encryption key, like device
@@ -43,12 +43,12 @@ The CA can be deleted once no device has a certificate from it.
 
 ## Defaults
 
-| Setting | Default | |
-|---|---|---|
-| Lifetime | 1 year | 30 days to 5 years, or any number of days. A certificate never outlives the CA |
-| Renew before expiry | 30 days | |
-| Renew automatically | On | Checked every 30 minutes; a failed renewal is retried after 6 hours |
-| Use for WebFig | On | Can be chosen per device when issuing |
+| Setting             | Default |                                                                                |
+| ------------------- | ------- | ------------------------------------------------------------------------------ |
+| Lifetime            | 1 year  | 30 days to 5 years, or any number of days. A certificate never outlives the CA |
+| Renew before expiry | 30 days |                                                                                |
+| Renew automatically | On      | Checked every 30 minutes; a failed renewal is retried after 6 hours            |
+| Use for WebFig      | On      | Can be chosen per device when issuing                                          |
 
 ## Issuing a certificate
 
@@ -124,9 +124,9 @@ certificate on the device.
 Install `mikrotik-manager-ca.crt` as a trusted root:
 
 - **macOS:** open it in Keychain Access, add it to the System keychain, and set it to
-  *Always Trust*.
+  _Always Trust_.
 - **Windows:** `certutil -addstore -f Root mikrotik-manager-ca.crt`, or double-click it and
-  install it into *Trusted Root Certification Authorities*.
+  install it into _Trusted Root Certification Authorities_.
 - **Linux (Debian/Ubuntu):** copy it to `/usr/local/share/ca-certificates/` and run
   `sudo update-ca-certificates`.
 - **Firefox** keeps its own store: Settings → Privacy & Security → Certificates → Import.

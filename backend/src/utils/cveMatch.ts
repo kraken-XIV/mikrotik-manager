@@ -37,7 +37,10 @@ export interface ParsedCve {
 }
 
 const METRIC_ORDER: [string, string][] = [
-  ['cvssMetricV40', '4.0'], ['cvssMetricV31', '3.1'], ['cvssMetricV30', '3.0'], ['cvssMetricV2', '2.0'],
+  ['cvssMetricV40', '4.0'],
+  ['cvssMetricV31', '3.1'],
+  ['cvssMetricV30', '3.0'],
+  ['cvssMetricV2', '2.0'],
 ];
 
 type Json = Record<string, unknown>;
@@ -50,7 +53,8 @@ export function rangeFromCpeMatch(m: Json): VersionRange | null | undefined {
   const criteria = str(m['criteria']) ?? '';
   const parts = criteria.split(':');
   // cpe:2.3:o:mikrotik:routeros:<version>:<update>:...
-  if (parts[3] !== 'mikrotik' || parts[4] !== 'routeros' || m['vulnerable'] === false) return undefined;
+  if (parts[3] !== 'mikrotik' || parts[4] !== 'routeros' || m['vulnerable'] === false)
+    return undefined;
   const version = parts[5] ?? '*';
   const update = parts[6] ?? '*';
   const range: VersionRange = {};
@@ -96,7 +100,10 @@ export function affects(cve: Pick<ParsedCve, 'ranges'>, version: string): boolea
  * entry says which major versions it does not apply to, and why.
  */
 export const CVE_CORRECTIONS = new Map<string, { notMajors: number[]; reason: string }>([
-  ['CVE-2025-6443', { notMajors: [6], reason: 'the flaw is in VXLAN, which RouterOS 6 does not have' }],
+  [
+    'CVE-2025-6443',
+    { notMajors: [6], reason: 'the flaw is in VXLAN, which RouterOS 6 does not have' },
+  ],
 ]);
 
 function majorOf(version: string): number | null {
@@ -139,13 +146,21 @@ export function fixedIn(cve: Pick<ParsedCve, 'ranges'>, version: string): string
 }
 
 /** The newest CVSS score NVD gives a CVE (4.0, then 3.1, 3.0, 2.0). */
-function scoreOf(c: Json): { score: number | null; severity: string | null; cvssVersion: string | null } {
+function scoreOf(c: Json): {
+  score: number | null;
+  severity: string | null;
+  cvssVersion: string | null;
+} {
   const metrics = obj(c['metrics']);
   for (const [key, ver] of METRIC_ORDER) {
     const first = obj(arr(metrics[key])[0]);
     const data = obj(first['cvssData']);
     if (typeof data['baseScore'] === 'number') {
-      return { score: data['baseScore'] as number, severity: str(data['baseSeverity']) ?? str(first['baseSeverity']) ?? null, cvssVersion: ver };
+      return {
+        score: data['baseScore'] as number,
+        severity: str(data['baseSeverity']) ?? str(first['baseSeverity']) ?? null,
+        cvssVersion: ver,
+      };
     }
   }
   return { score: null, severity: null, cvssVersion: null };
@@ -160,12 +175,24 @@ function summaryOf(c: Json): string {
  * when NVD doesn't have it yet. Its affected versions don't matter here: the
  * release notes already say which release fixed it.
  */
-export function parseNvdCveDetail(body: unknown): { id: string; summary: string; score: number | null; severity: string | null; published: string | null } | null {
+export function parseNvdCveDetail(body: unknown): {
+  id: string;
+  summary: string;
+  score: number | null;
+  severity: string | null;
+  published: string | null;
+} | null {
   const c = obj(obj(arr(obj(body)['vulnerabilities'])[0])['cve']);
   const id = str(c['id']);
   if (!id) return null;
   const { score, severity } = scoreOf(c);
-  return { id, summary: summaryOf(c).trim(), score, severity: severity?.toUpperCase() ?? null, published: str(c['published']) ?? null };
+  return {
+    id,
+    summary: summaryOf(c).trim(),
+    score,
+    severity: severity?.toUpperCase() ?? null,
+    published: str(c['published']) ?? null,
+  };
 }
 
 /** The NVD 2.0 API response, reduced to what matching needs. */
@@ -198,8 +225,12 @@ export function parseNvdResponse(body: unknown): ParsedCve[] {
       published: str(c['published']) ?? '',
       lastModified: str(c['lastModified']) ?? '',
       summary: summary.trim(),
-      score, severity: severity?.toUpperCase() ?? null, cvssVersion,
-      ranges, unranged: unranged && !ranges.length, hardwareSpecific,
+      score,
+      severity: severity?.toUpperCase() ?? null,
+      cvssVersion,
+      ranges,
+      unranged: unranged && !ranges.length,
+      hardwareSpecific,
     });
   }
   return out;

@@ -20,22 +20,22 @@ Neighbour discovery exposes two things before anything connects: the address and
 identity. Both being factory defaults means a new device; neither means one already in
 service.
 
-| Signals | Verdict |
-|---|---|
-| On `192.168.88.1` **and** identity is `MikroTik` | Brand-new device |
-| Neither | Already configured |
-| One but not the other | Brand-new, flagged as uncertain |
+| Signals                                          | Verdict                         |
+| ------------------------------------------------ | ------------------------------- |
+| On `192.168.88.1` **and** identity is `MikroTik` | Brand-new device                |
+| Neither                                          | Already configured              |
+| One but not the other                            | Brand-new, flagged as uncertain |
 
 The dialog states what it found and what it will do about it, with a link to disagree.
 Reachability is deliberately **not** used to decide: a configured switch in a VLAN the manager
-cannot route to is unreachable *and* fully configured, and adopting it would rewrite addressing
+cannot route to is unreachable _and_ fully configured, and adopting it would rewrite addressing
 it is already using.
 
 !!! warning "The check that matters runs later"
-    The verdict above is a guess from two fields. After authenticating and **before writing
-    anything**, the device is inspected properly — identity, every address, every user account
-    — and adoption stops if it does not look untouched. Overriding the dialog does not disable
-    that; it is what protects a live switch from a wrong choice.
+The verdict above is a guess from two fields. After authenticating and **before writing
+anything**, the device is inspected properly — identity, every address, every user account
+— and adoption stops if it does not look untouched. Overriding the dialog does not disable
+that; it is what protects a live switch from a wrong choice.
 
 ## What you need
 
@@ -52,21 +52,21 @@ is offered; pick whichever you would rather touch.
 You choose how the device is addressed. None of it is inferred, because a wrong prefix or
 gateway strands the device on both networks at once.
 
-| Option | Notes |
-|---|---|
-| **Static** | Address, prefix and gateway. The prefix is not assumed to be /24, the gateway is not assumed to end in `.1`, and the gateway is checked to be reachable from the address |
-| **DHCP** | A client is added and the lease read back to learn where the device landed. Consider a reservation — infrastructure benefits from a stable address |
-| **Management VLAN** | Either option, on a tagged VLAN. A `bridge-vlanN` sub-interface is created to carry the address |
+| Option              | Notes                                                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Static**          | Address, prefix and gateway. The prefix is not assumed to be /24, the gateway is not assumed to end in `.1`, and the gateway is checked to be reachable from the address |
+| **DHCP**            | A client is added and the lease read back to learn where the device landed. Consider a reservation — infrastructure benefits from a stable address                       |
+| **Management VLAN** | Either option, on a tagged VLAN. A `bridge-vlanN` sub-interface is created to carry the address                                                                          |
 
 A static address is checked against the network first, using both ARP and ping from the
 borrowed neighbour. Neither is sufficient alone: an address can answer ping while being absent
-from the ARP cache, and an ARP entry can be a record of a *failed* lookup rather than a live
+from the ARP cache, and an ARP entry can be a record of a _failed_ lookup rather than a live
 host. Adoption stops rather than handing a switch an address something else is using.
 
 !!! note "If the VLAN is wrong"
-    Operations are additive, so the factory address stays until the new one is proven. A
-    management VLAN the uplink does not actually carry means verification fails and the device
-    is left exactly as reachable as it was — still adoptable, not stranded.
+Operations are additive, so the factory address stays until the new one is proven. A
+management VLAN the uplink does not actually carry means verification fails and the device
+is left exactly as reachable as it was — still adoptable, not stranded.
 
 ## What it does
 
@@ -106,15 +106,15 @@ chassis and known to anyone with physical access.
 
 ## Troubleshooting
 
-| Symptom | Cause |
-|---|---|
-| "Could not authenticate" | Wrong password. It is on the sticker, not blank |
-| "does not look factory-default" | The device is in service. Add it normally with its credentials. Confirming it is factory-default in the dialog overrides only the guess made before connecting, not this check |
-| "is not *MAC*" | A different device answered on that address, often a second unadopted unit on `192.168.88.1`. Adopt one at a time |
-| "is not free" | Something already answers at that address |
-| "no lease arrived" | DHCP chosen with no server on that segment |
-| "not answering the API from the manager" | Configured, but unreachable — usually a wrong gateway or a VLAN the uplink does not carry. The factory address is still in place |
-| Device not listed | Only MikroTik neighbours can be adopted. Run **Discover** and confirm a managed device can see it |
+| Symptom                                  | Cause                                                                                                                                                                          |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| "Could not authenticate"                 | Wrong password. It is on the sticker, not blank                                                                                                                                |
+| "does not look factory-default"          | The device is in service. Add it normally with its credentials. Confirming it is factory-default in the dialog overrides only the guess made before connecting, not this check |
+| "is not _MAC_"                           | A different device answered on that address, often a second unadopted unit on `192.168.88.1`. Adopt one at a time                                                              |
+| "is not free"                            | Something already answers at that address                                                                                                                                      |
+| "no lease arrived"                       | DHCP chosen with no server on that segment                                                                                                                                     |
+| "not answering the API from the manager" | Configured, but unreachable — usually a wrong gateway or a VLAN the uplink does not carry. The factory address is still in place                                               |
+| Device not listed                        | Only MikroTik neighbours can be adopted. Run **Discover** and confirm a managed device can see it                                                                              |
 
 ## What it does not do
 

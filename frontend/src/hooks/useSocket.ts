@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+
 import { useAuthStore } from '../store/authStore';
 
 let globalSocket: Socket | null = null;
@@ -17,12 +18,12 @@ export function getSocket(): Socket | null {
   return globalSocket;
 }
 
-export function useSocket(
-  events: Record<string, (data: unknown) => void>
-): void {
+export function useSocket(events: Record<string, (data: unknown) => void>): void {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const eventsRef = useRef(events);
-  useLayoutEffect(() => { eventsRef.current = events; });
+  useLayoutEffect(() => {
+    eventsRef.current = events;
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {

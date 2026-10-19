@@ -17,7 +17,10 @@ const toInt = (ip: string): number | null => {
 /** Number of addresses in a pool's ranges; null when they can't be read. */
 export function poolSize(ranges: string | undefined): number | null {
   let total = 0;
-  const parts = (ranges || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const parts = (ranges || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   if (parts.length === 0) return null;
   for (const p of parts) {
     if (p.includes('/')) {

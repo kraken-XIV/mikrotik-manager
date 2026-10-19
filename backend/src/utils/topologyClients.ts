@@ -55,8 +55,11 @@ export interface TopoClient {
  * has for that id when it isn't just "VLAN <id>" again.
  */
 export function vlanLabel(
-  deviceId: number, iface: string | null, vlanId: number | null,
-  portTypes: Map<string, string>, vlanNames: Map<string, string>,
+  deviceId: number,
+  iface: string | null,
+  vlanId: number | null,
+  portTypes: Map<string, string>,
+  vlanNames: Map<string, string>,
 ): string | null {
   if (iface && portTypes.get(key(deviceId, iface)) === 'vlan') return iface;
   if (vlanId == null) return null;
@@ -70,7 +73,8 @@ export function isPortLike(name: string | null, type?: string | null): boolean {
   return !!name && /^(ether|sfp|qsfp|combo|wlan|wifi|bond)/i.test(name);
 }
 
-const key = (deviceId: number, iface: string | null) => `${deviceId}:${(iface ?? '').toLowerCase()}`;
+const key = (deviceId: number, iface: string | null) =>
+  `${deviceId}:${(iface ?? '').toLowerCase()}`;
 
 /**
  * One attachment per MAC. `uplinks` holds device:port pairs that face another
@@ -98,8 +102,11 @@ export function clientAttachments(
   };
   const out: TopoClient[] = [];
   for (const [mac, list] of byMac) {
-    const best = [...list].sort((a, b) =>
-      rank(a) - rank(b) || (Date.parse(b.last_seen ?? '') || 0) - (Date.parse(a.last_seen ?? '') || 0))[0];
+    const best = [...list].sort(
+      (a, b) =>
+        rank(a) - rank(b) ||
+        (Date.parse(b.last_seen ?? '') || 0) - (Date.parse(a.last_seen ?? '') || 0),
+    )[0];
     const r = rank(best);
     out.push({
       mac,

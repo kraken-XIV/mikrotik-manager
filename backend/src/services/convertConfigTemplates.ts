@@ -9,7 +9,7 @@ import { configTemplateToCommand, type OldConfigTemplate } from '../utils/config
 export async function convertConfigTemplates(): Promise<number> {
   const rows = await query<OldConfigTemplate & { id: number }>(
     `SELECT id, name, description, applies_to_type, template_json
-       FROM config_templates WHERE converted_at IS NULL ORDER BY id`
+       FROM config_templates WHERE converted_at IS NULL ORDER BY id`,
   );
   let converted = 0;
   for (const row of rows) {
@@ -18,33 +18,47 @@ export async function convertConfigTemplates(): Promise<number> {
     // again under the next free name (outside review S10).
     const outcome = await transaction(async (client) => {
       const locked = await client.query(
-        `SELECT id FROM config_templates WHERE id = $1 AND converted_at IS NULL FOR UPDATE SKIP LOCKED`, [row.id]);
+        `SELECT id FROM config_templates WHERE id = $1 AND converted_at IS NULL FOR UPDATE SKIP LOCKED`,
+        [row.id],
+      );
       if (locked.rowCount === 0) return 'skipped' as const; // done elsewhere meanwhile
       const conv = configTemplateToCommand(row);
       let copied = !conv;
       if (conv) {
         const base = row.name.trim().slice(0, 80) || `Config template ${row.id}`;
-        const candidates = [base, `${base} (config template)`, `${base} (config template ${row.id})`];
+        const candidates = [
+          base,
+          `${base} (config template)`,
+          `${base} (config template ${row.id})`,
+        ];
         for (const name of candidates) {
           const inserted = await client.query(
             `INSERT INTO command_templates (name, description, command, created_by)
              VALUES ($1, $2, $3, 'converted') ON CONFLICT (name) DO NOTHING RETURNING id`,
-            [name, conv.description, conv.command]
+            [name, conv.description, conv.command],
           );
-          if (inserted.rowCount) { copied = true; break; }
+          if (inserted.rowCount) {
+            copied = true;
+            break;
+          }
         }
       }
       if (!copied) return 'taken' as const;
       // Empty templates are marked too: there is nothing to carry over.
-      await client.query(`UPDATE config_templates SET converted_at = NOW() WHERE id = $1`, [row.id]);
-      return conv ? 'converted' as const : 'empty' as const;
+      await client.query(`UPDATE config_templates SET converted_at = NOW() WHERE id = $1`, [
+        row.id,
+      ]);
+      return conv ? ('converted' as const) : ('empty' as const);
     });
     if (outcome === 'converted') converted++;
     if (outcome === 'taken') {
       // Left unmarked so it is tried again, never silently dropped.
-      console.warn(`[templates] could not convert Config Template "${row.name}": every name tried is taken`);
+      console.warn(
+        `[templates] could not convert Config Template "${row.name}": every name tried is taken`,
+      );
     }
   }
-  if (converted) console.log(`[templates] converted ${converted} Config Template(s) into command templates`);
+  if (converted)
+    console.log(`[templates] converted ${converted} Config Template(s) into command templates`);
   return converted;
 }

@@ -1,5 +1,8 @@
 import {
-  parseRosVersion, compareRosVersions, isNewerRosVersion, updateAvailable,
+  compareRosVersions,
+  isNewerRosVersion,
+  parseRosVersion,
+  updateAvailable,
 } from '../rosVersion';
 
 describe('compareRosVersions', () => {
@@ -66,28 +69,44 @@ describe('updateAvailable', () => {
    * two strings differed.
    */
   it('does not offer an older release as an update', () => {
-    expect(updateAvailable({
-      installed: '7.24.3', latest: '7.24.2', status: 'New version is available',
-    })).toBe(false);
+    expect(
+      updateAvailable({
+        installed: '7.24.3',
+        latest: '7.24.2',
+        status: 'New version is available',
+      }),
+    ).toBe(false);
   });
 
   it('offers a genuinely newer release', () => {
-    expect(updateAvailable({
-      installed: '7.24.2', latest: '7.24.3', status: 'New version is available',
-    })).toBe(true);
+    expect(
+      updateAvailable({
+        installed: '7.24.2',
+        latest: '7.24.3',
+        status: 'New version is available',
+      }),
+    ).toBe(true);
   });
 
   it('is quiet when the versions match', () => {
-    expect(updateAvailable({
-      installed: '7.24.3', latest: '7.24.3', status: 'System is already up to date',
-    })).toBe(false);
+    expect(
+      updateAvailable({
+        installed: '7.24.3',
+        latest: '7.24.3',
+        status: 'System is already up to date',
+      }),
+    ).toBe(false);
   });
 
   // The device's word is a fallback for when the numbers cannot be read — not
   // an override of them.
   it('falls back to the reported status only when a version is unreadable', () => {
-    expect(updateAvailable({ installed: '7.24.3', latest: '', status: 'New version is available' })).toBe(true);
-    expect(updateAvailable({ installed: '', latest: '', status: 'System is already up to date' })).toBe(false);
+    expect(
+      updateAvailable({ installed: '7.24.3', latest: '', status: 'New version is available' }),
+    ).toBe(true);
+    expect(
+      updateAvailable({ installed: '', latest: '', status: 'System is already up to date' }),
+    ).toBe(false);
     expect(updateAvailable({ installed: '7.24.3', latest: null, status: null })).toBe(false);
   });
 

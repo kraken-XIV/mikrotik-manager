@@ -53,7 +53,9 @@ const HIDDEN = '(hidden)';
 
 /** Parameters with secrets replaced; the review modal never shows a key or passphrase. */
 export function hideSecrets(params: Record<string, string>): Record<string, string> {
-  return Object.fromEntries(safeEntries(params).map(([k, v]) => [k, isSecretKey(k) && v !== '' ? HIDDEN : v]));
+  return Object.fromEntries(
+    safeEntries(params).map(([k, v]) => [k, isSecretKey(k) && v !== '' ? HIDDEN : v]),
+  );
 }
 
 /**
@@ -86,7 +88,11 @@ function cliSelector(id: string | undefined, target: Record<string, string> | nu
 }
 
 /** The write as a terminal command, with secrets hidden. */
-export function toCli(command: string, params: Record<string, string>, target: Record<string, string> | null): string {
+export function toCli(
+  command: string,
+  params: Record<string, string>,
+  target: Record<string, string> | null,
+): string {
   const { path, verb } = splitCommand(command);
   const shown = hideSecrets(params);
   const id = params['.id'] ?? params.numbers;
@@ -117,7 +123,8 @@ export function wireParams(params: Record<string, unknown>): Record<string, stri
 }
 
 /** Counters and live state: they describe the moment, not the configuration. */
-const LIVE_FIELD = /(byte|packet|drop|-time$|^running$|^actual-|^current-|^managed$|^cache-used$|^slave$|^dynamic$|^invalid$|^inactive$|^link-downs$|^fp-|^last-|^uptime$)/;
+const LIVE_FIELD =
+  /(byte|packet|drop|-time$|^running$|^actual-|^current-|^managed$|^cache-used$|^slave$|^dynamic$|^invalid$|^inactive$|^link-downs$|^fp-|^last-|^uptime$)/;
 
 /** The item as the review shows it: its configuration, without counters. */
 export function trimTarget(row: Record<string, string>): Record<string, string> {
@@ -129,7 +136,7 @@ export function describeWrite(
   host: string,
   command: string,
   rawParams: Record<string, unknown>,
-  rawTarget: Record<string, string> | null
+  rawTarget: Record<string, string> | null,
 ): PreviewStep {
   const { path, verb } = splitCommand(command);
   const params = wireParams(rawParams);
@@ -140,7 +147,10 @@ export function describeWrite(
     for (const [k, v] of Object.entries(params)) {
       if (ID_KEYS.has(k)) continue;
       const secret = isSecretKey(k);
-      if (target && sameValue(target[k], v)) { unchanged.push(k); continue; }
+      if (target && sameValue(target[k], v)) {
+        unchanged.push(k);
+        continue;
+      }
       changes.push({
         field: k,
         from: target && k in target ? (secret ? HIDDEN : target[k]) : null,
@@ -164,7 +174,10 @@ export function describeWrite(
  * The query that reads the item a write acts on, or null when it names none.
  * A singleton menu (/ip/dns/set) has no id: its only row is the target.
  */
-export function targetQuery(command: string, params: Record<string, string>): { print: string; queries: string[] } | null {
+export function targetQuery(
+  command: string,
+  params: Record<string, string>,
+): { print: string; queries: string[] } | null {
   const { path, verb } = splitCommand(command);
   const id = params['.id'] ?? params.numbers;
   if (id !== undefined && id !== '') {
@@ -190,7 +203,10 @@ const PREVIEWABLE: [string, RegExp][] = [
   ['PUT', /^\/api\/devices\/\d+\/services\/[^/]+$/],
   ['PUT', /^\/api\/devices\/\d+\/(system-config|clock|l3hw)$/],
   ['POST|PUT|DELETE', /^\/api\/devices\/\d+\/ip-addresses(\/[^/]+)?$/],
-  ['POST|PUT|DELETE', /^\/api\/devices\/\d+\/routing(\/(ospf\/instance|ospf\/area|bgp\/connection|tables|filters\/rule))?(\/[^/]+)?$/],
+  [
+    'POST|PUT|DELETE',
+    /^\/api\/devices\/\d+\/routing(\/(ospf\/instance|ospf\/area|bgp\/connection|tables|filters\/rule))?(\/[^/]+)?$/,
+  ],
   ['POST|PUT|DELETE', /^\/api\/devices\/\d+\/(vlans|bonds)(\/[^/]+)?$/],
   ['PUT', /^\/api\/devices\/\d+\/bridge\/[^/]+\/vlan-filtering$/],
   ['POST|PUT', /^\/api\/devices\/\d+\/bridges(\/[^/]+)?$/],
@@ -212,7 +228,9 @@ const NOT_PREVIEWABLE = /\/(reset-counters|flush)$/;
 export function isPreviewableRoute(method: string, url: string): boolean {
   const path = url.split('?')[0].replace(/\/+$/, '');
   if (NOT_PREVIEWABLE.test(path)) return false;
-  return PREVIEWABLE.some(([methods, re]) => methods.split('|').includes(method.toUpperCase()) && re.test(path));
+  return PREVIEWABLE.some(
+    ([methods, re]) => methods.split('|').includes(method.toUpperCase()) && re.test(path),
+  );
 }
 
 /**
@@ -220,7 +238,11 @@ export function isPreviewableRoute(method: string, url: string): boolean {
  * edit route that also records its result locally leaves the database alone.
  */
 export function isDbWrite(sql: string): boolean {
-  const s = sql.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '').trim().toUpperCase();
+  const s = sql
+    .replace(/--[^\n]*/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .trim()
+    .toUpperCase();
   if (s.startsWith('SELECT') || s.startsWith('SHOW') || s.startsWith('EXPLAIN')) {
     // SELECT … FOR UPDATE takes a lock but changes nothing; still a read.
     return false;

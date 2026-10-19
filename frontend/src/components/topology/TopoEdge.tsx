@@ -1,6 +1,15 @@
-import { BaseEdge, EdgeLabelRenderer, useInternalNode, getSmoothStepPath, Position, type EdgeProps, type InternalNode } from '@xyflow/react';
+import {
+  BaseEdge,
+  EdgeLabelRenderer,
+  type EdgeProps,
+  getSmoothStepPath,
+  type InternalNode,
+  Position,
+  useInternalNode,
+} from '@xyflow/react';
 import { X } from 'lucide-react';
-import { linkEnds, sideOf, type Rect, type Side } from '../../utils/topologyGeometry';
+
+import { linkEnds, type Rect, type Side, sideOf } from '../../utils/topologyGeometry';
 
 /** What a link on the map carries; see toFlowEdge in the page. */
 export interface TopoEdgeData extends Record<string, unknown> {
@@ -15,7 +24,12 @@ export interface TopoEdgeData extends Record<string, unknown> {
   parallel?: number;
 }
 
-const POSITION: Record<Side, Position> = { t: Position.Top, b: Position.Bottom, l: Position.Left, r: Position.Right };
+const POSITION: Record<Side, Position> = {
+  t: Position.Top,
+  b: Position.Bottom,
+  l: Position.Left,
+  r: Position.Right,
+};
 
 const rectOf = (n: InternalNode): Rect => ({
   x: n.internals.positionAbsolute.x,
@@ -43,9 +57,14 @@ export default function TopoEdge({ id, source, target, data, style, markerEnd }:
     // around, as a wiring diagram does. A straight line from a side would just
     // run back across the card.
     const [p, lx, ly] = getSmoothStepPath({
-      sourceX: ends.s.x, sourceY: ends.s.y, sourcePosition: POSITION[d.sourceSide ?? sideOf(rs, ends.s)],
-      targetX: ends.t.x, targetY: ends.t.y, targetPosition: POSITION[d.targetSide ?? sideOf(rt, ends.t)],
-      borderRadius: 8, offset: 24,
+      sourceX: ends.s.x,
+      sourceY: ends.s.y,
+      sourcePosition: POSITION[d.sourceSide ?? sideOf(rs, ends.s)],
+      targetX: ends.t.x,
+      targetY: ends.t.y,
+      targetPosition: POSITION[d.targetSide ?? sideOf(rt, ends.t)],
+      borderRadius: 8,
+      offset: 24,
     });
     path = p;
     mid = { x: lx, y: ly };
@@ -60,20 +79,36 @@ export default function TopoEdge({ id, source, target, data, style, markerEnd }:
         <EdgeLabelRenderer>
           {/* Labels ignore the pointer unless told otherwise; nodrag/nopan stop a
               click on the button panning the map. */}
-          <div className="absolute flex items-center gap-1 nodrag nopan"
-            style={{ transform: `translate(-50%,-50%) translate(${mid.x}px,${mid.y}px)`, pointerEvents: 'all', opacity: style?.opacity }}>
+          <div
+            className="absolute flex items-center gap-1 nodrag nopan"
+            style={{
+              transform: `translate(-50%,-50%) translate(${mid.x}px,${mid.y}px)`,
+              pointerEvents: 'all',
+              opacity: style?.opacity,
+            }}
+          >
             {d.hand ? (
               <>
-                <span className="text-[9px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1 rounded">{d.label || 'drawn by hand'}</span>
+                <span className="text-[9px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1 rounded">
+                  {d.label || 'drawn by hand'}
+                </span>
                 {d.onDelete && (
-                  <button className="w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600"
-                    onClick={(ev) => { ev.stopPropagation(); d.onDelete?.(); }} title="Remove this hand-drawn link">
+                  <button
+                    className="w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      d.onDelete?.();
+                    }}
+                    title="Remove this hand-drawn link"
+                  >
                     <X className="w-2.5 h-2.5" />
                   </button>
                 )}
               </>
             ) : (
-              <span className="text-[10px] px-1 rounded bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 dark:text-slate-400 whitespace-nowrap">{d.label}</span>
+              <span className="text-[10px] px-1 rounded bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                {d.label}
+              </span>
             )}
           </div>
         </EdgeLabelRenderer>

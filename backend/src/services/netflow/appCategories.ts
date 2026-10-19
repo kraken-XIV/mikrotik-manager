@@ -57,11 +57,7 @@ const PORT_MAP: Record<string, string> = {
   [`${TCP}/5061`]: 'Video/Voice Calls',
 };
 
-export function classifyApp(
-  protocol: number,
-  localPort: number,
-  remotePort: number
-): string {
+export function classifyApp(protocol: number, localPort: number, remotePort: number): string {
   if (protocol === ICMP || protocol === ICMPV6) return 'ICMP';
   if (protocol === 47) return 'GRE';
   if (protocol === 50) return 'IPsec';

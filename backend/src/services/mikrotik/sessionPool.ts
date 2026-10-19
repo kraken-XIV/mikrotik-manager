@@ -22,6 +22,7 @@
  * is at every connect. Sessions idle for eleven minutes are closed.
  */
 import { createHash } from 'crypto';
+
 import { RouterOSClient } from './RouterOSClient';
 
 export type SessionLane = 'fast' | 'logs' | 'slow';
@@ -41,12 +42,26 @@ const REVERIFY_MS = 10 * 60_000;
 const pool = new Map<string, Pooled>();
 
 export interface SessionDevice {
-  id: number; ip_address: string; api_port: number; api_username: string; api_password_encrypted: string;
+  id: number;
+  ip_address: string;
+  api_port: number;
+  api_username: string;
+  api_password_encrypted: string;
 }
 
 /** What a session was opened for; any difference means a new one. */
 function credentialKey(d: SessionDevice, tls: boolean): string {
-  return createHash('sha256').update([d.ip_address, d.api_port, d.api_username, d.api_password_encrypted, tls ? 'tls' : 'plain'].join('|')).digest('hex');
+  return createHash('sha256')
+    .update(
+      [
+        d.ip_address,
+        d.api_port,
+        d.api_username,
+        d.api_password_encrypted,
+        tls ? 'tls' : 'plain',
+      ].join('|'),
+    )
+    .digest('hex');
 }
 
 export interface Lease {
@@ -64,7 +79,12 @@ export interface Lease {
  * A session for this device and lane, or null when the pooled one is in use
  * (the caller then connects on its own, as before).
  */
-export function lease(d: SessionDevice, lane: SessionLane, tls: boolean, make: () => RouterOSClient): Lease | null {
+export function lease(
+  d: SessionDevice,
+  lane: SessionLane,
+  tls: boolean,
+  make: () => RouterOSClient,
+): Lease | null {
   const k = `${d.id}:${lane}`;
   const credKey = credentialKey(d, tls);
   let entry = pool.get(k);
@@ -85,7 +105,9 @@ export function lease(d: SessionDevice, lane: SessionLane, tls: boolean, make: (
     client: e.client,
     fresh,
     needsVerify: !fresh && Date.now() - e.lastVerified > REVERIFY_MS,
-    markVerified: () => { e.lastVerified = Date.now(); },
+    markVerified: () => {
+      e.lastVerified = Date.now();
+    },
     release: (ok) => {
       e.busy = false;
       e.lastUsed = Date.now();
@@ -101,16 +123,24 @@ export function lease(d: SessionDevice, lane: SessionLane, tls: boolean, make: (
 export function dropSessions(deviceId: number): void {
   for (const lane of ['fast', 'logs', 'slow'] as const) {
     const e = pool.get(`${deviceId}:${lane}`);
-    if (e && !e.busy) { e.client.disconnect(); pool.delete(`${deviceId}:${lane}`); }
+    if (e && !e.busy) {
+      e.client.disconnect();
+      pool.delete(`${deviceId}:${lane}`);
+    }
   }
 }
 
-export function pooledSessionCount(): number { return pool.size; }
+export function pooledSessionCount(): number {
+  return pool.size;
+}
 
 // Close sessions nobody has used for a while.
 setInterval(() => {
   const now = Date.now();
   for (const [k, e] of pool) {
-    if (!e.busy && now - e.lastUsed > IDLE_MS) { e.client.disconnect(); pool.delete(k); }
+    if (!e.busy && now - e.lastUsed > IDLE_MS) {
+      e.client.disconnect();
+      pool.delete(k);
+    }
   }
 }, 60_000).unref();

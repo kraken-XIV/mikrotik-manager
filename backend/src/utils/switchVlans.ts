@@ -46,7 +46,12 @@ export interface SwitchVlanView {
  * the device (Marvell, CRS3xx, and chips that do VLAN filtering in hardware
  * on RouterOS 7), which is different from an empty table.
  */
-export function switchVlanView(switches: Row[], vlanTable: Row[] | null, switchPorts: Row[], bridges: Row[]): SwitchVlanView {
+export function switchVlanView(
+  switches: Row[],
+  vlanTable: Row[] | null,
+  switchPorts: Row[],
+  bridges: Row[],
+): SwitchVlanView {
   const ports: SwitchVlanPort[] = switchPorts
     .filter((p) => p['vlan-mode'] !== undefined)
     .map((p) => ({
@@ -61,7 +66,10 @@ export function switchVlanView(switches: Row[], vlanTable: Row[] | null, switchP
       id: v['.id'] ?? '',
       switch: v.switch ?? '',
       vlanId: Number(v['vlan-id']),
-      ports: (v.ports ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+      ports: (v.ports ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
       independentLearning: isTrue(v['independent-learning']),
       disabled: isTrue(v.disabled),
     }))
@@ -73,7 +81,11 @@ export function switchVlanView(switches: Row[], vlanTable: Row[] | null, switchP
     switches: switches.map((s) => ({ name: s.name ?? '', type: s.type ?? '' })),
     vlans,
     ports,
-    inUse: vlans.some((v) => !v.disabled) || ports.some((p) => p.vlanMode !== '' && p.vlanMode !== 'disabled'),
-    filteringBridges: supported ? bridges.filter((b) => isTrue(b['vlan-filtering'])).map((b) => b.name ?? '') : [],
+    inUse:
+      vlans.some((v) => !v.disabled) ||
+      ports.some((p) => p.vlanMode !== '' && p.vlanMode !== 'disabled'),
+    filteringBridges: supported
+      ? bridges.filter((b) => isTrue(b['vlan-filtering'])).map((b) => b.name ?? '')
+      : [],
   };
 }

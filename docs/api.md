@@ -47,23 +47,23 @@ or 2FA changes.
 
 ## Endpoints worth knowing
 
-| Endpoint | Purpose |
-|---|---|
-| `GET /api/devices` | Fleet inventory with status, model, versions and serials |
-| `POST /api/devices/:id/sync` | Force an immediate full collection for one device |
-| `GET /api/devices/:id/management-path` | How the manager reaches a device, with the reason for each hop |
-| `POST /api/devices/:id/preflight` | Analyse a change **without applying it** |
-| `POST /api/devices/:id/change-guard/check` | Can this device arm auto-revert right now? (`ready`, `reason`) |
-| `POST /api/devices/:id/change-guard/probe` | Report which safety mechanisms the device supports |
-| `GET /api/devices/:id/config-health` | Latest standing-audit findings |
-| `POST /api/devices/:id/check-api` | For a device added over SSH only: does the API answer now? If so it becomes an ordinary device (`api: true`); otherwise `reason` says why |
-| `GET /api/devices/:id/l3hw` | L3 hardware offloading state, routed VLANs and chip counters (`supported: false` on devices without a capable chip) |
-| `PUT /api/devices/:id/l3hw` | Turn offloading on or off (`{"enabled": true}`) under Change Guard; returns 409 with `needs_acknowledgement` when forward or NAT rules would be bypassed, so resend with `"acknowledge_firewall": true` |
-| `GET /api/topology` | Graph of devices, links, external nodes, and distrusted identifiers |
-| `GET /api/operations/insights` | The dashboard's "things to handle" feed |
-| `GET /api/sites` | Sites with device counts (see [Sites](sites.md)) |
-| `GET /api/metrics/resources/latest` | Newest CPU and memory point per device: `{"devices": {"<deviceId>": {"cpu_load", "memory_used", "memory_total", "time"}}}`. `cpu_load` is a percentage, memory is in bytes, `time` is ISO 8601. Devices with no point in the last 15 minutes are omitted. Returns `503` if the metrics database cannot be read. Read-only; honours site scoping |
-| `GET /api/metrics/interfaces/latest` | Newest byte counters per device and interface: `{"devices": {"<deviceId>": {"<interface>": {"rx_bytes", "tx_bytes", "time"}}}}`. See [Interface counters](#interface-counters). Returns `503` if the metrics database cannot be read. Read-only; honours site scoping |
+| Endpoint                                   | Purpose                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/devices`                         | Fleet inventory with status, model, versions and serials                                                                                                                                                                                                                                                                                        |
+| `POST /api/devices/:id/sync`               | Force an immediate full collection for one device                                                                                                                                                                                                                                                                                               |
+| `GET /api/devices/:id/management-path`     | How the manager reaches a device, with the reason for each hop                                                                                                                                                                                                                                                                                  |
+| `POST /api/devices/:id/preflight`          | Analyse a change **without applying it**                                                                                                                                                                                                                                                                                                        |
+| `POST /api/devices/:id/change-guard/check` | Can this device arm auto-revert right now? (`ready`, `reason`)                                                                                                                                                                                                                                                                                  |
+| `POST /api/devices/:id/change-guard/probe` | Report which safety mechanisms the device supports                                                                                                                                                                                                                                                                                              |
+| `GET /api/devices/:id/config-health`       | Latest standing-audit findings                                                                                                                                                                                                                                                                                                                  |
+| `POST /api/devices/:id/check-api`          | For a device added over SSH only: does the API answer now? If so it becomes an ordinary device (`api: true`); otherwise `reason` says why                                                                                                                                                                                                       |
+| `GET /api/devices/:id/l3hw`                | L3 hardware offloading state, routed VLANs and chip counters (`supported: false` on devices without a capable chip)                                                                                                                                                                                                                             |
+| `PUT /api/devices/:id/l3hw`                | Turn offloading on or off (`{"enabled": true}`) under Change Guard; returns 409 with `needs_acknowledgement` when forward or NAT rules would be bypassed, so resend with `"acknowledge_firewall": true`                                                                                                                                         |
+| `GET /api/topology`                        | Graph of devices, links, external nodes, and distrusted identifiers                                                                                                                                                                                                                                                                             |
+| `GET /api/operations/insights`             | The dashboard's "things to handle" feed                                                                                                                                                                                                                                                                                                         |
+| `GET /api/sites`                           | Sites with device counts (see [Sites](sites.md))                                                                                                                                                                                                                                                                                                |
+| `GET /api/metrics/resources/latest`        | Newest CPU and memory point per device: `{"devices": {"<deviceId>": {"cpu_load", "memory_used", "memory_total", "time"}}}`. `cpu_load` is a percentage, memory is in bytes, `time` is ISO 8601. Devices with no point in the last 15 minutes are omitted. Returns `503` if the metrics database cannot be read. Read-only; honours site scoping |
+| `GET /api/metrics/interfaces/latest`       | Newest byte counters per device and interface: `{"devices": {"<deviceId>": {"<interface>": {"rx_bytes", "tx_bytes", "time"}}}}`. See [Interface counters](#interface-counters). Returns `503` if the metrics database cannot be read. Read-only; honours site scoping                                                                           |
 
 ### Interface counters
 
@@ -152,7 +152,9 @@ RouterOS write is sent and nothing is saved. The reply is:
         "host": "192.168.0.51",
         "params": { "servers": "1.1.1.1,9.9.9.9" },
         "target": { "servers": "172.24.1.15,172.24.1.16", "allow-remote-requests": "false" },
-        "changes": [{ "field": "servers", "from": "172.24.1.15,172.24.1.16", "to": "1.1.1.1,9.9.9.9" }],
+        "changes": [
+          { "field": "servers", "from": "172.24.1.15,172.24.1.16", "to": "1.1.1.1,9.9.9.9" }
+        ],
         "unchanged": [],
         "cli": "/ip dns set servers=1.1.1.1,9.9.9.9"
       }

@@ -1,15 +1,18 @@
-import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, RefreshCw, ShieldCheck, AlertTriangle } from 'lucide-react';
-import { devicesApi, type ApiSslResult } from '../../services/api';
-import { useCanWrite } from '../../hooks/useCanWrite';
-import type { Device } from '../../types';
 import clsx from 'clsx';
+import { AlertTriangle, KeyRound, RefreshCw, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
+import { type ApiSslResult, devicesApi } from '../../services/api';
+import type { Device } from '../../types';
 import { unmutedForApiSslNotice } from '../../utils/apiSslNotice';
 import { usesApiTls } from '../../utils/apiTls';
 
-
-type Outcome = { state: 'working' } | { state: 'done'; result: ApiSslResult; plainApi?: { ok: boolean; message: string } } | { state: 'error'; message: string };
+type Outcome =
+  | { state: 'working' }
+  | { state: 'done'; result: ApiSslResult; plainApi?: { ok: boolean; message: string } }
+  | { state: 'error'; message: string };
 
 /**
  * Devices the manager still reaches over the plain API, which sends each
@@ -38,7 +41,10 @@ export default function ApiSslCard() {
     queryKey: ['security-suppressions'],
     queryFn: () => devicesApi.listSecuritySuppressions().then((r) => r.data),
   });
-  const { mutedFleetWide, devices: all } = unmutedForApiSslNotice(devices as Device[], suppressions);
+  const { mutedFleetWide, devices: all } = unmutedForApiSslNotice(
+    devices as Device[],
+    suppressions,
+  );
   const plain = all.filter((d) => !usesApiTls(d));
 
   const switchOne = async (d: Device): Promise<void> => {
@@ -50,15 +56,21 @@ export default function ApiSslCard() {
         try {
           plainApi = { ok: true, message: (await devicesApi.disablePlainApi(d.id)).data.message };
         } catch (e) {
-          const data = (e as { response?: { data?: { error?: string; verdict?: unknown } } })?.response?.data;
-          plainApi = { ok: false, message: data?.verdict
-            ? 'Plain API left on: Change Guard predicts a problem; turn it off from the device\u2019s Security tab to see why.'
-            : data?.error || 'Plain API left on: it couldn\u2019t be turned off' };
+          const data = (e as { response?: { data?: { error?: string; verdict?: unknown } } })
+            ?.response?.data;
+          plainApi = {
+            ok: false,
+            message: data?.verdict
+              ? 'Plain API left on: Change Guard predicts a problem; turn it off from the device\u2019s Security tab to see why.'
+              : data?.error || 'Plain API left on: it couldn\u2019t be turned off',
+          };
         }
       }
       setOutcomes((o) => ({ ...o, [d.id]: { state: 'done', result: res.data, plainApi } }));
     } catch (err) {
-      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not enable API-SSL';
+      const message =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Could not enable API-SSL';
       setOutcomes((o) => ({ ...o, [d.id]: { state: 'error', message } }));
     }
   };
@@ -106,25 +118,44 @@ export default function ApiSslCard() {
             </h2>
             {plain.length > 0 && (
               <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
-                The plain API (8728) sends each device&apos;s login in the clear on every poll. Switching enables
-                API-SSL on the device (with a self-signed certificate if it has none) and moves the manager over only
-                once it has logged in over it. The plain API stays on unless you tick the box.
+                The plain API (8728) sends each device&apos;s login in the clear on every poll.
+                Switching enables API-SSL on the device (with a self-signed certificate if it has
+                none) and moves the manager over only once it has logged in over it. The plain API
+                stays on unless you tick the box.
               </p>
             )}
             {plain.length > 0 && canWrite && (
               <label className="mt-1.5 flex items-center gap-2 text-xs text-amber-900 dark:text-amber-200 cursor-pointer">
-                <input type="checkbox" className="w-3.5 h-3.5 rounded" checked={thenPlainOff} disabled={runningAll}
-                  onChange={(e) => setThenPlainOff(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  className="w-3.5 h-3.5 rounded"
+                  checked={thenPlainOff}
+                  disabled={runningAll}
+                  onChange={(e) => setThenPlainOff(e.target.checked)}
+                />
                 Then turn off plain API on each (skipped where something else still uses it)
               </label>
             )}
           </div>
         </div>
         {canWrite && plain.some((d) => d.status === 'online') && (
-          <button onClick={() => { void switchAll(); }} disabled={runningAll}
-            className="btn-primary text-xs py-1.5 flex items-center gap-1.5 flex-shrink-0">
-            {runningAll ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-            {runningAll ? 'Switching…' : plain.filter((d) => d.status === 'online').length > 1 ? 'Switch all online' : 'Switch to API-SSL'}
+          <button
+            onClick={() => {
+              void switchAll();
+            }}
+            disabled={runningAll}
+            className="btn-primary text-xs py-1.5 flex items-center gap-1.5 flex-shrink-0"
+          >
+            {runningAll ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <KeyRound className="w-3.5 h-3.5" />
+            )}
+            {runningAll
+              ? 'Switching…'
+              : plain.filter((d) => d.status === 'online').length > 1
+                ? 'Switch all online'
+                : 'Switch to API-SSL'}
           </button>
         )}
       </div>
@@ -139,28 +170,56 @@ export default function ApiSslCard() {
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-gray-900 dark:text-white">{d.name}</div>
                 <div className="text-xs text-gray-500 dark:text-slate-400">
-                  {d.ip_address} · port {d.api_port}{d.status !== 'online' ? ` · ${d.status}` : ''}
+                  {d.ip_address} · port {d.api_port}
+                  {d.status !== 'online' ? ` · ${d.status}` : ''}
                 </div>
                 {o?.state === 'done' && (
-                  <p className={clsx('text-xs mt-1 flex items-start gap-1',
-                    o.result.switched ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400')}>
-                    {o.result.switched ? <ShieldCheck className="w-3.5 h-3.5 flex-shrink-0" /> : <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />}
+                  <p
+                    className={clsx(
+                      'text-xs mt-1 flex items-start gap-1',
+                      o.result.switched
+                        ? 'text-green-700 dark:text-green-400'
+                        : 'text-amber-700 dark:text-amber-400',
+                    )}
+                  >
+                    {o.result.switched ? (
+                      <ShieldCheck className="w-3.5 h-3.5 flex-shrink-0" />
+                    ) : (
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    )}
                     {o.result.message}
                   </p>
                 )}
                 {o?.state === 'done' && o.plainApi && (
-                  <p className={clsx('text-xs mt-0.5', o.plainApi.ok ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400')}>
+                  <p
+                    className={clsx(
+                      'text-xs mt-0.5',
+                      o.plainApi.ok
+                        ? 'text-green-700 dark:text-green-400'
+                        : 'text-amber-700 dark:text-amber-400',
+                    )}
+                  >
                     {o.plainApi.message}
                   </p>
                 )}
-                {o?.state === 'error' && <p className="text-xs mt-1 text-red-600 dark:text-red-400">{o.message}</p>}
+                {o?.state === 'error' && (
+                  <p className="text-xs mt-1 text-red-600 dark:text-red-400">{o.message}</p>
+                )}
               </div>
               {canWrite && !(o?.state === 'done' && o.result.switched) && (
-                <button onClick={() => { void switchOne(d).then(refresh); }}
+                <button
+                  onClick={() => {
+                    void switchOne(d).then(refresh);
+                  }}
                   disabled={runningAll || o?.state === 'working' || d.status !== 'online'}
                   title={d.status !== 'online' ? 'The device must be online' : undefined}
-                  className="btn-secondary text-xs py-1 flex items-center gap-1.5 flex-shrink-0">
-                  {o?.state === 'working' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}
+                  className="btn-secondary text-xs py-1 flex items-center gap-1.5 flex-shrink-0"
+                >
+                  {o?.state === 'working' ? (
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <KeyRound className="w-3 h-3" />
+                  )}
                   {o?.state === 'working' ? 'Switching…' : 'Switch to API-SSL'}
                 </button>
               )}
@@ -169,8 +228,10 @@ export default function ApiSslCard() {
         })}
       </ul>
       {shown.length > PREVIEW && (
-        <button onClick={() => setExpanded((e) => !e)}
-          className="w-full px-4 py-2 text-xs font-medium text-amber-800 dark:text-amber-300 border-t border-amber-200 dark:border-amber-800 hover:bg-amber-100/60 dark:hover:bg-amber-900/30">
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          className="w-full px-4 py-2 text-xs font-medium text-amber-800 dark:text-amber-300 border-t border-amber-200 dark:border-amber-800 hover:bg-amber-100/60 dark:hover:bg-amber-900/30"
+        >
           {expanded ? 'Show fewer' : `Show all ${shown.length}`}
         </button>
       )}

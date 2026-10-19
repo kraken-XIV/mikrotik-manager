@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, RefreshCw, AlertCircle, ExternalLink, FileText } from 'lucide-react';
+import { AlertCircle, ExternalLink, FileText, RefreshCw, X } from 'lucide-react';
+import { useEffect } from 'react';
+
 import { firmwareApi } from '../services/api';
 
 /**
@@ -9,10 +10,16 @@ import { firmwareApi } from '../services/api';
  * are cached client- and server-side). Falls back to an external link when
  * the changelog can't be fetched.
  */
-export default function ChangelogModal({ version, onClose }: { version: string; onClose: () => void }) {
+export default function ChangelogModal({
+  version,
+  onClose,
+}: {
+  version: string;
+  onClose: () => void;
+}) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['firmware-changelog', version],
-    queryFn: () => firmwareApi.changelog(version).then(r => r.data),
+    queryFn: () => firmwareApi.changelog(version).then((r) => r.data),
     staleTime: Infinity,
     retry: 1,
   });
@@ -20,17 +27,23 @@ export default function ChangelogModal({ version, onClose }: { version: string; 
   const fallbackUrl = `https://download.mikrotik.com/routeros/${encodeURIComponent(version)}/CHANGELOG`;
   // Dark Site Mode answers 409 with disabled: true. That is a decision, not a
   // failure, so it gets its own wording instead of "couldn't load".
-  const disabled = (error as { response?: { data?: { disabled?: boolean } } } | null)
-    ?.response?.data?.disabled === true;
+  const disabled =
+    (error as { response?: { data?: { disabled?: boolean } } } | null)?.response?.data?.disabled ===
+    true;
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
       <div
         className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -41,7 +54,10 @@ export default function ChangelogModal({ version, onClose }: { version: string; 
             <FileText className="w-4 h-4 text-blue-500" />
             What&apos;s new in RouterOS {version}
           </h2>
-          <button onClick={onClose} className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
+          <button
+            onClick={onClose}
+            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -94,7 +110,9 @@ export default function ChangelogModal({ version, onClose }: { version: string; 
           >
             Open on mikrotik.com <ExternalLink className="w-3 h-3" />
           </a>
-          <button onClick={onClose} className="btn-secondary text-sm">Close</button>
+          <button onClick={onClose} className="btn-secondary text-sm">
+            Close
+          </button>
         </div>
       </div>
     </div>
