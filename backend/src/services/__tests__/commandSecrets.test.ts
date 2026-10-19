@@ -81,3 +81,7 @@ describe('refuseSecrets', () => {
     });
   });
 });
+
+it.each([0, -1, 1.5, 5000, NaN])('rejects unsafe secret length %s', (length) => {
+  expect(() => generateSecret(length)).toThrow(RangeError);
+});

@@ -1,4 +1,3 @@
-import * as crypto from 'crypto';
 import { EventEmitter } from 'events';
 import * as net from 'net';
 import * as tls from 'tls';
@@ -192,6 +191,9 @@ export class RouterOSClient extends EventEmitter {
                 const fp = cert?.fingerprint256;
                 if (!fp) throw new RouterOSError('The device presented no certificate on API-SSL');
                 this.tlsFingerprint = fp.replace(/:/g, '').toLowerCase();
+                if (!RouterOSClient.tlsVerifier) {
+                  throw new RouterOSError('API-SSL requires a certificate identity verifier');
+                }
                 if (RouterOSClient.tlsVerifier) {
                   await RouterOSClient.tlsVerifier(
                     this.host,
@@ -523,27 +525,9 @@ export class RouterOSClient extends EventEmitter {
     }
 
     if (first.type === '!re' && first.words['ret']) {
-      // Legacy v6 challenge-response
-      const challengeHex = first.words['ret'];
-      // Drain the !done that follows the !re
-      await this.readNextSentence();
-
-      const challenge = Buffer.from(challengeHex, 'hex');
-      const md5 = crypto.createHash('md5');
-      md5.update(Buffer.from([0x00]));
-      md5.update(Buffer.from(this.password, 'utf8'));
-      md5.update(challenge);
-      const responseHex = '00' + md5.digest('hex');
-
-      await this.sendSentence(['/login', `=name=${this.username}`, `=response=${responseHex}`]);
-      const result = await this.readNextSentence();
-      if (result.type !== '!done') {
-        throw new RouterOSError(
-          result.words['message'] || 'Authentication failed (legacy MD5)',
-          result.words['category'],
-        );
-      }
-      return;
+      throw new RouterOSError(
+        'Legacy MD5 login is disabled; upgrade RouterOS to 6.43 or newer and use API-SSL',
+      );
     }
 
     if (first.type === '!trap') {

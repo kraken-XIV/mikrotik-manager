@@ -427,7 +427,7 @@ terminalNs.on('connection', (socket) => {
 });
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet());
 app.use(cors(corsMiddlewareOptions()));
 app.use(compression());
 // While a platform backup is being restored the data is being replaced:

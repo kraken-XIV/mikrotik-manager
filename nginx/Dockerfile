@@ -6,6 +6,7 @@ WORKDIR /frontend
 
 # Copy package files and install dependencies
 COPY frontend/package*.json ./
+COPY backend/scripts/harden-braces.cjs /backend/scripts/harden-braces.cjs
 RUN npm ci
 
 # Copy source and build

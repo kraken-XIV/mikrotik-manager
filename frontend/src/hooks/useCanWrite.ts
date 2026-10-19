@@ -10,11 +10,12 @@ import { useSiteStore } from '../store/siteStore';
 export function useCanWrite(): boolean {
   const user = useAuthStore((state) => state.user);
   const siteId = useSiteStore((state) => state.currentSiteId);
-  if (user?.siteRoles && siteId != null) {
+  if (!user) return false;
+  if (user.siteRoles && siteId != null) {
     const role = user.siteRoles[String(siteId)];
     return role === 'operator' || role === 'admin';
   }
-  return user?.role !== 'viewer';
+  return user.role === 'operator' || user.role === 'admin';
 }
 
 /** An account limited to particular sites (P1-7). */

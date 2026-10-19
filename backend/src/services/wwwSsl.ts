@@ -44,19 +44,28 @@ const CHECK_ATTEMPTS = 3;
 /**
  * Does the device answer HTTPS on this port? Any HTTP status counts: WebFig
  * answers / with a page or a redirect. The certificate isn't verified, since
- * it's self-signed; this only proves the service is up and reachable.
+ * it's self-signed; its SHA-256 fingerprint must instead match the public
+ * certificate read over the authenticated RouterOS management connection.
  */
 export function httpsAnswers(
   host: string,
   port: number,
+  expectedFingerprint: string,
   timeoutMs = CHECK_TIMEOUT_MS,
 ): Promise<string | null> {
+  const expected = expectedFingerprint.replace(/:/g, '').toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(expected))
+    return Promise.resolve('No valid SHA-256 certificate fingerprint was provided');
   return new Promise((resolve) => {
     const req = https.request(
       { host, port, path: '/', method: 'GET', rejectUnauthorized: false, timeout: timeoutMs },
       (res) => {
+        const socket = res.socket as import('tls').TLSSocket;
+        const seen = socket.getPeerCertificate()?.fingerprint256?.replace(/:/g, '').toLowerCase();
         res.resume();
-        resolve(null);
+        resolve(
+          seen === expected ? null : 'WebFig certificate does not match the device certificate',
+        );
       },
     );
     req.on('timeout', () => req.destroy(new Error('no answer')));
@@ -125,10 +134,12 @@ export async function enableWwwSsl(deviceId: number): Promise<WwwSslResult> {
     }
 
     // The deciding step: HTTPS has to answer before plain www goes.
+    const certificate = await certByName(run, certName);
+    const fingerprint = certificate?.['fingerprint'] || '';
     let failure: string | null = 'not checked';
     for (let i = 0; i < CHECK_ATTEMPTS && failure; i++) {
       if (i > 0) await new Promise((r) => setTimeout(r, 2_000));
-      failure = await httpsAnswers(device.ip_address, port);
+      failure = await httpsAnswers(device.ip_address, port, fingerprint);
     }
     const url = webfigUrl(device.ip_address, port);
     if (failure) {
