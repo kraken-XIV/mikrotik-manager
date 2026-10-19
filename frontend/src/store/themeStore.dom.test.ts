@@ -5,6 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAccentPreset } from '../theme/accents';
+import { DEFAULT_CUSTOM_ACCENT, getCustomAccentVars } from '../theme/customAccent';
 import { initThemeFromStorage, resolveEffectiveTheme, useThemeStore } from './themeStore';
 
 /** jsdom has no matchMedia; the store must both detect its absence and use it when present. */
@@ -29,7 +30,12 @@ function resetDom(): void {
   document.documentElement.removeAttribute('style');
   document.documentElement.removeAttribute('data-scheme');
   localStorage.clear();
-  useThemeStore.setState({ theme: 'light', accent: 'blue', scheme: 'default' });
+  useThemeStore.setState({
+    theme: 'light',
+    accent: 'blue',
+    scheme: 'default',
+    customColor: DEFAULT_CUSTOM_ACCENT,
+  });
 }
 
 beforeEach(() => {
@@ -308,4 +314,58 @@ it('starts live OS tracking on a deep-link boot without mounting a theme hook', 
     getAccentPreset('rose').dark.accent,
   );
   expect(document.documentElement.getAttribute('data-scheme')).toBe('midnight');
+});
+
+describe('custom accent storage and mode changes', () => {
+  it('persists a validated colour and restores it at boot and rehydration', async () => {
+    useThemeStore.getState().setCustomColor('#FF8800');
+    expect(useThemeStore.getState()).toMatchObject({ accent: 'custom', customColor: '#ff8800' });
+    const raw = localStorage.getItem('mikrotik-theme')!;
+    expect(JSON.parse(raw).state.customColor).toBe('#ff8800');
+    useThemeStore.getState().setAccent('blue');
+    localStorage.setItem('mikrotik-theme', raw);
+    initThemeFromStorage();
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+      getCustomAccentVars('#ff8800', 'light').accent,
+    );
+    await useThemeStore.persist.rehydrate();
+    expect(useThemeStore.getState().accent).toBe('custom');
+    expect(typeof useThemeStore.getState().setCustomColor).toBe('function');
+  });
+
+  it('recomputes custom tones in every mode and keeps the colour when a preset is chosen', () => {
+    useThemeStore.getState().setCustomColor('#ff8800');
+    useThemeStore.getState().setTheme('dark');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+      getCustomAccentVars('#ff8800', 'dark').accent,
+    );
+    stubMatchMedia(false);
+    useThemeStore.getState().setTheme('system');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+      getCustomAccentVars('#ff8800', 'light').accent,
+    );
+    useThemeStore.getState().setAccent('blue');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('');
+    useThemeStore.getState().setAccent('custom');
+    expect(useThemeStore.getState().customColor).toBe('#ff8800');
+  });
+
+  it('rejects invalid custom CSS and cannot rehydrate over the setter', async () => {
+    useThemeStore.getState().setCustomColor('url(attacker)');
+    expect(useThemeStore.getState().accent).toBe('blue');
+    localStorage.setItem(
+      'mikrotik-theme',
+      JSON.stringify({
+        state: { accent: 'custom', customColor: '#fff; color:red', setCustomColor: null },
+        version: 0,
+      }),
+    );
+    await useThemeStore.persist.rehydrate();
+    expect(useThemeStore.getState()).toMatchObject({
+      accent: 'blue',
+      customColor: DEFAULT_CUSTOM_ACCENT,
+    });
+    expect(typeof useThemeStore.getState().setCustomColor).toBe('function');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('');
+  });
 });

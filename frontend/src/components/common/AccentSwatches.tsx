@@ -1,7 +1,8 @@
 import clsx from 'clsx';
 
 import { useEffectiveTheme, useThemeStore } from '../../store/themeStore';
-import { ACCENT_PRESETS, type AccentId } from '../../theme/accents';
+import { ACCENT_PRESETS } from '../../theme/accents';
+import { type AccentSelection, getCustomAccentVars } from '../../theme/customAccent';
 
 /**
  * The accent-choosing row shared by the TopBar popover and the Settings
@@ -14,6 +15,9 @@ export default function AccentSwatches({ className }: { className?: string }) {
   const effectiveTheme = useEffectiveTheme();
   const accent = useThemeStore((s) => s.accent);
   const setAccent = useThemeStore((s) => s.setAccent);
+  const customColor = useThemeStore((s) => s.customColor);
+  const setCustomColor = useThemeStore((s) => s.setCustomColor);
+  const custom = getCustomAccentVars(customColor, effectiveTheme);
 
   return (
     <div
@@ -43,10 +47,41 @@ export default function AccentSwatches({ className }: { className?: string }) {
           />
         );
       })}
+      <div className="w-full flex flex-wrap items-center gap-2 mt-1">
+        <button
+          type="button"
+          aria-label="Use custom accent"
+          aria-pressed={accent === 'custom'}
+          onClick={() => setAccent('custom')}
+          className="inline-flex items-center gap-1.5 rounded border border-line px-1.5 py-1 text-xs text-ink-2"
+        >
+          <span
+            className="w-4 h-4 rounded-full"
+            style={{
+              backgroundColor: custom.accent,
+              ...(accent === 'custom' ? { boxShadow: `0 0 0 2px ${custom.accent}` } : {}),
+            }}
+          />
+          Custom
+        </button>
+        <input
+          type="color"
+          aria-label="Pick custom accent colour"
+          title="Pick custom accent colour"
+          value={customColor}
+          onChange={(event) => setCustomColor(event.currentTarget.value)}
+          className="w-8 h-8 shrink-0 cursor-pointer rounded border border-line bg-surface p-0.5"
+        />
+        <output className="text-[11px] text-ink-3">{customColor.toUpperCase()}</output>
+        <p className="w-full text-[11px] text-ink-3">
+          Custom colours adapt for readability in each mode.
+        </p>
+      </div>
     </div>
   );
 }
 
-export function accentIdLabel(id: AccentId): string {
+export function accentIdLabel(id: AccentSelection): string {
+  if (id === 'custom') return 'Custom';
   return ACCENT_PRESETS.find((a) => a.id === id)?.label ?? id;
 }

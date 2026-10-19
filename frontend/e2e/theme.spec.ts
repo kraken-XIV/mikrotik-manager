@@ -126,7 +126,7 @@ test('keyboard entry focuses the selected option, and Tab can leave the popover'
   await page.keyboard.press('Escape');
   await expect(trigger).toBeFocused();
   await page.keyboard.press('Enter');
-  await page.getByRole('button', { name: 'Accent colour: Teal' }).focus();
+  await page.getByLabel('Pick custom accent colour').focus();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('dialog', { name: 'Theme and accent' })).toBeHidden();
 });
@@ -154,4 +154,74 @@ test('invalid persisted preferences do not break theme controls after reload', a
     'aria-pressed',
     'true',
   );
+});
+
+test('shared picker keeps native colour selection open and applies a custom colour', async ({
+  page,
+}) => {
+  await openThemeMenu(page);
+  const dialog = page.getByRole('dialog', { name: 'Theme and accent', exact: true });
+  const picker = dialog.getByLabel('Pick custom accent colour');
+  await picker.focus();
+  // Native colour windows can blur the document without a DOM focus target.
+  await picker.dispatchEvent('focusout', { relatedTarget: null });
+  await expect(dialog).toBeVisible();
+  await picker.fill('#12abcd');
+  await expect(dialog.getByRole('button', { name: 'Use custom accent' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('html')).toHaveCSS('--accent', /^#[0-9a-f]{6}$/);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await page.reload();
+  await openThemeMenu(page);
+  await expect(picker).toHaveValue('#12abcd');
+});
+
+test('invalid persisted custom colour cannot inject CSS or replace its setter', async ({
+  page,
+}) => {
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'mikrotik-theme',
+      JSON.stringify({
+        state: {
+          theme: 'light',
+          accent: 'custom',
+          customColor: '#fff; background: red',
+          setCustomColor: false,
+        },
+        version: 0,
+      }),
+    ),
+  );
+  await page.reload();
+  await expect(page.locator('html')).toHaveCSS('--accent', '#2563eb');
+  await openThemeMenu(page);
+  await page.getByLabel('Pick custom accent colour').fill('#334455');
+  await expect(page.getByRole('button', { name: 'Use custom accent' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+test('mobile login picker stays above the logo and every colour control is clickable', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openThemeMenu(page);
+  for (const label of ['Blue', 'Violet', 'Emerald', 'Rose', 'Amber', 'Teal']) {
+    const bubble = page.getByRole('button', { name: `Accent colour: ${label}` });
+    const onTop = await bubble.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      return el.contains(
+        document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2),
+      );
+    });
+    expect(onTop, `${label} must not be covered by the login logo`).toBe(true);
+    await bubble.click();
+  }
+  await page.getByLabel('Pick custom accent colour').fill('#ff8800');
+  await page.getByRole('button', { name: 'Use custom accent' }).click();
 });

@@ -7,6 +7,7 @@ import {
   DEFAULT_ACCENT,
   getAccentPreset,
 } from './accents';
+import { DEFAULT_CUSTOM_ACCENT, getCustomAccentVars, normalizeCustomColor } from './customAccent';
 
 /**
  * The blue preset is load-bearing: it must equal the historical `:root` and
@@ -109,4 +110,46 @@ it('normal and hover button text meets WCAG AA in every accent and mode', () => 
       }
     }
   }
+});
+
+// Independent luminance/contrast checks cover saturated, grayscale and boundary
+// colours; a valid native picker choice must never produce unreadable labels.
+describe('custom accent palettes', () => {
+  it('accepts only complete hex colours and rejects CSS/storage injection', () => {
+    expect(normalizeCustomColor('#Aa00Ff')).toBe('#aa00ff');
+    for (const value of [null, {}, '#abc', '#12345678', 'red', '#ff0000; color:red', 'url(x)']) {
+      expect(normalizeCustomColor(value)).toBeNull();
+    }
+  });
+
+  it('generates readable normal/hover labels and links across the RGB gamut', () => {
+    const values = [0, 51, 102, 153, 204, 255];
+    for (const r of values)
+      for (const g of values)
+        for (const b of values) {
+          const seed = `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+          for (const mode of ['light', 'dark'] as const) {
+            const palette = getCustomAccentVars(seed, mode);
+            for (const colour of [palette.accent, palette.accent2]) {
+              const fg = luminance(palette.accentFg);
+              const bg = luminance(colour);
+              expect(
+                (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05),
+                `${seed}/${mode}`,
+              ).toBeGreaterThanOrEqual(4.5);
+              // Darkest light / brightest dark neutral surface across all schemes.
+              const surface = luminance(mode === 'light' ? '#e5e3d8' : '#23262c');
+              expect(
+                (Math.max(surface, bg) + 0.05) / (Math.min(surface, bg) + 0.05),
+              ).toBeGreaterThanOrEqual(4.5);
+            }
+          }
+        }
+  });
+
+  it('falls back safely for malformed runtime values', () => {
+    expect(getCustomAccentVars('url(attacker)', 'light')).toEqual(
+      getCustomAccentVars(DEFAULT_CUSTOM_ACCENT, 'light'),
+    );
+  });
 });

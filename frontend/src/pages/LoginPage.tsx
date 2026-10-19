@@ -135,7 +135,7 @@ export default function LoginPage() {
 
       {/* Theme + accent — the same popover the app uses, so what a user picks
           before signing in is exactly what they find after. */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-20">
         <ThemeMenu />
       </div>
 
