@@ -155,3 +155,13 @@ skip when tools are missing.
 - GitHub secret scanning and push protection were verified enabled for this
   public fork. No credentials, live RouterOS configuration, TLS login behavior,
   firewall rules or product code are changed by Phase 3.
+
+### Inherited CodeQL policy (unchanged)
+
+The upstream `.github/codeql/codeql-config.yml` excludes the single
+`js/missing-rate-limiting` query: its documented rationale is global Express API
+rate limiting plus dedicated authentication limiters that this query does not
+attribute to individual handlers. Phase 3 neither adds nor broadens that
+exclusion. This inherited query-level policy is distinct from the repaired
+Gitleaks/Trivy exceptions; the remaining CodeQL security-extended rules stay
+active. No claim is made that every possible CodeQL query runs.
