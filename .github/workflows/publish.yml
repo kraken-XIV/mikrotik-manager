@@ -21,6 +21,9 @@ env:
   BACKEND_IMAGE: ghcr.io/2gt-media-group-llc/mikrotik-manager-backend
   NGINX_IMAGE: ghcr.io/2gt-media-group-llc/mikrotik-manager-nginx
 
+permissions:
+  contents: read
+
 jobs:
   publish-backend:
     name: Build & Push Backend

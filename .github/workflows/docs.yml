@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: docs-${{ github.ref }}
@@ -53,6 +53,8 @@ jobs:
       - run: mkdocs build --strict
 
   deploy:
+    permissions:
+      contents: write
     name: Publish versioned site
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest

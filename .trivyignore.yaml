@@ -1,0 +1,12 @@
+# No vulnerability/CVE exceptions. This is one Dockerfile misconfiguration.
+misconfigurations:
+  - id: DS-0002
+    paths:
+      - nginx/Dockerfile
+    expired_at: 2027-01-19
+    statement: >-
+      Reviewed 2026-10-19: official nginx master binds ports 80/443 and the
+      entrypoint generates certificate files as root; workers drop to nginx.
+      Only this exact Dockerfile and check are excepted. Remove when startup
+      uses pre-provisioned certificates and a verified non-root/unprivileged
+      image, or when this component is removed. Re-review before expiry.

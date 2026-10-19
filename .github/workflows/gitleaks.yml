@@ -1,0 +1,36 @@
+name: Secrets Scan (gitleaks)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, fork/main]
+  pull_request:
+    branches: [main, fork/main]
+  schedule:
+    - cron: '23 7 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gitleaks:
+    name: Secrets — gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install checksum-verified Gitleaks 8.30.1
+        run: |
+          bash scripts/install-security-tools.sh gitleaks "$RUNNER_TEMP/security-bin"
+          echo "$RUNNER_TEMP/security-bin" >> "$GITHUB_PATH"
+      # Full reachable history on PR, push, manual and scheduled runs alike.
+      # No licensing signup, PR comments, write token or diff-only blind spots.
+      - name: Scan full history (findings and scanner errors fail CI)
+        run: gitleaks git --redact --no-banner --config .gitleaks.toml .

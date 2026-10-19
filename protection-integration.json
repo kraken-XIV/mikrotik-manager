@@ -8,7 +8,10 @@
       "Security Audit",
       "Analyze (javascript-typescript)",
       "Formatting — Prettier",
-      "CodeQL"
+      "CodeQL",
+      "Secrets — gitleaks",
+      "Trivy — vuln & misconfig",
+      "Dependency Review"
     ]
   },
   "enforce_admins": false,
