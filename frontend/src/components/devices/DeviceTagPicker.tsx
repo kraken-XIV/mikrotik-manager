@@ -129,7 +129,7 @@ export default function DeviceTagPicker({ deviceId }: Props) {
                     style={{ background: t.color }}
                   />
                   <span className="flex-1 text-left truncate">{t.name}</span>
-                  {on && <Check className="w-3.5 h-3.5 text-blue-500" />}
+                  {on && <Check className="w-3.5 h-3.5 text-accent" />}
                 </button>
               );
             })

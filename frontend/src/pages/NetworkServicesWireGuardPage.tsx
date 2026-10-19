@@ -59,10 +59,10 @@ function CopyButton({ text }: { text: string }) {
           setTimeout(() => setCopied(false), 1500);
         });
       }}
-      className="p-1 rounded text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+      className="p-1 rounded text-ink-4 hover:text-accent dark:hover:text-accent transition-colors"
       title="Copy"
     >
-      {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? <Check className="w-3.5 h-3.5 text-good" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
   );
 }
@@ -99,23 +99,21 @@ function IfaceForm({ deviceId, existing, onClose }: IfaceFormProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+      <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+          <h3 className="text-sm font-semibold text-ink">
             {existing ? 'Edit' : 'Add'} WireGuard Interface
           </h3>
           <button
             onClick={onClose}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+            className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
-              Name *
-            </label>
+            <label className="block text-xs font-medium text-ink-2 mb-1">Name *</label>
             <input
               className="input w-full"
               value={name}
@@ -124,16 +122,12 @@ function IfaceForm({ deviceId, existing, onClose }: IfaceFormProps) {
               disabled={!!existing}
             />
             {!existing && (
-              <p className="mt-0.5 text-xs text-gray-400">
-                RouterOS will auto-generate a key pair.
-              </p>
+              <p className="mt-0.5 text-xs text-ink-4">RouterOS will auto-generate a key pair.</p>
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
-                Listen Port
-              </label>
+              <label className="block text-xs font-medium text-ink-2 mb-1">Listen Port</label>
               <input
                 className="input w-full"
                 type="number"
@@ -143,9 +137,7 @@ function IfaceForm({ deviceId, existing, onClose }: IfaceFormProps) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
-                MTU
-              </label>
+              <label className="block text-xs font-medium text-ink-2 mb-1">MTU</label>
               <input
                 className="input w-full"
                 type="number"
@@ -162,7 +154,7 @@ function IfaceForm({ deviceId, existing, onClose }: IfaceFormProps) {
               onClick={() => setDisabled((v) => !v)}
               className={clsx(
                 'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors',
-                !disabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                !disabled ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3',
               )}
             >
               <span
@@ -172,14 +164,14 @@ function IfaceForm({ deviceId, existing, onClose }: IfaceFormProps) {
                 )}
               />
             </button>
-            <span className="text-sm text-gray-700 dark:text-slate-200">Enabled</span>
+            <span className="text-sm text-ink-2 dark:text-ink">Enabled</span>
           </div>
         </div>
         <div className="px-5 pb-4 flex items-center gap-3">
           <button
             onClick={() => save.mutate()}
             disabled={!name || save.isPending}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-accent hover:bg-accent text-accent-fg text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
           >
             <Check className="w-3.5 h-3.5" />
             {save.isPending ? 'Saving…' : 'Save'}
@@ -190,12 +182,10 @@ function IfaceForm({ deviceId, existing, onClose }: IfaceFormProps) {
             applyLabel="Save"
             disabled={!name || save.isPending}
           />
-          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700">
+          <button onClick={onClose} className="text-sm text-ink-3 hover:text-ink-2">
             Cancel
           </button>
-          {save.isError && (
-            <span className="text-xs text-red-500">{apiErrorMessage(save.error)}</span>
-          )}
+          {save.isError && <span className="text-xs text-bad">{apiErrorMessage(save.error)}</span>}
         </div>
       </div>
     </div>
@@ -268,23 +258,21 @@ function PeerForm({ deviceId, ifaceName, existing, onClose }: PeerFormProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+      <div className="bg-surface rounded-xl shadow-2xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+          <h3 className="text-sm font-semibold text-ink">
             {existing ? 'Edit' : 'Add'} Peer — {ifaceName}
           </h3>
           <button
             onClick={onClose}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+            className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
-              Peer Public Key *
-            </label>
+            <label className="block text-xs font-medium text-ink-2 mb-1">Peer Public Key *</label>
             <input
               className="input w-full font-mono text-xs"
               value={pubKey}
@@ -293,9 +281,7 @@ function PeerForm({ deviceId, ifaceName, existing, onClose }: PeerFormProps) {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
-              Allowed Addresses *
-            </label>
+            <label className="block text-xs font-medium text-ink-2 mb-1">Allowed Addresses *</label>
             <ListInput
               value={allowedAddr}
               onChange={setAllowedAddr}
@@ -303,15 +289,13 @@ function PeerForm({ deviceId, ifaceName, existing, onClose }: PeerFormProps) {
               validate={(e) => (isIpOrPrefix(e) ? null : `${e} isn't an IP address or prefix`)}
               placeholder="10.0.0.2/32 or 0.0.0.0/0"
             />
-            <p className="mt-0.5 text-xs text-gray-400">
+            <p className="mt-0.5 text-xs text-ink-4">
               Addresses or prefixes this peer may use. Press Enter after each.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
-                Endpoint Address
-              </label>
+              <label className="block text-xs font-medium text-ink-2 mb-1">Endpoint Address</label>
               <input
                 className="input w-full"
                 value={endpointAddr}
@@ -320,9 +304,7 @@ function PeerForm({ deviceId, ifaceName, existing, onClose }: PeerFormProps) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
-                Endpoint Port
-              </label>
+              <label className="block text-xs font-medium text-ink-2 mb-1">Endpoint Port</label>
               <input
                 className="input w-full"
                 type="number"
@@ -334,7 +316,7 @@ function PeerForm({ deviceId, ifaceName, existing, onClose }: PeerFormProps) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-ink-2 mb-1">
                 Persistent Keepalive (s)
               </label>
               <input
@@ -346,9 +328,7 @@ function PeerForm({ deviceId, ifaceName, existing, onClose }: PeerFormProps) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
-                Preshared Key
-              </label>
+              <label className="block text-xs font-medium text-ink-2 mb-1">Preshared Key</label>
               <input
                 className="input w-full font-mono text-xs"
                 value={presharedKey}
@@ -363,7 +343,7 @@ function PeerForm({ deviceId, ifaceName, existing, onClose }: PeerFormProps) {
           <button
             onClick={() => save.mutate()}
             disabled={!pubKey || allowedAddr.length === 0 || save.isPending}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-accent hover:bg-accent text-accent-fg text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
           >
             <Check className="w-3.5 h-3.5" />
             {save.isPending ? 'Saving…' : 'Save Peer'}
@@ -374,12 +354,10 @@ function PeerForm({ deviceId, ifaceName, existing, onClose }: PeerFormProps) {
             applyLabel="Save"
             disabled={!pubKey || allowedAddr.length === 0 || save.isPending}
           />
-          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700">
+          <button onClick={onClose} className="text-sm text-ink-3 hover:text-ink-2">
             Cancel
           </button>
-          {save.isError && (
-            <span className="text-xs text-red-500">{apiErrorMessage(save.error)}</span>
-          )}
+          {save.isError && <span className="text-xs text-bad">{apiErrorMessage(save.error)}</span>}
         </div>
       </div>
     </div>
@@ -497,7 +475,7 @@ function DeviceWireGuardCard({
       )}
 
       {writeError && (
-        <div className="m-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
+        <div className="m-3 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg text-sm text-bad">
           {writeError}
         </div>
       )}
@@ -509,14 +487,14 @@ function DeviceWireGuardCard({
       />
 
       {/* Device header */}
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-200 dark:border-slate-700">
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-line">
         <DeviceTypePill type={device.device_type} />
         <Link to={`/devices/${device.id}`} className="cell-primary hover:underline">
           {device.name}
         </Link>
         <TagChips tags={device.tags} />
         {device.status !== 'online' && (
-          <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+          <span className="inline-flex items-center gap-1 text-xs text-warn">
             <AlertTriangle className="w-3.5 h-3.5" />
             offline
           </span>
@@ -525,7 +503,7 @@ function DeviceWireGuardCard({
           {canWrite && (
             <button
               onClick={() => setIfaceForm('new')}
-              className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 bg-accent hover:bg-accent text-accent-fg text-xs font-medium rounded-lg transition-colors"
             >
               <Plus className="w-3 h-3" />
               New Interface
@@ -536,27 +514,23 @@ function DeviceWireGuardCard({
             disabled={isFetching}
             title="Refresh"
             aria-label="Refresh"
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 disabled:opacity-50"
+            className="p-1.5 rounded-lg text-ink-4 hover:text-ink-2 dark:hover:text-ink-2 disabled:opacity-50"
           >
             <RefreshCw className={clsx('w-3.5 h-3.5', isFetching && 'animate-spin')} />
           </button>
         </div>
       </div>
 
-      {isLoading && (
-        <div className="p-5 text-center text-sm text-gray-400 dark:text-slate-500">Loading…</div>
-      )}
+      {isLoading && <div className="p-5 text-center text-sm text-ink-3">Loading…</div>}
       {error && (
-        <div className="p-4 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+        <div className="p-4 flex items-center gap-2 text-sm text-bad">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
           Failed: {apiErrorMessage(error)}
         </div>
       )}
 
       {wg && wg.interfaces.length === 0 && !isLoading && (
-        <div className="p-5 text-center text-sm text-gray-400 dark:text-slate-500">
-          No WireGuard interfaces.
-        </div>
+        <div className="p-5 text-center text-sm text-ink-3">No WireGuard interfaces.</div>
       )}
 
       {wg &&
@@ -569,34 +543,27 @@ function DeviceWireGuardCard({
           const isExpanded = expandedIface === name;
 
           return (
-            <div
-              key={id || name}
-              className="border-b last:border-b-0 border-gray-100 dark:border-slate-700/60"
-            >
+            <div key={id || name} className="border-b last:border-b-0 border-line-soft/60">
               {/* Interface header */}
-              <div className="flex items-center border-b border-gray-200 dark:border-slate-700">
+              <div className="flex items-center border-b border-line">
                 <button
                   onClick={() => setExpandedIface(isExpanded ? null : name)}
-                  className="flex items-center gap-2 flex-1 px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
+                  className="flex items-center gap-2 flex-1 px-5 py-3 text-left hover:bg-surface-2/40 transition-colors"
                 >
                   {isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                    <ChevronDown className="w-4 h-4 text-ink-4" />
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <ChevronRight className="w-4 h-4 text-ink-4" />
                   )}
-                  <Shield className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                  <span className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-                    {name}
-                  </span>
+                  <Shield className="w-4 h-4 text-info flex-shrink-0" />
+                  <span className="text-sm font-semibold text-ink-2 dark:text-ink">{name}</span>
                   {iface['listen-port'] && (
-                    <span className="text-xs text-gray-400 dark:text-slate-500">
-                      :{iface['listen-port']}
-                    </span>
+                    <span className="text-xs text-ink-3">:{iface['listen-port']}</span>
                   )}
                   {isMgmtIface(iface) && (
                     <span
                       title={mgmt!.reason}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-info-bg dark:bg-info-bg text-info dark:text-info"
                     >
                       <Lock className="w-3 h-3" /> Protected
                     </span>
@@ -608,20 +575,16 @@ function DeviceWireGuardCard({
                     className={clsx(
                       'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
                       running && !disabled
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        ? 'bg-good-bg text-good'
                         : disabled
-                          ? 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
-                          : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+                          ? 'bg-surface-3 text-ink-3'
+                          : 'bg-warn-bg dark:bg-warn-bg text-warn',
                     )}
                   >
                     <span
                       className={clsx(
                         'w-1.5 h-1.5 rounded-full',
-                        running && !disabled
-                          ? 'bg-green-500'
-                          : disabled
-                            ? 'bg-gray-400'
-                            : 'bg-amber-400',
+                        running && !disabled ? 'bg-good' : disabled ? 'bg-surface-3' : 'bg-warn',
                       )}
                     />
                     {disabled ? 'Disabled' : running ? 'Running' : 'Stopped'}
@@ -634,8 +597,8 @@ function DeviceWireGuardCard({
                         className={clsx(
                           'p-1.5 rounded-lg transition-colors',
                           disabled
-                            ? 'text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                            : 'text-green-600 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20',
+                            ? 'text-ink-4 hover:text-good hover:bg-good-bg dark:hover:bg-good-bg'
+                            : 'text-good hover:text-warn hover:bg-warn-bg dark:hover:bg-warn-bg',
                         )}
                       >
                         <Power className="w-3.5 h-3.5" />
@@ -643,7 +606,7 @@ function DeviceWireGuardCard({
                       <button
                         onClick={() => setIfaceForm(iface)}
                         title="Edit"
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        className="p-1.5 rounded-lg text-ink-4 hover:text-accent hover:bg-accent-soft dark:hover:bg-accent-soft transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -653,7 +616,7 @@ function DeviceWireGuardCard({
                             removeIface(id);
                         }}
                         title="Delete"
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        className="p-1.5 rounded-lg text-ink-4 hover:text-bad hover:bg-bad-bg dark:hover:bg-bad-bg transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -663,7 +626,7 @@ function DeviceWireGuardCard({
               </div>
 
               {isMgmtIface(iface) && (
-                <p className="px-5 py-2 text-xs text-indigo-800 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 flex items-start gap-1.5 border-b border-gray-200 dark:border-slate-700">
+                <p className="px-5 py-2 text-xs text-info dark:text-info bg-info-bg dark:bg-info-bg flex items-start gap-1.5 border-b border-line">
                   <Lock className="w-3.5 h-3.5 mt-px flex-shrink-0" />
                   <span>
                     {mgmt!.reason} This tunnel and its peers are shown read-only so the manager
@@ -678,11 +641,11 @@ function DeviceWireGuardCard({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {iface['public-key'] && (
                       <div className="sm:col-span-2">
-                        <div className="text-xs text-gray-400 dark:text-slate-500 mb-1 flex items-center gap-1">
+                        <div className="text-xs text-ink-3 mb-1 flex items-center gap-1">
                           <Key className="w-3 h-3" /> Public Key
                         </div>
                         <div className="flex items-center gap-2">
-                          <code className="text-xs font-mono text-gray-700 dark:text-slate-300 break-all flex-1">
+                          <code className="text-xs font-mono text-ink-2 break-all flex-1">
                             {iface['public-key']}
                           </code>
                           <CopyButton text={iface['public-key']} />
@@ -691,8 +654,8 @@ function DeviceWireGuardCard({
                     )}
                     {iface['mtu'] && (
                       <div>
-                        <div className="text-xs text-gray-400 dark:text-slate-500 mb-0.5">MTU</div>
-                        <div className="text-sm text-gray-900 dark:text-white">{iface['mtu']}</div>
+                        <div className="text-xs text-ink-3 mb-0.5">MTU</div>
+                        <div className="text-sm text-ink">{iface['mtu']}</div>
                       </div>
                     )}
                   </div>
@@ -700,13 +663,13 @@ function DeviceWireGuardCard({
                   {/* Peers */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                      <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wide">
                         Peers ({peers.length})
                       </h3>
                       {canWrite && !isMgmtIface(iface) && (
                         <button
                           onClick={() => setPeerForm({ ifaceName: name })}
-                          className="flex items-center gap-1 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors"
+                          className="flex items-center gap-1 px-2.5 py-1 bg-info hover:bg-info text-white text-xs font-medium rounded-lg transition-colors"
                         >
                           <Plus className="w-3 h-3" />
                           Add Peer
@@ -715,31 +678,29 @@ function DeviceWireGuardCard({
                     </div>
 
                     {peers.length === 0 ? (
-                      <p className="text-sm text-gray-400 dark:text-slate-500">
-                        No peers configured.
-                      </p>
+                      <p className="text-sm text-ink-3">No peers configured.</p>
                     ) : (
-                      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+                      <div className="overflow-x-auto rounded-lg border border-line">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40">
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                            <tr className="border-b border-line bg-surface-2/40">
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-ink-3 uppercase tracking-wide">
                                 Public Key
                               </th>
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-ink-3 uppercase tracking-wide">
                                 Allowed Addresses
                               </th>
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-ink-3 uppercase tracking-wide">
                                 Endpoint
                               </th>
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-ink-3 uppercase tracking-wide">
                                 TX / RX
                               </th>
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-ink-3 uppercase tracking-wide">
                                 Last Handshake
                               </th>
                               {canWrite && !isMgmtIface(iface) && (
-                                <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                                <th className="px-3 py-2 text-right text-xs font-semibold text-ink-3 uppercase tracking-wide">
                                   Actions
                                 </th>
                               )}
@@ -750,15 +711,13 @@ function DeviceWireGuardCard({
                               <tr
                                 key={peer['.id'] || i}
                                 className={clsx(
-                                  'border-b border-gray-100 dark:border-slate-800 transition-colors hover:bg-blue-50 dark:hover:bg-slate-700/40',
-                                  i % 2 === 0
-                                    ? 'bg-white dark:bg-transparent'
-                                    : 'bg-gray-50 dark:bg-slate-800/40',
+                                  'border-b border-line-soft dark:border-line-soft transition-colors hover:bg-accent-soft dark:hover:bg-surface-3',
+                                  i % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-surface-2/40',
                                 )}
                               >
                                 <td className="px-3 py-2">
                                   <div className="flex items-center gap-1">
-                                    <code className="text-xs font-mono text-gray-700 dark:text-slate-300">
+                                    <code className="text-xs font-mono text-ink-2">
                                       {truncateKey(peer['public-key'] || '')}
                                     </code>
                                     {peer['public-key'] && <CopyButton text={peer['public-key']} />}
@@ -769,7 +728,7 @@ function DeviceWireGuardCard({
                                             ? 'This peer carries the manager\u2019s connection to the device'
                                             : 'The manager\u2019s address couldn\u2019t be seen, so this peer may carry its connection'
                                         }
-                                        className="ml-1 inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+                                        className="ml-1 inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-info-bg dark:bg-info-bg text-info dark:text-info"
                                       >
                                         <Lock className="w-2.5 h-2.5" />{' '}
                                         {mgmt!.peer_certain ? 'Manager' : 'Maybe manager'}
@@ -777,20 +736,20 @@ function DeviceWireGuardCard({
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-3 py-2 text-xs font-mono text-gray-600 dark:text-slate-300">
+                                <td className="px-3 py-2 text-xs font-mono text-ink-2">
                                   {peer['allowed-address'] || '—'}
                                 </td>
-                                <td className="px-3 py-2 text-xs text-gray-600 dark:text-slate-300">
+                                <td className="px-3 py-2 text-xs text-ink-2">
                                   {peer['endpoint-address']
                                     ? `${peer['endpoint-address']}:${peer['endpoint-port'] || '?'}`
                                     : '—'}
                                 </td>
-                                <td className="px-3 py-2 text-xs text-gray-500 dark:text-slate-400">
+                                <td className="px-3 py-2 text-xs text-ink-3">
                                   {peer['tx'] || peer['rx']
                                     ? `${formatBytes(peer['tx'] || '0')} / ${formatBytes(peer['rx'] || '0')}`
                                     : '—'}
                                 </td>
-                                <td className="px-3 py-2 text-xs text-gray-500 dark:text-slate-400">
+                                <td className="px-3 py-2 text-xs text-ink-3">
                                   {peer['last-handshake'] || '—'}
                                 </td>
                                 {canWrite && !isMgmtIface(iface) && (
@@ -800,7 +759,7 @@ function DeviceWireGuardCard({
                                         onClick={() =>
                                           setPeerForm({ ifaceName: name, existing: peer })
                                         }
-                                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                        className="p-1.5 rounded-lg text-ink-4 hover:text-accent hover:bg-accent-soft dark:hover:bg-accent-soft transition-colors"
                                       >
                                         <Pencil className="w-3.5 h-3.5" />
                                       </button>
@@ -810,7 +769,7 @@ function DeviceWireGuardCard({
                                             deletePeer.mutate(peer['.id']);
                                         }}
                                         title="Delete"
-                                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                        className="p-1.5 rounded-lg text-ink-4 hover:text-bad hover:bg-bad-bg dark:hover:bg-bad-bg transition-colors"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -869,20 +828,18 @@ export default function NetworkServicesWireGuardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">WireGuard</h1>
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <h1 className="text-xl font-bold text-ink">WireGuard</h1>
+        <p className="text-sm text-ink-3">
           WireGuard interfaces and peers on every device in this site
         </p>
       </div>
 
       {(devicesLoading || overviewLoading) && (
-        <div className="card p-8 text-center text-sm text-gray-400 dark:text-slate-500">
-          Loading…
-        </div>
+        <div className="card p-8 text-center text-sm text-ink-3">Loading…</div>
       )}
 
       {!devicesLoading && !overviewLoading && withWg.length === 0 && (
-        <div className="card p-8 text-center text-sm text-gray-400 dark:text-slate-500">
+        <div className="card p-8 text-center text-sm text-ink-3">
           No device in this site has a WireGuard interface.
         </div>
       )}
@@ -893,15 +850,15 @@ export default function NetworkServicesWireGuardPage() {
 
       {(without.length > 0 || unread.length > 0) && !overviewLoading && (
         <div className="card overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-slate-200">
+          <div className="px-5 py-3 border-b border-line text-sm font-semibold text-ink-2 dark:text-ink">
             Without WireGuard ({without.length})
             {unread.length > 0 && (
-              <span className="ml-2 text-xs font-normal text-amber-600 dark:text-amber-400">
+              <span className="ml-2 text-xs font-normal text-warn">
                 {unread.length} couldn&apos;t be read
               </span>
             )}
           </div>
-          <div className="divide-y divide-gray-100 dark:divide-slate-700/60">
+          <div className="divide-y divide-line/60">
             {[...without, ...unread].map((d) => (
               <div key={d.id} className="flex items-center gap-2 px-5 py-2">
                 <DeviceTypePill type={d.device_type} />
@@ -910,14 +867,12 @@ export default function NetworkServicesWireGuardPage() {
                 </Link>
                 <TagChips tags={d.tags} />
                 {wgCount.get(d.id) === null && (
-                  <span className="text-xs text-amber-600 dark:text-amber-400">
-                    couldn&apos;t read
-                  </span>
+                  <span className="text-xs text-warn">couldn&apos;t read</span>
                 )}
                 {canWrite && (
                   <button
                     onClick={() => setAdding(d.id)}
-                    className="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="ml-auto text-xs text-accent hover:underline"
                   >
                     Show / add interface
                   </button>

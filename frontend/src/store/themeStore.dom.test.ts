@@ -1,58 +1,311 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+// This suite exercises real DOM behaviour (the `.dark` class, inline custom
+// properties, localStorage), so it runs in jsdom via the per-file pragma —
+// the rest of the suite stays on the fast node environment.
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useThemeStore } from './themeStore';
+import { getAccentPreset } from '../theme/accents';
+import { initThemeFromStorage, resolveEffectiveTheme, useThemeStore } from './themeStore';
 
-/**
- * The class-based dark mode: the store is the single writer of the `dark`
- * class on <html>, so the UI (and any screenshot flow) can trust it. It also
- * persists the choice, and re-applies it on the next load.
- */
-describe('themeStore', () => {
-  beforeEach(() => {
-    localStorage.clear();
-    useThemeStore.setState({ theme: 'light' });
-    document.documentElement.classList.remove('dark');
+/** jsdom has no matchMedia; the store must both detect its absence and use it when present. */
+function stubMatchMedia(matches: boolean): { calls: number; listeners: Set<() => void> } {
+  const listeners = new Set<() => void>();
+  const mql = {
+    matches,
+    media: '(prefers-color-scheme: dark)',
+    addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+    removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+    addListener: (fn: () => void) => listeners.add(fn),
+    removeListener: (fn: () => void) => listeners.delete(fn),
+    onchange: null,
+    dispatchEvent: () => false,
+  };
+  window.matchMedia = vi.fn().mockReturnValue(mql) as unknown as typeof window.matchMedia;
+  return { calls: 0, listeners };
+}
+
+function resetDom(): void {
+  document.documentElement.className = '';
+  document.documentElement.removeAttribute('style');
+  document.documentElement.removeAttribute('data-scheme');
+  localStorage.clear();
+  useThemeStore.setState({ theme: 'light', accent: 'blue', scheme: 'default' });
+}
+
+beforeEach(() => {
+  resetDom();
+  stubMatchMedia(false);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('resolveEffectiveTheme', () => {
+  it('light and dark pass straight through', () => {
+    expect(resolveEffectiveTheme('light', true)).toBe('light');
+    expect(resolveEffectiveTheme('dark', false)).toBe('dark');
   });
 
-  it('toggles the dark class on the document element', () => {
+  it('system follows the OS, not the last explicit choice', () => {
+    expect(resolveEffectiveTheme('system', false)).toBe('light');
+    expect(resolveEffectiveTheme('system', true)).toBe('dark');
+  });
+});
+
+describe('theme store DOM effects', () => {
+  it('default is light with no .dark class', () => {
+    expect(useThemeStore.getState().theme).toBe('light');
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+  });
+
+  it('setTheme("dark") adds the .dark class; back to light removes it', () => {
     useThemeStore.getState().setTheme('dark');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(useThemeStore.getState().theme).toBe('dark');
-
     useThemeStore.getState().setTheme('light');
     expect(document.documentElement.classList.contains('dark')).toBe(false);
   });
 
-  it('flips with toggleTheme', () => {
-    useThemeStore.getState().toggleTheme();
+  it('system resolves through matchMedia', () => {
+    stubMatchMedia(true);
+    useThemeStore.getState().setTheme('system');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
-    useThemeStore.getState().toggleTheme();
+    stubMatchMedia(false);
+    useThemeStore.getState().setTheme('system');
     expect(document.documentElement.classList.contains('dark')).toBe(false);
   });
 
-  it('persists the choice across reloads', async () => {
-    useThemeStore.getState().setTheme('dark');
-    expect(localStorage.getItem('mikrotik-theme')).toContain('dark');
+  it('toggleTheme cycles light → dark → system → light', () => {
+    const store = useThemeStore.getState();
+    store.toggleTheme();
+    expect(useThemeStore.getState().theme).toBe('dark');
+    store.toggleTheme();
+    expect(useThemeStore.getState().theme).toBe('system');
+    store.toggleTheme();
+    expect(useThemeStore.getState().theme).toBe('light');
+  });
 
-    // A fresh module instance rehydrates from storage and re-applies the class.
+  it('preferences persist under the historical key', () => {
+    useThemeStore.getState().setTheme('dark');
+    useThemeStore.getState().setAccent('emerald');
+    const raw = JSON.parse(localStorage.getItem('mikrotik-theme') ?? '{}');
+    expect(raw.state.theme).toBe('dark');
+    expect(raw.state.accent).toBe('emerald');
+  });
+});
+
+describe('accent DOM effects', () => {
+  it('the default accent writes no inline properties — the stylesheet wins, unchanged', () => {
+    useThemeStore.getState().setAccent('violet');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+      getAccentPreset('violet').light.accent,
+    );
+    useThemeStore.getState().setAccent('blue');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--accent-2')).toBe('');
+  });
+
+  it('a non-default accent writes all four variables', () => {
+    useThemeStore.getState().setAccent('rose');
+    const rose = getAccentPreset('rose').light;
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(rose.accent);
+    expect(document.documentElement.style.getPropertyValue('--accent-2')).toBe(rose.accent2);
+    expect(document.documentElement.style.getPropertyValue('--accent-soft')).toBe(rose.accentSoft);
+    expect(document.documentElement.style.getPropertyValue('--accent-fg')).toBe(rose.accentFg);
+  });
+
+  it('accent variables track the colour scheme: dark mode lifts the tone', () => {
+    useThemeStore.getState().setTheme('dark');
+    useThemeStore.getState().setAccent('emerald');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+      getAccentPreset('emerald').dark.accent,
+    );
+    useThemeStore.getState().setTheme('light');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+      getAccentPreset('emerald').light.accent,
+    );
+  });
+});
+
+describe('initThemeFromStorage (the pre-React FOUC guard)', () => {
+  it('applies a persisted dark + accent combination before React renders', () => {
+    localStorage.setItem(
+      'mikrotik-theme',
+      JSON.stringify({ state: { theme: 'dark', accent: 'teal' } }),
+    );
+    initThemeFromStorage();
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+      getAccentPreset('teal').dark.accent,
+    );
+  });
+
+  it('system preference resolves at boot, not after hydration', () => {
+    stubMatchMedia(true);
+    localStorage.setItem('mikrotik-theme', JSON.stringify({ state: { theme: 'system' } }));
+    initThemeFromStorage();
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+  });
+
+  it('malformed or tampered payloads fall back to light + default accent', () => {
+    localStorage.setItem('mikrotik-theme', '{not json');
+    expect(() => initThemeFromStorage()).not.toThrow();
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('');
+
+    localStorage.setItem(
+      'mikrotik-theme',
+      JSON.stringify({ state: { theme: 'banana', accent: 'nope' } }),
+    );
+    expect(() => initThemeFromStorage()).not.toThrow();
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('');
+  });
+
+  it('no stored payload at all leaves the defaults untouched', () => {
+    expect(() => initThemeFromStorage()).not.toThrow();
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('');
+  });
+});
+
+/**
+ * Carried over from the Phase 2 fork suite: a fresh module instance (what a
+ * page reload produces) must rehydrate the persisted preference and accent
+ * and re-apply both to the document, not just hold them in state.
+ */
+describe('rehydration on a fresh module instance', () => {
+  it('re-applies dark + accent from storage without any interaction', async () => {
+    useThemeStore.getState().setTheme('dark');
+    useThemeStore.getState().setAccent('emerald');
     vi.resetModules();
-    document.documentElement.classList.remove('dark');
+    document.documentElement.className = '';
+    document.documentElement.removeAttribute('style');
     const { useThemeStore: reloaded } = await import('./themeStore');
     await vi.waitFor(() => {
       expect(document.documentElement.classList.contains('dark')).toBe(true);
       expect(reloaded.getState().theme).toBe('dark');
+      expect(reloaded.getState().accent).toBe('emerald');
+      expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+        getAccentPreset('emerald').dark.accent,
+      );
+    });
+  });
+});
+
+describe('surface schemes (data-scheme on <html>)', () => {
+  it("setScheme writes the attribute; 'default' removes it entirely", () => {
+    useThemeStore.getState().setScheme('midnight');
+    expect(document.documentElement.getAttribute('data-scheme')).toBe('midnight');
+    useThemeStore.getState().setScheme('high-contrast');
+    expect(document.documentElement.getAttribute('data-scheme')).toBe('high-contrast');
+    useThemeStore.getState().setScheme('default');
+    expect(document.documentElement.hasAttribute('data-scheme')).toBe(false);
+  });
+
+  it('the scheme survives theme and accent changes — all three apply together', () => {
+    useThemeStore.getState().setScheme('midnight');
+    useThemeStore.getState().setTheme('dark');
+    useThemeStore.getState().setAccent('violet');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(document.documentElement.getAttribute('data-scheme')).toBe('midnight');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+      getAccentPreset('violet').dark.accent,
+    );
+  });
+
+  it('the scheme persists under the historical key and rehydrates in a fresh module', async () => {
+    useThemeStore.getState().setScheme('high-contrast');
+    const raw = JSON.parse(localStorage.getItem('mikrotik-theme') ?? '{}');
+    expect(raw.state.scheme).toBe('high-contrast');
+
+    vi.resetModules();
+    document.documentElement.removeAttribute('data-scheme');
+    const { useThemeStore: reloaded } = await import('./themeStore');
+    await vi.waitFor(() => {
+      expect(reloaded.getState().scheme).toBe('high-contrast');
+      expect(document.documentElement.getAttribute('data-scheme')).toBe('high-contrast');
     });
   });
 
-  it('rehydrates light mode without the dark class', async () => {
+  it('a tampered scheme value falls back to default at boot', () => {
     localStorage.setItem(
       'mikrotik-theme',
-      JSON.stringify({ state: { theme: 'light' }, version: 0 }),
+      JSON.stringify({ state: { theme: 'dark', scheme: 'banana' } }),
     );
-    vi.resetModules();
-    const { useThemeStore: reloaded } = await import('./themeStore');
-    await vi.waitFor(() => expect(reloaded.getState().theme).toBe('light'));
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(() => initThemeFromStorage()).not.toThrow();
+    expect(document.documentElement.hasAttribute('data-scheme')).toBe(false);
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
+});
+
+describe('untrusted persisted preference rehydration', () => {
+  it('normalizes unknown preferences and cannot overwrite store actions', async () => {
+    localStorage.setItem(
+      'mikrotik-theme',
+      JSON.stringify({
+        state: {
+          theme: 'banana',
+          accent: { id: 'rose' },
+          scheme: ['midnight'],
+          setTheme: 'not a function',
+          setAccent: null,
+          setScheme: false,
+        },
+        version: 0,
+      }),
+    );
+    await useThemeStore.persist.rehydrate();
+    const state = useThemeStore.getState();
+    expect(state.theme).toBe('light');
+    expect(state.accent).toBe('blue');
+    expect(state.scheme).toBe('default');
+    expect(typeof state.setTheme).toBe('function');
+    expect(typeof state.setAccent).toBe('function');
+    expect(typeof state.setScheme).toBe('function');
+    expect(() => state.setTheme('dark')).not.toThrow();
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+  });
+
+  it('older payloads reset missing accent and scheme to defaults', async () => {
+    useThemeStore.getState().setAccent('rose');
+    useThemeStore.getState().setScheme('midnight');
+    localStorage.setItem(
+      'mikrotik-theme',
+      JSON.stringify({ state: { theme: 'dark' }, version: 0 }),
+    );
+    await useThemeStore.persist.rehydrate();
+    expect(useThemeStore.getState()).toMatchObject({
+      theme: 'dark',
+      accent: 'blue',
+      scheme: 'default',
+    });
+    expect(document.documentElement.hasAttribute('data-scheme')).toBe(false);
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('');
+  });
+});
+
+it('starts live OS tracking on a deep-link boot without mounting a theme hook', async () => {
+  const listeners = new Set<() => void>();
+  const media = {
+    matches: false,
+    addEventListener: (_: string, callback: () => void) => listeners.add(callback),
+  };
+  window.matchMedia = vi.fn().mockReturnValue(media);
+  localStorage.setItem(
+    'mikrotik-theme',
+    JSON.stringify({ state: { theme: 'system', accent: 'rose', scheme: 'midnight' }, version: 0 }),
+  );
+  vi.resetModules();
+  const reloaded = await import('./themeStore');
+  reloaded.initThemeFromStorage();
+  expect(listeners.size).toBe(1);
+  expect(document.documentElement.classList.contains('dark')).toBe(false);
+  media.matches = true;
+  for (const listener of listeners) listener();
+  expect(document.documentElement.classList.contains('dark')).toBe(true);
+  expect(document.documentElement.style.getPropertyValue('--accent')).toBe(
+    getAccentPreset('rose').dark.accent,
+  );
+  expect(document.documentElement.getAttribute('data-scheme')).toBe('midnight');
 });

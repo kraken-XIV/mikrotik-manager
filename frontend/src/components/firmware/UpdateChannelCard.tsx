@@ -113,13 +113,13 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
   return (
     <div className="card p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <Radio className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Update channel</h3>
+        <Radio className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink">Update channel</h3>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="text-sm">
-          <span className="text-gray-700 dark:text-slate-300">Fleet default</span>
+          <span className="text-ink-2">Fleet default</span>
           <select
             className="input mt-1"
             value={fleet}
@@ -134,7 +134,7 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
               </option>
             ))}
           </select>
-          <span className="block text-[11px] text-gray-400 mt-1">
+          <span className="block text-[11px] text-ink-4 mt-1">
             Devices are moved at their next update check. A device already running something newer
             than its channel offers is not downgraded.
           </span>
@@ -142,7 +142,7 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
 
         {canWrite && (
           <div className="text-sm">
-            <span className="text-gray-700 dark:text-slate-300">Override for a tag or device</span>
+            <span className="text-ink-2">Override for a tag or device</span>
             <div className="flex gap-2 mt-1">
               {tags.length > 0 && (
                 <select
@@ -209,12 +209,12 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
                 Apply
               </button>
             </div>
-            {message && <span className="block text-[11.5px] text-gray-500 mt-1">{message}</span>}
+            {message && <span className="block text-[11.5px] text-ink-3 mt-1">{message}</span>}
           </div>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-gray-500 dark:text-slate-400">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-ink-3">
         <span>Devices report:</span>
         {reported.map(([ch, n]) => (
           <span key={ch}>
@@ -225,12 +225,12 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
       </div>
 
       {overridden.length > 0 && (
-        <div className="rounded-lg border border-gray-200 dark:border-slate-700">
-          <div className="flex items-center px-3 py-2 text-[12px] font-medium text-gray-600 dark:text-slate-300 border-b border-gray-100 dark:border-slate-700">
+        <div className="rounded-lg border border-line">
+          <div className="flex items-center px-3 py-2 text-[12px] font-medium text-ink-2 border-b border-line-soft">
             <span className="flex-1">Overrides</span>
             {canWrite && overridden.length > 1 && (
               <button
-                className="text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
+                className="text-accent hover:underline disabled:opacity-50"
                 disabled={clearOverrides.isPending}
                 onClick={() => {
                   if (
@@ -247,14 +247,14 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
             )}
           </div>
           <table className="w-full text-[12px]">
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-line">
               {overridden.map((d) => (
                 <tr key={d.id}>
-                  <td className="px-3 py-1.5 text-gray-900 dark:text-white">{d.name.trim()}</td>
+                  <td className="px-3 py-1.5 text-ink">{d.name.trim()}</td>
                   <td className="px-3 py-1.5">
                     <span className="mono">{d.update_channel}</span>
                   </td>
-                  <td className="px-3 py-1.5 text-gray-500 dark:text-slate-400">
+                  <td className="px-3 py-1.5 text-ink-3">
                     {d.reported_update_channel ? (
                       d.reported_update_channel === d.update_channel ? (
                         'on it now'
@@ -271,7 +271,7 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
                   <td className="px-3 py-1.5 text-right">
                     {canWrite && (
                       <button
-                        className="text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
+                        className="text-accent hover:underline disabled:opacity-50"
                         disabled={clearOverrides.isPending}
                         onClick={() => clearOverrides.mutate([d.id])}
                       >

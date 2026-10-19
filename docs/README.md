@@ -28,6 +28,7 @@ whether to try it, the [project README](https://github.com/2GT-Media-Group-LLC/m
 | [Polling and scaling](scaling.md)                 | Poller health, headroom, tuning, and clearing a backlog                                                 |
 | [API and automation](api.md)                      | Scoped tokens, authentication, and driving the platform from scripts                                    |
 | [Architecture](architecture.md)                   | How the system is put together, for contributors                                                        |
+| [Theming](theming.md)                             | Schemes, accents and the design-token system                                                            |
 
 ## Conventions used here
 

@@ -171,19 +171,17 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex items-center justify-between p-5 border-b border-line">
           <div className="flex items-center gap-2">
-            <ShieldQuestion className="w-5 h-5 text-blue-500" />
+            <ShieldQuestion className="w-5 h-5 text-accent" />
             <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                Adopt Device
-              </h2>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mono">
+              <h2 className="text-base font-semibold text-ink">Adopt Device</h2>
+              <p className="text-xs text-ink-3 mono">
                 {candidate.mac} · currently {candidate.address}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -191,25 +189,23 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
         <div className="p-5 space-y-4">
           {/* What was detected, and what will happen because of it. Stated as a
               decision already taken, with the means to overrule it. */}
-          <div className="rounded border border-gray-200 dark:border-slate-700 p-3 space-y-2">
+          <div className="rounded border border-line p-3 space-y-2">
             <div className="flex items-start gap-2">
               {detectedNew ? (
-                <ShieldQuestion className="w-4 h-4 mt-px shrink-0 text-blue-500" />
+                <ShieldQuestion className="w-4 h-4 mt-px shrink-0 text-accent" />
               ) : (
-                <Check className="w-4 h-4 mt-px shrink-0 text-green-500" />
+                <Check className="w-4 h-4 mt-px shrink-0 text-good" />
               )}
               <div className="space-y-1">
-                <p className="text-[13px] font-medium text-gray-900 dark:text-white">
+                <p className="text-[13px] font-medium text-ink">
                   {detectedNew
                     ? 'Detected: a brand-new device'
                     : 'Detected: a device that is already configured'}
                   {rec?.confidence === 'low' && (
-                    <span className="ml-1.5 text-[11px] font-normal text-amber-600">
-                      (uncertain)
-                    </span>
+                    <span className="ml-1.5 text-[11px] font-normal text-warn">(uncertain)</span>
                   )}
                 </p>
-                <ul className="text-[11.5px] text-gray-500 dark:text-slate-400 list-disc pl-4 space-y-0.5">
+                <ul className="text-[11.5px] text-ink-3 list-disc pl-4 space-y-0.5">
                   {rec?.reasons.map((r, i) => (
                     <li key={i}>{r}</li>
                   ))}
@@ -217,7 +213,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
               </div>
             </div>
 
-            <p className="text-[12px] text-gray-600 dark:text-slate-300 pl-6">
+            <p className="text-[12px] text-ink-2 pl-6">
               {mode === 'new'
                 ? 'It will be given an address on your network using a managed neighbour, then registered.'
                 : 'It will be registered using its existing credentials. Nothing on the device is changed.'}
@@ -241,8 +237,8 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                 className={clsx(
                   'ml-6 flex items-start gap-2 text-[11.5px] rounded p-2',
                   mode === 'new'
-                    ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
-                    : 'bg-gray-50 dark:bg-slate-800/50 text-gray-600 dark:text-slate-300',
+                    ? 'bg-bad-bg text-bad dark:text-bad'
+                    : 'bg-surface-2/50 text-ink-2',
                 )}
               >
                 <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" />
@@ -274,7 +270,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
           ) : (
             <>
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-ink-2 mb-1">
                   Borrow which managed device?
                 </label>
                 <select
@@ -288,16 +284,14 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-gray-400 mt-1">
+                <p className="text-[11px] text-ink-4 mt-1">
                   Any device that can see the new one. It gets a temporary second address for about
                   a minute.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  Device password
-                </label>
+                <label className="block text-xs font-medium text-ink-2 mb-1">Device password</label>
                 <input
                   type="password"
                   className="input w-full"
@@ -306,17 +300,15 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="printed on a sticker on the unit"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">
+                <p className="text-[11px] text-ink-4 mt-1">
                   MikroTik ships every unit with its own password, printed on the device itself.
                   There is no default.
                 </p>
               </div>
 
-              <div className="border border-gray-200 dark:border-slate-700 rounded p-3 space-y-3">
+              <div className="border border-line rounded p-3 space-y-3">
                 <div className="flex items-center gap-4">
-                  <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
-                    Management address
-                  </span>
+                  <span className="text-xs font-medium text-ink-2">Management address</span>
                   {(['static', 'dhcp'] as const).map((m) => (
                     <label key={m} className="flex items-center gap-1.5 text-[12px] cursor-pointer">
                       <input
@@ -333,7 +325,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                 {addrMode === 'static' ? (
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2">
-                      <label className="block text-[11px] text-gray-500 mb-1">Address</label>
+                      <label className="block text-[11px] text-ink-3 mb-1">Address</label>
                       <input
                         className="input w-full mono"
                         value={targetAddress}
@@ -342,7 +334,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] text-gray-500 mb-1">Prefix</label>
+                      <label className="block text-[11px] text-ink-3 mb-1">Prefix</label>
                       <input
                         className="input w-full mono"
                         value={prefix}
@@ -351,28 +343,28 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                       />
                     </div>
                     <div className="col-span-3">
-                      <label className="block text-[11px] text-gray-500 mb-1">Gateway</label>
+                      <label className="block text-[11px] text-ink-3 mb-1">Gateway</label>
                       <input
                         className="input w-full mono"
                         value={gatewayInput}
                         onChange={(e) => setGatewayInput(e.target.value)}
                         placeholder={subnet ? `${subnet}.1` : '10.0.0.1'}
                       />
-                      <p className="text-[10.5px] text-gray-400 mt-1">
+                      <p className="text-[10.5px] text-ink-4 mt-1">
                         Not assumed — it is often not .1, and the device cannot reply off-subnet
                         without it.
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-[11.5px] text-gray-500 dark:text-slate-400">
+                  <p className="text-[11.5px] text-ink-3">
                     A DHCP client is added and the lease read back to learn where the device landed.
                     Consider a reservation, so infrastructure keeps a stable address.
                   </p>
                 )}
 
                 <div>
-                  <label className="block text-[11px] text-gray-500 mb-1">
+                  <label className="block text-[11px] text-ink-3 mb-1">
                     Management VLAN (optional)
                   </label>
                   <input
@@ -382,7 +374,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                     placeholder="leave blank for the untagged bridge"
                   />
                   {vlanId && (
-                    <p className="text-[10.5px] text-amber-600 mt-1">
+                    <p className="text-[10.5px] text-warn mt-1">
                       A <span className="mono">bridge-vlan{vlanId}</span> interface will be created
                       and addressed. The uplink must already carry VLAN {vlanId} tagged — if it does
                       not, adoption stops at verification and the factory address is left in place.
@@ -394,11 +386,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                   <div
                     className={clsx(
                       'text-[11.5px] flex items-center gap-1.5',
-                      checking
-                        ? 'text-gray-400'
-                        : addrCheck?.free
-                          ? 'text-green-600'
-                          : 'text-red-600',
+                      checking ? 'text-ink-4' : addrCheck?.free ? 'text-good' : 'text-bad',
                     )}
                   >
                     {checking ? (
@@ -420,9 +408,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  Name
-                </label>
+                <label className="block text-xs font-medium text-ink-2 mb-1">Name</label>
                 <input
                   className="input w-full"
                   value={name}
@@ -431,7 +417,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                 />
               </div>
 
-              <label className="flex items-start gap-2 text-[12px] text-gray-600 dark:text-slate-300 cursor-pointer">
+              <label className="flex items-start gap-2 text-[12px] text-ink-2 cursor-pointer">
                 <input
                   type="checkbox"
                   className="mt-0.5"
@@ -440,7 +426,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                 />
                 <span>
                   Remove the factory {candidate.address} address afterwards
-                  <span className="block text-[11px] text-gray-400">
+                  <span className="block text-[11px] text-ink-4">
                     Recommended. Two un-adopted devices both answering on {candidate.address} would
                     collide.
                   </span>
@@ -448,7 +434,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
               </label>
 
               {overridden && mode === 'new' && (
-                <label className="flex items-start gap-2 text-[12px] text-red-700 dark:text-red-300 cursor-pointer">
+                <label className="flex items-start gap-2 text-[12px] text-bad dark:text-bad cursor-pointer">
                   <input
                     type="checkbox"
                     className="mt-0.5"
@@ -465,7 +451,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
                 </label>
               )}
 
-              <div className="flex items-start gap-2 text-[11px] rounded p-2.5 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300">
+              <div className="flex items-start gap-2 text-[11px] rounded p-2.5 bg-warn-bg text-warn dark:text-warn">
                 <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" />
                 <span>
                   The password is sent over plain HTTP to reach the device, because factory units
@@ -475,31 +461,25 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
               </div>
 
               {result && (
-                <div className="rounded border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-800">
+                <div className="rounded border border-line divide-y divide-line-soft dark:divide-line-soft">
                   {result.steps.map((s, i) => (
                     <div key={i} className="flex items-center gap-2 px-3 py-1.5 text-[12px]">
                       {s.ok ? (
-                        <Check className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                        <Check className="w-3.5 h-3.5 text-good shrink-0" />
                       ) : (
-                        <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                        <AlertTriangle className="w-3.5 h-3.5 text-bad shrink-0" />
                       )}
-                      <span
-                        className={clsx(
-                          s.ok ? 'text-gray-600 dark:text-slate-300' : 'text-red-600',
-                        )}
-                      >
+                      <span className={clsx(s.ok ? 'text-ink-2' : 'text-bad')}>
                         {s.step}
                         {s.detail ? ` — ${s.detail}` : ''}
                       </span>
                     </div>
                   ))}
                   {result.error && (
-                    <div className="px-3 py-2 text-[12px] text-red-600 dark:text-red-400">
-                      {result.error}
-                    </div>
+                    <div className="px-3 py-2 text-[12px] text-bad">{result.error}</div>
                   )}
                   {result.ok && (
-                    <div className="px-3 py-2 text-[12px] text-green-600 dark:text-green-400">
+                    <div className="px-3 py-2 text-[12px] text-good">
                       Adopted. Opening the device list…
                     </div>
                   )}
@@ -511,7 +491,7 @@ export default function AdoptDeviceModal({ candidate, discovered, onClose, onSuc
 
         {/* The embedded add form carries its own buttons. */}
         {mode === 'new' && (
-          <div className="flex justify-end gap-2 p-5 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex justify-end gap-2 p-5 border-t border-line">
             <button onClick={onClose} className="btn-secondary text-[12px]">
               {result?.ok ? 'Close' : 'Cancel'}
             </button>

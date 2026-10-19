@@ -197,7 +197,7 @@ function PasswordInput({
       <button
         type="button"
         tabIndex={-1}
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-4 hover:text-ink-2"
         onClick={() => setShow((s) => !s)}
       >
         {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -209,16 +209,16 @@ function PasswordInput({
 function AdvancedSection({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
+    <div className="border border-line rounded-lg overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-slate-800/60 text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-surface-2/60 text-sm font-medium text-ink-2 hover:bg-surface-3/50 transition-colors"
       >
         <span>Advanced Settings</span>
         {open ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </button>
-      {open && <div className="p-4 space-y-3 bg-white dark:bg-slate-800/20">{children}</div>}
+      {open && <div className="p-4 space-y-3 bg-surface/20">{children}</div>}
     </div>
   );
 }
@@ -235,8 +235,8 @@ function FormRow({
   return (
     <div className="grid grid-cols-3 gap-3 items-start">
       <div className="col-span-1 pt-2">
-        <label className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</label>
-        {hint && <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{hint}</p>}
+        <label className="text-sm font-medium text-ink-2">{label}</label>
+        {hint && <p className="text-xs text-ink-3 mt-0.5">{hint}</p>}
       </div>
       <div className="col-span-2">{children}</div>
     </div>
@@ -535,9 +535,9 @@ function SsidModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="px-5 py-4 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white">
+      <div className="bg-surface rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="px-5 py-4 border-b border-line">
+          <h3 className="font-semibold text-ink">
             {isEdit ? `Edit SSID — ${existing!.name}` : 'Add SSID / Virtual AP'}
           </h3>
         </div>
@@ -545,7 +545,7 @@ function SsidModal({
         {/* Bulk deployment results */}
         {bulkResults ? (
           <div className="p-5">
-            <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">
+            <p className="text-sm text-ink-2 mb-4">
               Deployed to <strong>{bulkResults.filter((r) => r.ok).length}</strong> of{' '}
               <strong>{bulkResults.length}</strong> APs.
             </p>
@@ -555,7 +555,7 @@ function SsidModal({
                   key={r.id}
                   className={clsx(
                     'flex items-start gap-2 text-sm',
-                    r.ok ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400',
+                    r.ok ? 'text-good' : 'text-bad',
                   )}
                 >
                   {r.ok ? (
@@ -565,12 +565,12 @@ function SsidModal({
                   )}
                   <div>
                     <span className="font-medium">{r.name}</span>
-                    {!r.ok && <p className="text-xs mt-0.5 text-red-400">{r.error}</p>}
+                    {!r.ok && <p className="text-xs mt-0.5 text-bad">{r.error}</p>}
                   </div>
                 </div>
               ))}
             </div>
-            <div className="flex justify-end mt-5 pt-4 border-t border-gray-100 dark:border-slate-700">
+            <div className="flex justify-end mt-5 pt-4 border-t border-line-soft">
               <button className="btn-primary text-sm" onClick={onClose}>
                 Done
               </button>
@@ -669,9 +669,7 @@ function SsidModal({
                         disabled={conflict}
                         onChange={() => toggleAuthType(t)}
                       />
-                      <span className="text-xs font-mono text-gray-700 dark:text-slate-300">
-                        {t}
-                      </span>
+                      <span className="text-xs font-mono text-ink-2">{t}</span>
                     </label>
                   );
                 })}
@@ -717,9 +715,7 @@ function SsidModal({
                   checked={form.disabled}
                   onChange={(e) => set('disabled')(e.target.checked)}
                 />
-                <span className="text-sm text-gray-600 dark:text-slate-400">
-                  Interface disabled
-                </span>
+                <span className="text-sm text-ink-2">Interface disabled</span>
               </label>
             </FormRow>
 
@@ -813,15 +809,15 @@ function SsidModal({
 
             {/* Deploy to APs — shown in create mode when multiple APs exist */}
             {!isEdit && allAps && allAps.length > 1 && (
-              <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
+              <div className="border border-line rounded-lg overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setDeployOpen((o) => !o)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-slate-800/60 text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-surface-2/60 text-sm font-medium text-ink-2 hover:bg-surface-3/50 transition-colors"
                 >
                   <span>
                     Deploy to APs
-                    <span className="ml-2 text-xs font-normal text-blue-600 dark:text-blue-400">
+                    <span className="ml-2 text-xs font-normal text-accent">
                       {deployToApIds.length} of {onlineAps.length} online selected
                     </span>
                   </span>
@@ -833,7 +829,7 @@ function SsidModal({
                 </button>
                 {deployOpen && (
                   <div className="p-4 space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer pb-2 border-b border-gray-100 dark:border-slate-700">
+                    <label className="flex items-center gap-2 cursor-pointer pb-2 border-b border-line-soft">
                       <input
                         type="checkbox"
                         className="w-3.5 h-3.5 rounded"
@@ -842,9 +838,7 @@ function SsidModal({
                           setDeployToApIds(e.target.checked ? onlineAps.map((a) => a.id) : [])
                         }
                       />
-                      <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                        All online APs
-                      </span>
+                      <span className="text-sm font-medium text-ink-2">All online APs</span>
                     </label>
                     {allAps.map((ap) => {
                       const isOnline = ap.status === 'online';
@@ -869,14 +863,14 @@ function SsidModal({
                               )
                             }
                           />
-                          <span className="text-gray-700 dark:text-slate-300">{ap.name}</span>
-                          <span className="text-xs text-gray-400">{ap.ip_address}</span>
-                          {!isOnline && <span className="text-xs text-amber-500">offline</span>}
+                          <span className="text-ink-2">{ap.name}</span>
+                          <span className="text-xs text-ink-4">{ap.ip_address}</span>
+                          {!isOnline && <span className="text-xs text-warn">offline</span>}
                         </label>
                       );
                     })}
                     {isBulk && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 pt-2 border-t border-gray-100 dark:border-slate-700">
+                      <p className="text-xs text-warn pt-2 border-t border-line-soft">
                         Bridge and radio settings are per-device — configure them individually after
                         deployment.
                       </p>
@@ -886,9 +880,9 @@ function SsidModal({
               </div>
             )}
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-bad">{error}</p>}
             {(mutation.error || bulkMutation.error) && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-bad">
                 {(
                   (mutation.error || bulkMutation.error) as {
                     response?: { data?: { error?: string } };
@@ -983,14 +977,12 @@ function SpectralScanSettings({ canWrite }: { canWrite: boolean }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-        <ScanLine className="w-4 h-4 text-indigo-500" />
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-          Spectral Scan Schedule
-        </h2>
+      <div className="px-5 py-4 border-b border-line flex items-center gap-2">
+        <ScanLine className="w-4 h-4 text-info" />
+        <h2 className="text-sm font-semibold text-ink">Spectral Scan Schedule</h2>
       </div>
       <div className="px-5 py-4 space-y-4">
-        <p className="text-xs text-gray-500 dark:text-slate-400">
+        <p className="text-xs text-ink-3">
           Automatically run spectrum scans on all wireless AP radios at the configured interval.
           Results are viewable in the <strong>Radio</strong> tab of each device.
         </p>
@@ -998,17 +990,15 @@ function SpectralScanSettings({ canWrite }: { canWrite: boolean }) {
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
-              className="w-4 h-4 rounded text-indigo-600"
+              className="w-4 h-4 rounded text-info"
               checked={enabled}
               disabled={!canWrite}
               onChange={(e) => setEnabled(e.target.checked)}
             />
-            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-              Enable scheduled scans
-            </span>
+            <span className="text-sm font-medium text-ink-2">Enable scheduled scans</span>
           </label>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 dark:text-slate-400">Interval:</label>
+            <label className="text-sm text-ink-2">Interval:</label>
             <select
               className="input w-auto text-sm"
               value={intervalHours}
@@ -1082,12 +1072,12 @@ function APScanSettings({ canWrite }: { canWrite: boolean }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-        <Radio className="w-4 h-4 text-blue-500" />
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">AP Scan Schedule</h2>
+      <div className="px-5 py-4 border-b border-line flex items-center gap-2">
+        <Radio className="w-4 h-4 text-accent" />
+        <h2 className="text-sm font-semibold text-ink">AP Scan Schedule</h2>
       </div>
       <div className="px-5 py-4 space-y-4">
-        <p className="text-xs text-gray-500 dark:text-slate-400">
+        <p className="text-xs text-ink-3">
           Automatically scan for nearby access points on all wireless AP radios at the configured
           interval. Results are viewable in the <strong>Radio</strong> tab of each device.
         </p>
@@ -1095,17 +1085,15 @@ function APScanSettings({ canWrite }: { canWrite: boolean }) {
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
-              className="w-4 h-4 rounded text-blue-600"
+              className="w-4 h-4 rounded text-accent"
               checked={enabled}
               disabled={!canWrite}
               onChange={(e) => setEnabled(e.target.checked)}
             />
-            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-              Enable scheduled scans
-            </span>
+            <span className="text-sm font-medium text-ink-2">Enable scheduled scans</span>
           </label>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 dark:text-slate-400">Interval:</label>
+            <label className="text-sm text-ink-2">Interval:</label>
             <select
               className="input w-auto text-sm"
               value={intervalHours}
@@ -1244,18 +1232,14 @@ export default function WirelessSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Wireless Settings</h1>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
-          Manage SSIDs and radio configuration
-        </p>
+        <h1 className="text-xl font-bold text-ink">Wireless Settings</h1>
+        <p className="text-sm text-ink-3 mt-0.5">Manage SSIDs and radio configuration</p>
       </div>
 
       {/* AP selector */}
       {aps.length > 1 && (
         <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
-            Access Point:
-          </label>
+          <label className="text-sm font-medium text-ink-2">Access Point:</label>
           <DevicePicker
             className="w-auto min-w-[18rem]"
             devices={aps}
@@ -1269,13 +1253,13 @@ export default function WirelessSettingsPage() {
       )}
 
       {aps.length === 0 && (
-        <div className="card p-8 text-center text-gray-400 dark:text-slate-500 text-sm">
+        <div className="card p-8 text-center text-ink-3 text-sm">
           No wireless APs found. Add a device with type <strong>Wireless AP</strong> in Devices.
         </div>
       )}
 
       {writeError && (
-        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
+        <div className="p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg text-sm text-bad">
           {writeError}
         </div>
       )}
@@ -1290,7 +1274,7 @@ export default function WirelessSettingsPage() {
       {selectedAp && (
         <>
           {isOffline && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-700/50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+            <div className="rounded-lg border border-warn bg-warn-bg dark:border-warn dark:bg-warn-bg px-4 py-3 text-sm text-warn dark:text-warn">
               <strong>{selectedAp.name}</strong> is currently <strong>{selectedAp.status}</strong> —
               live configuration requires the device to be online.
             </div>
@@ -1298,14 +1282,12 @@ export default function WirelessSettingsPage() {
 
           {/* ── SSIDs ─────────────────────────────────────────────────────── */}
           <div className="card overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Wireless Interfaces
-              </h2>
+            <div className="px-5 py-4 border-b border-line flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-ink">Wireless Interfaces</h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => refetchIfaces()}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="p-1.5 rounded-lg text-ink-4 hover:text-ink-2 hover:bg-surface-3 transition-colors"
                   title="Refresh"
                   disabled={isOffline}
                 >
@@ -1324,62 +1306,48 @@ export default function WirelessSettingsPage() {
             </div>
 
             {isOffline ? (
-              <div className="p-8 text-center text-gray-400 dark:text-slate-500 text-sm">
+              <div className="p-8 text-center text-ink-3 text-sm">
                 Device must be online to view and manage SSIDs.
               </div>
             ) : ifaceLoading ? (
-              <div className="p-8 text-center text-gray-400">
+              <div className="p-8 text-center text-ink-4">
                 <RefreshCw className="w-5 h-5 animate-spin inline mr-2" />
                 Loading…
               </div>
             ) : ifaces.length === 0 ? (
-              <div className="p-8 text-center text-gray-400 dark:text-slate-500 text-sm">
+              <div className="p-8 text-center text-ink-3 text-sm">
                 No wireless interfaces found.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
-                        Interface
-                      </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
-                        SSID
-                      </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
-                        Network
-                      </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
-                        Band
-                      </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-slate-400">
-                        Security
-                      </th>
-                      <th className="px-4 py-3 text-center font-medium text-gray-500 dark:text-slate-400">
-                        Status
-                      </th>
+                    <tr className="border-b border-line bg-surface-2/50">
+                      <th className="px-4 py-3 text-left font-medium text-ink-3">Interface</th>
+                      <th className="px-4 py-3 text-left font-medium text-ink-3">SSID</th>
+                      <th className="px-4 py-3 text-left font-medium text-ink-3">Network</th>
+                      <th className="px-4 py-3 text-left font-medium text-ink-3">Band</th>
+                      <th className="px-4 py-3 text-left font-medium text-ink-3">Security</th>
+                      <th className="px-4 py-3 text-center font-medium text-ink-3">Status</th>
                       <th className="px-4 py-3" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
+                  <tbody className="divide-y divide-line/50">
                     {ifaces.map((iface, i) => (
                       <tr
                         key={iface.name}
                         className={clsx(
-                          'hover:bg-blue-50/40 dark:hover:bg-slate-700/30 transition-colors',
-                          i % 2 === 1
-                            ? 'bg-gray-50 dark:bg-slate-800/40'
-                            : 'bg-white dark:bg-slate-900/20',
+                          'hover:bg-accent-soft dark:hover:bg-surface-3 transition-colors',
+                          i % 2 === 1 ? 'bg-surface-2/40' : 'bg-surface/20',
                         )}
                       >
-                        <td className="px-4 py-3 font-mono text-xs font-medium text-gray-800 dark:text-slate-200">
+                        <td className="px-4 py-3 font-mono text-xs font-medium text-ink">
                           {iface.name}
                         </td>
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                          {iface.ssid || <span className="text-gray-400">—</span>}
+                        <td className="px-4 py-3 font-medium text-ink">
+                          {iface.ssid || <span className="text-ink-4">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-slate-400">
+                        <td className="px-4 py-3 text-xs text-ink-2">
                           {iface.bridge ? (
                             <span
                               className="font-mono"
@@ -1391,54 +1359,50 @@ export default function WirelessSettingsPage() {
                             >
                               {iface.bridge}
                               {iface['bridge-pvid'] ? (
-                                <span className="text-gray-400"> VLAN {iface['bridge-pvid']}</span>
+                                <span className="text-ink-4"> VLAN {iface['bridge-pvid']}</span>
                               ) : (
                                 ''
                               )}
                               {iface['network_source'] === 'capsman-datapath' && (
-                                <span className="text-gray-400"> (datapath)</span>
+                                <span className="text-ink-4"> (datapath)</span>
                               )}
                             </span>
                           ) : iface['managed_by_capsman'] ? (
                             <span
-                              className="text-gray-400"
+                              className="text-ink-4"
                               title="This interface is provisioned by CAPsMAN and its datapath does not name a bridge"
                             >
                               via controller
                             </span>
                           ) : (
-                            <span className="text-amber-500 font-medium">no network</span>
+                            <span className="text-warn font-medium">no network</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-slate-400">
-                          {iface.band || '—'}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-slate-400">
+                        <td className="px-4 py-3 text-xs text-ink-2">{iface.band || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-ink-2">
                           {iface['security'] && !iface['security'].startsWith('*') ? (
                             iface['security']
                           ) : iface['security-profile'] ? (
                             iface['security-profile']
                           ) : iface['authentication-types'] ? (
-                            <span className="text-green-600 dark:text-green-400">
-                              {iface['authentication-types']}
-                            </span>
+                            <span className="text-good">{iface['authentication-types']}</span>
                           ) : (
-                            <span className="text-amber-500 font-medium">open</span>
+                            <span className="text-warn font-medium">open</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-center">
                           {iface.disabled === 'true' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-surface-3 text-ink-3">
                               <XCircle className="w-3 h-3" />
                               Disabled
                             </span>
                           ) : iface.running === 'true' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-good-bg text-good">
                               <CheckCircle className="w-3 h-3" />
                               Running
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-warn-bg dark:bg-warn-bg text-warn dark:text-warn">
                               <Power className="w-3 h-3" />
                               Enabled, not running
                             </span>
@@ -1451,14 +1415,14 @@ export default function WirelessSettingsPage() {
                                 onClick={() =>
                                   toggleSsid(iface.name, iface.disabled !== 'true', iface.ssid)
                                 }
-                                className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                                className="p-1.5 rounded-lg text-ink-4 hover:text-warn hover:bg-warn-bg dark:hover:bg-warn-bg transition-colors"
                                 title={iface.disabled === 'true' ? 'Enable' : 'Disable'}
                               >
                                 <Power className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => setSsidModal({ open: true, existing: iface })}
-                                className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                className="p-1.5 rounded-lg text-ink-4 hover:text-accent hover:bg-accent-soft dark:hover:bg-accent-soft transition-colors"
                                 title="Edit"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
@@ -1468,7 +1432,7 @@ export default function WirelessSettingsPage() {
                                   if (confirm(`Delete SSID "${iface.name}"?`))
                                     deleteSsid(iface.name);
                                 }}
-                                className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                className="p-1.5 rounded-lg text-ink-4 hover:text-bad hover:bg-bad-bg dark:hover:bg-bad-bg transition-colors"
                                 title="Delete"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

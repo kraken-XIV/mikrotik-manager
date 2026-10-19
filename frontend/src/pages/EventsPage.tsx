@@ -18,9 +18,9 @@ const severityIcon = (severity: EventSeverity) => {
 };
 
 const severityColor = (severity: EventSeverity): string => {
-  if (severity === 'error' || severity === 'critical') return 'text-red-500';
-  if (severity === 'warning') return 'text-yellow-500';
-  return 'text-blue-500';
+  if (severity === 'error' || severity === 'critical') return 'text-bad';
+  if (severity === 'warning') return 'text-warn';
+  return 'text-accent';
 };
 
 const ALL_SEVERITIES = ['error', 'warning', 'info'] as const;
@@ -106,15 +106,11 @@ export default function EventsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-xl font-bold text-ink">
           Events
-          {total > 0 && (
-            <span className="ml-2 text-sm font-normal text-gray-500 dark:text-slate-400">
-              ({totalLabel})
-            </span>
-          )}
+          {total > 0 && <span className="ml-2 text-sm font-normal text-ink-3">({totalLabel})</span>}
           {eventsData?.criticalCount ? (
-            <span className="ml-2 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs rounded-full font-medium">
+            <span className="ml-2 px-2 py-0.5 bg-bad-bg text-bad text-xs rounded-full font-medium">
               {eventsData.criticalCount} critical (24h)
             </span>
           ) : null}
@@ -124,7 +120,7 @@ export default function EventsPage() {
             onClick={() => {
               if (confirm('Clear all events? This cannot be undone.')) clearMutation.mutate();
             }}
-            className="btn-secondary flex items-center gap-2 text-red-500 hover:text-red-600"
+            className="btn-secondary flex items-center gap-2 text-bad hover:text-bad"
           >
             <Trash2 className="w-4 h-4" />
             Clear
@@ -135,7 +131,7 @@ export default function EventsPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative w-full sm:flex-1 sm:min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4" />
           <input
             type="text"
             className="input pl-9"
@@ -166,12 +162,12 @@ export default function EventsPage() {
           </select>
         )}
 
-        <div className="flex items-center gap-3 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800">
+        <div className="flex items-center gap-3 px-3 py-1.5 border border-line rounded-lg bg-surface">
           {(
             [
-              { key: 'error', label: 'Error', color: 'text-red-500' },
-              { key: 'warning', label: 'Warning', color: 'text-yellow-500' },
-              { key: 'info', label: 'Info', color: 'text-blue-500' },
+              { key: 'error', label: 'Error', color: 'text-bad' },
+              { key: 'warning', label: 'Warning', color: 'text-warn' },
+              { key: 'info', label: 'Info', color: 'text-accent' },
             ] as const
           ).map(({ key, label, color }) => (
             <label key={key} className="flex items-center gap-1.5 cursor-pointer select-none">
@@ -184,7 +180,7 @@ export default function EventsPage() {
               <span className={clsx('text-xs font-medium', color)}>{label}</span>
             </label>
           ))}
-          <span className="w-px h-4 bg-gray-200 dark:bg-slate-600" />
+          <span className="w-px h-4 bg-surface-3 dark:bg-surface-3" />
           <label
             className="flex items-center gap-1.5 cursor-pointer select-none"
             title="NTP and IP Cloud clock adjustments ('ntp change time', 'cloud change time')"
@@ -198,9 +194,7 @@ export default function EventsPage() {
               }}
               className="w-3.5 h-3.5 rounded accent-current cursor-pointer"
             />
-            <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
-              Clock changes
-            </span>
+            <span className="text-xs font-medium text-ink-3">Clock changes</span>
           </label>
         </div>
 
@@ -218,18 +212,18 @@ export default function EventsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400">Loading...</div>
+        <div className="flex items-center justify-center h-48 text-ink-4">Loading...</div>
       ) : events.length === 0 ? (
         <div className="card p-12 flex flex-col items-center gap-3 text-center">
-          <Bell className="w-12 h-12 text-gray-300 dark:text-slate-600" />
-          <p className="text-gray-500 dark:text-slate-400">No events found</p>
+          <Bell className="w-12 h-12 text-ink-4" />
+          <p className="text-ink-3">No events found</p>
         </div>
       ) : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-slate-700">
+                <tr className="border-b border-line">
                   <th className="table-header px-4 py-2.5 text-left">Time</th>
                   <th className="table-header px-4 py-2.5 text-left w-24">Severity</th>
                   <th className="table-header px-4 py-2.5 text-left">Device</th>
@@ -237,19 +231,19 @@ export default function EventsPage() {
                   <th className="table-header px-4 py-2.5 text-left">Message</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+              <tbody className="divide-y divide-line table-zebra">
                 {events.map((ev) => {
                   const Icon = severityIcon(ev.severity);
                   return (
                     <tr
                       key={ev.id}
                       className={clsx(
-                        'hover:bg-gray-50 dark:hover:bg-slate-700/30',
+                        'hover:bg-surface-2/30',
                         (ev.severity === 'error' || ev.severity === 'critical') &&
-                          'bg-red-50/30 dark:bg-red-900/10',
+                          'bg-red-50/30 dark:bg-bad-bg',
                       )}
                     >
-                      <td className="px-4 py-2.5 text-xs font-mono text-gray-500 dark:text-slate-400 whitespace-nowrap">
+                      <td className="px-4 py-2.5 text-xs font-mono text-ink-3 whitespace-nowrap">
                         {format(new Date(ev.event_time), 'MMM d, HH:mm:ss')}
                       </td>
                       <td className="px-4 py-2.5">
@@ -263,15 +257,11 @@ export default function EventsPage() {
                           {ev.severity}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">
-                        {ev.device_name || '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs font-mono text-gray-400 dark:text-slate-500">
+                      <td className="px-4 py-2.5 text-xs text-ink-3">{ev.device_name || '—'}</td>
+                      <td className="px-4 py-2.5 text-xs font-mono text-ink-3">
                         {ev.topic || '—'}
                       </td>
-                      <td className="px-4 py-2.5 text-gray-700 dark:text-slate-300">
-                        {ev.message}
-                      </td>
+                      <td className="px-4 py-2.5 text-ink-2">{ev.message}</td>
                     </tr>
                   );
                 })}
@@ -284,7 +274,7 @@ export default function EventsPage() {
       {/* Pagination */}
       {total > PAGE_SIZE && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500 dark:text-slate-400">
+          <span className="text-ink-3">
             Showing {(page * PAGE_SIZE + 1).toLocaleString()}–
             {(page * PAGE_SIZE + events.length).toLocaleString()} of {totalLabel}
           </span>

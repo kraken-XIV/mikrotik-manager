@@ -71,7 +71,7 @@ export default function ListInput({
         {value.map((entry) => (
           <span
             key={entry}
-            className="inline-flex items-center gap-1 rounded bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 font-mono text-xs text-gray-800 dark:text-slate-200"
+            className="inline-flex items-center gap-1 rounded bg-surface-3 px-1.5 py-0.5 font-mono text-xs text-ink"
           >
             {entry}
             {!disabled && (
@@ -79,7 +79,7 @@ export default function ListInput({
                 type="button"
                 aria-label={`Remove ${entry}`}
                 onClick={() => onChange(value.filter((v) => v !== entry))}
-                className="text-gray-400 hover:text-red-500"
+                className="text-ink-4 hover:text-bad"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -103,7 +103,7 @@ export default function ListInput({
           }}
         />
       </div>
-      {error && <p className="mt-0.5 text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-0.5 text-xs text-bad">{error}</p>}
     </div>
   );
 }

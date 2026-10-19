@@ -240,10 +240,10 @@ export default function AddDeviceModal({
             placeholder="192.168.88.1 or router.example.com"
           />
           {addressInvalid && (
-            <p className="text-[11px] text-red-500 mt-1">Not a valid IP address or hostname.</p>
+            <p className="text-[11px] text-bad mt-1">Not a valid IP address or hostname.</p>
           )}
           {showPlaintextWarning && (
-            <p className="flex items-start gap-1 text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+            <p className="flex items-start gap-1 text-[11px] text-warn mt-1">
               <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
               <span>
                 Credentials travel unencrypted to this address. Prefer api-ssl on port 8729, or a
@@ -272,21 +272,21 @@ export default function AddDeviceModal({
 
       {/* Credentials: preset or manual */}
       <div>
-        <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+        <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3 flex items-center gap-1.5">
           <KeyRound className="w-3.5 h-3.5" />
           Credentials
         </h3>
 
-        <label className="flex items-start gap-2 mb-3 p-2.5 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer">
+        <label className="flex items-start gap-2 mb-3 p-2.5 rounded-lg border border-line cursor-pointer">
           <input
             type="checkbox"
             className="mt-0.5 w-4 h-4 rounded"
             checked={sshOnly}
             onChange={(e) => setSshOnly(e.target.checked)}
           />
-          <span className="text-sm text-gray-700 dark:text-slate-200">
+          <span className="text-sm text-ink-2 dark:text-ink">
             The API isn&apos;t enabled on this device yet
-            <span className="block text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+            <span className="block text-xs text-ink-3 mt-0.5">
               Adds it over SSH. Bulk commands, templates, the terminal and backups work straight
               away, so you can turn on api-ssl; the manager switches to the API by itself once it
               answers.
@@ -311,7 +311,7 @@ export default function AddDeviceModal({
               ))}
             </select>
             {selectedPreset && (
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
+              <p className="text-xs text-ink-3 mt-2">
                 Using preset <strong>{selectedPreset.name}</strong>. The server will pull the API
                 username/password
                 {selectedPreset.has_ssh_password && selectedPreset.ssh_username
@@ -368,7 +368,7 @@ export default function AddDeviceModal({
                   />
                   {portGiven ? (
                     <label
-                      className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-200 mt-1.5 cursor-pointer"
+                      className="flex items-center gap-1.5 text-xs text-ink-2 dark:text-ink mt-1.5 cursor-pointer"
                       title="Tick when this port runs api-ssl, for example a forwarded port behind NAT"
                     >
                       <input
@@ -380,7 +380,7 @@ export default function AddDeviceModal({
                       API-SSL (encrypted)
                     </label>
                   ) : (
-                    <p className="text-[11px] text-gray-400 mt-1">
+                    <p className="text-[11px] text-ink-4 mt-1">
                       Blank tries API-SSL (8729), then 8728.
                     </p>
                   )}
@@ -399,7 +399,7 @@ export default function AddDeviceModal({
                   autoComplete="new-password"
                 />
                 {sshOnly && (
-                  <p className="text-[11px] text-gray-400 mt-1">
+                  <p className="text-[11px] text-ink-4 mt-1">
                     The same login is tried on the API once it&apos;s enabled. To use another one,
                     change the API login in Edit Device later.
                   </p>
@@ -410,7 +410,7 @@ export default function AddDeviceModal({
             {/* SSH credentials (optional) */}
             {!sshOnly && (
               <details className="group mt-3">
-                <summary className="cursor-pointer text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider select-none">
+                <summary className="cursor-pointer text-xs font-semibold text-ink-3 uppercase tracking-wider select-none">
                   SSH Credentials (optional, for backup/restore)
                 </summary>
                 <div className="mt-3 grid grid-cols-2 gap-3">
@@ -490,16 +490,16 @@ export default function AddDeviceModal({
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+          <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-bad">{error}</p>
         </div>
       )}
 
       {loading && (
-        <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <Loader2 className="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" />
-          <p className="text-sm text-blue-600 dark:text-blue-400">
+        <div className="flex items-center gap-2 p-3 bg-accent-soft border border-accent dark:border-accent rounded-lg">
+          <Loader2 className="w-4 h-4 text-accent animate-spin flex-shrink-0" />
+          <p className="text-sm text-accent">
             {sshOnly
               ? 'Trying the API, then logging in over SSH...'
               : 'Testing connection and collecting device data...'}
@@ -550,11 +550,11 @@ export default function AddDeviceModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add Device</h2>
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h2 className="text-lg font-semibold text-ink">Add Device</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+            className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
           >
             <X className="w-5 h-5" />
           </button>

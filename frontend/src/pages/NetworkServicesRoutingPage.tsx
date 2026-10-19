@@ -10,10 +10,10 @@ import { routingApi, type RoutingPeerRow } from '../services/api';
 
 function StateBadge({ p }: { p: RoutingPeerRow }) {
   const cls = p.disabled
-    ? 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400'
+    ? 'bg-surface-3 text-ink-3 dark:bg-surface-3 dark:text-ink-3'
     : p.up
-      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good'
+      : 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad';
   return (
     <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', cls)}>
       {p.state}
@@ -68,11 +68,11 @@ export default function NetworkServicesRoutingPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Routing</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
+          <h1 className="text-xl font-bold text-ink">Routing</h1>
+          <p className="text-sm text-ink-3">
             BGP peers and OSPF neighbours across the fleet, refreshed with each slow poll. Set them
             up on a device&apos;s Routing tab; turn on the{' '}
-            <Link to="/settings" className="text-blue-600 dark:text-blue-400 hover:underline">
+            <Link to="/settings" className="text-accent hover:underline">
               Routing peer down
             </Link>{' '}
             alert to hear when one drops.
@@ -94,13 +94,8 @@ export default function NetworkServicesRoutingPage() {
           { label: 'Down', value: down, bad: down > 0 },
         ].map((c) => (
           <div key={c.label} className="card px-4 py-3">
-            <div className="text-xs text-gray-500 dark:text-slate-400">{c.label}</div>
-            <div
-              className={clsx(
-                'text-2xl font-bold',
-                c.bad ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white',
-              )}
-            >
+            <div className="text-xs text-ink-3">{c.label}</div>
+            <div className={clsx('text-2xl font-bold', c.bad ? 'text-bad' : 'text-ink')}>
               {c.value}
             </div>
           </div>
@@ -127,9 +122,9 @@ export default function NetworkServicesRoutingPage() {
 
       <div className="card overflow-hidden">
         {isLoading ? (
-          <div className="py-10 text-center text-gray-400">Loading…</div>
+          <div className="py-10 text-center text-ink-4">Loading…</div>
         ) : peers.length === 0 ? (
-          <div className="py-10 text-center text-gray-400 dark:text-slate-500 flex flex-col items-center gap-2">
+          <div className="py-10 text-center text-ink-3 flex flex-col items-center gap-2">
             <RouteIcon className="w-6 h-6" />
             No BGP peers or OSPF neighbours found. They appear here after the next slow poll of a
             device that has them.
@@ -137,7 +132,7 @@ export default function NetworkServicesRoutingPage() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700 text-left">
+              <tr className="border-b border-line text-left">
                 {[
                   'Device',
                   'Protocol',
@@ -154,66 +149,62 @@ export default function NetworkServicesRoutingPage() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-line">
               {shown.map((p) => (
                 <tr
                   key={`${p.device_id}-${p.protocol}-${p.peer_key}`}
-                  className="hover:bg-gray-50 dark:hover:bg-slate-700/30"
+                  className="hover:bg-surface-2/30"
                 >
                   <td className="px-4 py-2">
                     <Link
                       to={`/devices/${p.device_id}?tab=routing`}
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-accent hover:underline"
                     >
                       {p.device_name}
                     </Link>
                     {p.device_status !== 'online' && (
-                      <span className="ml-1.5 text-xs text-gray-400">({p.device_status})</span>
+                      <span className="ml-1.5 text-xs text-ink-4">({p.device_status})</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs uppercase text-gray-600 dark:text-slate-300">
-                    {p.protocol}
-                  </td>
+                  <td className="px-4 py-2 font-mono text-xs uppercase text-ink-2">{p.protocol}</td>
                   <td className="px-4 py-2">
-                    <div className="font-mono text-xs text-gray-900 dark:text-white">
-                      {p.name || '—'}
-                    </div>
+                    <div className="font-mono text-xs text-ink">{p.name || '—'}</div>
                     {(p.instance || p.detail) && (
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-ink-4">
                         {[p.instance, p.detail].filter(Boolean).join(' · ')}
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-gray-600 dark:text-slate-300">
+                  <td className="px-4 py-2 font-mono text-xs text-ink-2">
                     {p.remote_address || '—'}
-                    {p.remote_as && <span className="text-gray-400"> · AS {p.remote_as}</span>}
+                    {p.remote_as && <span className="text-ink-4"> · AS {p.remote_as}</span>}
                     {p.protocol === 'bgp' && p.remote_id && p.remote_id !== p.remote_address && (
-                      <div className="text-gray-400">id {p.remote_id}</div>
+                      <div className="text-ink-4">id {p.remote_id}</div>
                     )}
                   </td>
                   <td className="px-4 py-2">
                     <StateBadge p={p} />
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-gray-600 dark:text-slate-300">
+                  <td className="px-4 py-2 font-mono text-xs text-ink-2">
                     {p.up && p.uptime ? p.uptime.replace(/\d+ms$/, '') || p.uptime : '—'}
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-gray-600 dark:text-slate-300">
+                  <td className="px-4 py-2 font-mono text-xs text-ink-2">
                     {p.prefix_count ?? '—'}
                   </td>
                   <td
-                    className="px-4 py-2 text-xs text-gray-500 dark:text-slate-400"
+                    className="px-4 py-2 text-xs text-ink-3"
                     title={new Date(p.last_change_at).toLocaleString()}
                   >
                     {formatDistanceToNow(new Date(p.last_change_at), { addSuffix: true })}
                     {!p.up && !p.disabled && !p.last_up_at && (
-                      <div className="text-gray-400">never up</div>
+                      <div className="text-ink-4">never up</div>
                     )}
                   </td>
                 </tr>
               ))}
               {shown.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={8} className="px-4 py-6 text-center text-ink-4">
                     Nothing matches the filters.
                   </td>
                 </tr>

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
+import AccentSwatches from '../components/common/AccentSwatches';
 import AutomationSettings from '../components/settings/AutomationSettings';
 import DarkSiteCard from '../components/settings/DarkSiteCard';
 import EncryptionKeyCard from '../components/settings/EncryptionKeyCard';
@@ -62,17 +63,17 @@ import { docsUrl } from '../version';
 const ROLE_META: Record<UserRole, { label: string; color: string; desc: string }> = {
   admin: {
     label: 'Admin',
-    color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    color: 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad',
     desc: 'Full access including user management',
   },
   operator: {
     label: 'Operator',
-    color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+    color: 'bg-warn-bg text-warn dark:bg-orange-900/30 dark:text-warn',
     desc: 'Manage devices and configs, no user admin',
   },
   viewer: {
     label: 'Viewer',
-    color: 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300',
+    color: 'bg-surface-3 text-ink-2 dark:bg-surface-3 dark:text-ink-2',
     desc: 'Read-only access',
   },
 };
@@ -98,7 +99,7 @@ interface EditUserState {
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme, scheme, setScheme } = useThemeStore();
   const isAdmin = user?.role === 'admin';
   const canWrite = user?.role !== 'viewer';
   // Timezone for scheduled work. The browser's zone is offered as a shortcut
@@ -573,7 +574,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
+      <h1 className="text-xl font-bold text-ink">Settings</h1>
 
       {/* Side navigation rather than a tab strip. Fourteen tabs across three
           groups wrapped onto several lines above the content and scrolled out
@@ -601,7 +602,7 @@ export default function SettingsPage() {
         <nav className="hidden md:flex md:w-52 flex-shrink-0 md:sticky md:top-2 flex-col gap-5">
           {tabGroups.map((group) => (
             <div key={group.label}>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 select-none px-3 mb-1">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3 select-none px-3 mb-1">
                 {group.label}
               </div>
               <div className="flex flex-col gap-0.5">
@@ -612,8 +613,8 @@ export default function SettingsPage() {
                     className={clsx(
                       'px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-2 whitespace-nowrap text-left',
                       activeTab === tab.key
-                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                        : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200',
+                        ? 'bg-accent-soft text-accent dark:bg-accent-soft dark:text-accent'
+                        : 'text-ink-2 hover:bg-surface-3 hover:text-ink dark:hover:text-ink',
                     )}
                   >
                     <tab.icon className="w-4 h-4 flex-shrink-0" />
@@ -635,26 +636,23 @@ export default function SettingsPage() {
             <div className="max-w-6xl xl:columns-2 xl:gap-4 [&>*]:mb-4 [&>*]:break-inside-avoid">
               {isAdmin && <EncryptionKeyCard />}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Appearance</h3>
-                <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-ink mb-4">Appearance</h3>
+                <div className="flex flex-col items-start gap-2">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                      Theme
-                    </label>
-                    <p className="text-xs text-gray-400 dark:text-slate-500">
-                      Choose your preferred color scheme
-                    </p>
+                    <label className="text-sm font-medium text-ink-2">Theme</label>
+                    <p className="text-xs text-ink-3">Choose your preferred color scheme</p>
                   </div>
-                  <div className="flex gap-2">
-                    {(['light', 'dark'] as const).map((t) => (
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {(['light', 'dark', 'system'] as const).map((t) => (
                       <button
                         key={t}
                         onClick={() => setTheme(t)}
+                        aria-pressed={theme === t}
                         className={clsx(
                           'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors capitalize',
                           theme === t
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400',
+                            ? 'bg-accent text-accent-fg border-accent'
+                            : 'border-line text-ink-2',
                         )}
                       >
                         {t}
@@ -662,13 +660,52 @@ export default function SettingsPage() {
                     ))}
                   </div>
                 </div>
+                <div className="flex flex-col items-start gap-2 mt-4">
+                  <div>
+                    <label className="text-sm font-medium text-ink-2">Accent</label>
+                    <p className="text-xs text-ink-3">
+                      The colour used for buttons, links and highlights
+                    </p>
+                  </div>
+                  <AccentSwatches />
+                </div>
+                <div className="flex flex-col items-start gap-2 mt-4">
+                  <div>
+                    <label className="text-sm font-medium text-ink-2">
+                      Contrast &amp; surfaces
+                    </label>
+                    <p className="text-xs text-ink-3">
+                      High contrast strengthens text and borders; Midnight deepens dark mode (it
+                      applies whenever dark is active)
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {(['default', 'high-contrast', 'midnight'] as const).map((sc) => (
+                      <button
+                        key={sc}
+                        onClick={() => setScheme(sc)}
+                        aria-pressed={scheme === sc}
+                        className={clsx(
+                          'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors capitalize',
+                          scheme === sc
+                            ? 'bg-accent text-accent-fg border-accent'
+                            : 'border-line text-ink-2',
+                        )}
+                      >
+                        {sc === 'default'
+                          ? 'Default'
+                          : sc === 'high-contrast'
+                            ? 'High contrast'
+                            : 'Midnight'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                  Polling Intervals
-                </h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <h3 className="font-semibold text-ink mb-1">Polling Intervals</h3>
+                <p className="text-xs text-ink-3 mb-4">
                   The defaults. A site (Sites → edit) or a device (its Overview tab) can override
                   them.
                 </p>
@@ -688,10 +725,8 @@ export default function SettingsPage() {
                   ].map(({ key, label, unit }) => (
                     <div key={key} className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                          {label}
-                        </div>
-                        <div className="text-xs text-gray-400">{unit}</div>
+                        <div className="text-sm font-medium text-ink-2">{label}</div>
+                        <div className="text-xs text-ink-4">{unit}</div>
                       </div>
                       <NumberSetting
                         className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -708,10 +743,8 @@ export default function SettingsPage() {
 
               {/* Login Rate Limit */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                  Login Rate Limiting
-                </h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <h3 className="font-semibold text-ink mb-1">Login Rate Limiting</h3>
+                <p className="text-xs text-ink-3 mb-4">
                   Limits login attempts per IP address to protect against brute-force attacks.
                 </p>
                 <div className="space-y-3">
@@ -721,10 +754,8 @@ export default function SettingsPage() {
                   ].map(({ key, label, unit }) => (
                     <div key={key} className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                          {label}
-                        </div>
-                        <div className="text-xs text-gray-400">{unit}</div>
+                        <div className="text-sm font-medium text-ink-2">{label}</div>
+                        <div className="text-xs text-ink-4">{unit}</div>
                       </div>
                       <NumberSetting
                         className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -741,17 +772,15 @@ export default function SettingsPage() {
 
               {/* MAC Scan */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">MAC Scan</h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <h3 className="font-semibold text-ink mb-1">MAC Scan</h3>
+                <p className="text-xs text-ink-3 mb-4">
                   Runs <code className="font-mono">/tool/mac-scan</code> on each switch to map MAC
                   addresses to IP addresses, enriching the Clients section.
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                        Enable MAC scan
-                      </div>
+                      <div className="text-sm font-medium text-ink-2">Enable MAC scan</div>
                     </div>
                     <button
                       onClick={() =>
@@ -765,8 +794,8 @@ export default function SettingsPage() {
                         'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                         isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                         settings['mac_scan_enabled']
-                          ? 'bg-blue-600'
-                          : 'bg-gray-300 dark:bg-slate-600',
+                          ? 'bg-accent'
+                          : 'bg-surface-3 dark:bg-surface-3',
                       )}
                     >
                       <span
@@ -779,10 +808,8 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                        Scan interval
-                      </div>
-                      <div className="text-xs text-gray-400">seconds</div>
+                      <div className="text-sm font-medium text-ink-2">Scan interval</div>
+                      <div className="text-xs text-ink-4">seconds</div>
                     </div>
                     <NumberSetting
                       className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -798,10 +825,8 @@ export default function SettingsPage() {
 
               {/* Configuration Snapshots */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                  Configuration Snapshots
-                </h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <h3 className="font-semibold text-ink mb-1">Configuration Snapshots</h3>
+                <p className="text-xs text-ink-3 mb-4">
                   Periodically captures each device&apos;s{' '}
                   <code className="font-mono">/export</code> for the Config History / drift
                   detection feature. This runs <strong>over SSH</strong>, so it only executes on
@@ -810,9 +835,7 @@ export default function SettingsPage() {
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                      Enable config snapshots
-                    </div>
+                    <div className="text-sm font-medium text-ink-2">Enable config snapshots</div>
                     <button
                       onClick={() =>
                         isAdmin &&
@@ -825,8 +848,8 @@ export default function SettingsPage() {
                         'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                         isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                         settings['config_snapshot_enabled'] !== false
-                          ? 'bg-blue-600'
-                          : 'bg-gray-300 dark:bg-slate-600',
+                          ? 'bg-accent'
+                          : 'bg-surface-3 dark:bg-surface-3',
                       )}
                     >
                       <span
@@ -841,10 +864,8 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                        Snapshot interval
-                      </div>
-                      <div className="text-xs text-gray-400">minutes</div>
+                      <div className="text-sm font-medium text-ink-2">Snapshot interval</div>
+                      <div className="text-xs text-ink-4">minutes</div>
                     </div>
                     <NumberSetting
                       className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -859,10 +880,8 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                        Retention
-                      </div>
-                      <div className="text-xs text-gray-400">snapshots kept per device</div>
+                      <div className="text-sm font-medium text-ink-2">Retention</div>
+                      <div className="text-xs text-ink-4">snapshots kept per device</div>
                     </div>
                     <NumberSetting
                       className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -880,17 +899,15 @@ export default function SettingsPage() {
 
               {/* Change Guard */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Change Guard</h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <h3 className="font-semibold text-ink mb-1">Change Guard</h3>
+                <p className="text-xs text-ink-3 mb-4">
                   Before a change that could cut the manager off, the device arms its own revert. If
                   the manager can&apos;t reach it afterwards, the device puts the change back by
                   itself.
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                      Protect risky changes
-                    </div>
+                    <div className="text-sm font-medium text-ink-2">Protect risky changes</div>
                     <button
                       onClick={() =>
                         isAdmin &&
@@ -903,8 +920,8 @@ export default function SettingsPage() {
                         'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                         isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                         settings['change_guard_enabled'] !== false
-                          ? 'bg-blue-600'
-                          : 'bg-gray-300 dark:bg-slate-600',
+                          ? 'bg-accent'
+                          : 'bg-surface-3 dark:bg-surface-3',
                       )}
                     >
                       <span
@@ -919,10 +936,8 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                        How it reverts
-                      </div>
-                      <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5 max-w-md">
+                      <div className="text-sm font-medium text-ink-2">How it reverts</div>
+                      <div className="text-xs text-ink-3 mt-0.5 max-w-md">
                         {settings['change_guard_mode'] === 'script'
                           ? 'Puts back only what the change touched, with no reboot. Works with a RouterOS login in the write group. Changes it can\u2019t cover (bulk commands, firmware, routing, WireGuard, wireless) use a full restore instead.'
                           : 'Restores the whole configuration from a backup taken just before the change, and reboots. Needs the policy permission on the RouterOS login (the full group has it).'}{' '}
@@ -950,12 +965,8 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                        Revert after
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        seconds without contact (60 to 900)
-                      </div>
+                      <div className="text-sm font-medium text-ink-2">Revert after</div>
+                      <div className="text-xs text-ink-4">seconds without contact (60 to 900)</div>
                     </div>
                     <NumberSetting
                       className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -976,15 +987,15 @@ export default function SettingsPage() {
 
               {/* Config Health */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Config Health</h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <h3 className="font-semibold text-ink mb-1">Config Health</h3>
+                <p className="text-xs text-ink-3 mb-4">
                   A standing audit of each device&apos;s live configuration for things RouterOS
                   accepts but that don&apos;t work, shown on the Operations dashboard and each
                   device&apos;s Config Health card. Read-only on the device.
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                    <div className="text-sm font-medium text-ink-2">
                       Run the audit automatically
                     </div>
                     <button
@@ -999,8 +1010,8 @@ export default function SettingsPage() {
                         'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                         isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                         settings['config_health_enabled'] !== false
-                          ? 'bg-blue-600'
-                          : 'bg-gray-300 dark:bg-slate-600',
+                          ? 'bg-accent'
+                          : 'bg-surface-3 dark:bg-surface-3',
                       )}
                     >
                       <span
@@ -1014,9 +1025,7 @@ export default function SettingsPage() {
                     </button>
                   </div>
                   <div className="flex items-center justify-between gap-4">
-                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                      How often
-                    </div>
+                    <div className="text-sm font-medium text-ink-2">How often</div>
                     <select
                       className="input w-36 disabled:opacity-50 disabled:cursor-not-allowed"
                       value={String(settings['config_health_interval_min'] ?? 60)}
@@ -1046,17 +1055,13 @@ export default function SettingsPage() {
 
               {/* Reverse DNS */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                  Reverse DNS Lookup
-                </h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <h3 className="font-semibold text-ink mb-1">Reverse DNS Lookup</h3>
+                <p className="text-xs text-ink-3 mb-4">
                   Performs PTR record lookups on client IP addresses to resolve hostnames. Runs
                   every 5 minutes, filling in clients that have an IP but no hostname.
                 </p>
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                    Enable reverse DNS
-                  </div>
+                  <div className="text-sm font-medium text-ink-2">Enable reverse DNS</div>
                   <button
                     onClick={() =>
                       isAdmin &&
@@ -1069,8 +1074,8 @@ export default function SettingsPage() {
                       'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                       isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                       settings['reverse_dns_enabled']
-                        ? 'bg-blue-600'
-                        : 'bg-gray-300 dark:bg-slate-600',
+                        ? 'bg-accent'
+                        : 'bg-surface-3 dark:bg-surface-3',
                     )}
                   >
                     <span
@@ -1084,7 +1089,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Data Retention</h3>
+                <h3 className="font-semibold text-ink mb-4">Data Retention</h3>
                 <div className="space-y-3">
                   {[
                     {
@@ -1140,10 +1145,8 @@ export default function SettingsPage() {
                   ].map(({ key, label, desc }) => (
                     <div key={key} className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                          {label}
-                        </div>
-                        <div className="text-xs text-gray-400">{desc}</div>
+                        <div className="text-sm font-medium text-ink-2">{label}</div>
+                        <div className="text-xs text-ink-4">{desc}</div>
                       </div>
                       <NumberSetting
                         className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1165,10 +1168,10 @@ export default function SettingsPage() {
                   <div className="card p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                        <h3 className="font-semibold text-ink mb-1">
                           Include passwords and keys in backups
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                        <p className="text-xs text-ink-3">
                           Without them, RouterOS v7 leaves Wi-Fi keys, VPN and PPP secrets,
                           WireGuard private keys and SNMP communities out of a backup, so a restore
                           can&apos;t bring a device back exactly. With them, those backups are
@@ -1186,7 +1189,7 @@ export default function SettingsPage() {
                         className={clsx(
                           'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                           isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                          on ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                          on ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3',
                         )}
                       >
                         <span
@@ -1203,10 +1206,8 @@ export default function SettingsPage() {
 
               {/* Scheduled Backups */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                  Scheduled Backups
-                </h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <h3 className="font-semibold text-ink mb-1">Scheduled Backups</h3>
+                <p className="text-xs text-ink-3 mb-4">
                   Automatically backs up all online devices on a schedule via SSH export. Backups
                   appear in the Backups section with type{' '}
                   <code className="font-mono">scheduled</code>.
@@ -1234,7 +1235,7 @@ export default function SettingsPage() {
                   return (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                        <div className="text-sm font-medium text-ink-2">
                           Enable scheduled backups
                         </div>
                         <button
@@ -1246,7 +1247,7 @@ export default function SettingsPage() {
                           className={clsx(
                             'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                             isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                            enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                            enabled ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3',
                           )}
                         >
                           <span
@@ -1261,7 +1262,7 @@ export default function SettingsPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {/* Frequency */}
                         <div>
-                          <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
+                          <label className="block text-xs font-medium text-ink-3 mb-1">
                             Frequency
                           </label>
                           <select
@@ -1281,7 +1282,7 @@ export default function SettingsPage() {
                         {/* Day selector — weekly or monthly */}
                         {sched.frequency === 'weekly' && (
                           <div>
-                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
+                            <label className="block text-xs font-medium text-ink-3 mb-1">
                               Day of week
                             </label>
                             <select
@@ -1302,7 +1303,7 @@ export default function SettingsPage() {
                         )}
                         {sched.frequency === 'monthly' && (
                           <div>
-                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
+                            <label className="block text-xs font-medium text-ink-3 mb-1">
                               Day of month
                             </label>
                             <select
@@ -1324,9 +1325,7 @@ export default function SettingsPage() {
 
                         {/* Time of day */}
                         <div>
-                          <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                            Time
-                          </label>
+                          <label className="block text-xs font-medium text-ink-3 mb-1">Time</label>
                           <input
                             type="time"
                             className="input w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1346,9 +1345,7 @@ export default function SettingsPage() {
                       the container clock — UTC in the shipped image — so "02:00"
                       meant 02:00 UTC wherever you were (#117). */}
                       <div className="flex flex-wrap items-center gap-2">
-                        <label className="text-xs text-gray-500 dark:text-slate-400">
-                          Timezone
-                        </label>
+                        <label className="text-xs text-ink-3">Timezone</label>
                         <select
                           value={appTimezone}
                           disabled={!isAdmin}
@@ -1373,31 +1370,21 @@ export default function SettingsPage() {
                             onClick={() =>
                               updateSettingsMutation.mutate({ app_timezone: browserTimezone })
                             }
-                            className="text-xs underline text-blue-600 dark:text-blue-400 disabled:opacity-50"
+                            className="text-xs underline text-accent disabled:opacity-50"
                           >
                             Use {browserTimezone}
                           </button>
                         )}
                       </div>
 
-                      <p
-                        className={clsx(
-                          'text-xs',
-                          enabled
-                            ? 'text-gray-500 dark:text-slate-400'
-                            : 'text-gray-400 dark:text-slate-600',
-                        )}
-                      >
+                      <p className={clsx('text-xs', enabled ? 'text-ink-3' : 'text-ink-4')}>
                         {enabled ? (
                           <>
                             Runs{' '}
-                            <span className="font-medium text-gray-700 dark:text-slate-300">
+                            <span className="font-medium text-ink-2">
                               {describeBackupSchedule(sched).toLowerCase()}
                             </span>{' '}
-                            in{' '}
-                            <span className="font-medium text-gray-700 dark:text-slate-300">
-                              {appTimezone}
-                            </span>{' '}
+                            in <span className="font-medium text-ink-2">{appTimezone}</span>{' '}
                             (currently {currentTimeInAppTz}).
                           </>
                         ) : (
@@ -1405,7 +1392,7 @@ export default function SettingsPage() {
                         )}
                       </p>
                       {sched.frequency === 'monthly' && (
-                        <p className="text-xs text-gray-400 dark:text-slate-500">
+                        <p className="text-xs text-ink-3">
                           Days are limited to 1–28 so the backup runs every month, including
                           February.
                         </p>
@@ -1457,7 +1444,7 @@ export default function SettingsPage() {
               )}
               {/* Role legend */}
               <div className="card p-4">
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3">
                   Role Permissions
                 </h3>
                 <div className="grid grid-cols-3 gap-3">
@@ -1465,9 +1452,7 @@ export default function SettingsPage() {
                     ([role, meta]) => (
                       <div key={role} className="flex items-start gap-2">
                         <RoleBadge role={role} />
-                        <span className="text-xs text-gray-500 dark:text-slate-400">
-                          {meta.desc}
-                        </span>
+                        <span className="text-xs text-ink-3">{meta.desc}</span>
                       </div>
                     ),
                   )}
@@ -1476,14 +1461,14 @@ export default function SettingsPage() {
 
               {/* Users table */}
               <div className="card overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                <div className="px-4 py-3 border-b border-line">
+                  <h3 className="text-sm font-semibold text-ink">
                     System Users ({(users as User[]).length})
                   </h3>
                 </div>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 dark:border-slate-700">
+                    <tr className="border-b border-line-soft">
                       <th className="table-header px-4 py-2.5 text-left">Username</th>
                       <th className="table-header px-4 py-2.5 text-left">Role</th>
                       <th className="table-header px-4 py-2.5 text-left">Access</th>
@@ -1491,38 +1476,34 @@ export default function SettingsPage() {
                       <th className="table-header px-4 py-2.5 w-20" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+                  <tbody className="divide-y divide-line table-zebra">
                     {(users as User[]).map((u) => (
-                      <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                        <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
+                      <tr key={u.id} className="hover:bg-surface-2/30">
+                        <td className="px-4 py-2.5 font-medium text-ink">
                           <div className="flex items-center gap-2">
                             {u.username}
                             {u.id === user?.id && (
-                              <span className="text-xs text-blue-500">(you)</span>
+                              <span className="text-xs text-accent">(you)</span>
                             )}
                             {u.auth_provider === 'oidc' && (
-                              <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                              <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-accent-soft text-accent dark:bg-accent-soft dark:text-accent">
                                 SSO
                               </span>
                             )}
                           </div>
                           {u.email && (
-                            <div className="text-xs text-gray-400 dark:text-slate-500 font-normal">
-                              {u.email}
-                            </div>
+                            <div className="text-xs text-ink-3 font-normal">{u.email}</div>
                           )}
                         </td>
                         <td className="px-4 py-2.5">
                           {/* A site-limited account's roles are per site; its own role column doesn't apply (P1-7). */}
                           {isLimited(u) ? (
-                            <span className="text-xs text-gray-500 dark:text-slate-400">
-                              per site
-                            </span>
+                            <span className="text-xs text-ink-3">per site</span>
                           ) : (
                             <RoleBadge role={u.role} />
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600 dark:text-slate-300">
+                        <td className="px-4 py-2.5 text-xs text-ink-2">
                           {isLimited(u)
                             ? [
                                 ...groupRolesOf(u).map((r) => `${r.group_name} (group): ${r.role}`),
@@ -1530,7 +1511,7 @@ export default function SettingsPage() {
                               ].join(', ')
                             : 'Whole fleet'}
                         </td>
-                        <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">
+                        <td className="px-4 py-2.5 text-xs text-ink-3">
                           {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
                         </td>
                         <td className="px-4 py-2.5">
@@ -1548,14 +1529,14 @@ export default function SettingsPage() {
                                     confirmPassword: '',
                                   });
                                 }}
-                                className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
+                                className="p-1 rounded text-ink-4 hover:text-accent transition-colors"
                                 title="Edit user"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => setAccessUser(u)}
-                                className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
+                                className="p-1 rounded text-ink-4 hover:text-accent transition-colors"
                                 title="Site access"
                               >
                                 <Globe className="w-3.5 h-3.5" />
@@ -1567,7 +1548,7 @@ export default function SettingsPage() {
                                       deleteUserMutation.mutate(u.id);
                                     }
                                   }}
-                                  className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
+                                  className="p-1 rounded text-ink-4 hover:text-bad transition-colors"
                                   title="Delete user"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1585,7 +1566,7 @@ export default function SettingsPage() {
               {/* Add user form */}
               {isAdmin && (
                 <div className="card p-5 max-w-lg">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Add User</h3>
+                  <h3 className="font-semibold text-ink mb-4">Add User</h3>
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -1624,12 +1605,12 @@ export default function SettingsPage() {
                     </div>
 
                     {userError && (
-                      <div className="flex items-center gap-2 text-sm text-red-500">
+                      <div className="flex items-center gap-2 text-sm text-bad">
                         <AlertCircle className="w-4 h-4 flex-shrink-0" /> {userError}
                       </div>
                     )}
                     {userSuccess && (
-                      <div className="flex items-center gap-2 text-sm text-green-500">
+                      <div className="flex items-center gap-2 text-sm text-good">
                         <CheckCircle className="w-4 h-4 flex-shrink-0" /> {userSuccess}
                       </div>
                     )}
@@ -1657,16 +1638,14 @@ export default function SettingsPage() {
 
           {/* ── My Password ── */}
           {activeTab === 'security' && !passwordLogin && (
-            <div className="card p-5 max-w-2xl text-sm text-gray-600 dark:text-slate-300">
+            <div className="card p-5 max-w-2xl text-sm text-ink-2">
               Password sign-in is turned off on this server, so accounts are managed through SSO.
             </div>
           )}
           {activeTab === 'security' && passwordLogin && (
             <div className="max-w-md space-y-4">
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                  Change My Password
-                </h3>
+                <h3 className="font-semibold text-ink mb-4">Change My Password</h3>
                 <div className="space-y-3">
                   <div>
                     <label className="label">Current Password</label>
@@ -1700,12 +1679,12 @@ export default function SettingsPage() {
                   </div>
 
                   {pwError && (
-                    <div className="flex items-center gap-2 text-sm text-red-500">
+                    <div className="flex items-center gap-2 text-sm text-bad">
                       <AlertCircle className="w-4 h-4" /> {pwError}
                     </div>
                   )}
                   {pwSuccess && (
-                    <div className="flex items-center gap-2 text-sm text-green-500">
+                    <div className="flex items-center gap-2 text-sm text-good">
                       <CheckCircle className="w-4 h-4" /> {pwSuccess}
                     </div>
                   )}
@@ -1733,22 +1712,22 @@ export default function SettingsPage() {
 
               {/* ── TOTP / 2FA ── */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-blue-500" />
+                <h3 className="font-semibold text-ink mb-1 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-accent" />
                   Two-Factor Authentication
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                <p className="text-xs text-ink-3 dark:text-ink-4 mb-4">
                   Add an extra layer of security with a TOTP authenticator app (Google
                   Authenticator, Authy, etc.)
                 </p>
 
                 {totpMsg && (
-                  <div className="flex items-center gap-2 text-sm text-green-500 mb-3">
+                  <div className="flex items-center gap-2 text-sm text-good mb-3">
                     <CheckCircle className="w-4 h-4" /> {totpMsg}
                   </div>
                 )}
                 {totpError && (
-                  <div className="flex items-center gap-2 text-sm text-red-500 mb-3">
+                  <div className="flex items-center gap-2 text-sm text-bad mb-3">
                     <AlertCircle className="w-4 h-4" /> {totpError}
                   </div>
                 )}
@@ -1756,7 +1735,7 @@ export default function SettingsPage() {
                 {totpStatus?.totp_enabled ? (
                   /* Already enabled — show disable form */
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
+                    <div className="flex items-center gap-2 text-sm text-good font-medium">
                       <ShieldCheck className="w-4 h-4" /> 2FA is currently enabled
                     </div>
                     <div>
@@ -1780,7 +1759,7 @@ export default function SettingsPage() {
                 ) : totpSetupData ? (
                   /* Setup in progress — show QR + confirm step */
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                    <p className="text-sm text-ink-2 dark:text-ink-4">
                       Scan this QR code with your authenticator app, then enter the 6-digit code to
                       confirm.
                     </p>
@@ -1788,10 +1767,10 @@ export default function SettingsPage() {
                       <img
                         src={totpSetupData.qr}
                         alt="TOTP QR code"
-                        className="w-44 h-44 rounded-lg border border-gray-200 dark:border-slate-700"
+                        className="w-44 h-44 rounded-lg border border-line"
                       />
                     </div>
-                    <details className="text-xs text-gray-500 dark:text-gray-400">
+                    <details className="text-xs text-ink-3 dark:text-ink-4">
                       <summary className="cursor-pointer select-none">
                         Can&apos;t scan? Enter secret manually
                       </summary>
@@ -1864,53 +1843,51 @@ export default function SettingsPage() {
             <div className="space-y-4 max-w-2xl">
               {/* Current cert info */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-blue-500" />
+                <h3 className="font-semibold text-ink mb-4 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-accent" />
                   Current Certificate
                 </h3>
                 {certLoading ? (
-                  <p className="text-sm text-gray-400">Loading...</p>
+                  <p className="text-sm text-ink-4">Loading...</p>
                 ) : !certInfo?.exists ? (
-                  <p className="text-sm text-amber-500">No certificate found.</p>
+                  <p className="text-sm text-warn">No certificate found.</p>
                 ) : (
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                      <div className="text-gray-500 dark:text-slate-400">Subject</div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {certInfo.subject}
-                      </div>
+                      <div className="text-ink-3">Subject</div>
+                      <div className="font-medium text-ink">{certInfo.subject}</div>
 
-                      <div className="text-gray-500 dark:text-slate-400">Issuer</div>
-                      <div className="text-gray-700 dark:text-slate-300 flex items-center gap-2">
+                      <div className="text-ink-3">Issuer</div>
+                      <div className="text-ink-2 flex items-center gap-2">
                         {certInfo.issuer}
                         {certInfo.is_self_signed && (
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn">
                             Self-Signed
                           </span>
                         )}
                         {!certInfo.is_self_signed && (
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-good-bg text-good dark:bg-good-bg dark:text-good">
                             Trusted CA
                           </span>
                         )}
                       </div>
 
-                      <div className="text-gray-500 dark:text-slate-400">Valid From</div>
-                      <div className="text-gray-700 dark:text-slate-300">
+                      <div className="text-ink-3">Valid From</div>
+                      <div className="text-ink-2">
                         {certInfo.valid_from
                           ? new Date(certInfo.valid_from).toLocaleDateString()
                           : '—'}
                       </div>
 
-                      <div className="text-gray-500 dark:text-slate-400">Expires</div>
+                      <div className="text-ink-3">Expires</div>
                       <div
                         className={clsx(
                           'font-medium',
                           (certInfo.days_remaining ?? 0) < 30
-                            ? 'text-red-500'
+                            ? 'text-bad'
                             : (certInfo.days_remaining ?? 0) < 90
-                              ? 'text-amber-500'
-                              : 'text-green-600 dark:text-green-400',
+                              ? 'text-warn'
+                              : 'text-good',
                         )}
                       >
                         {certInfo.valid_to ? new Date(certInfo.valid_to).toLocaleDateString() : '—'}
@@ -1927,10 +1904,8 @@ export default function SettingsPage() {
 
                       {certInfo.san && (
                         <>
-                          <div className="text-gray-500 dark:text-slate-400">SANs</div>
-                          <div className="text-xs font-mono text-gray-600 dark:text-slate-400">
-                            {certInfo.san}
-                          </div>
+                          <div className="text-ink-3">SANs</div>
+                          <div className="text-xs font-mono text-ink-2">{certInfo.san}</div>
                         </>
                       )}
                     </div>
@@ -1940,11 +1915,11 @@ export default function SettingsPage() {
 
               {/* Regenerate self-signed */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4 text-gray-500" />
+                <h3 className="font-semibold text-ink mb-1 flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 text-ink-3" />
                   Regenerate Self-Signed Certificate
                 </h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <p className="text-xs text-ink-3 mb-4">
                   Generates a new 10-year self-signed certificate. Use this to replace an expired
                   self-signed cert or to reset back to defaults. Nginx reloads automatically within
                   a few seconds.
@@ -1971,11 +1946,11 @@ export default function SettingsPage() {
 
               {/* Upload custom cert */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-gray-500" />
+                <h3 className="font-semibold text-ink mb-1 flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-ink-3" />
                   Install Custom Certificate
                 </h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <p className="text-xs text-ink-3 mb-4">
                   Paste PEM-encoded certificate and private key, or use the file pickers to load
                   from disk. The certificate and key must match. Nginx reloads automatically within
                   a few seconds.
@@ -1986,7 +1961,7 @@ export default function SettingsPage() {
                       <label className="label mb-0">Certificate (PEM)</label>
                       <button
                         type="button"
-                        className="text-xs text-blue-500 hover:text-blue-600"
+                        className="text-xs text-accent hover:text-accent"
                         onClick={() => certFileRef.current?.click()}
                       >
                         Load from file...
@@ -2025,7 +2000,7 @@ export default function SettingsPage() {
                       <label className="label mb-0">Private Key (PEM)</label>
                       <button
                         type="button"
-                        className="text-xs text-blue-500 hover:text-blue-600"
+                        className="text-xs text-accent hover:text-accent"
                         onClick={() => keyFileRef.current?.click()}
                       >
                         Load from file...
@@ -2059,15 +2034,15 @@ export default function SettingsPage() {
                   </div>
 
                   {certError && (
-                    <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                      <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-red-600 dark:text-red-400">{certError}</p>
+                    <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+                      <ShieldAlert className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-bad">{certError}</p>
                     </div>
                   )}
                   {certSuccess && (
-                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <p className="text-sm text-green-600 dark:text-green-400">{certSuccess}</p>
+                    <div className="flex items-center gap-2 p-3 bg-good-bg border border-good dark:border-good rounded-lg">
+                      <CheckCircle className="w-4 h-4 text-good flex-shrink-0" />
+                      <p className="text-sm text-good">{certSuccess}</p>
                     </div>
                   )}
 
@@ -2090,8 +2065,8 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="card p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                <p className="text-xs text-blue-700 dark:text-blue-300">
+              <div className="card p-4 bg-accent-soft border border-accent dark:border-accent">
+                <p className="text-xs text-accent dark:text-accent">
                   <strong>Note:</strong> HTTP (port 80) automatically redirects to HTTPS (port 443).
                   Browser warnings for self-signed certificates are normal and can be bypassed by
                   accepting the security exception. Use a CA-signed certificate to eliminate browser
@@ -2106,13 +2081,8 @@ export default function SettingsPage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
               <div className="card w-full max-w-sm mx-4 p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    Edit User: {editUser.username}
-                  </h3>
-                  <button
-                    onClick={() => setEditUser(null)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
+                  <h3 className="font-semibold text-ink">Edit User: {editUser.username}</h3>
+                  <button onClick={() => setEditUser(null)} className="text-ink-4 hover:text-ink-2">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -2133,7 +2103,7 @@ export default function SettingsPage() {
                       <option value="admin">Admin (full access)</option>
                     </select>
                     {editUser.id === user?.id && (
-                      <p className="text-xs text-gray-400 mt-1">Cannot change your own role</p>
+                      <p className="text-xs text-ink-4 mt-1">Cannot change your own role</p>
                     )}
                   </div>
 
@@ -2164,7 +2134,7 @@ export default function SettingsPage() {
                   )}
 
                   {editError && (
-                    <div className="flex items-center gap-2 text-sm text-red-500">
+                    <div className="flex items-center gap-2 text-sm text-bad">
                       <AlertCircle className="w-4 h-4" /> {editError}
                     </div>
                   )}
@@ -2192,15 +2162,13 @@ export default function SettingsPage() {
             <fieldset disabled={!canWrite} className="space-y-4 min-w-0">
               {/* Hardware health limit (#168) */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                  Hardware health
-                </h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-3">
+                <h3 className="font-semibold text-ink mb-1">Hardware health</h3>
+                <p className="text-xs text-ink-3 mb-3">
                   A device shows as degraded when a power supply or fan reports a failure, or a
                   temperature reaches this limit. Readings can be ignored per device on its Overview
                   tab.
                 </p>
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+                <label className="flex items-center gap-2 text-sm text-ink-2">
                   Temperature limit
                   <input
                     key={String(settings['health_temp_limit_c'] ?? 85)}
@@ -2228,14 +2196,14 @@ export default function SettingsPage() {
 
               {/* Alert Rules */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Alert Rules</h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                <h3 className="font-semibold text-ink mb-1">Alert Rules</h3>
+                <p className="text-xs text-ink-3 mb-4">
                   Enable or disable each alert event. Threshold and cooldown apply where relevant.
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-xs text-gray-500 dark:text-slate-400 border-b border-gray-100 dark:border-slate-700">
+                      <tr className="text-left text-xs text-ink-3 border-b border-line-soft">
                         <th className="pb-2 pr-4 font-medium">Event</th>
                         <th className="pb-2 pr-4 font-medium text-center">Enabled</th>
                         <th className="pb-2 pr-4 font-medium text-center">Threshold</th>
@@ -2246,9 +2214,9 @@ export default function SettingsPage() {
                       {alertRules.map((rule) => (
                         <tr
                           key={rule.event_type}
-                          className="border-b border-gray-50 dark:border-slate-800"
+                          className="border-b border-gray-50 dark:border-line-soft"
                         >
-                          <td className="py-2.5 pr-4 text-gray-700 dark:text-slate-300">
+                          <td className="py-2.5 pr-4 text-ink-2">
                             {RULE_LABELS[rule.event_type] ?? rule.event_type}
                           </td>
                           <td className="py-2.5 pr-4 text-center">
@@ -2268,7 +2236,7 @@ export default function SettingsPage() {
                               className={clsx(
                                 'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors',
                                 canWrite ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                                rule.enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                                rule.enabled ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3',
                               )}
                             >
                               <span
@@ -2307,7 +2275,7 @@ export default function SettingsPage() {
                                 disabled={!canWrite}
                               />
                             ) : (
-                              <span className="text-gray-300 dark:text-slate-600">—</span>
+                              <span className="text-ink-4">—</span>
                             )}
                           </td>
                           <td className="py-2.5 text-center">
@@ -2335,9 +2303,9 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Optional fixed receive limits for optics (#249). */}
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 text-sm">
-                  <p className="font-medium text-gray-900 dark:text-white">Optic receive limits</p>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 mb-2">
+                <div className="mt-4 pt-4 border-t border-line-soft text-sm">
+                  <p className="font-medium text-ink">Optic receive limits</p>
+                  <p className="text-xs text-ink-3 mt-0.5 mb-2">
                     Optional. A port turns red, and alerts under &quot;Optic light level&quot;, when
                     its receive light goes under the low limit or over the high one. Leave empty for
                     off. Each port is always also judged against its own usual level. The right
@@ -2367,8 +2335,8 @@ export default function SettingsPage() {
               <div className="card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Alert Channels</h3>
-                    <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                    <h3 className="font-semibold text-ink">Alert Channels</h3>
+                    <p className="text-xs text-ink-3 mt-0.5">
                       Where to send alerts — email, Slack, Discord, or Telegram.
                     </p>
                   </div>
@@ -2387,28 +2355,24 @@ export default function SettingsPage() {
                 </div>
 
                 {alertChannels.length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-slate-500">
-                    No channels configured yet.
-                  </p>
+                  <p className="text-sm text-ink-3">No channels configured yet.</p>
                 ) : (
                   <div className="space-y-2">
                     {alertChannels.map((ch) => (
                       <div
                         key={ch.id}
-                        className="p-3 rounded-lg border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 space-y-2"
+                        className="p-3 rounded-lg border border-line-soft bg-surface-2/50 space-y-2"
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm text-gray-800 dark:text-white">
+                              <span className="font-medium text-sm text-ink dark:text-white">
                                 {ch.name}
                               </span>
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400 uppercase">
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-surface-3 dark:bg-surface-3 text-ink-3 uppercase">
                                 {ch.type}
                               </span>
-                              {!ch.enabled && (
-                                <span className="text-xs text-amber-500">disabled</span>
-                              )}
+                              {!ch.enabled && <span className="text-xs text-warn">disabled</span>}
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -2416,10 +2380,10 @@ export default function SettingsPage() {
                               className={clsx(
                                 'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors',
                                 chTestStatus[ch.id] === 'ok'
-                                  ? 'border-green-400 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                                  ? 'border-green-400 text-good bg-good-bg'
                                   : chTestStatus[ch.id] === 'err'
-                                    ? 'border-red-400 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-                                    : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400',
+                                    ? 'border-bad text-bad bg-bad-bg'
+                                    : 'border-line text-ink-2 hover:border-accent hover:text-accent dark:hover:text-accent',
                               )}
                               onClick={() => testChannel(ch.id)}
                               disabled={chTestStatus[ch.id] === 'testing'}
@@ -2443,7 +2407,7 @@ export default function SettingsPage() {
                             </button>
                             {canWrite && (
                               <button
-                                className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 hover:text-blue-500 transition-colors"
+                                className="p-1.5 rounded hover:bg-surface-3 dark:hover:bg-surface-3 text-ink-4 hover:text-accent transition-colors"
                                 title="Edit channel"
                                 onClick={() => {
                                   setChForm({
@@ -2461,7 +2425,7 @@ export default function SettingsPage() {
                             )}
                             {canWrite && (
                               <button
-                                className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 hover:text-red-500 transition-colors"
+                                className="p-1.5 rounded hover:bg-surface-3 dark:hover:bg-surface-3 text-ink-4 hover:text-bad transition-colors"
                                 title="Delete channel"
                                 onClick={() => {
                                   if (confirm(`Delete channel "${ch.name}"?`))
@@ -2477,9 +2441,7 @@ export default function SettingsPage() {
                           <p
                             className={clsx(
                               'text-xs pl-0.5',
-                              chTestStatus[ch.id] === 'err'
-                                ? 'text-red-500'
-                                : 'text-green-600 dark:text-green-400',
+                              chTestStatus[ch.id] === 'err' ? 'text-bad' : 'text-good',
                             )}
                           >
                             {chTestMsg[ch.id]}
@@ -2493,16 +2455,14 @@ export default function SettingsPage() {
 
               {/* Alert History */}
               <div className="card p-5">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-                  Recent Alert History
-                </h3>
+                <h3 className="font-semibold text-ink mb-3">Recent Alert History</h3>
                 {alertHistory.length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-slate-500">No alerts sent yet.</p>
+                  <p className="text-sm text-ink-3">No alerts sent yet.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="text-left text-gray-500 dark:text-slate-400 border-b border-gray-100 dark:border-slate-700">
+                        <tr className="text-left text-ink-3 border-b border-line-soft">
                           <th className="pb-2 pr-3 font-medium">Time</th>
                           <th className="pb-2 pr-3 font-medium">Event</th>
                           <th className="pb-2 pr-3 font-medium">Device</th>
@@ -2512,20 +2472,16 @@ export default function SettingsPage() {
                       </thead>
                       <tbody className="table-zebra">
                         {alertHistory.map((h) => (
-                          <tr key={h.id} className="border-b border-gray-50 dark:border-slate-800">
-                            <td className="py-2 pr-3 text-gray-400 whitespace-nowrap">
+                          <tr key={h.id} className="border-b border-gray-50 dark:border-line-soft">
+                            <td className="py-2 pr-3 text-ink-4 whitespace-nowrap">
                               {new Date(h.sent_at).toLocaleString()}
                             </td>
-                            <td className="py-2 pr-3 font-mono text-gray-600 dark:text-slate-300 whitespace-nowrap">
+                            <td className="py-2 pr-3 font-mono text-ink-2 whitespace-nowrap">
                               {h.event_type}
                             </td>
-                            <td className="py-2 pr-3 text-gray-500 dark:text-slate-400">
-                              {h.device_name ?? '—'}
-                            </td>
-                            <td className="py-2 pr-3 text-gray-700 dark:text-slate-300 max-w-xs truncate">
-                              {h.message}
-                            </td>
-                            <td className="py-2 text-gray-500 dark:text-slate-400">
+                            <td className="py-2 pr-3 text-ink-3">{h.device_name ?? '—'}</td>
+                            <td className="py-2 pr-3 text-ink-2 max-w-xs truncate">{h.message}</td>
+                            <td className="py-2 text-ink-3">
                               {(h.channels_notified ?? []).join(', ') || '—'}
                             </td>
                           </tr>
@@ -2541,23 +2497,21 @@ export default function SettingsPage() {
           {/* ── Channel Modal ── */}
           {chModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-700">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
+              <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+                <div className="flex items-center justify-between p-4 border-b border-line-soft">
+                  <h3 className="font-semibold text-ink">
                     {chModal.mode === 'add' ? 'Add Alert Channel' : 'Edit Alert Channel'}
                   </h3>
                   <button
                     onClick={() => setChModal(null)}
-                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700"
+                    className="p-1 rounded hover:bg-surface-3"
                   >
-                    <X className="w-4 h-4 text-gray-500" />
+                    <X className="w-4 h-4 text-ink-3" />
                   </button>
                 </div>
                 <div className="p-4 space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
-                      Name
-                    </label>
+                    <label className="block text-xs font-medium text-ink-2 mb-1">Name</label>
                     <input
                       className="input w-full"
                       value={chForm.name}
@@ -2567,9 +2521,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex gap-3">
                     <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
-                        Type
-                      </label>
+                      <label className="block text-xs font-medium text-ink-2 mb-1">Type</label>
                       <select
                         className="input w-full"
                         value={chForm.type}
@@ -2592,15 +2544,13 @@ export default function SettingsPage() {
                       </select>
                     </div>
                     <div className="flex items-end pb-0.5 gap-2">
-                      <label className="text-xs font-medium text-gray-600 dark:text-slate-400">
-                        Enabled
-                      </label>
+                      <label className="text-xs font-medium text-ink-2">Enabled</label>
                       <button
                         type="button"
                         onClick={() => setChForm((f) => ({ ...f, enabled: !f.enabled }))}
                         className={clsx(
                           'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                          chForm.enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                          chForm.enabled ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3',
                         )}
                       >
                         <span
@@ -2616,7 +2566,7 @@ export default function SettingsPage() {
                   {/* Type-specific config fields */}
                   {chForm.type === 'slack' || chForm.type === 'discord' ? (
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                      <label className="block text-xs font-medium text-ink-2 mb-1">
                         Webhook URL
                       </label>
                       <input
@@ -2629,7 +2579,7 @@ export default function SettingsPage() {
                   ) : chForm.type === 'telegram' ? (
                     <>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-ink-2 mb-1">
                           Bot Token
                         </label>
                         <input
@@ -2640,9 +2590,7 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
-                          Chat ID
-                        </label>
+                        <label className="block text-xs font-medium text-ink-2 mb-1">Chat ID</label>
                         <input
                           className="input w-full"
                           value={cfgStr('chat_id')}
@@ -2654,7 +2602,7 @@ export default function SettingsPage() {
                   ) : chForm.type === 'gotify' ? (
                     <>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-ink-2 mb-1">
                           Server URL
                         </label>
                         <input
@@ -2665,7 +2613,7 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-ink-2 mb-1">
                           App Token
                         </label>
                         <input
@@ -2675,13 +2623,13 @@ export default function SettingsPage() {
                           onChange={(e) => setCfg('app_token', e.target.value)}
                           placeholder="A1b2C3..."
                         />
-                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                        <p className="mt-1 text-[11px] text-ink-3">
                           In Gotify, create an application under Apps and copy its token. Outages
                           are sent at priority 8, recoveries at 2.
                         </p>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-ink-2 mb-1">
                           Manager URL (optional)
                         </label>
                         <input
@@ -2690,7 +2638,7 @@ export default function SettingsPage() {
                           onChange={(e) => setCfg('click_url', e.target.value)}
                           placeholder="https://mikrotik.example.com"
                         />
-                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                        <p className="mt-1 text-[11px] text-ink-3">
                           Makes each notification open the device it refers to.
                         </p>
                       </div>
@@ -2698,7 +2646,7 @@ export default function SettingsPage() {
                   ) : chForm.type === 'ntfy' ? (
                     <>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-ink-2 mb-1">
                           Server URL
                         </label>
                         <input
@@ -2707,14 +2655,12 @@ export default function SettingsPage() {
                           onChange={(e) => setCfg('server_url', e.target.value)}
                           placeholder="https://ntfy.sh"
                         />
-                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                        <p className="mt-1 text-[11px] text-ink-3">
                           Leave blank for the public ntfy.sh, or point at your own instance.
                         </p>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
-                          Topic
-                        </label>
+                        <label className="block text-xs font-medium text-ink-2 mb-1">Topic</label>
                         <input
                           className="input w-full font-mono text-xs"
                           value={cfgStr('topic')}
@@ -2723,7 +2669,7 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-ink-2 mb-1">
                           Access Token
                         </label>
                         <input
@@ -2733,14 +2679,14 @@ export default function SettingsPage() {
                           onChange={(e) => setCfg('token', e.target.value)}
                           placeholder="tk_..."
                         />
-                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                        <p className="mt-1 text-[11px] text-ink-3">
                           Preferred over a username and password. Anyone who can publish to an
                           unprotected topic can spoof your alerts.
                         </p>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          <label className="block text-xs font-medium text-ink-2 mb-1">
                             Username
                           </label>
                           <input
@@ -2751,7 +2697,7 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          <label className="block text-xs font-medium text-ink-2 mb-1">
                             Password
                           </label>
                           <input
@@ -2764,7 +2710,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-ink-2 mb-1">
                           Manager URL (optional)
                         </label>
                         <input
@@ -2773,7 +2719,7 @@ export default function SettingsPage() {
                           onChange={(e) => setCfg('click_url', e.target.value)}
                           placeholder="https://mikrotik.example.com"
                         />
-                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                        <p className="mt-1 text-[11px] text-ink-3">
                           Makes each notification tappable, opening the device it refers to.
                         </p>
                       </div>
@@ -2782,7 +2728,7 @@ export default function SettingsPage() {
                     <>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          <label className="block text-xs font-medium text-ink-2 mb-1">
                             SMTP Host
                           </label>
                           <input
@@ -2793,9 +2739,7 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
-                            Port
-                          </label>
+                          <label className="block text-xs font-medium text-ink-2 mb-1">Port</label>
                           <input
                             type="number"
                             className="input w-full"
@@ -2806,7 +2750,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          <label className="block text-xs font-medium text-ink-2 mb-1">
                             SMTP User
                           </label>
                           <input
@@ -2817,7 +2761,7 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          <label className="block text-xs font-medium text-ink-2 mb-1">
                             SMTP Password
                           </label>
                           <input
@@ -2830,7 +2774,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-ink-2 mb-1">
                           From Address
                         </label>
                         <input
@@ -2841,7 +2785,7 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-ink-2 mb-1">
                           Recipients (comma-separated)
                         </label>
                         <input
@@ -2869,10 +2813,7 @@ export default function SettingsPage() {
                           onChange={(e) => setCfg('smtp_secure', e.target.checked)}
                           className="rounded"
                         />
-                        <label
-                          htmlFor="smtp_secure"
-                          className="text-xs text-gray-600 dark:text-slate-400"
-                        >
+                        <label htmlFor="smtp_secure" className="text-xs text-ink-2">
                           Use TLS/SSL (port 465)
                         </label>
                       </div>
@@ -2880,7 +2821,7 @@ export default function SettingsPage() {
                   )}
 
                   {chError && (
-                    <div className="flex items-center gap-2 text-sm text-red-500">
+                    <div className="flex items-center gap-2 text-sm text-bad">
                       <AlertCircle className="w-4 h-4 flex-shrink-0" /> {chError}
                     </div>
                   )}
@@ -2896,10 +2837,10 @@ export default function SettingsPage() {
                             className={clsx(
                               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
                               chTestStatus[chModal.id!] === 'ok'
-                                ? 'border-green-400 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                                ? 'border-green-400 text-good bg-good-bg'
                                 : chTestStatus[chModal.id!] === 'err'
-                                  ? 'border-red-400 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-                                  : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600',
+                                  ? 'border-bad text-bad bg-bad-bg'
+                                  : 'border-line text-ink-2 hover:border-accent hover:text-accent',
                             )}
                           >
                             {chTestStatus[chModal.id!] === 'testing' ? (
@@ -2923,9 +2864,7 @@ export default function SettingsPage() {
                             <span
                               className={clsx(
                                 'text-xs',
-                                chTestStatus[chModal.id!] === 'err'
-                                  ? 'text-red-500'
-                                  : 'text-green-600 dark:text-green-400',
+                                chTestStatus[chModal.id!] === 'err' ? 'text-bad' : 'text-good',
                               )}
                             >
                               {chTestMsg[chModal.id!]}
@@ -2958,16 +2897,14 @@ export default function SettingsPage() {
           {activeTab === 'tags' && (
             <div className="space-y-4">
               <div className="card p-5">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-                  Device Tags
-                </h3>
+                <h3 className="text-sm font-semibold text-ink mb-4">Device Tags</h3>
                 {isAdmin && (
                   <div className="flex items-center gap-2 mb-4">
                     <input
                       type="color"
                       value={newTagColor}
                       onChange={(e) => setNewTagColor(e.target.value)}
-                      className="w-8 h-8 rounded cursor-pointer border border-gray-300 dark:border-slate-600 p-0.5"
+                      className="w-8 h-8 rounded cursor-pointer border border-line p-0.5"
                     />
                     <input
                       type="text"
@@ -3003,9 +2940,7 @@ export default function SettingsPage() {
                     />
                   ))}
                   {tags.length === 0 && (
-                    <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">
-                      No tags created yet
-                    </p>
+                    <p className="text-sm text-ink-3 text-center py-4">No tags created yet</p>
                   )}
                 </div>
               </div>
@@ -3027,8 +2962,8 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div className="card p-5">
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <ClipboardList className="w-4 h-4 text-blue-500" />
+                  <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-accent" />
                     Audit Log
                   </h3>
                   <input
@@ -3045,7 +2980,7 @@ export default function SettingsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-xs text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+                      <tr className="text-left text-xs text-ink-3 border-b border-line">
                         <th className="pb-2 pr-4">Time</th>
                         <th className="pb-2 pr-4">User</th>
                         <th className="pb-2 pr-4">Action</th>
@@ -3056,11 +2991,8 @@ export default function SettingsPage() {
                     </thead>
                     <tbody>
                       {(auditData?.rows ?? []).map((row) => (
-                        <tr
-                          key={row.id}
-                          className="border-b border-gray-100 dark:border-slate-700/50"
-                        >
-                          <td className="py-2 pr-4 font-mono text-xs text-gray-400 whitespace-nowrap">
+                        <tr key={row.id} className="border-b border-line-soft/50">
+                          <td className="py-2 pr-4 font-mono text-xs text-ink-4 whitespace-nowrap">
                             {new Date(row.created_at).toLocaleString()}
                           </td>
                           <td className="py-2 pr-4 font-medium">{row.username ?? '—'}</td>
@@ -3069,22 +3001,22 @@ export default function SettingsPage() {
                               className={clsx(
                                 'px-1.5 py-0.5 rounded text-xs font-semibold mr-2',
                                 row.method === 'DELETE'
-                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                  ? 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad'
                                   : row.method === 'POST'
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                    ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good'
+                                    : 'bg-accent-soft text-accent dark:bg-accent-soft dark:text-accent',
                               )}
                             >
                               {row.method}
                             </span>
                             <span
-                              className="text-gray-500 dark:text-slate-400 truncate max-w-[200px] inline-block align-bottom"
+                              className="text-ink-3 truncate max-w-[200px] inline-block align-bottom"
                               title={row.path}
                             >
                               {row.path}
                             </span>
                           </td>
-                          <td className="py-2 pr-4 text-gray-500 dark:text-slate-400">
+                          <td className="py-2 pr-4 text-ink-3">
                             {row.entity_type
                               ? row.entity_id
                                 ? `${row.entity_type}#${row.entity_id}`
@@ -3096,26 +3028,23 @@ export default function SettingsPage() {
                               className={clsx(
                                 'px-1.5 py-0.5 rounded text-xs font-semibold',
                                 (row.status_code ?? 200) < 300
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                  ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good'
                                   : (row.status_code ?? 200) < 500
-                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                                    ? 'bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn'
+                                    : 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad',
                               )}
                             >
                               {row.status_code ?? '—'}
                             </span>
                           </td>
-                          <td className="py-2 font-mono text-xs text-gray-400">
+                          <td className="py-2 font-mono text-xs text-ink-4">
                             {row.ip_address ?? '—'}
                           </td>
                         </tr>
                       ))}
                       {(auditData?.rows ?? []).length === 0 && (
                         <tr>
-                          <td
-                            colSpan={6}
-                            className="py-8 text-center text-gray-400 dark:text-slate-500"
-                          >
+                          <td colSpan={6} className="py-8 text-center text-ink-3">
                             No audit log entries yet
                           </td>
                         </tr>
@@ -3124,7 +3053,7 @@ export default function SettingsPage() {
                   </table>
                 </div>
                 {(auditData?.total ?? 0) > 50 && (
-                  <div className="flex items-center justify-between mt-4 text-sm text-gray-500 dark:text-slate-400">
+                  <div className="flex items-center justify-between mt-4 text-sm text-ink-3">
                     <span>{(auditData?.total ?? 0).toLocaleString()} total entries</span>
                     {/* Jump straight to a page (discussion #85), not only one at a time. */}
                     <div className="flex items-center gap-2">
@@ -3221,7 +3150,7 @@ function DbmLimit({
     if (String(n) !== saved) onCommit(n);
   };
   return (
-    <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-slate-300">
+    <label className="flex items-center gap-2 text-xs text-ink-2">
       {label}
       <input
         className="input w-20 text-center py-1 text-xs"

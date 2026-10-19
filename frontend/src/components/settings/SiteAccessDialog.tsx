@@ -93,7 +93,7 @@ export default function SiteAccessDialog({
     <select
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value as Choice)}
-      className={clsx('input py-1 text-xs w-32', !value && 'text-gray-400')}
+      className={clsx('input py-1 text-xs w-32', !value && 'text-ink-4')}
     >
       <option value="">No access</option>
       <option value="viewer">Viewer</option>
@@ -107,20 +107,20 @@ export default function SiteAccessDialog({
       <div className="card w-full max-w-lg mx-4 p-6 space-y-4 max-h-[85vh] overflow-y-auto">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h3 className="font-semibold text-ink flex items-center gap-2">
               <Globe className="w-4 h-4" /> Access for {user.username}
             </h3>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-ink-3 mt-1">
               Where this account can see and act, and with what role.
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {isSelf ? (
-          <p className="text-sm text-gray-600 dark:text-slate-300">
+          <p className="text-sm text-ink-2">
             You can&apos;t limit your own account to particular sites: you would lose fleet
             administration.
           </p>
@@ -135,8 +135,8 @@ export default function SiteAccessDialog({
                   className="mt-1"
                 />
                 <span>
-                  <span className="font-medium text-gray-900 dark:text-white">Whole fleet</span>
-                  <span className="block text-xs text-gray-500 dark:text-slate-400">
+                  <span className="font-medium text-ink">Whole fleet</span>
+                  <span className="block text-xs text-ink-3">
                     Every site, as <strong>{user.role}</strong> (the role set on the account).
                   </span>
                 </span>
@@ -149,10 +149,10 @@ export default function SiteAccessDialog({
                   className="mt-1"
                 />
                 <span>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span className="font-medium text-ink">
                     {groups.length ? 'Specific groups and sites' : 'Specific sites'}
                   </span>
-                  <span className="block text-xs text-gray-500 dark:text-slate-400">
+                  <span className="block text-xs text-ink-3">
                     Only those below, with a role in each
                     {groups.length
                       ? '; a group covers every site in it, including ones added later'
@@ -165,7 +165,7 @@ export default function SiteAccessDialog({
 
             {scoped && groups.length > 0 && (
               <table className="w-full text-sm">
-                <thead className="text-xs text-gray-500 dark:text-slate-400">
+                <thead className="text-xs text-ink-3">
                   <tr>
                     <th className="text-left font-medium py-1">Group</th>
                     <th className="text-right font-medium">Role</th>
@@ -173,10 +173,10 @@ export default function SiteAccessDialog({
                 </thead>
                 <tbody>
                   {groups.map((g) => (
-                    <tr key={g.id} className="border-t border-gray-100 dark:border-slate-700/50">
-                      <td className="py-1.5 text-gray-900 dark:text-white">
+                    <tr key={g.id} className="border-t border-line-soft/50">
+                      <td className="py-1.5 text-ink">
                         {g.name}{' '}
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-ink-4">
                           {g.site_ids.length} site{g.site_ids.length === 1 ? '' : 's'}
                         </span>
                       </td>
@@ -190,7 +190,7 @@ export default function SiteAccessDialog({
             )}
             {scoped && (
               <table className="w-full text-sm">
-                <thead className="text-xs text-gray-500 dark:text-slate-400">
+                <thead className="text-xs text-ink-3">
                   <tr>
                     <th className="text-left font-medium py-1">Site</th>
                     <th className="text-right font-medium">Role</th>
@@ -198,11 +198,11 @@ export default function SiteAccessDialog({
                 </thead>
                 <tbody>
                   {sites.map((s) => (
-                    <tr key={s.id} className="border-t border-gray-100 dark:border-slate-700/50">
-                      <td className="py-1.5 text-gray-900 dark:text-white">
+                    <tr key={s.id} className="border-t border-line-soft/50">
+                      <td className="py-1.5 text-ink">
                         {s.name}
                         {s.group_id != null && groupRoles.get(s.group_id) && (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-ink-4">
                             {' '}
                             · {groupRoles.get(s.group_id)} through {s.group_name}
                           </span>
@@ -217,11 +217,11 @@ export default function SiteAccessDialog({
               </table>
             )}
             {scoped && chosen === 0 && (
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-warn">
                 Choose at least one {groups.length ? 'group or site' : 'site'}, or pick Whole fleet.
               </p>
             )}
-            {error && <p className="text-xs text-red-600">{error}</p>}
+            {error && <p className="text-xs text-bad">{error}</p>}
             <div className="flex justify-end gap-2">
               <button onClick={onClose} className="btn-secondary text-sm">
                 Cancel
@@ -234,7 +234,7 @@ export default function SiteAccessDialog({
                 {save.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Save
               </button>
             </div>
-            <p className="text-[11px] text-gray-400">
+            <p className="text-[11px] text-ink-4">
               Takes effect on the account&apos;s next request; it doesn&apos;t need to sign in
               again.
             </p>

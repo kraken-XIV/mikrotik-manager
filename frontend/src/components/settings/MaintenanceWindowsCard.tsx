@@ -122,10 +122,8 @@ export default function MaintenanceWindowsCard({
 
   return (
     <div className="card p-5">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-        Maintenance Windows
-      </h3>
-      <p className="text-xs text-gray-500 dark:text-slate-400 mb-4">
+      <h3 className="text-sm font-semibold text-ink mb-1">Maintenance Windows</h3>
+      <p className="text-xs text-ink-3 mb-4">
         Alerts for the chosen devices are held back while a window is open, so planned reboots and
         upgrades don&apos;t page anyone.
       </p>
@@ -141,7 +139,7 @@ export default function MaintenanceWindowsCard({
               className="input text-sm"
             />
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-500 dark:text-slate-400">Start</label>
+              <label className="text-xs text-ink-3">Start</label>
               <input
                 type="datetime-local"
                 value={form.start}
@@ -150,7 +148,7 @@ export default function MaintenanceWindowsCard({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-500 dark:text-slate-400">End</label>
+              <label className="text-xs text-ink-3">End</label>
               <input
                 type="datetime-local"
                 value={form.end}
@@ -161,7 +159,7 @@ export default function MaintenanceWindowsCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <label className="text-xs text-gray-500 dark:text-slate-400">Repeat</label>
+            <label className="text-xs text-ink-3">Repeat</label>
             <select
               className="input text-sm w-auto"
               value={form.repeat}
@@ -172,15 +170,15 @@ export default function MaintenanceWindowsCard({
               <option value="weekly">Every week, same day</option>
             </select>
             {form.repeat !== 'none' && form.start && (
-              <span className="text-xs text-gray-500 dark:text-slate-400">
+              <span className="text-xs text-ink-3">
                 {describeRepeat(cronFor(form.repeat, new Date(form.start), timeZone)!, timeZone)},
                 starting {new Date(form.start).toLocaleDateString()}
               </span>
             )}
           </div>
 
-          <details className="rounded border border-gray-200 dark:border-slate-700">
-            <summary className="cursor-pointer px-3 py-2 text-sm text-gray-700 dark:text-slate-300">
+          <details className="rounded border border-line">
+            <summary className="cursor-pointer px-3 py-2 text-sm text-ink-2">
               Devices:{' '}
               {deviceIds.length === 0 ? (
                 <strong>All devices</strong>
@@ -198,7 +196,7 @@ export default function MaintenanceWindowsCard({
               {deviceIds.length > 0 && (
                 <button
                   type="button"
-                  className="text-xs text-blue-600 text-left"
+                  className="text-xs text-accent text-left"
                   onClick={() => setDeviceIds([])}
                 >
                   Clear, to cover all devices
@@ -208,9 +206,9 @@ export default function MaintenanceWindowsCard({
           </details>
 
           {endsBeforeStart && (
-            <p className="text-xs text-red-600">The window must end after it starts.</p>
+            <p className="text-xs text-bad">The window must end after it starts.</p>
           )}
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-bad">{error}</p>}
           <button
             onClick={() => create.mutate()}
             disabled={
@@ -242,26 +240,24 @@ export default function MaintenanceWindowsCard({
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {mw.name}
-                  </span>
+                  <span className="text-sm font-medium text-ink">{mw.name}</span>
                   {isActive && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn">
                       Active
                     </span>
                   )}
                   {isPast && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-surface-3 text-ink-3 dark:bg-surface-3 dark:text-ink-3">
                       Expired
                     </span>
                   )}
                   {!mw.active && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 dark:bg-slate-700 dark:text-slate-500">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-surface-3 text-ink-4 dark:bg-surface-3 dark:text-ink-3">
                       Disabled
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                <div className="text-xs text-ink-3 mt-0.5">
                   {repeating
                     ? `${describeRepeat(mw.recurring_cron!, timeZone)} for ${formatSpan(end.getTime() - start.getTime())}, from ${start.toLocaleDateString()}`
                     : `${start.toLocaleString()} – ${end.toLocaleString()}`}
@@ -277,7 +273,7 @@ export default function MaintenanceWindowsCard({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => toggle.mutate({ id: mw.id, active: !mw.active })}
-                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300"
+                    className="text-xs px-2 py-1 rounded border border-line text-ink-3 hover:text-ink-2 dark:hover:text-ink-2"
                   >
                     {mw.active ? 'Disable' : 'Enable'}
                   </button>
@@ -286,7 +282,7 @@ export default function MaintenanceWindowsCard({
                       if (confirm(`Delete the maintenance window "${mw.name}"?`))
                         remove.mutate(mw.id);
                     }}
-                    className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
+                    className="p-1 rounded text-ink-4 hover:text-bad transition-colors"
                     aria-label="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -297,9 +293,7 @@ export default function MaintenanceWindowsCard({
           );
         })}
         {(windows as MaintenanceWindow[]).length === 0 && (
-          <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">
-            No maintenance windows yet
-          </p>
+          <p className="text-sm text-ink-3 text-center py-4">No maintenance windows yet</p>
         )}
       </div>
     </div>

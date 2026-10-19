@@ -88,4 +88,5 @@ nav:
   - Contributing:
       - Architecture: architecture.md
       - Testing and the coverage ratchet: testing.md
+      - Theming: theming.md
       - Security scanning: security-scanning.md

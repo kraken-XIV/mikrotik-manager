@@ -391,8 +391,8 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
       {/* ── System Settings (identity, NTP, DNS, clock) ── */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Server className="w-4 h-4 text-blue-500" />
+          <h3 className="font-semibold text-ink flex items-center gap-2">
+            <Server className="w-4 h-4 text-accent" />
             System Settings
           </h3>
           {canWrite && !editing && (
@@ -407,11 +407,11 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-ink-4">
             <RefreshCw className="w-4 h-4 animate-spin" /> Loading...
           </div>
         ) : !sysConfig ? (
-          <div className="text-sm text-gray-400">Could not load system configuration</div>
+          <div className="text-sm text-ink-4">Could not load system configuration</div>
         ) : editing ? (
           <div className="space-y-5">
             {/* Identity */}
@@ -427,7 +427,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
             {/* Date / Time / Timezone */}
             <div>
-              <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-2">
                 Date &amp; Time
               </h4>
               <div className="grid grid-cols-3 gap-3">
@@ -457,14 +457,14 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                     onChange={(e) => setClockForm((f) => ({ ...f, timezone: e.target.value }))}
                     placeholder="America/New_York"
                   />
-                  <p className="text-xs text-gray-400 mt-1">IANA name (e.g. UTC, Europe/London)</p>
+                  <p className="text-xs text-ink-4 mt-1">IANA name (e.g. UTC, Europe/London)</p>
                 </div>
               </div>
             </div>
 
             {/* NTP */}
             <div>
-              <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-2">
                 NTP Client
               </h4>
               <div className="space-y-2">
@@ -476,10 +476,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                     onChange={(e) => setSysForm((f) => ({ ...f, ntp_enabled: e.target.checked }))}
                     className="w-4 h-4"
                   />
-                  <label
-                    htmlFor="ntp_enabled"
-                    className="text-sm text-gray-700 dark:text-slate-300"
-                  >
+                  <label htmlFor="ntp_enabled" className="text-sm text-ink-2">
                     NTP enabled
                   </label>
                 </div>
@@ -504,7 +501,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                   </div>
                 </div>
                 {Number(sysConfig?.ntp['extra-servers'] || 0) > 0 && (
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  <p className="text-xs text-ink-3 mt-1">
                     This device has {sysConfig?.ntp['extra-servers']} more NTP server
                     {sysConfig?.ntp['extra-servers'] === '1' ? '' : 's'} after these two;
                     they&apos;re kept as they are.
@@ -515,7 +512,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
             {/* DNS */}
             <div>
-              <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-2">
                 DNS
               </h4>
               <div className="space-y-2">
@@ -541,7 +538,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                     }
                     className="w-4 h-4"
                   />
-                  <label htmlFor="dns_remote" className="text-sm text-gray-700 dark:text-slate-300">
+                  <label htmlFor="dns_remote" className="text-sm text-ink-2">
                     Allow remote DNS requests (act as DNS server)
                   </label>
                 </div>
@@ -549,9 +546,9 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
             </div>
 
             {saveError && (
-              <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-600 dark:text-red-400">{saveError}</p>
+              <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+                <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-bad">{saveError}</p>
               </div>
             )}
 
@@ -582,19 +579,16 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
               ['DNS Servers', sysConfig.dns.servers || '—'],
               ['Allow Remote DNS', sysConfig.dns['allow-remote-requests'] === 'yes' ? 'Yes' : 'No'],
             ].map(([k, v]) => (
-              <div
-                key={k}
-                className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2"
-              >
-                <span className="text-gray-500 dark:text-slate-400">{k}</span>
-                <span className="font-medium text-gray-900 dark:text-white text-right">{v}</span>
+              <div key={k} className="flex justify-between border-b border-line-soft pb-2">
+                <span className="text-ink-3">{k}</span>
+                <span className="font-medium text-ink text-right">{v}</span>
               </div>
             ))}
           </div>
         )}
 
         {saveSuccess && (
-          <div className="flex items-center gap-2 mt-3 text-sm text-green-600">
+          <div className="flex items-center gap-2 mt-3 text-sm text-good">
             <CheckCircle className="w-4 h-4" /> {saveSuccess}
           </div>
         )}
@@ -602,11 +596,11 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
       {/* ── IP Addresses ── */}
       <div className="card overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white">IP Addresses</h3>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-line">
+          <h3 className="font-semibold text-ink">IP Addresses</h3>
           <button
             onClick={() => refetchIp()}
-            className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-1.5 text-ink-4 hover:text-ink-2 transition-colors"
             title="Refresh"
           >
             <RefreshCw className={clsx('w-3.5 h-3.5', ipLoading && 'animate-spin')} />
@@ -615,7 +609,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 dark:border-slate-700">
+            <tr className="border-b border-line-soft">
               <th className="table-header px-4 py-2 text-left">Address / Prefix</th>
               <th className="table-header px-4 py-2 text-left">Network</th>
               <th className="table-header px-4 py-2 text-left">Interface</th>
@@ -624,23 +618,23 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
               <th className="table-header px-4 py-2 w-20" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+          <tbody className="divide-y divide-line table-zebra">
             {ipLoading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-ink-4">
                   Loading...
                 </td>
               </tr>
             ) : (ipAddresses as IpAddress[]).length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-ink-4">
                   No IP addresses
                 </td>
               </tr>
             ) : (
               (ipAddresses as IpAddress[]).map((ip) =>
                 editingIp?.id === ip['.id'] ? (
-                  <tr key={ip['.id']} className="bg-blue-50/50 dark:bg-slate-700/40">
+                  <tr key={ip['.id']} className="bg-blue-50/50 dark:bg-surface-3">
                     <td className="px-4 py-2" colSpan={2}>
                       <input
                         className="input font-mono py-1 text-sm"
@@ -682,7 +676,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                       />
                     </td>
                     <td className="px-4 py-2">
-                      <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300">
+                      <label className="flex items-center gap-1.5 text-xs text-ink-2">
                         <input
                           type="checkbox"
                           checked={editingIp.enabled}
@@ -701,7 +695,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                             updateIpMutation.isPending ||
                             Object.keys(ipEdits(editingIp)).length === 0
                           }
-                          className="p-1 rounded text-green-600 hover:text-green-700 disabled:opacity-40"
+                          className="p-1 rounded text-good hover:text-good disabled:opacity-40"
                           title="Save"
                         >
                           {updateIpMutation.isPending ? (
@@ -715,7 +709,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                             setEditingIp(null);
                             setIpError('');
                           }}
-                          className="p-1 rounded text-gray-400 hover:text-gray-600"
+                          className="p-1 rounded text-ink-4 hover:text-ink-2"
                           title="Cancel"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -724,24 +718,16 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                     </td>
                   </tr>
                 ) : (
-                  <tr key={ip['.id']} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2 font-mono text-gray-900 dark:text-white">
-                      {ip.address}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-xs text-gray-500 dark:text-slate-400">
-                      {ip.network || '—'}
-                    </td>
-                    <td className="px-4 py-2 text-gray-600 dark:text-slate-300">{ip.interface}</td>
-                    <td className="px-4 py-2 text-xs text-gray-500 dark:text-slate-400">
-                      {ip.comment || ''}
-                    </td>
+                  <tr key={ip['.id']} className="hover:bg-surface-2/30">
+                    <td className="px-4 py-2 font-mono text-ink">{ip.address}</td>
+                    <td className="px-4 py-2 font-mono text-xs text-ink-3">{ip.network || '—'}</td>
+                    <td className="px-4 py-2 text-ink-2">{ip.interface}</td>
+                    <td className="px-4 py-2 text-xs text-ink-3">{ip.comment || ''}</td>
                     <td className="px-4 py-2">
                       <span
                         className={clsx(
                           'text-xs font-medium',
-                          ip.disabled === 'true'
-                            ? 'text-gray-400'
-                            : 'text-green-600 dark:text-green-400',
+                          ip.disabled === 'true' ? 'text-ink-4' : 'text-good',
                         )}
                       >
                         {ip.dynamic === 'true'
@@ -766,7 +752,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                                 enabled: ip.disabled !== 'true',
                               });
                             }}
-                            className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
+                            className="p-1 rounded text-ink-4 hover:text-accent transition-colors"
                             title="Edit"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -777,7 +763,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                                 removeIpMutation.mutate({ id: ip['.id'] });
                               }
                             }}
-                            className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
+                            className="p-1 rounded text-ink-4 hover:text-bad transition-colors"
                             title="Remove"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -793,7 +779,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
         </table>
 
         {canWrite && (
-          <div className="p-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
+          <div className="p-4 border-t border-line-soft bg-surface-2/50">
             <div className="flex items-end gap-3">
               <div className="flex-1">
                 <label className="label">Address / Prefix (e.g. 192.168.1.1/24)</label>
@@ -836,7 +822,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
               />
             </div>
             {ipError && (
-              <div className="flex items-center gap-2 mt-2 text-sm text-red-500">
+              <div className="flex items-center gap-2 mt-2 text-sm text-bad">
                 <AlertCircle className="w-4 h-4" /> {ipError}
               </div>
             )}
@@ -846,11 +832,11 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
       {/* ── Certificates ── */}
       <div className="card p-5">
-        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
-          <ShieldCheck className="w-4 h-4 text-blue-500" />
+        <h3 className="font-semibold text-ink flex items-center gap-2 mb-1">
+          <ShieldCheck className="w-4 h-4 text-accent" />
           Certificates
         </h3>
-        <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+        <p className="text-xs text-ink-3 mb-4">
           Collected on each slow poll.{' '}
           {certData &&
             (certData.alertingEnabled
@@ -858,7 +844,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
               : 'Expiry alerting is off — enable "Certificate expiring soon" in Settings → Alerts.')}
         </p>
         {certLoading ? (
-          <p className="text-sm text-gray-400">Loading…</p>
+          <p className="text-sm text-ink-4">Loading…</p>
         ) : (
           <CertificateList certificates={certData?.certificates ?? []} storageKey="device" />
         )}
@@ -866,14 +852,14 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
       {/* ── Software & Firmware Updates ── */}
       <div className="card p-5">
-        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-5">
-          <Download className="w-4 h-4 text-blue-500" />
+        <h3 className="font-semibold text-ink flex items-center gap-2 mb-5">
+          <Download className="w-4 h-4 text-accent" />
           Software &amp; Firmware Updates
         </h3>
 
         {/* Order-of-operations notice when both are pending */}
         {hasUpdate && rbInfo?.upgradeAvailable && (
-          <div className="flex items-start gap-2 p-3 mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-700 dark:text-blue-300">
+          <div className="flex items-start gap-2 p-3 mb-5 bg-accent-soft border border-accent dark:border-accent rounded-lg text-sm text-accent dark:text-accent">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <p>
               <span className="font-medium">Update order matters:</span> Install the RouterOS update
@@ -895,8 +881,8 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
         {/* ── RouterOS ── */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Download className="w-3.5 h-3.5 text-gray-400" />
+            <h4 className="text-sm font-semibold text-ink-2 flex items-center gap-1.5">
+              <Download className="w-3.5 h-3.5 text-ink-4" />
               RouterOS
             </h4>
             {canWrite && (
@@ -912,12 +898,12 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
           </div>
 
           {updateError && (
-            <div className="flex items-center gap-2 text-sm text-red-500">
+            <div className="flex items-center gap-2 text-sm text-bad">
               <AlertCircle className="w-4 h-4" /> {updateError}
             </div>
           )}
           {installSuccess && (
-            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+            <div className="flex items-center gap-2 text-sm text-good">
               <CheckCircle className="w-4 h-4" /> {installSuccess}
             </div>
           )}
@@ -925,7 +911,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
           {updateInfo ? (
             <div className="space-y-3">
               {updateInfo['from-stored-state'] && (
-                <p className="text-xs text-gray-400 dark:text-slate-500">
+                <p className="text-xs text-ink-3">
                   From the last stored check — press Check for Updates to ask the device now.
                 </p>
               )}
@@ -940,17 +926,12 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                       (updateInfo['from-stored-state'] ? 'not checked yet' : '—'),
                   ],
                 ].map(([k, v]) => (
-                  <div
-                    key={k}
-                    className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2"
-                  >
-                    <span className="text-gray-500 dark:text-slate-400">{k}</span>
+                  <div key={k} className="flex justify-between border-b border-line-soft pb-2">
+                    <span className="text-ink-3">{k}</span>
                     <span
                       className={clsx(
                         'font-medium text-right',
-                        k === 'Status' && hasUpdate
-                          ? 'text-orange-500'
-                          : 'text-gray-900 dark:text-white',
+                        k === 'Status' && hasUpdate ? 'text-warn' : 'text-ink',
                       )}
                     >
                       {v}
@@ -960,18 +941,18 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
               </div>
 
               {hasUpdate ? (
-                <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                <div className="flex items-center gap-3 p-3 bg-warn-bg dark:bg-warn-bg border border-warn dark:border-warn rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-warn flex-shrink-0" />
                   <div className="flex-1 text-sm">
-                    <p className="font-medium text-orange-700 dark:text-orange-400">
+                    <p className="font-medium text-warn dark:text-warn">
                       Update available: {latestVersion}
                     </p>
-                    <p className="text-orange-600 dark:text-orange-500 text-xs mt-0.5">
+                    <p className="text-warn dark:text-warn text-xs mt-0.5">
                       The device will reboot after installing.
                     </p>
                     <button
                       onClick={() => setChangelogVersion(latestVersion)}
-                      className="mt-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                      className="mt-1.5 text-xs text-accent hover:underline flex items-center gap-1"
                     >
                       <FileText className="w-3 h-3" /> What&apos;s new in {latestVersion}
                     </button>
@@ -996,7 +977,7 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                   )}
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <div className="flex items-center gap-2 text-sm text-good">
                   <CheckCircle className="w-4 h-4" /> RouterOS is up to date
                 </div>
               )}
@@ -1004,20 +985,20 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
           ) : (
             !updateChecking &&
             !installSuccess && (
-              <p className="text-sm text-gray-400 dark:text-slate-500">
+              <p className="text-sm text-ink-3">
                 Click &quot;Check for Updates&quot; to query the MikroTik update server.
               </p>
             )
           )}
         </div>
 
-        <div className="border-t border-gray-200 dark:border-slate-700 my-5" />
+        <div className="border-t border-line my-5" />
 
         {/* ── RouterBOOT ── */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-gray-400" />
+            <h4 className="text-sm font-semibold text-ink-2 flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5 text-ink-4" />
               RouterBOOT Firmware
             </h4>
             {canWrite && (
@@ -1033,12 +1014,12 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
           </div>
 
           {rbError && (
-            <div className="flex items-center gap-2 text-sm text-red-500">
+            <div className="flex items-center gap-2 text-sm text-bad">
               <AlertCircle className="w-4 h-4" /> {rbError}
             </div>
           )}
           {rbInstallSuccess && (
-            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+            <div className="flex items-center gap-2 text-sm text-good">
               <CheckCircle className="w-4 h-4" /> {rbInstallSuccess}
             </div>
           )}
@@ -1051,26 +1032,21 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                     ['Current Bootloader', rbInfo.currentFirmware || '—'],
                     ['Available Upgrade', rbInfo.upgradeFirmware || '—'],
                   ].map(([k, v]) => (
-                    <div
-                      key={k}
-                      className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2"
-                    >
-                      <span className="text-gray-500 dark:text-slate-400">{k}</span>
-                      <span className="font-medium text-right text-gray-900 dark:text-white">
-                        {v}
-                      </span>
+                    <div key={k} className="flex justify-between border-b border-line-soft pb-2">
+                      <span className="text-ink-3">{k}</span>
+                      <span className="font-medium text-right text-ink">{v}</span>
                     </div>
                   ))}
                 </div>
 
                 {rbInfo.upgradeAvailable ? (
-                  <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                  <div className="flex items-center gap-3 p-3 bg-warn-bg dark:bg-warn-bg border border-warn dark:border-warn rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-warn flex-shrink-0" />
                     <div className="flex-1 text-sm">
-                      <p className="font-medium text-orange-700 dark:text-orange-400">
+                      <p className="font-medium text-warn dark:text-warn">
                         Upgrade available: {rbInfo.upgradeFirmware}
                       </p>
-                      <p className="text-orange-600 dark:text-orange-500 text-xs mt-0.5">
+                      <p className="text-warn dark:text-warn text-xs mt-0.5">
                         {hasUpdate
                           ? 'Install RouterOS first, then apply this upgrade.'
                           : 'The device will reboot after upgrading.'}
@@ -1101,20 +1077,20 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                  <div className="flex items-center gap-2 text-sm text-good">
                     <CheckCircle className="w-4 h-4" /> RouterBOOT is up to date
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-gray-400 dark:text-slate-500">
+              <p className="text-sm text-ink-3">
                 RouterBOOT is not available on this device (CHR or virtual instance).
               </p>
             )
           ) : (
             !rbChecking &&
             !rbInstallSuccess && (
-              <p className="text-sm text-gray-400 dark:text-slate-500">
+              <p className="text-sm text-ink-3">
                 Click &quot;Check RouterBOOT&quot; to read the bootloader firmware status from the
                 device.
               </p>

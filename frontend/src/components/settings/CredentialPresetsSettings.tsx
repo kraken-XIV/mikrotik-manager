@@ -151,11 +151,11 @@ export default function CredentialPresetsSettings() {
       <div className="card p-5">
         <div className="flex items-start justify-between gap-4 mb-1">
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-blue-500" />
+            <h3 className="font-semibold text-ink flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-accent" />
               Device Credential Presets
             </h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+            <p className="text-xs text-ink-3 mt-1">
               Reusable RouterOS API &amp; SSH credential sets. When adding a discovered device you
               can pick a preset instead of retyping the same username and password. Passwords are
               encrypted at rest and never returned to the browser.
@@ -174,18 +174,18 @@ export default function CredentialPresetsSettings() {
 
       <div className="card overflow-hidden">
         {isLoading ? (
-          <div className="p-6 text-sm text-gray-400 flex items-center gap-2">
+          <div className="p-6 text-sm text-ink-4 flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading presets…
           </div>
         ) : presets.length === 0 ? (
-          <div className="p-6 text-sm text-gray-400 dark:text-slate-500 text-center">
+          <div className="p-6 text-sm text-ink-3 text-center">
             No credential presets yet.
             {isAdmin && ' Click "Add Preset" to create your first one.'}
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-slate-700">
+              <tr className="border-b border-line-soft">
                 <th className="table-header px-4 py-2.5 text-left">Name</th>
                 <th className="table-header px-4 py-2.5 text-left">Site</th>
                 <th className="table-header px-4 py-2.5 text-left">API</th>
@@ -199,37 +199,35 @@ export default function CredentialPresetsSettings() {
                 <th className="table-header px-4 py-2.5 w-24" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+            <tbody className="divide-y divide-line table-zebra">
               {presets.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                <tr key={p.id} className="hover:bg-surface-2/30">
                   <td className="px-4 py-2.5 cell-primary">{p.name}</td>
-                  <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
+                  <td className="px-4 py-2.5 text-xs text-ink-3 whitespace-nowrap">
                     {p.site_id != null ? (p.site_name ?? `Site ${p.site_id}`) : 'All sites'}
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">
+                  <td className="px-4 py-2.5 text-xs text-ink-3">
                     <div className="font-mono">{p.api_username}</div>
-                    <div className="text-gray-400 dark:text-slate-500">
-                      port {p.api_port ?? 8728}
-                    </div>
+                    <div className="text-ink-3">port {p.api_port ?? 8728}</div>
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">
+                  <td className="px-4 py-2.5 text-xs text-ink-3">
                     {p.ssh_username ? (
                       <>
                         <div className="font-mono">{p.ssh_username}</div>
-                        <div className="text-gray-400 dark:text-slate-500">
+                        <div className="text-ink-3">
                           port {p.ssh_port ?? 22}
                           {p.has_ssh_password ? '' : ' · no password'}
                         </div>
                       </>
                     ) : (
-                      <span className="text-gray-300 dark:text-slate-600">—</span>
+                      <span className="text-ink-4">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 max-w-xs truncate">
-                    {p.notes || <span className="text-gray-300 dark:text-slate-600">—</span>}
+                  <td className="px-4 py-2.5 text-xs text-ink-3 max-w-xs truncate">
+                    {p.notes || <span className="text-ink-4">—</span>}
                   </td>
                   {isAdmin && (
-                    <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
+                    <td className="px-4 py-2.5 text-xs text-ink-3 whitespace-nowrap">
                       {p.allow_operator_use !== false ? 'All users' : 'Admins only'}
                     </td>
                   )}
@@ -238,7 +236,7 @@ export default function CredentialPresetsSettings() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => openEdit(p)}
-                          className="p-1.5 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                          className="p-1.5 rounded text-ink-4 hover:text-accent hover:bg-accent-soft dark:hover:bg-accent-soft transition-colors"
                           title="Edit preset"
                         >
                           <Pencil className="w-3.5 h-3.5" />
@@ -253,7 +251,7 @@ export default function CredentialPresetsSettings() {
                               deleteMutation.mutate(p.id);
                             }
                           }}
-                          className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          className="p-1.5 rounded text-ink-4 hover:text-bad hover:bg-bad-bg dark:hover:bg-bad-bg transition-colors"
                           title="Delete preset"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -271,13 +269,13 @@ export default function CredentialPresetsSettings() {
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="flex items-center justify-between p-5 border-b border-line">
+              <h2 className="text-lg font-semibold text-ink">
                 {modal.mode === 'add' ? 'Add Credential Preset' : 'Edit Credential Preset'}
               </h2>
               <button
                 onClick={() => setModal(null)}
-                className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+                className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -299,7 +297,7 @@ export default function CredentialPresetsSettings() {
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
+                <p className="text-[11px] text-ink-3 mt-1">
                   A site&apos;s preset is only offered for devices in that site, and that
                   site&apos;s admins manage it.
                 </p>
@@ -315,7 +313,7 @@ export default function CredentialPresetsSettings() {
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3">
                   RouterOS API
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
@@ -356,7 +354,7 @@ export default function CredentialPresetsSettings() {
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3">
                   SSH (optional, for backups)
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
@@ -391,7 +389,7 @@ export default function CredentialPresetsSettings() {
                       autoComplete="new-password"
                     />
                     {modal.mode === 'edit' && (
-                      <label className="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-slate-400 select-none">
+                      <label className="flex items-center gap-1.5 mt-2 text-xs text-ink-3 select-none">
                         <input
                           type="checkbox"
                           className="rounded"
@@ -417,7 +415,7 @@ export default function CredentialPresetsSettings() {
                 />
               </div>
 
-              <label className="flex items-start gap-2 text-sm text-gray-600 dark:text-slate-400 select-none">
+              <label className="flex items-start gap-2 text-sm text-ink-2 select-none">
                 <input
                   type="checkbox"
                   className="rounded mt-0.5"
@@ -431,9 +429,9 @@ export default function CredentialPresetsSettings() {
               </label>
 
               {error && (
-                <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-bad">{error}</p>
                 </div>
               )}
 

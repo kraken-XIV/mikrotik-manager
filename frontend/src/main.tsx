@@ -8,23 +8,12 @@ import App from './App';
 import { actionErrorMessage, useActionErrorStore } from './store/actionErrorStore';
 import { useAuthStore } from './store/authStore';
 import { useSiteStore } from './store/siteStore';
+import { initThemeFromStorage } from './store/themeStore';
 
-// Initialize theme from storage immediately
-const storedTheme = (() => {
-  try {
-    const raw = localStorage.getItem('mikrotik-theme');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed?.state?.theme;
-    }
-  } catch {
-    // localStorage unavailable (e.g. sandboxed iframe) — leave as default
-  }
-  return 'light';
-})();
-if (storedTheme === 'dark') {
-  document.documentElement.classList.add('dark');
-}
+// Initialize theme (light / dark / system + accent) from storage immediately,
+// before the first paint — the same FOUC guard the light/dark toggle always
+// had, extended to the system preference and the accent variables.
+initThemeFromStorage();
 
 function makeQueryClient() {
   return new QueryClient({

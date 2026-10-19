@@ -82,6 +82,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Type-check browser tests
+        run: npm run e2e:check
+
+      - name: Install Chromium for mandatory theme regressions
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser theme regressions
+        run: npm run e2e
+
   backend:
     name: Backend — Lint, Type-check, Test & Build
     runs-on: ubuntu-latest
