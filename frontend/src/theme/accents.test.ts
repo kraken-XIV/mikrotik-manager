@@ -44,7 +44,6 @@ function assertComplete(preset: AccentPreset): void {
       );
     }
   }
-  expect(preset.swatch).toMatch(/^#[0-9a-fA-F]{6}$/);
   expect(preset.label.length).toBeGreaterThan(0);
 }
 

@@ -130,3 +130,44 @@ test('high-contrast muted text meets AA on the darkest card surface in both mode
     expect(ratio).toBeGreaterThanOrEqual(4.5);
   }
 });
+
+test('accent bubbles match the actual UI accent in Light, Dark and live System mode', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/settings');
+  const appearance = page.locator('.card').filter({
+    has: page.getByRole('heading', { name: 'Appearance', exact: true }),
+  });
+  const labels = ['Blue', 'Violet', 'Emerald', 'Rose', 'Amber', 'Teal'];
+  async function checkPalette() {
+    for (const label of labels) {
+      const bubble = appearance.getByRole('button', { name: `Accent colour: ${label}` });
+      await bubble.click();
+      const actualAccent = await page.evaluate(() => {
+        const probe = document.createElement('span');
+        probe.style.backgroundColor = 'var(--accent)';
+        document.body.append(probe);
+        const color = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return color;
+      });
+      await expect(bubble).toHaveCSS('background-color', actualAccent);
+      await expect(bubble).toHaveCSS('background-image', 'none');
+      await expect(bubble).toHaveCSS('box-shadow', `${actualAccent} 0px 0px 0px 2px`);
+    }
+  }
+  for (const mode of ['light', 'dark', 'system']) {
+    await appearance.getByRole('button', { name: mode, exact: true }).click();
+    await checkPalette();
+  }
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await checkPalette();
+  await page.getByRole('button', { name: 'Theme and accent settings' }).click();
+  const menu = page.getByRole('dialog', { name: 'Theme and accent', exact: true });
+  const selected = menu.getByRole('button', { name: 'Accent colour: Teal' });
+  await expect(selected).toHaveCSS('background-color', 'rgb(45, 212, 191)');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(selected).toHaveCSS('background-color', 'rgb(15, 118, 110)');
+});
