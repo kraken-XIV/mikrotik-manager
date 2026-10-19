@@ -1,0 +1,47 @@
+name: OpenSSF Scorecard
+
+# Supply-chain posture, published to the OpenSSF Scorecard project and attached
+# to code scanning as SARIF. Advisory by design — the badge and the weekly
+# trend are the signal — so this is deliberately not a required check.
+on:
+  branch_protection_rule:
+  schedule:
+    # Saturdays 05:31 UTC.
+    - cron: '31 5 * * 6'
+  push:
+    branches: [fork/main]
+
+# Read-all at the workflow level; the step below widens to what it needs.
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      # Signing the SARIF with a workflow token and uploading it.
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
+      checks: read
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@46dc3187a971a9febf3aeb7f94ccde489f7bb46a # v2.5.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # The fork is public: results feed its public Scorecard entry.
+          publish_results: true
+
+      - name: Upload SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          sarif_file: results.sarif
