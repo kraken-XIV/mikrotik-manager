@@ -163,6 +163,22 @@ class WorkflowPolicy(unittest.TestCase):
             self.assertNotIn('pull_request_target:', text)
 
 
+    def test_scorecard_publisher_has_one_scorecard_job(self):
+        publisher = (ROOT / '.github/workflows/scorecard.yml').read_text()
+        preview = (ROOT / '.github/workflows/scorecard-preview.yml').read_text()
+        # Public service chooses a single Scorecard job. Two such jobs cause it
+        # to reject the other job's necessary OIDC grant even with valid GitHub CI.
+        self.assertEqual(publisher.count('uses: ossf/scorecard-action@'), 1)
+        self.assertEqual(len(re.findall(r'(?m)^  [a-z][a-z0-9_-]*:\s*$', publisher.split('jobs:', 1)[1])), 1)
+        self.assertNotIn('pull_request:', publisher)
+        self.assertIn('publish_results: true', publisher)
+        self.assertIn('id-token: write', publisher)
+        self.assertIn('pull_request:', preview)
+        self.assertIn('publish_results: false', preview)
+        self.assertNotIn('id-token:', preview)
+        self.assertNotIn('security-events:', preview)
+
+
 class PublishingTrustBoundaries(unittest.TestCase):
     def test_actual_event_condition_rejects_untrusted_sources(self):
         workflow = (ROOT / '.github/workflows/publish.yml').read_text()

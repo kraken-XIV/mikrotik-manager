@@ -109,7 +109,7 @@ trivy fs --scanners vuln --include-dev-deps --severity HIGH,CRITICAL \
   --skip-dirs '**/node_modules/**' --ignorefile .trivyignore.yaml --no-progress .
 ```
 
-The 16 regression tests run the **actual** scanners in temporary directories,
+The 17 regression tests run the **actual** scanners in temporary directories,
 first without exceptions to prove each fixture triggers, then with the production
 configuration to prove only the reviewed findings disappear. Trivy's negative
 fixtures exercise backend/root regressions, lookalike paths and another HIGH
@@ -165,3 +165,13 @@ attribute to individual handlers. Phase 3 neither adds nor broadens that
 exclusion. This inherited query-level policy is distinct from the repaired
 Gitleaks/Trivy exceptions; the remaining CodeQL security-extended rules stay
 active. No claim is made that every possible CodeQL query runs.
+
+### Scorecard service verification
+
+Keep the read-only PR preview in `scorecard-preview.yml`, separate from the
+single-job trusted publisher in `scorecard.yml`. The public Scorecard service
+identifies one Scorecard job per workflow; putting preview and publisher jobs
+in the same workflow caused HTTP 400 OIDC-policy rejection. The upstream action
+only warns for that error, so a green GitHub job alone does **not** prove public
+publication. Verify publication logs and the public API commit after merging;
+SARIF upload to GitHub is a separate outcome. A regression guards this layout.

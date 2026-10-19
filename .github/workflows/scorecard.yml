@@ -1,37 +1,20 @@
 name: OpenSSF Scorecard
 
-# Publication is restricted to trusted default-branch events. PRs only preview.
+# Single publisher job: Scorecard service validates one identified Scorecard job.
+# Read-only PR preview lives in scorecard-preview.yml.
 on:
   branch_protection_rule:
   schedule:
     - cron: '31 5 * * 6'
   push:
     branches: [fork/main]
-  pull_request:
-    branches: [fork/main]
 
 permissions:
   contents: read
 
 jobs:
-  preview:
-    name: Scorecard preview (read-only)
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0 peeled commit
-        with:
-          results_file: results.sarif
-          results_format: sarif
-          publish_results: false
-
   analysis:
     name: Scorecard analysis
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
