@@ -3,11 +3,18 @@ import { logAlertCandidates } from '../logAlerts';
 // Outside review P2-18.
 describe('logAlertCandidates', () => {
   const now = new Date('2026-10-01T12:00:00Z');
-  const ev = (id: number, severity: string, mins: number) =>
-    ({ id, severity, message: `m${id}`, event_time: new Date(now.getTime() - mins * 60_000) });
+  const ev = (id: number, severity: string, mins: number) => ({
+    id,
+    severity,
+    message: `m${id}`,
+    event_time: new Date(now.getTime() - mins * 60_000),
+  });
 
   it('picks the newest error and the newest warning among the stored lines', () => {
-    const out = logAlertCandidates([ev(1, 'error', 3), ev(2, 'info', 2), ev(3, 'error', 1), ev(4, 'warning', 1)], now);
+    const out = logAlertCandidates(
+      [ev(1, 'error', 3), ev(2, 'info', 2), ev(3, 'error', 1), ev(4, 'warning', 1)],
+      now,
+    );
     expect(out.map((e) => e.id)).toEqual([3, 4]);
   });
 
@@ -17,6 +24,8 @@ describe('logAlertCandidates', () => {
 
   it('alerts on an error even when an info line came after it', () => {
     // The old check looked only at the single newest row by time.
-    expect(logAlertCandidates([ev(1, 'error', 2), ev(2, 'info', 1)], now).map((e) => e.id)).toEqual([1]);
+    expect(logAlertCandidates([ev(1, 'error', 2), ev(2, 'info', 1)], now).map((e) => e.id)).toEqual(
+      [1],
+    );
   });
 });

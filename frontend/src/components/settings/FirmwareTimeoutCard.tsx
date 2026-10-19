@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { Clock, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 /**
  * How long a rollout waits for a device.
@@ -53,8 +53,8 @@ export default function FirmwareTimeoutCard({ settings, onSave, saving }: Props)
         <h3 className="font-semibold text-gray-900 dark:text-white">Firmware rollout timeouts</h3>
       </div>
       <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-        Applied at the start of each rollout, so a change needs no restart and a rollout in
-        flight keeps the values it began with.
+        Applied at the start of each rollout, so a change needs no restart and a rollout in flight
+        keeps the values it began with.
       </p>
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -62,15 +62,18 @@ export default function FirmwareTimeoutCard({ settings, onSave, saving }: Props)
           <span className="text-gray-700 dark:text-slate-300">Download timeout</span>
           <div className="flex items-center gap-2 mt-1">
             <input
-              type="number" min={MIN} max={MAX} value={download}
+              type="number"
+              min={MIN}
+              max={MAX}
+              value={download}
               onChange={(e) => setDownload(e.target.value)}
               className="input w-24"
             />
             <span className="text-xs text-gray-400">minutes</span>
           </div>
           <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
-            Waiting for the image to land. A device that fails to download is never rebooted,
-            so raising this costs a delay rather than a risk.
+            Waiting for the image to land. A device that fails to download is never rebooted, so
+            raising this costs a delay rather than a risk.
           </p>
         </label>
 
@@ -78,15 +81,18 @@ export default function FirmwareTimeoutCard({ settings, onSave, saving }: Props)
           <span className="text-gray-700 dark:text-slate-300">Reboot timeout</span>
           <div className="flex items-center gap-2 mt-1">
             <input
-              type="number" min={MIN} max={MAX} value={reboot}
+              type="number"
+              min={MIN}
+              max={MAX}
+              value={reboot}
               onChange={(e) => setReboot(e.target.value)}
               className="input w-24"
             />
             <span className="text-xs text-gray-400">minutes</span>
           </div>
           <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
-            Waiting for the device to come back after the flash. CRS switches have been
-            reported needing a full 12 minutes; raise it if your hardware is slower.
+            Waiting for the device to come back after the flash. CRS switches have been reported
+            needing a full 12 minutes; raise it if your hardware is slower.
           </p>
         </label>
       </div>

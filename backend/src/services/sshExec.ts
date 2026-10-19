@@ -11,12 +11,13 @@
  * devices without one (#110).
  */
 import { Client as SSHClient } from 'ssh2';
-import { previewContext } from '../utils/previewContext';
+
 import { queryOne } from '../config/database';
 import { decrypt } from '../utils/crypto';
-import { preferredAuth, type KeyStatus } from '../utils/sshKeys';
-import { sshHostCheck, explainSshError } from './sshHostCheck';
+import { previewContext } from '../utils/previewContext';
+import { type KeyStatus, preferredAuth } from '../utils/sshKeys';
 import { sshHostKeyFingerprint } from './identityPins';
+import { explainSshError, sshHostCheck } from './sshHostCheck';
 
 export interface SshExecDevice {
   id: number;
@@ -55,18 +56,20 @@ export async function resolveAuth(device: SshExecDevice): Promise<{
   kind: 'key' | 'password';
 }> {
   const key = await queryOne<{
-    private_key_encrypted: string; ssh_username: string | null; status: KeyStatus;
+    private_key_encrypted: string;
+    ssh_username: string | null;
+    status: KeyStatus;
   }>(
     `SELECT private_key_encrypted, ssh_username, status FROM device_ssh_keys
       WHERE device_id = $1`,
-    [device.id]
+    [device.id],
   );
 
   const encryptedPassword = device.ssh_password_encrypted || device.api_password_encrypted;
   const choice = preferredAuth(
     key?.status ?? null,
     !!key?.private_key_encrypted,
-    !!encryptedPassword
+    !!encryptedPassword,
   );
 
   if (choice === 'key' && key) {
@@ -97,7 +100,7 @@ export async function runSshCommand(
   opts: { onHostKey?: (fingerprint: string) => void } = {},
 ): Promise<SshExecResult> {
   // A preview (#255) only intercepts the RouterOS API; never run SSH under one.
-  if (previewContext()) throw new Error('This change runs over SSH, so it can\'t be previewed');
+  if (previewContext()) throw new Error("This change runs over SSH, so it can't be previewed");
   const { username, auth, kind } = await resolveAuth(device);
 
   return new Promise<SshExecResult>((resolve, reject) => {
@@ -107,7 +110,11 @@ export async function runSshCommand(
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      try { conn.end(); } catch { /* already closing */ }
+      try {
+        conn.end();
+      } catch {
+        /* already closing */
+      }
       fn();
     };
 
@@ -120,12 +127,18 @@ export async function runSshCommand(
       conn.exec(command, (err, stream) => {
         if (err) return finish(() => reject(err));
         let output = '';
-        stream.on('data', (d: Buffer) => { output += d.toString(); });
-        stream.stderr.on('data', (d: Buffer) => { output += d.toString(); });
+        stream.on('data', (d: Buffer) => {
+          output += d.toString();
+        });
+        stream.stderr.on('data', (d: Buffer) => {
+          output += d.toString();
+        });
         stream.on('close', () => finish(() => resolve({ output: output.trim(), auth: kind })));
       });
     });
-    conn.on('error', (err) => finish(() => reject(explainSshError(err, device.ip_address, device.ssh_port ?? 22))));
+    conn.on('error', (err) =>
+      finish(() => reject(explainSshError(err, device.ip_address, device.ssh_port ?? 22))),
+    );
 
     conn.connect({
       host: device.ip_address,
@@ -161,6 +174,7 @@ function withHostKeyHook(
  * halt a rollout that was working.
  */
 export function looksLikeFailure(output: string): boolean {
-  return /(^|\n)\s*(syntax error|bad command name|expected end of command|no such item|failure:|input does not match any value)/i
-    .test(output);
+  return /(^|\n)\s*(syntax error|bad command name|expected end of command|no such item|failure:|input does not match any value)/i.test(
+    output,
+  );
 }

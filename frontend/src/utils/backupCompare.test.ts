@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { orderForDiff, type ComparableBackup } from './backupCompare';
+import { describe, expect, it } from 'vitest';
+
+import { type ComparableBackup, orderForDiff } from './backupCompare';
 
 const backups: ComparableBackup[] = [
   { id: 10, created_at: '2026-09-01T10:00:00Z' },

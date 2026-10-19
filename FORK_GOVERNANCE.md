@@ -12,21 +12,21 @@ A disciplined fork of [2GT-Media-Group-LLC/mikrotik-manager](https://github.com/
 
 ## Decisions log
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Rebranding | **None** | Upstream identity, name, logo and README stay intact; keeps upstream contribution friction near zero and AGPL attribution trivially correct |
-| Default branch | `fork/main` (= `main` + governance overlay) | Governance/community files are active (CODEOWNERS, templates, SECURITY.md) without diverging the mirror |
-| Sync cadence | Weekly, or before starting any new work | The Phase 4C token codemod touched 115 frontend files — the main conflict zone; small frequent merges beat rare painful ones |
-| Contribution flow | Upstream **issue-first** for major changes, then PR | Required by upstream README; the theming issue draft is already written (Phase 4 kit, HANDOFF.md §2) |
+| Decision          | Choice                                              | Rationale                                                                                                                                   |
+| ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rebranding        | **None**                                            | Upstream identity, name, logo and README stay intact; keeps upstream contribution friction near zero and AGPL attribution trivially correct |
+| Default branch    | `fork/main` (= `main` + governance overlay)         | Governance/community files are active (CODEOWNERS, templates, SECURITY.md) without diverging the mirror                                     |
+| Sync cadence      | Weekly, or before starting any new work             | The Phase 4C token codemod touched 115 frontend files — the main conflict zone; small frequent merges beat rare painful ones                |
+| Contribution flow | Upstream **issue-first** for major changes, then PR | Required by upstream README; the theming issue draft is already written (Phase 4 kit, HANDOFF.md §2)                                        |
 
 ## Branch model
 
-| Branch | Content | Rules |
-|---|---|---|
-| `main` | Exact mirror of `upstream/main` | Never commit directly. Only `scripts/sync-fork.sh` (ff-only). Never diverges. |
-| `fork/main` | `main` + governance overlay (NOTICE, FORK.md, `.github/` community files, optional fork tooling) | Default branch of the fork. Only ever **merges forward** (`git merge main`). Merge commits expected and allowed. |
-| `feat/*` | Work intended for upstream PRs | Cut from `main`. PRs go to **upstream**, not to the fork. Rebase onto `main` after each sync. |
-| `fork/*` (other) | Fork-only experiments | May diverge freely; never propose to upstream. |
+| Branch           | Content                                                                                          | Rules                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `main`           | Exact mirror of `upstream/main`                                                                  | Never commit directly. Only `scripts/sync-fork.sh` (ff-only). Never diverges.                                    |
+| `fork/main`      | `main` + governance overlay (NOTICE, FORK.md, `.github/` community files, optional fork tooling) | Default branch of the fork. Only ever **merges forward** (`git merge main`). Merge commits expected and allowed. |
+| `feat/*`         | Work intended for upstream PRs                                                                   | Cut from `main`. PRs go to **upstream**, not to the fork. Rebase onto `main` after each sync.                    |
+| `fork/*` (other) | Fork-only experiments                                                                            | May diverge freely; never propose to upstream.                                                                   |
 
 ### Phase 0 setup — 2026-10-19
 

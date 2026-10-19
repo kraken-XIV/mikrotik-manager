@@ -23,7 +23,14 @@ export const ERROR_COUNTERS: Record<ErrorKind, string[]> = {
   overflow: ['rx-overflow'],
   // Other signs of a bad physical link or a duplex mismatch. rx-too-long is
   // left out: oversized frames are an MTU mismatch, not a failing cable.
-  other: ['rx-fragment', 'rx-jabber', 'rx-code-error', 'rx-carrier-error', 'rx-too-short', 'tx-late-collision'],
+  other: [
+    'rx-fragment',
+    'rx-jabber',
+    'rx-code-error',
+    'rx-carrier-error',
+    'rx-too-short',
+    'tx-late-collision',
+  ],
 };
 
 const KINDS = Object.keys(ERROR_COUNTERS) as ErrorKind[];
@@ -46,7 +53,10 @@ const num = (v: string | undefined): number | null => {
 };
 
 /** Sum one Ethernet stats row into the four kinds, plus link-downs from /interface. */
-export function readCounters(eth: Record<string, string>, linkDowns: string | undefined): PortCounters {
+export function readCounters(
+  eth: Record<string, string>,
+  linkDowns: string | undefined,
+): PortCounters {
   const errors = { fcs: 0, align: 0, overflow: 0, other: 0 } as Record<ErrorKind, number>;
   for (const kind of KINDS) {
     for (const key of ERROR_COUNTERS[kind]) errors[kind] += num(eth[key]) ?? 0;
@@ -74,7 +84,8 @@ export function counterDelta(prev: PortCounters, cur: PortCounters): PortDelta |
   return { errors, linkDowns };
 }
 
-export const totalErrors = (e: Record<ErrorKind, number>): number => KINDS.reduce((s, k) => s + (e[k] || 0), 0);
+export const totalErrors = (e: Record<ErrorKind, number>): number =>
+  KINDS.reduce((s, k) => s + (e[k] || 0), 0);
 
 export function isEmpty(d: PortDelta): boolean {
   return d.linkDowns === 0 && totalErrors(d.errors) === 0;
@@ -116,7 +127,9 @@ export interface PortErrorSummary {
 
 /** Per-port summary of the last hour of events. */
 export function summarise(
-  events: ErrorEvent[], errorsPerMin = DEFAULT_ERRORS_PER_MIN, flapsPerHour = DEFAULT_FLAPS_PER_HOUR,
+  events: ErrorEvent[],
+  errorsPerMin = DEFAULT_ERRORS_PER_MIN,
+  flapsPerHour = DEFAULT_FLAPS_PER_HOUR,
 ): PortErrorSummary[] {
   const byPort = new Map<string, ErrorEvent[]>();
   for (const e of events) {
@@ -134,11 +147,18 @@ export function summarise(
     for (const raw of list) {
       // Numbers, whatever the driver handed back (BIGINT arrives as a string).
       const e = {
-        ...raw, fcs: Number(raw.fcs) || 0, align: Number(raw.align) || 0,
-        overflow: Number(raw.overflow) || 0, other: Number(raw.other) || 0, link_downs: Number(raw.link_downs) || 0,
+        ...raw,
+        fcs: Number(raw.fcs) || 0,
+        align: Number(raw.align) || 0,
+        overflow: Number(raw.overflow) || 0,
+        other: Number(raw.other) || 0,
+        link_downs: Number(raw.link_downs) || 0,
       };
       const errs = e.fcs + e.align + e.overflow + e.other;
-      hour.fcs += e.fcs; hour.align += e.align; hour.overflow += e.overflow; hour.other += e.other;
+      hour.fcs += e.fcs;
+      hour.align += e.align;
+      hour.overflow += e.overflow;
+      hour.other += e.other;
       hour.link_downs += e.link_downs;
       if (errs > 0) {
         if (e.ago_sec <= RATE_WINDOW_MIN * 60) windowErrors += errs;
@@ -163,6 +183,13 @@ export function summarise(
 
 /** "FCS 40, alignment 2" — only the kinds that grew. */
 export function describeErrors(e: Partial<Record<ErrorKind, number>>): string {
-  const labels: Record<ErrorKind, string> = { fcs: 'FCS', align: 'alignment', overflow: 'overflow', other: 'other' };
-  return KINDS.filter((k) => (e[k] ?? 0) > 0).map((k) => `${labels[k]} ${e[k]}`).join(', ');
+  const labels: Record<ErrorKind, string> = {
+    fcs: 'FCS',
+    align: 'alignment',
+    overflow: 'overflow',
+    other: 'other',
+  };
+  return KINDS.filter((k) => (e[k] ?? 0) > 0)
+    .map((k) => `${labels[k]} ${e[k]}`)
+    .join(', ');
 }

@@ -31,8 +31,7 @@ export interface ProxyConnection {
 }
 
 /** Drop per-worker suffixes so "3proxy-17" and "3proxy-b-32" both become "3proxy". */
-const normaliseSource = (name: string): string =>
-  name.replace(/(-[a-z])?-\d+$/i, '') || 'proxy';
+const normaliseSource = (name: string): string => name.replace(/(-[a-z])?-\d+$/i, '') || 'proxy';
 
 const num = (v: unknown): number | null => {
   const n = typeof v === 'number' ? v : Number(v);

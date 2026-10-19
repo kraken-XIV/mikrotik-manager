@@ -1,8 +1,9 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth } from '../middleware/auth';
-import { siteScopeByDevice } from '../utils/siteScope';
 import { activeSite } from '../middleware/site';
+import { siteScopeByDevice } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);
@@ -19,7 +20,8 @@ router.get('/peers', async (req: Request, res: Response) => {
   if (scope) where.push(scope);
   const deviceId = Number(req.query.deviceId);
   if (req.query.deviceId !== undefined) {
-    if (!Number.isInteger(deviceId)) return res.status(400).json({ error: 'deviceId must be a number' });
+    if (!Number.isInteger(deviceId))
+      return res.status(400).json({ error: 'deviceId must be a number' });
     params.push(deviceId);
     where.push(`r.device_id = $${params.length}`);
   }
@@ -30,7 +32,7 @@ router.get('/peers', async (req: Request, res: Response) => {
        FROM routing_peers r JOIN devices d ON d.id = r.device_id
       ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
       ORDER BY r.up, r.disabled, d.name, r.protocol, r.name`,
-    params
+    params,
   );
   return res.json(rows);
 });

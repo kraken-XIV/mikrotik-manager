@@ -75,17 +75,27 @@ export function classifyApiFailure(err: unknown): { kind: ApiFailureKind; messag
   if (/invalid user name or password|cannot log in|login failure|not allowed/i.test(msg)) {
     return {
       kind: 'login',
-      message: 'The API answered but refused the login. Check the API username and password, and that the user\'s group has the "api" policy.',
+      message:
+        'The API answered but refused the login. Check the API username and password, and that the user\'s group has the "api" policy.',
     };
   }
   if (/handshake failure|alert number 40|no shared cipher|certificate|self.signed|tls/i.test(msg)) {
-    return { kind: 'tls', message: 'api-ssl answered but the TLS connection failed (it may have no certificate).' };
+    return {
+      kind: 'tls',
+      message: 'api-ssl answered but the TLS connection failed (it may have no certificate).',
+    };
   }
   if (code === 'ECONNREFUSED' || /ECONNREFUSED|refused/i.test(msg)) {
-    return { kind: 'unreachable', message: 'The API service is turned off (the connection was refused).' };
+    return {
+      kind: 'unreachable',
+      message: 'The API service is turned off (the connection was refused).',
+    };
   }
   if (/timeout|timed out|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH/i.test(msg) || code === 'ETIMEDOUT') {
-    return { kind: 'unreachable', message: 'Nothing answered on the API ports; the service is off or a firewall blocks it.' };
+    return {
+      kind: 'unreachable',
+      message: 'Nothing answered on the API ports; the service is off or a firewall blocks it.',
+    };
   }
   return { kind: 'other', message: msg.split('\n')[0].slice(0, 200) };
 }
@@ -117,7 +127,7 @@ export class ApiNotEnabledError extends Error {
   constructor(deviceName: string) {
     super(
       `${deviceName.trim()} was added over SSH only, so this needs its RouterOS API, which isn't enabled yet. ` +
-      'Turn on api-ssl (or api) on the device, for example with a bulk command, then use Check API on its page.'
+        'Turn on api-ssl (or api) on the device, for example with a bulk command, then use Check API on its page.',
     );
     this.name = 'ApiNotEnabledError';
   }
@@ -130,9 +140,15 @@ export function describeSshFailure(err: unknown, port: number): string {
   if (/all configured authentication methods failed|authentication failed/i.test(msg)) {
     return 'The SSH login was refused: the username or password is wrong, or the user has no "ssh" policy.';
   }
-  if (code === 'ECONNREFUSED') return `Nothing accepted SSH on port ${port}; the ssh service may be off or on another port.`;
-  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'The hostname could not be resolved. Check the address for typos.';
-  if (/timed out|timeout|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH/i.test(msg) || code === 'ETIMEDOUT' || code === 'EHOSTUNREACH') {
+  if (code === 'ECONNREFUSED')
+    return `Nothing accepted SSH on port ${port}; the ssh service may be off or on another port.`;
+  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN')
+    return 'The hostname could not be resolved. Check the address for typos.';
+  if (
+    /timed out|timeout|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH/i.test(msg) ||
+    code === 'ETIMEDOUT' ||
+    code === 'EHOSTUNREACH'
+  ) {
     return `Timed out reaching SSH on port ${port}. Check the address and firewall rules.`;
   }
   // Our own messages (host key changed, not RouterOS) are already worded for people.

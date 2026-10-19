@@ -5,11 +5,16 @@
 const IPV4_CIDR = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}\/(3[0-2]|[12]?\d)$/;
 const IFACE = /^[^\s"\\;]{1,64}$/;
 
-export function ipAddressEdit(body: Record<string, unknown>): { fields: Record<string, string> } | { error: string } {
+export function ipAddressEdit(
+  body: Record<string, unknown>,
+): { fields: Record<string, string> } | { error: string } {
   const fields: Record<string, string> = {};
   if (body.address !== undefined) {
     const a = String(body.address).trim();
-    if (!IPV4_CIDR.test(a)) return { error: 'address must be an IPv4 address with a prefix length, e.g. 192.168.88.1/24' };
+    if (!IPV4_CIDR.test(a))
+      return {
+        error: 'address must be an IPv4 address with a prefix length, e.g. 192.168.88.1/24',
+      };
     fields.address = a;
   }
   if (body.interface !== undefined) {

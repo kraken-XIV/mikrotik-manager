@@ -1,4 +1,4 @@
-import { Layers, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Layers } from 'lucide-react';
 
 /**
  * Switching off collectors.
@@ -65,8 +65,8 @@ export default function PollModulesCard({ settings, onChange, saving }: Props) {
         <h3 className="font-semibold text-gray-900 dark:text-white">Collectors</h3>
       </div>
       <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-        What each poll gathers. Switching one off reduces traffic to every device on every
-        cycle — the lever that matters on a large fleet — at the cost of the feature it feeds.
+        What each poll gathers. Switching one off reduces traffic to every device on every cycle —
+        the lever that matters on a large fleet — at the cost of the feature it feeds.
       </p>
 
       <div className="space-y-3">

@@ -1,4 +1,4 @@
-import { normalizeDeviceAddress, isBlockedAddress, classifyAddress } from '../deviceAddress';
+import { classifyAddress, isBlockedAddress, normalizeDeviceAddress } from '../deviceAddress';
 
 describe('normalizeDeviceAddress', () => {
   it('accepts a plain LAN IPv4 address unchanged', () => {
@@ -10,13 +10,17 @@ describe('normalizeDeviceAddress', () => {
   });
 
   it('accepts a hostname and lowercases it', () => {
-    expect(normalizeDeviceAddress('Router1.Example.COM'))
-      .toEqual({ ok: true, address: 'router1.example.com' });
+    expect(normalizeDeviceAddress('Router1.Example.COM')).toEqual({
+      ok: true,
+      address: 'router1.example.com',
+    });
   });
 
   it('accepts a DDNS-style hostname', () => {
-    expect(normalizeDeviceAddress('abc123.sn.mynetname.net'))
-      .toEqual({ ok: true, address: 'abc123.sn.mynetname.net' });
+    expect(normalizeDeviceAddress('abc123.sn.mynetname.net')).toEqual({
+      ok: true,
+      address: 'abc123.sn.mynetname.net',
+    });
   });
 
   it('accepts a 253-char FQDN (the migration widened the column for exactly this)', () => {
@@ -43,22 +47,34 @@ describe('normalizeDeviceAddress', () => {
   });
 
   it('accepts a bracketed IPv6 address with a port', () => {
-    expect(normalizeDeviceAddress('[2001:db8::1]:8729')).toEqual({ address: '2001:db8::1', ok: true, port: 8729 });
+    expect(normalizeDeviceAddress('[2001:db8::1]:8729')).toEqual({
+      address: '2001:db8::1',
+      ok: true,
+      port: 8729,
+    });
   });
 
   it('strips a pasted https URL, pulling out host and port', () => {
-    expect(normalizeDeviceAddress('https://1.2.3.4:8729/'))
-      .toEqual({ ok: true, address: '1.2.3.4', port: 8729 });
+    expect(normalizeDeviceAddress('https://1.2.3.4:8729/')).toEqual({
+      ok: true,
+      address: '1.2.3.4',
+      port: 8729,
+    });
   });
 
   it('strips a pasted URL with no port', () => {
-    expect(normalizeDeviceAddress('http://router.example.com/webfig'))
-      .toEqual({ ok: true, address: 'router.example.com' });
+    expect(normalizeDeviceAddress('http://router.example.com/webfig')).toEqual({
+      ok: true,
+      address: 'router.example.com',
+    });
   });
 
   it('splits a bare host:port', () => {
-    expect(normalizeDeviceAddress('192.168.1.1:8728'))
-      .toEqual({ ok: true, address: '192.168.1.1', port: 8728 });
+    expect(normalizeDeviceAddress('192.168.1.1:8728')).toEqual({
+      ok: true,
+      address: '192.168.1.1',
+      port: 8728,
+    });
   });
 
   it('rejects an empty address', () => {

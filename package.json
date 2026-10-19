@@ -1,0 +1,17 @@
+{
+  "name": "mikrotik-manager",
+  "version": "0.72.0-beta",
+  "private": true,
+  "description": "Repo-wide tooling root for the mikrotik-manager monorepo: Prettier formatting and pre-commit hooks. Application code lives in frontend/ and backend/.",
+  "license": "AGPL-3.0",
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10"
+  }
+}

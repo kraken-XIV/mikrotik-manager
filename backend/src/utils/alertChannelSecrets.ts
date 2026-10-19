@@ -6,15 +6,15 @@
 import { isSealed, seal, unseal } from './sealed';
 
 export const SENSITIVE_KEYS: Record<string, string[]> = {
-  email:    ['smtp_pass'],
+  email: ['smtp_pass'],
   // For Slack and Discord the incoming-webhook URL is itself the credential:
   // anyone holding it can post into that channel.
-  slack:    ['webhook_url'],
-  discord:  ['webhook_url'],
+  slack: ['webhook_url'],
+  discord: ['webhook_url'],
   telegram: ['bot_token'],
   // ntfy accepts either an access token or basic auth; both are secrets.
-  ntfy:     ['token', 'password'],
-  gotify:   ['app_token'],
+  ntfy: ['token', 'password'],
+  gotify: ['app_token'],
 };
 
 export function maskConfig(type: string, config: Record<string, unknown>): Record<string, unknown> {
@@ -32,8 +32,8 @@ export function maskConfig(type: string, config: Record<string, unknown>): Recor
  * server they run, keep the masked token, press Test, and receive the token.
  */
 const DESTINATION_KEYS: Record<string, string[]> = {
-  email:  ['smtp_host', 'smtp_port'],
-  ntfy:   ['server_url'],
+  email: ['smtp_host', 'smtp_port'],
+  ntfy: ['server_url'],
   gotify: ['server_url'],
 };
 
@@ -44,23 +44,25 @@ const DESTINATION_KEYS: Record<string, string[]> = {
 export function mergeConfig(
   type: string,
   existing: Record<string, unknown>,
-  incoming: Record<string, unknown>
+  incoming: Record<string, unknown>,
 ): { merged: Record<string, unknown> } | { error: string } {
   const merged = { ...existing, ...incoming };
   const destinationChanged = (DESTINATION_KEYS[type] ?? []).some(
-    (k) => k in incoming && String(incoming[k] ?? '') !== String(existing[k] ?? '')
+    (k) => k in incoming && String(incoming[k] ?? '') !== String(existing[k] ?? ''),
   );
   for (const key of SENSITIVE_KEYS[type] ?? []) {
     if (incoming[key] === '••••••••') {
       if (destinationChanged && existing[key]) {
-        return { error: 'The server changed, so re-enter the password or token. A saved secret is only sent to the server it was saved for.' };
+        return {
+          error:
+            'The server changed, so re-enter the password or token. A saved secret is only sent to the server it was saved for.',
+        };
       }
       merged[key] = existing[key]; // restore original
     }
   }
   return { merged };
 }
-
 
 const SENSITIVE = new Map(Object.entries(SENSITIVE_KEYS));
 
@@ -72,8 +74,12 @@ export function sensitiveKeys(type: string): Set<string> {
 /** Encrypt the secret fields of a channel's settings for storage (S7). */
 export function sealConfig(type: string, config: Record<string, unknown>): Record<string, unknown> {
   const keys = sensitiveKeys(type);
-  return Object.fromEntries(Object.entries(config).map(([k, v]) =>
-    [k, keys.has(k) && typeof v === 'string' && v && !isSealed(v) ? seal(v) : v]));
+  return Object.fromEntries(
+    Object.entries(config).map(([k, v]) => [
+      k,
+      keys.has(k) && typeof v === 'string' && v && !isSealed(v) ? seal(v) : v,
+    ]),
+  );
 }
 
 /**
@@ -85,8 +91,15 @@ export function openConfig(type: string, config: Record<string, unknown>): Recor
   const keys = sensitiveKeys(type);
   const out: Array<[string, unknown]> = [];
   for (const [k, v] of Object.entries(config)) {
-    if (!keys.has(k) || !isSealed(v)) { out.push([k, v]); continue; }
-    try { out.push([k, unseal(v)]); } catch { /* left out */ }
+    if (!keys.has(k) || !isSealed(v)) {
+      out.push([k, v]);
+      continue;
+    }
+    try {
+      out.push([k, unseal(v)]);
+    } catch {
+      /* left out */
+    }
   }
   return Object.fromEntries(out);
 }
@@ -94,5 +107,7 @@ export function openConfig(type: string, config: Record<string, unknown>): Recor
 /** True when a channel's settings still hold a plaintext secret. */
 export function hasPlaintextSecret(type: string, config: Record<string, unknown>): boolean {
   const keys = sensitiveKeys(type);
-  return Object.entries(config).some(([k, v]) => keys.has(k) && typeof v === 'string' && !!v && !isSealed(v));
+  return Object.entries(config).some(
+    ([k, v]) => keys.has(k) && typeof v === 'string' && !!v && !isSealed(v),
+  );
 }

@@ -1,37 +1,44 @@
-import { Queue, Worker, Job } from 'bullmq';
-import { hasRadios } from './mikrotik/capsman';
-import { checkApi, promoteToApi, recordApiCheck, refreshOverSsh, type SshOnlyDevice } from './sshOnly';
-import { apiCheckIntervalMs } from '../utils/sshOnly';
-import { cleanOverrides, effectiveValues } from '../utils/pollOverrides';
-import { createRedisConnection, redis } from '../config/redis';
-import { query, queryOne } from '../config/database';
-import { pooledSessionCount } from './mikrotik/sessionPool';
-import { DeviceCollector, DeviceRow } from './mikrotik/DeviceCollector';
-import { Server as SocketServer } from 'socket.io';
-import { getWriteApi } from '../config/influxdb';
 import { Point } from '@influxdata/influxdb-client';
-import { alertService } from './AlertService';
-import { logAlertCandidates } from '../utils/logAlerts';
-import { runConfigHealth } from './changeGuard/configHealth';
-import type { GuardDevice } from './changeGuard/ChangeGuard';
+import { Job, Queue, Worker } from 'bullmq';
+import { Server as SocketServer } from 'socket.io';
+
+import { query, queryOne } from '../config/database';
+import { getWriteApi } from '../config/influxdb';
+import { createRedisConnection, redis } from '../config/redis';
+import { certExpiryState, describeCert, needsAttention } from '../utils/certExpiry';
 import { cronMatches } from '../utils/cron';
-import { reconcileProxyUsage } from './ProxyUsageService';
-import { checkInterfaceErrors, purgeInterfaceErrorEvents } from './interfaceErrors';
-import { checkOptics, purgeOpticReadings } from './opticLevels';
-import { checkWireGuardStale } from './wireguardStale';
-import { checkRoutingPeers } from './routingPeerAlerts';
-import { isRestoring, scheduleTick as platformBackupTick } from './platformBackup/service';
-import { renewalTick as deviceCertRenewalTick } from './deviceCa';
-import { resolveModules, describeDisabled } from '../utils/pollModules';
+import { describeDuration, offlineAction, recoveryAlert } from '../utils/intermittent';
+import { logAlertCandidates } from '../utils/logAlerts';
+import { pollJobAborted, runPollJob } from '../utils/pollJobContext';
+import { describeDisabled, resolveModules } from '../utils/pollModules';
+import { cleanOverrides, effectiveValues } from '../utils/pollOverrides';
 import { updateAvailable } from '../utils/rosVersion';
-import { certExpiryState, needsAttention, describeCert } from '../utils/certExpiry';
-import { offlineAction, recoveryAlert, describeDuration } from '../utils/intermittent';
-import { runHealthCheck } from './healthCheck';
 import { gateTtlSeconds } from '../utils/schedulerGate';
-import { runPollJob, pollJobAborted } from '../utils/pollJobContext';
-import { refreshCveFeed } from './cveFeed';
+import { apiCheckIntervalMs } from '../utils/sshOnly';
+import { alertService } from './AlertService';
+import type { GuardDevice } from './changeGuard/ChangeGuard';
+import { runConfigHealth } from './changeGuard/configHealth';
 import { checkCveAlerts } from './cveAlerts';
-import { POLLER_ROLE, PROCESS_ID, EMIT_CHANNEL, HEARTBEAT_PREFIX } from './pollerRole';
+import { refreshCveFeed } from './cveFeed';
+import { renewalTick as deviceCertRenewalTick } from './deviceCa';
+import { runHealthCheck } from './healthCheck';
+import { checkInterfaceErrors, purgeInterfaceErrorEvents } from './interfaceErrors';
+import { hasRadios } from './mikrotik/capsman';
+import { DeviceCollector, DeviceRow } from './mikrotik/DeviceCollector';
+import { pooledSessionCount } from './mikrotik/sessionPool';
+import { checkOptics, purgeOpticReadings } from './opticLevels';
+import { isRestoring, scheduleTick as platformBackupTick } from './platformBackup/service';
+import { EMIT_CHANNEL, HEARTBEAT_PREFIX, POLLER_ROLE, PROCESS_ID } from './pollerRole';
+import { reconcileProxyUsage } from './ProxyUsageService';
+import { checkRoutingPeers } from './routingPeerAlerts';
+import {
+  checkApi,
+  promoteToApi,
+  recordApiCheck,
+  refreshOverSsh,
+  type SshOnlyDevice,
+} from './sshOnly';
+import { checkWireGuardStale } from './wireguardStale';
 
 // ─── Tuning ───────────────────────────────────────────────────────────────────
 
@@ -87,23 +94,41 @@ const JOB_TIMEOUT_MS = Math.max(5_000, Number(process.env.POLLER_JOB_TIMEOUT_MS 
  * cancels its device sessions when it does (onTimeout). Without that the work
  * carried on after the job had already been counted as failed.
  */
-function withTimeout<T>(work: Promise<T>, ms: number, label: string, onTimeout?: () => void): Promise<T> {
+function withTimeout<T>(
+  work: Promise<T>,
+  ms: number,
+  label: string,
+  onTimeout?: () => void,
+): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   return Promise.race([
     work.finally(() => clearTimeout(timer)),
     new Promise<never>((_, reject) => {
       timer = setTimeout(() => {
-        try { onTimeout?.(); } catch { /* cancelling is best effort */ }
+        try {
+          onTimeout?.();
+        } catch {
+          /* cancelling is best effort */
+        }
         reject(new Error(`${label} exceeded ${ms}ms`));
       }, ms);
     }),
   ]);
 }
 
-
 interface PollJob {
   deviceId: number;
-  type: 'fast' | 'slow' | 'logs' | 'full' | 'macscan' | 'spectral' | 'apscan' | 'configsnap' | 'confighealth' | 'sshcheck';
+  type:
+    | 'fast'
+    | 'slow'
+    | 'logs'
+    | 'full'
+    | 'macscan'
+    | 'spectral'
+    | 'apscan'
+    | 'configsnap'
+    | 'confighealth'
+    | 'sshcheck';
 }
 
 /** Keep API sessions open between polls (#301); on unless switched off in Settings → Polling. */
@@ -117,7 +142,14 @@ function persistentSessions(appSettings: Record<string, unknown>): boolean {
 }
 
 /** Job types recorded under their own kind in device_poll_stats rather than their queue's. */
-const OWN_STATS_ROW = new Set(['full', 'macscan', 'configsnap', 'confighealth', 'spectral', 'apscan']);
+const OWN_STATS_ROW = new Set([
+  'full',
+  'macscan',
+  'configsnap',
+  'confighealth',
+  'spectral',
+  'apscan',
+]);
 
 export class PollerService {
   private fastQueue: Queue;
@@ -142,7 +174,7 @@ export class PollerService {
     // operation long before that, which starves the very polling this serves.
     const defaultJobOptions = {
       removeOnComplete: { age: JOB_RETENTION_SEC, count: JOB_RETENTION_COUNT },
-      removeOnFail:     { age: JOB_RETENTION_SEC, count: JOB_RETENTION_COUNT },
+      removeOnFail: { age: JOB_RETENTION_SEC, count: JOB_RETENTION_COUNT },
     };
 
     this.fastQueue = new Queue('poll-fast', { connection: conn1, defaultJobOptions });
@@ -178,7 +210,10 @@ export class PollerService {
             if (ids.length < CLEANUP_BATCH) break;
           }
         } catch (e) {
-          console.error(`[Poller] History cleanup failed for ${name}/${state}:`, (e as Error).message);
+          console.error(
+            `[Poller] History cleanup failed for ${name}/${state}:`,
+            (e as Error).message,
+          );
         }
         if (removed > 0) console.log(`[Poller] Trimmed ${removed} ${state} jobs from ${name}`);
       }
@@ -192,17 +227,26 @@ export class PollerService {
    * Send a device's live update only to accounts that can see it: fleet-wide
    * ones ('fleet' room) and those with access to its site (P1-7).
    */
-  private async emitForDevice(event: string, payload: Record<string, unknown>, deviceId: number): Promise<void> {
+  private async emitForDevice(
+    event: string,
+    payload: Record<string, unknown>,
+    deviceId: number,
+  ): Promise<void> {
     if (!this.io) {
       // A worker process has no browsers: the API process sends it on (#301).
       if (POLLER_ROLE === 'worker') {
-        void redis.publish(EMIT_CHANNEL, JSON.stringify({ event, payload, deviceId })).catch(() => {});
+        void redis
+          .publish(EMIT_CHANNEL, JSON.stringify({ event, payload, deviceId }))
+          .catch(() => {});
       }
       return;
     }
     let hit = this.deviceSite.get(deviceId);
     if (!hit || Date.now() - hit.at > 60_000) {
-      const row = await queryOne<{ site_id: number | null }>(`SELECT site_id FROM devices WHERE id = $1`, [deviceId]).catch(() => null);
+      const row = await queryOne<{ site_id: number | null }>(
+        `SELECT site_id FROM devices WHERE id = $1`,
+        [deviceId],
+      ).catch(() => null);
       hit = { site: row?.site_id ?? null, at: Date.now() };
       this.deviceSite.set(deviceId, hit);
     }
@@ -239,9 +283,21 @@ export class PollerService {
    */
   private startHeartbeat(): void {
     const beat = () => {
-      void redis.set(`${HEARTBEAT_PREFIX}${PROCESS_ID}`, JSON.stringify({
-        role: POLLER_ROLE, concurrency: POLL_CONCURRENCY, sessions: pooledSessionCount(), at: Date.now(),
-      }), 'EX', 45).catch(() => { /* health just won't count it this time */ });
+      void redis
+        .set(
+          `${HEARTBEAT_PREFIX}${PROCESS_ID}`,
+          JSON.stringify({
+            role: POLLER_ROLE,
+            concurrency: POLL_CONCURRENCY,
+            sessions: pooledSessionCount(),
+            at: Date.now(),
+          }),
+          'EX',
+          45,
+        )
+        .catch(() => {
+          /* health just won't count it this time */
+        });
     };
     beat();
     this.heartbeatTimer = setInterval(beat, 15_000);
@@ -254,15 +310,25 @@ export class PollerService {
     this.relay = sub;
     sub.on('message', (_channel: string, raw: string) => {
       try {
-        const m = JSON.parse(raw) as { event: string; payload: Record<string, unknown>; deviceId: number | null };
+        const m = JSON.parse(raw) as {
+          event: string;
+          payload: Record<string, unknown>;
+          deviceId: number | null;
+        };
         if (typeof m.event !== 'string') return;
         if (m.deviceId == null) this.io?.emit(m.event, m.payload ?? {});
         else void this.emitForDevice(m.event, m.payload ?? {}, m.deviceId);
-      } catch { /* not ours */ }
+      } catch {
+        /* not ours */
+      }
     });
-    sub.on('error', () => { /* ioredis reconnects by itself */ });
-    void sub.connect().then(() => sub.subscribe(EMIT_CHANNEL)).catch((e: Error) =>
-      console.warn('[Poller] live-update relay not started:', e.message));
+    sub.on('error', () => {
+      /* ioredis reconnects by itself */
+    });
+    void sub
+      .connect()
+      .then(() => sub.subscribe(EMIT_CHANNEL))
+      .catch((e: Error) => console.warn('[Poller] live-update relay not started:', e.message));
   }
 
   /**
@@ -272,8 +338,16 @@ export class PollerService {
    */
   private async slowestPolls(limit = 15): Promise<Record<string, unknown>[]> {
     const rows = await query<{
-      id: number; name: string; site: string | null; duration: number; connect: number | null; collect: number | null;
-      device: number | null; reused: boolean | null; error: string | null; at: string | null;
+      id: number;
+      name: string;
+      site: string | null;
+      duration: number;
+      connect: number | null;
+      collect: number | null;
+      device: number | null;
+      reused: boolean | null;
+      error: string | null;
+      at: string | null;
     }>(
       `SELECT d.id, d.name, s.name AS site, p.last_duration_ms AS duration, p.last_connect_ms AS connect,
               p.last_collect_ms AS collect, p.last_device_ms AS device, p.last_session_reused AS reused,
@@ -283,36 +357,69 @@ export class PollerService {
          LEFT JOIN sites s ON s.id = d.site_id
         WHERE p.kind = 'fast' AND p.last_duration_ms IS NOT NULL AND d.status != 'disabled'
         ORDER BY p.last_duration_ms DESC
-        LIMIT $1`, [limit]).catch(() => []);
+        LIMIT $1`,
+      [limit],
+    ).catch(() => []);
     return rows.map((r) => ({
-      id: r.id, name: r.name, site: r.site, total_ms: r.duration,
-      connect_ms: r.connect, device_ms: r.device,
+      id: r.id,
+      name: r.name,
+      site: r.site,
+      total_ms: r.duration,
+      connect_ms: r.connect,
+      device_ms: r.device,
       // Everything not spent connecting or waiting on the device.
-      other_ms: r.connect == null || r.device == null ? null : Math.max(0, r.duration - r.connect - r.device),
-      reused: r.reused, error: r.error, at: r.at,
+      other_ms:
+        r.connect == null || r.device == null
+          ? null
+          : Math.max(0, r.duration - r.connect - r.device),
+      reused: r.reused,
+      error: r.error,
+      at: r.at,
     }));
   }
 
   /** Every process running poll workers, from their heartbeats. */
-  private async pollerProcesses(): Promise<{ id: string; role: string; concurrency: number; sessions: number }[]> {
+  private async pollerProcesses(): Promise<
+    { id: string; role: string; concurrency: number; sessions: number }[]
+  > {
     try {
       const keys = await redis.keys(`${HEARTBEAT_PREFIX}*`);
       if (!keys.length) return [];
       const vals = await redis.mget(...keys);
       return keys.flatMap((k, i) => {
         try {
-          const v = JSON.parse(vals[i] ?? '') as { role: string; concurrency: number; sessions: number };
-          return [{ id: k.slice(HEARTBEAT_PREFIX.length), role: v.role, concurrency: Number(v.concurrency) || 0, sessions: Number(v.sessions) || 0 }];
-        } catch { return []; }
+          const v = JSON.parse(vals[i] ?? '') as {
+            role: string;
+            concurrency: number;
+            sessions: number;
+          };
+          return [
+            {
+              id: k.slice(HEARTBEAT_PREFIX.length),
+              role: v.role,
+              concurrency: Number(v.concurrency) || 0,
+              sessions: Number(v.sessions) || 0,
+            },
+          ];
+        } catch {
+          return [];
+        }
       });
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   }
 
   /** A live update for every browser (no device to scope it by). */
   private broadcast(event: string, payload: Record<string, unknown>): void {
-    if (this.io) { this.io.emit(event, payload); return; }
+    if (this.io) {
+      this.io.emit(event, payload);
+      return;
+    }
     if (POLLER_ROLE === 'worker') {
-      void redis.publish(EMIT_CHANNEL, JSON.stringify({ event, payload, deviceId: null })).catch(() => {});
+      void redis
+        .publish(EMIT_CHANNEL, JSON.stringify({ event, payload, deviceId: null }))
+        .catch(() => {});
     }
   }
 
@@ -364,13 +471,13 @@ export class PollerService {
         attempts: 3,
         backoff: { type: 'exponential', delay: 5000 },
       });
-    // Periodic polls are not retried in-job: the schedule is the retry. A device
-    // that just failed to answer is unlikely to answer a second later, and each
-    // extra attempt occupies a worker for up to the job timeout. On a fleet with
-    // several devices down that doubles the capacity they waste, which is exactly
-    // the capacity the rest of the fleet is short of (#114). Historically this
-    // also doubled the recorded failure count: 231k failed jobs on a four-device
-    // fleet turned out to be ~1,000 hours of genuine downtime, counted twice.
+      // Periodic polls are not retried in-job: the schedule is the retry. A device
+      // that just failed to answer is unlikely to answer a second later, and each
+      // extra attempt occupies a worker for up to the job timeout. On a fleet with
+      // several devices down that doubles the capacity they waste, which is exactly
+      // the capacity the rest of the fleet is short of (#114). Historically this
+      // also doubled the recorded failure count: 231k failed jobs on a four-device
+      // fleet turned out to be ~1,000 hours of genuine downtime, counted twice.
     } else if (type === 'fast') {
       await this.fastQueue.add('device-fast-poll', jobData, periodic);
     } else if (type === 'slow') {
@@ -393,10 +500,14 @@ export class PollerService {
   }
 
   private startScheduler(): void {
-    this.schedulerInterval = setInterval(() => { void this.guardedCycle(); }, POLL_INTERVAL_MS);
+    this.schedulerInterval = setInterval(() => {
+      void this.guardedCycle();
+    }, POLL_INTERVAL_MS);
 
     // Also run immediately
-    setTimeout(() => { void this.guardedCycle(); }, 5000);
+    setTimeout(() => {
+      void this.guardedCycle();
+    }, 5000);
   }
 
   /** True while a scheduling cycle is running (J10). */
@@ -423,30 +534,36 @@ export class PollerService {
     try {
       const appSettings = await this.getAppSettings();
       const reverseDnsEnabled = appSettings['reverse_dns_enabled'] === true;
-      const spectralEnabled       = appSettings['spectral_scan_enabled'] === true;
+      const spectralEnabled = appSettings['spectral_scan_enabled'] === true;
       const spectralIntervalHours = (appSettings['spectral_scan_interval_hours'] as number) || 24;
-      const apScanEnabled         = appSettings['ap_scan_enabled'] === true;
-      const apScanIntervalHours   = (appSettings['ap_scan_interval_hours'] as number) || 24;
+      const apScanEnabled = appSettings['ap_scan_enabled'] === true;
+      const apScanIntervalHours = (appSettings['ap_scan_interval_hours'] as number) || 24;
       const backupScheduleEnabled = appSettings['backup_schedule_enabled'] === true;
-      const backupScheduleCron    = (appSettings['backup_schedule_cron'] as string) || '0 2 * * *';
+      const backupScheduleCron = (appSettings['backup_schedule_cron'] as string) || '0 2 * * *';
       // Schedules are the operator's local time, not the container's (#117).
-      const appTimezone           = (appSettings['app_timezone'] as string) || 'UTC';
-      const configHealthEnabled     = appSettings['config_health_enabled'] !== false;
+      const appTimezone = (appSettings['app_timezone'] as string) || 'UTC';
+      const configHealthEnabled = appSettings['config_health_enabled'] !== false;
       const configHealthIntervalMin = (appSettings['config_health_interval_min'] as number) || 60;
 
-      const devices = await query<DeviceRow & { poll_overrides?: unknown; site_id?: number | null }>(
-        `SELECT * FROM devices WHERE status != 'disabled'`
-      );
+      const devices = await query<
+        DeviceRow & { poll_overrides?: unknown; site_id?: number | null }
+      >(`SELECT * FROM devices WHERE status != 'disabled'`);
       // Per-site and per-device overrides (#261). The global intervals in
       // Settings used to be saved and never read: polls ran every 30 s, 5 min
       // and 1 min whatever they said.
-      const siteRows = await query<{ id: number; poll_overrides: unknown }>(`SELECT id, poll_overrides FROM sites`).catch(() => []);
+      const siteRows = await query<{ id: number; poll_overrides: unknown }>(
+        `SELECT id, poll_overrides FROM sites`,
+      ).catch(() => []);
       const siteOverrides = new Map(siteRows.map((r) => [r.id, cleanOverrides(r.poll_overrides)]));
       const slowWindows = new Map<number, number>();
 
       const now = Date.now();
       for (const device of devices) {
-        const eff = effectiveValues(appSettings, siteOverrides.get(device.site_id ?? -1) ?? null, cleanOverrides(device.poll_overrides));
+        const eff = effectiveValues(
+          appSettings,
+          siteOverrides.get(device.site_id ?? -1) ?? null,
+          cleanOverrides(device.poll_overrides),
+        );
         const configSnapEnabled = eff.configSnapEnabled;
         const configSnapIntervalMin = eff.configSnapMin;
         slowWindows.set(device.id, eff.slowSec);
@@ -476,13 +593,17 @@ export class PollerService {
           await this.setTimestamp(key, now, ms);
           return true;
         };
-        if (await due(`poll:fast:${device.id}`, eff.fastSec * 1000)) await this.scheduleDeviceSync(device.id, 'fast');
-        if (await due(`poll:slow:${device.id}`, eff.slowSec * 1000)) await this.scheduleDeviceSync(device.id, 'slow');
-        if (await due(`poll:logs:${device.id}`, eff.logsSec * 1000)) await this.scheduleDeviceSync(device.id, 'logs');
+        if (await due(`poll:fast:${device.id}`, eff.fastSec * 1000))
+          await this.scheduleDeviceSync(device.id, 'fast');
+        if (await due(`poll:slow:${device.id}`, eff.slowSec * 1000))
+          await this.scheduleDeviceSync(device.id, 'slow');
+        if (await due(`poll:logs:${device.id}`, eff.logsSec * 1000))
+          await this.scheduleDeviceSync(device.id, 'logs');
 
         // MAC scan — switches only
         if (eff.macScanEnabled && device.device_type === 'switch') {
-          if (await due(`poll:macscan:${device.id}`, eff.macScanSec * 1000)) await this.scheduleDeviceSync(device.id, 'macscan');
+          if (await due(`poll:macscan:${device.id}`, eff.macScanSec * 1000))
+            await this.scheduleDeviceSync(device.id, 'macscan');
         }
 
         // Spectral scan — devices with radios (an all-in-one router too), user-configured interval (default 24h)
@@ -538,7 +659,7 @@ export class PollerService {
         if (now - lastRdns > 300_000) {
           await this.setTimestamp(rdnsKey, now, 300_000);
           this.resolveClientHostnames().catch((e) =>
-            console.error('[Poller] Reverse DNS error:', e)
+            console.error('[Poller] Reverse DNS error:', e),
           );
         }
       }
@@ -559,10 +680,15 @@ export class PollerService {
             USING (SELECT unnest($1::int[]) AS id, unnest($2::int[]) AS secs) w
             WHERE tl.from_device_id = w.id
               AND tl.discovered_at < NOW() - make_interval(secs => GREATEST(1200, w.secs * 4))`,
-          [ids, ids.map((id) => slowWindows.get(id)!)])
-          .then(() => query(
-            `DELETE FROM topology_links WHERE discovered_at < NOW() - INTERVAL '20 minutes'
-               AND NOT (from_device_id = ANY($1::int[]))`, [ids]))
+          [ids, ids.map((id) => slowWindows.get(id)!)],
+        )
+          .then(() =>
+            query(
+              `DELETE FROM topology_links WHERE discovered_at < NOW() - INTERVAL '20 minutes'
+               AND NOT (from_device_id = ANY($1::int[]))`,
+              [ids],
+            ),
+          )
           .catch((e) => console.error('[Poller] Stale topology-link cleanup error:', e));
       }
 
@@ -579,8 +705,9 @@ export class PollerService {
       const lastCert = await this.getTimestamp(certKey);
       if (now - lastCert > 3_600_000) {
         await this.setTimestamp(certKey, now, 3_600_000);
-        this.checkCertificateExpiry()
-          .catch((e) => console.error('[Poller] Certificate expiry check failed:', e));
+        this.checkCertificateExpiry().catch((e) =>
+          console.error('[Poller] Certificate expiry check failed:', e),
+        );
       }
 
       // Stale WireGuard peers (#208) — every 5 minutes, after slow polls have
@@ -589,7 +716,9 @@ export class PollerService {
       const lastWg = await this.getTimestamp(wgKey);
       if (now - lastWg > 300_000) {
         await this.setTimestamp(wgKey, now, 300_000);
-        checkWireGuardStale().catch((e) => console.error('[Poller] WireGuard stale check failed:', e));
+        checkWireGuardStale().catch((e) =>
+          console.error('[Poller] WireGuard stale check failed:', e),
+        );
       }
 
       // BGP sessions and OSPF neighbours down (#279) — every minute, from what
@@ -608,13 +737,17 @@ export class PollerService {
       const lastIfErr = await this.getTimestamp(ifErrKey);
       if (now - lastIfErr > 60_000) {
         await this.setTimestamp(ifErrKey, now, 60_000);
-        checkInterfaceErrors().catch((e) => console.error('[Poller] Interface error check failed:', e));
+        checkInterfaceErrors().catch((e) =>
+          console.error('[Poller] Interface error check failed:', e),
+        );
       }
       const ifErrPurgeKey = 'task:interface_errors_purge';
       const lastIfErrPurge = await this.getTimestamp(ifErrPurgeKey);
       if (now - lastIfErrPurge > 3_600_000) {
         await this.setTimestamp(ifErrPurgeKey, now, 3_600_000);
-        purgeInterfaceErrorEvents().catch((e) => console.error('[Poller] Interface error purge failed:', e));
+        purgeInterfaceErrorEvents().catch((e) =>
+          console.error('[Poller] Interface error purge failed:', e),
+        );
         purgeOpticReadings().catch((e) => console.error('[Poller] Optic reading purge failed:', e));
       }
 
@@ -635,7 +768,8 @@ export class PollerService {
       if (now - lastStale > 300_000) {
         await this.setTimestamp(staleKey, now, 300_000);
         this.dropStalePending().catch((e) =>
-          console.error('[Poller] Stale-pending sweep error:', e));
+          console.error('[Poller] Stale-pending sweep error:', e),
+        );
       }
 
       // Firmware update check — runs once per day
@@ -647,7 +781,7 @@ export class PollerService {
         await this.setTimestamp(firmwareKey, now, 86_400_000);
         // Over the API; an SSH-only device (#174) has none yet.
         this.checkAllDevicesFirmware(devices.filter((d) => !d.ssh_only)).catch((e) =>
-          console.error('[Poller] Firmware check error:', e)
+          console.error('[Poller] Firmware check error:', e),
         );
       }
 
@@ -657,12 +791,20 @@ export class PollerService {
       const lastCve = await this.getTimestamp(cveKey);
       if (appSettings['cve_feed_enabled'] !== false && now - lastCve > 86_400_000) {
         await this.setTimestamp(cveKey, now, 86_400_000);
-        refreshCveFeed().catch((e) =>
-          console.warn('[Poller] RouterOS vulnerability list not refreshed:', (e as Error).message))
+        refreshCveFeed()
+          .catch((e) =>
+            console.warn(
+              '[Poller] RouterOS vulnerability list not refreshed:',
+              (e as Error).message,
+            ),
+          )
           // Then any new serious CVE affecting the fleet (#224), against the
           // stored list even when the refresh failed (offline, say).
-          .finally(() => checkCveAlerts().catch((e) =>
-            console.warn('[Poller] CVE alert check failed:', (e as Error).message)));
+          .finally(() =>
+            checkCveAlerts().catch((e) =>
+              console.warn('[Poller] CVE alert check failed:', (e as Error).message),
+            ),
+          );
       }
 
       // NetFlow data retention — runs once per day. Purges old client_traffic
@@ -671,9 +813,7 @@ export class PollerService {
       const lastNetflowPrune = await this.getTimestamp(netflowPruneKey);
       if (now - lastNetflowPrune > 86_400_000) {
         await this.setTimestamp(netflowPruneKey, now, 86_400_000);
-        this.purgeNetflowData().catch((e) =>
-          console.error('[Poller] NetFlow retention error:', e)
-        );
+        this.purgeNetflowData().catch((e) => console.error('[Poller] NetFlow retention error:', e));
       }
 
       // Stale client pruning — runs once per hour
@@ -683,7 +823,7 @@ export class PollerService {
       if (now - lastPrune > 3_600_000) {
         await this.setTimestamp(pruneKey, now, 3_600_000);
         this.pruneStaleClients(appSettings).catch((e) =>
-          console.error('[Poller] Client prune error:', e)
+          console.error('[Poller] Client prune error:', e),
         );
       }
 
@@ -698,29 +838,33 @@ export class PollerService {
       if (now - lastEventPrune > 3_600_000) {
         await this.setTimestamp(eventPruneKey, now, 3_600_000);
         this.pruneOldEvents(appSettings).catch((e) =>
-          console.error('[Poller] Event prune error:', e)
+          console.error('[Poller] Event prune error:', e),
         );
         this.pruneProxyConnections(appSettings).catch((e) =>
-          console.error('[Poller] Proxy prune error:', e)
+          console.error('[Poller] Proxy prune error:', e),
         );
         // Once a day, recompute the last 48 hours of the proxy usage rollup from the raw
         // rows, so a crash or a rolling deploy cannot leave it drifting.
         const reconcileKey = 'task:proxy_usage_reconcile';
-        if (now - await this.getTimestamp(reconcileKey) > 86_400_000) {
+        if (now - (await this.getTimestamp(reconcileKey)) > 86_400_000) {
           await this.setTimestamp(reconcileKey, now, 86_400_000);
           reconcileProxyUsage().catch((e) =>
-            console.error('[Poller] Proxy usage reconcile error:', e)
+            console.error('[Poller] Proxy usage reconcile error:', e),
           );
         }
         this.pruneHistoryTables(appSettings).catch((e) =>
-          console.error('[Poller] History prune error:', e)
+          console.error('[Poller] History prune error:', e),
         );
       }
 
       // Platform backups of MikroTik Manager itself — checked every minute; the
       // schedule's own last-run time stops a double run.
-      platformBackupTick(appTimezone).catch((e) => console.error('[Poller] Platform backup schedule error:', e));
-      deviceCertRenewalTick().catch((e) => console.error('[Poller] Device certificate renewal error:', e));
+      platformBackupTick(appTimezone).catch((e) =>
+        console.error('[Poller] Platform backup schedule error:', e),
+      );
+      deviceCertRenewalTick().catch((e) =>
+        console.error('[Poller] Device certificate renewal error:', e),
+      );
 
       // Scheduled backups — fire when the cron expression matches the current minute/hour.
       // Redis key with 1-hour TTL prevents double-firing within the same cron window.
@@ -730,7 +874,7 @@ export class PollerService {
         if (now - lastBackup > 3_600_000) {
           await this.setTimestamp(backupKey, now, 3_600_000);
           this.runScheduledBackups().catch((e) =>
-            console.error('[Poller] Scheduled backup error:', e)
+            console.error('[Poller] Scheduled backup error:', e),
           );
         }
       }
@@ -745,7 +889,7 @@ export class PollerService {
       // on/off switch and interval were read here but never selected, so
       // turning it off did nothing and it always ran hourly.
       const rows = await query<{ key: string; value: unknown }>(
-        `SELECT key, value FROM app_settings`
+        `SELECT key, value FROM app_settings`,
       );
       const map: Record<string, unknown> = {};
       for (const row of rows) map[row.key] = row.value;
@@ -755,20 +899,24 @@ export class PollerService {
     }
   }
 
-
   private async runScheduledBackups(): Promise<void> {
     const { BackupService } = await import('./BackupService');
     const backupService = new BackupService();
     const devices = await query<{
-      id: number; name: string; ip_address: string; ssh_port: number;
-      ssh_username: string; ssh_password_encrypted: string;
-      api_username: string; api_password_encrypted: string;
+      id: number;
+      name: string;
+      ip_address: string;
+      ssh_port: number;
+      ssh_username: string;
+      ssh_password_encrypted: string;
+      api_username: string;
+      api_password_encrypted: string;
     }>(`SELECT id, name, ip_address, ssh_port, ssh_username, ssh_password_encrypted,
                api_username, api_password_encrypted
         FROM devices WHERE status = 'online'`);
     console.log(`[Poller] Starting scheduled backup for ${devices.length} online device(s)`);
     const results = await Promise.allSettled(
-      devices.map((d) => backupService.createBackup(d, 'Scheduled backup', 'scheduled'))
+      devices.map((d) => backupService.createBackup(d, 'Scheduled backup', 'scheduled')),
     );
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
     console.log(`[Poller] Scheduled backup complete: ${succeeded}/${devices.length} succeeded`);
@@ -783,7 +931,7 @@ export class PollerService {
        WHERE ip_address IS NOT NULL AND ip_address != ''
          AND (hostname IS NULL OR hostname = '')
        ORDER BY ip_address, last_seen DESC
-       LIMIT 50`
+       LIMIT 50`,
     );
     if (clients.length === 0) return;
 
@@ -791,7 +939,7 @@ export class PollerService {
       clients.map(async (c) => {
         const names = await reverse(c.ip_address);
         return { mac: c.mac_address, ip: c.ip_address, hostname: names[0] };
-      })
+      }),
     );
 
     let updated = 0;
@@ -803,7 +951,7 @@ export class PollerService {
         await query(
           `UPDATE clients SET hostname = $1
            WHERE mac_address = $2 AND ip_address = $3 AND (hostname IS NULL OR hostname = '')`,
-          [r.value.hostname, r.value.mac, r.value.ip]
+          [r.value.hostname, r.value.mac, r.value.ip],
         );
         updated++;
       }
@@ -818,7 +966,7 @@ export class PollerService {
   private async purgeNetflowData(): Promise<void> {
     const rows = await query<{ key: string; value: unknown }>(
       `SELECT key, value FROM app_settings
-       WHERE key IN ('netflow_retention_days', 'netflow_daily_retention_days')`
+       WHERE key IN ('netflow_retention_days', 'netflow_daily_retention_days')`,
     );
     const map: Record<string, unknown> = {};
     for (const row of rows) map[row.key] = row.value;
@@ -849,11 +997,13 @@ export class PollerService {
          RETURNING 1
        )
        SELECT COUNT(*) AS count FROM deleted`,
-      [dailyDays]
+      [dailyDays],
     );
     const count = parseInt(result[0]?.count || '0', 10);
     if (count > 0) {
-      console.log(`[Poller] NetFlow retention pruned ${count} daily rollup row(s) (> ${dailyDays} days)`);
+      console.log(
+        `[Poller] NetFlow retention pruned ${count} daily rollup row(s) (> ${dailyDays} days)`,
+      );
     }
   }
 
@@ -881,7 +1031,7 @@ export class PollerService {
              LIMIT $2
           )
         RETURNING id`,
-        [String(days), BATCH]
+        [String(days), BATCH],
       );
       total += deleted.length;
       if (deleted.length < BATCH) break;
@@ -899,12 +1049,42 @@ export class PollerService {
    */
   private async pruneHistoryTables(settings: Record<string, unknown>): Promise<void> {
     const tables: Array<{ table: string; where: string; setting: string; fallback: number }> = [
-      { table: 'spectral_scan_data', where: 'scanned_at < $1', setting: 'retention_scan_days', fallback: 30 },
-      { table: 'ap_scan_data', where: 'scanned_at < $1', setting: 'retention_scan_days', fallback: 30 },
-      { table: 'lte_cell_history', where: 'at < $1', setting: 'retention_lte_history_days', fallback: 90 },
-      { table: 'alert_history', where: 'sent_at < $1', setting: 'retention_alert_history_days', fallback: 180 },
-      { table: 'audit_log', where: 'created_at < $1', setting: 'retention_audit_days', fallback: 365 },
-      { table: 'device_availability', where: 'came_back_online_at IS NOT NULL AND came_back_online_at < $1', setting: 'retention_availability_days', fallback: 400 },
+      {
+        table: 'spectral_scan_data',
+        where: 'scanned_at < $1',
+        setting: 'retention_scan_days',
+        fallback: 30,
+      },
+      {
+        table: 'ap_scan_data',
+        where: 'scanned_at < $1',
+        setting: 'retention_scan_days',
+        fallback: 30,
+      },
+      {
+        table: 'lte_cell_history',
+        where: 'at < $1',
+        setting: 'retention_lte_history_days',
+        fallback: 90,
+      },
+      {
+        table: 'alert_history',
+        where: 'sent_at < $1',
+        setting: 'retention_alert_history_days',
+        fallback: 180,
+      },
+      {
+        table: 'audit_log',
+        where: 'created_at < $1',
+        setting: 'retention_audit_days',
+        fallback: 365,
+      },
+      {
+        table: 'device_availability',
+        where: 'came_back_online_at IS NOT NULL AND came_back_online_at < $1',
+        setting: 'retention_availability_days',
+        fallback: 400,
+      },
     ];
     const BATCH = 20_000;
     const settingMap = new Map(Object.entries(settings));
@@ -919,12 +1099,15 @@ export class PollerService {
           `WITH gone AS (
              DELETE FROM ${t.table} WHERE ctid IN (SELECT ctid FROM ${t.table} WHERE ${t.where} LIMIT ${BATCH})
              RETURNING 1
-           ) SELECT COUNT(*)::int AS n FROM gone`, [cutoff]);
+           ) SELECT COUNT(*)::int AS n FROM gone`,
+          [cutoff],
+        );
         const n = deleted[0]?.n ?? 0;
         total += n;
         if (n < BATCH) break;
       }
-      if (total > 0) console.log(`[Poller] Pruned ${total} ${t.table} row(s) older than ${days} days`);
+      if (total > 0)
+        console.log(`[Poller] Pruned ${total} ${t.table} row(s) older than ${days} days`);
     }
   }
 
@@ -934,13 +1117,17 @@ export class PollerService {
     if (!Number.isFinite(days) || days <= 0) return;
     const deleted = await query<{ id: number }>(
       `DELETE FROM proxy_connections WHERE event_time < NOW() - ($1 || ' days')::interval RETURNING id`,
-      [String(days)]
+      [String(days)],
     );
     if (deleted.length > 0) {
       console.log(`[Poller] Pruned ${deleted.length} proxy connections older than ${days} days`);
     }
-    await query(`DELETE FROM proxy_sources WHERE last_seen < NOW() - ($1 || ' days')::interval`, [String(days)]);
-    await query(`DELETE FROM proxy_usage_hourly WHERE bucket < NOW() - ($1 || ' days')::interval`, [String(days)]);
+    await query(`DELETE FROM proxy_sources WHERE last_seen < NOW() - ($1 || ' days')::interval`, [
+      String(days),
+    ]);
+    await query(`DELETE FROM proxy_usage_hourly WHERE bucket < NOW() - ($1 || ' days')::interval`, [
+      String(days),
+    ]);
   }
 
   private async pruneStaleClients(settings: Record<string, unknown>): Promise<void> {
@@ -956,18 +1143,20 @@ export class PollerService {
          RETURNING 1
        )
        SELECT COUNT(*) AS count FROM deleted`,
-      [retentionDays]
+      [retentionDays],
     );
     const count = parseInt(result[0]?.count || '0', 10);
     if (count > 0) {
-      console.log(`[Poller] Pruned ${count} stale client record(s) (inactive > ${retentionDays} days)`);
+      console.log(
+        `[Poller] Pruned ${count} stale client record(s) (inactive > ${retentionDays} days)`,
+      );
       this.broadcast('clients:updated', {});
     }
   }
 
   async pruneStaleClientsNow(): Promise<number> {
     const rows = await query<{ value: unknown }>(
-      `SELECT value FROM app_settings WHERE key = 'retention_clients_days'`
+      `SELECT value FROM app_settings WHERE key = 'retention_clients_days'`,
     );
     const retentionDays = (rows[0]?.value as number) || 7;
     const result = await query<{ count: string }>(
@@ -978,7 +1167,7 @@ export class PollerService {
          RETURNING 1
        )
        SELECT COUNT(*) AS count FROM deleted`,
-      [retentionDays]
+      [retentionDays],
     );
     return parseInt(result[0]?.count || '0', 10);
   }
@@ -1053,7 +1242,10 @@ export class PollerService {
    * instead of guesswork (#114).
    */
   private async recordPollOutcome(
-    deviceId: number, kind: string, durationMs: number, error: string | null,
+    deviceId: number,
+    kind: string,
+    durationMs: number,
+    error: string | null,
   ): Promise<void> {
     const ph = this.phases.get(`${deviceId}:${kind}`);
     this.phases.delete(`${deviceId}:${kind}`);
@@ -1071,15 +1263,19 @@ export class PollerService {
            last_error       = $4,
            attempts         = device_poll_stats.attempts + 1,
            failures         = device_poll_stats.failures + CASE WHEN $4::text IS NULL THEN 0 ELSE 1 END`,
-        [deviceId, kind, durationMs, error]
+        [deviceId, kind, durationMs, error],
       );
       // Where the time went (#301): opening or reusing the session, and the work.
       if (ph && !error) {
         await query(
           `UPDATE device_poll_stats SET last_connect_ms = $3, last_collect_ms = $4, last_session_reused = $5, last_device_ms = $6
-            WHERE device_id = $1 AND kind = $2`, [deviceId, kind, ph.connectMs, ph.collectMs, ph.reused, ph.deviceMs]);
+            WHERE device_id = $1 AND kind = $2`,
+          [deviceId, kind, ph.connectMs, ph.collectMs, ph.reused, ph.deviceMs],
+        );
       }
-    } catch { /* never let bookkeeping break a poll */ }
+    } catch {
+      /* never let bookkeeping break a poll */
+    }
   }
 
   /**
@@ -1107,7 +1303,7 @@ export class PollerService {
     let deviceCount = 0;
     try {
       const [row] = await query<{ count: number }>(
-        `SELECT COUNT(*)::int AS count FROM devices WHERE status != 'disabled'`
+        `SELECT COUNT(*)::int AS count FROM devices WHERE status != 'disabled'`,
       );
       deviceCount = row?.count ?? 0;
     } catch (e) {
@@ -1119,7 +1315,7 @@ export class PollerService {
       [timing] = await query<{ avg_ms: number | null; p90_ms: number | null }>(
         `SELECT AVG(last_duration_ms)::int AS avg_ms,
                 (PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY last_duration_ms))::int AS p90_ms
-           FROM device_poll_stats WHERE kind = 'fast' AND last_duration_ms IS NOT NULL`
+           FROM device_poll_stats WHERE kind = 'fast' AND last_duration_ms IS NOT NULL`,
       );
     } catch (e) {
       console.error('[Poller] Health: timing query failed:', (e as Error).message);
@@ -1134,20 +1330,30 @@ export class PollerService {
     try {
       const rows = await query<{ dev: unknown; site: unknown }>(
         `SELECT d.poll_overrides AS dev, s.poll_overrides AS site
-           FROM devices d LEFT JOIN sites s ON s.id = d.site_id WHERE d.status != 'disabled'`);
+           FROM devices d LEFT JOIN sites s ON s.id = d.site_id WHERE d.status != 'disabled'`,
+      );
       if (rows.length) {
-        arrivalPerSec = rows.reduce((sum, r) =>
-          sum + 1 / effectiveValues(appSettings, cleanOverrides(r.site), cleanOverrides(r.dev)).fastSec, 0);
+        arrivalPerSec = rows.reduce(
+          (sum, r) =>
+            sum +
+            1 / effectiveValues(appSettings, cleanOverrides(r.site), cleanOverrides(r.dev)).fastSec,
+          0,
+        );
       }
-    } catch { /* fall back to the global interval for every device */ }
+    } catch {
+      /* fall back to the global interval for every device */
+    }
     // Workers in every process (#301), or this one's before any heartbeat.
     const procs = await this.pollerProcesses();
-    const totalConcurrency = procs.length ? procs.reduce((n, p) => n + p.concurrency, 0) : POLL_CONCURRENCY;
+    const totalConcurrency = procs.length
+      ? procs.reduce((n, p) => n + p.concurrency, 0)
+      : POLL_CONCURRENCY;
     const servicePerSec = avgSec > 0 ? totalConcurrency / avgSec : null;
 
-    const headroom = servicePerSec == null || arrivalPerSec === 0
-      ? null
-      : Math.round((servicePerSec / arrivalPerSec) * 100) / 100;
+    const headroom =
+      servicePerSec == null || arrivalPerSec === 0
+        ? null
+        : Math.round((servicePerSec / arrivalPerSec) * 100) / 100;
 
     // Backlog is reported alongside headroom because headroom alone lies.
     // It describes flow — whether the workers can keep up from here — and says
@@ -1156,31 +1362,46 @@ export class PollerService {
     // nine stale devices, which is worse than no number at all (#114).
     const backlog = queues.reduce((n, q) => n + (Number(q.waiting) || 0), 0);
     const netDrainPerSec = servicePerSec == null ? null : servicePerSec - arrivalPerSec;
-    const drainEtaSec = backlog === 0 ? 0
-      : netDrainPerSec == null || netDrainPerSec <= 0 ? null
-      : Math.round(backlog / netDrainPerSec);
+    const drainEtaSec =
+      backlog === 0
+        ? 0
+        : netDrainPerSec == null || netDrainPerSec <= 0
+          ? null
+          : Math.round(backlog / netDrainPerSec);
 
     // A single verdict, so nobody has to interpret three numbers correctly.
     const status =
-      headroom != null && headroom < 1 ? 'saturated'
-      : backlog > deviceCount * 3      ? 'draining'
-      : 'ok';
+      headroom != null && headroom < 1
+        ? 'saturated'
+        : backlog > deviceCount * 3
+          ? 'draining'
+          : 'ok';
 
     // Where poll time goes (#301): session setup (new vs reused) and the work.
     let phases: Record<string, unknown> | null = null;
     try {
-      const [p] = await query<{ new_connect: number | null; reused_connect: number | null; collect: number | null; device: number | null; reused_pct: number | null; n: number }>(
+      const [p] = await query<{
+        new_connect: number | null;
+        reused_connect: number | null;
+        collect: number | null;
+        device: number | null;
+        reused_pct: number | null;
+        n: number;
+      }>(
         `SELECT AVG(last_connect_ms) FILTER (WHERE NOT last_session_reused)::int AS new_connect,
                 AVG(last_connect_ms) FILTER (WHERE last_session_reused)::int AS reused_connect,
                 AVG(last_collect_ms)::int AS collect,
                 AVG(last_device_ms)::int AS device,
                 (100.0 * COUNT(*) FILTER (WHERE last_session_reused) / NULLIF(COUNT(*), 0))::int AS reused_pct,
                 COUNT(*)::int AS n
-           FROM device_poll_stats WHERE kind = 'fast' AND last_connect_ms IS NOT NULL`);
+           FROM device_poll_stats WHERE kind = 'fast' AND last_connect_ms IS NOT NULL`,
+      );
       phases = {
         persistent_sessions: persistentSessions(appSettings),
         pipelined_reads: appSettings['poller_pipelined_reads'] !== false,
-        open_sessions: procs.length ? procs.reduce((n, p) => n + p.sessions, 0) : pooledSessionCount(),
+        open_sessions: procs.length
+          ? procs.reduce((n, p) => n + p.sessions, 0)
+          : pooledSessionCount(),
         avg_connect_new_ms: p?.new_connect ?? null,
         avg_connect_reused_ms: p?.reused_connect ?? null,
         avg_collect_ms: p?.collect ?? null,
@@ -1201,7 +1422,11 @@ export class PollerService {
       workers: {
         // Every process's workers (#301); `processes` lists them when there are worker containers.
         concurrency: totalConcurrency,
-        processes: procs.map((p) => ({ role: p.role, concurrency: p.concurrency, sessions: p.sessions })),
+        processes: procs.map((p) => ({
+          role: p.role,
+          concurrency: p.concurrency,
+          sessions: p.sessions,
+        })),
         job_timeout_ms: JOB_TIMEOUT_MS,
         poll_interval_ms: POLL_INTERVAL_MS,
         /** The global fast-poll interval; sites and devices may override it (#261). */
@@ -1237,7 +1462,9 @@ export class PollerService {
     try {
       const { redis } = await import('../config/redis');
       await redis.set(key, String(ts), 'EX', gateTtlSeconds(intervalMs));
-    } catch { /* redis unavailable — timestamp not cached */ }
+    } catch {
+      /* redis unavailable — timestamp not cached */
+    }
   }
 
   private startWorkers(): void {
@@ -1252,8 +1479,8 @@ export class PollerService {
      * success is what makes "we never polled it" distinguishable from "we polled
      * it and it did not answer", which was previously impossible to tell apart.
      */
-    const run = (kind: string, fn: (data: PollJob) => Promise<void>) =>
-      async (job: Job<PollJob>) => {
+    const run =
+      (kind: string, fn: (data: PollJob) => Promise<void>) => async (job: Job<PollJob>) => {
         const started = Date.now();
         // Full syncs and MAC scans ride the fast queue; each keeps its own stats
         // row so a slow full sync doesn't overwrite the fast poll's (J1). The
@@ -1270,23 +1497,32 @@ export class PollerService {
           await withTimeout(promise, JOB_TIMEOUT_MS, `${kind} poll`, abortJob);
           await this.recordPollOutcome(job.data.deviceId, statKind, Date.now() - started, null);
         } catch (err) {
-          await this.recordPollOutcome(job.data.deviceId, statKind, Date.now() - started, (err as Error).message);
+          await this.recordPollOutcome(
+            job.data.deviceId,
+            statKind,
+            Date.now() - started,
+            (err as Error).message,
+          );
           throw err;
         }
       };
 
-    this.fastWorker = new Worker('poll-fast', run('fast', (d) => this.processPollJob(d)), workerOptions);
+    this.fastWorker = new Worker(
+      'poll-fast',
+      run('fast', (d) => this.processPollJob(d)),
+      workerOptions,
+    );
 
     this.slowWorker = new Worker(
       'poll-slow',
       run('slow', (d) => this.processSlowJob(d)),
-      { ...workerOptions, connection: createRedisConnection() }
+      { ...workerOptions, connection: createRedisConnection() },
     );
 
     this.logsWorker = new Worker(
       'poll-logs',
       run('logs', (d) => this.processLogsJob(d)),
-      { ...workerOptions, connection: createRedisConnection() }
+      { ...workerOptions, connection: createRedisConnection() },
     );
 
     // The one place a failed fast poll is handled (the job itself only throws).
@@ -1295,7 +1531,11 @@ export class PollerService {
     this.fastWorker.on('failed', (job, err) => {
       if (job) {
         this.handleDeviceFailure(job.data.deviceId, err.message).catch((e) =>
-          console.error(`[Poller] Could not record device ${job.data.deviceId} as failed:`, (e as Error).message));
+          console.error(
+            `[Poller] Could not record device ${job.data.deviceId} as failed:`,
+            (e as Error).message,
+          ),
+        );
       }
     });
   }
@@ -1337,7 +1577,13 @@ export class PollerService {
         await collector.collectFast();
       }
       ok = true;
-      this.notePhases(device.id, data.type === 'full' ? 'full' : 'fast', collector.timings, Date.now() - collectStarted, collector.deviceTime());
+      this.notePhases(
+        device.id,
+        data.type === 'full' ? 'full' : 'fast',
+        collector.timings,
+        Date.now() - collectStarted,
+        collector.deviceTime(),
+      );
 
       this.recordPollSuccess(device, prevStatus);
 
@@ -1352,9 +1598,23 @@ export class PollerService {
   }
 
   /** Phase timings of the poll that just ran, picked up by recordPollOutcome (#301). */
-  private phases = new Map<string, { connectMs: number; collectMs: number; deviceMs: number; reused: boolean }>();
-  private notePhases(deviceId: number, kind: string, t: { connectMs: number; reused: boolean }, collectMs: number, deviceMs: number): void {
-    this.phases.set(`${deviceId}:${kind}`, { connectMs: t.connectMs, collectMs, deviceMs: Math.min(deviceMs, collectMs), reused: t.reused });
+  private phases = new Map<
+    string,
+    { connectMs: number; collectMs: number; deviceMs: number; reused: boolean }
+  >();
+  private notePhases(
+    deviceId: number,
+    kind: string,
+    t: { connectMs: number; reused: boolean },
+    collectMs: number,
+    deviceMs: number,
+  ): void {
+    this.phases.set(`${deviceId}:${kind}`, {
+      connectMs: t.connectMs,
+      collectMs,
+      deviceMs: Math.min(deviceMs, collectMs),
+      reused: t.reused,
+    });
   }
 
   /** A poll reached the device: close any open outage, and announce a recovery. */
@@ -1368,22 +1628,29 @@ export class PollerService {
        SET came_back_online_at = NOW(),
            duration_seconds = EXTRACT(EPOCH FROM (NOW() - went_offline_at))::INTEGER
        WHERE device_id = $1 AND came_back_online_at IS NULL`,
-      [device.id]
+      [device.id],
     ).catch(() => {});
 
     // Device came online (first poll after add, or recovery from offline)
     if (prevStatus !== 'online') {
       // Intermittent devices (#168) only announce recovery if their
       // long-offline alert went out; otherwise they came and went quietly.
-      const d = device as DeviceRow & { intermittent?: boolean; intermittent_alerted_at?: string | null };
+      const d = device as DeviceRow & {
+        intermittent?: boolean;
+        intermittent_alerted_at?: string | null;
+      };
       if (recoveryAlert(!!d.intermittent, !!d.intermittent_alerted_at)) {
-        alertService.dispatch('device_online', `${device.name} is back online`, {
-          deviceId: device.id,
-          deviceName: device.name,
-        }).catch(() => {});
+        alertService
+          .dispatch('device_online', `${device.name} is back online`, {
+            deviceId: device.id,
+            deviceName: device.name,
+          })
+          .catch(() => {});
       }
       if (d.intermittent_alerted_at) {
-        query(`UPDATE devices SET intermittent_alerted_at = NULL WHERE id = $1`, [device.id]).catch(() => {});
+        query(`UPDATE devices SET intermittent_alerted_at = NULL WHERE id = $1`, [device.id]).catch(
+          () => {},
+        );
       }
     }
   }
@@ -1417,7 +1684,7 @@ export class PollerService {
   }
 
   private static aggregateSpectralRows(
-    rows: Record<string, string>[]
+    rows: Record<string, string>[],
   ): { freq: number; magn: number; peak: number }[] {
     const map = new Map<number, { sum: number; count: number; peak: number }>();
     for (const row of rows) {
@@ -1427,9 +1694,9 @@ export class PollerService {
       if (freq <= 0) continue;
       const existing = map.get(freq);
       if (existing) {
-        existing.sum   += magn;
+        existing.sum += magn;
         existing.count += 1;
-        existing.peak   = Math.max(existing.peak, peak);
+        existing.peak = Math.max(existing.peak, peak);
       } else {
         map.set(freq, { sum: magn, count: 1, peak });
       }
@@ -1450,7 +1717,7 @@ export class PollerService {
     // Fetch wireless interfaces for this device so we know which radios to scan
     const ifaces = await query<{ name: string }>(
       `SELECT name FROM wireless_interfaces WHERE device_id = $1 AND disabled = FALSE`,
-      [device.id]
+      [device.id],
     );
     if (ifaces.length === 0) return;
 
@@ -1464,9 +1731,11 @@ export class PollerService {
         await query(
           `INSERT INTO spectral_scan_data (device_id, interface_name, data, scan_type)
            VALUES ($1, $2, $3, 'scheduled')`,
-          [device.id, iface.name, JSON.stringify(aggregated)]
+          [device.id, iface.name, JSON.stringify(aggregated)],
         );
-        console.log(`[Poller] Spectral scan saved for ${device.name}/${iface.name} (${aggregated.length} freq points)`);
+        console.log(
+          `[Poller] Spectral scan saved for ${device.name}/${iface.name} (${aggregated.length} freq points)`,
+        );
       }
     } catch (err) {
       console.error(`[Poller] Spectral scan failed for ${device.name}:`, (err as Error).message);
@@ -1481,7 +1750,7 @@ export class PollerService {
 
     const ifaces = await query<{ name: string }>(
       `SELECT name FROM wireless_interfaces WHERE device_id = $1 AND disabled = FALSE`,
-      [device.id]
+      [device.id],
     );
     if (ifaces.length === 0) return;
 
@@ -1491,7 +1760,9 @@ export class PollerService {
       await collector.connect();
       const allRows: { iface: string; rows: Record<string, string>[] }[] = [];
       for (const iface of ifaces) {
-        const rows = await collector.scanWireless(iface.name).catch(() => [] as Record<string, string>[]);
+        const rows = await collector
+          .scanWireless(iface.name)
+          .catch(() => [] as Record<string, string>[]);
         if (rows.length > 0) allRows.push({ iface: iface.name, rows });
       }
       if (allRows.length === 0) return;
@@ -1500,7 +1771,7 @@ export class PollerService {
       const aggregated = aggregateAPScanRows(allRows, lookupVendor);
       await query(
         `INSERT INTO ap_scan_data (device_id, data, scan_type) VALUES ($1, $2, 'scheduled')`,
-        [device.id, JSON.stringify(aggregated)]
+        [device.id, JSON.stringify(aggregated)],
       );
       console.log(`[Poller] AP scan saved for ${device.name} (${aggregated.length} networks)`);
     } catch (err) {
@@ -1547,10 +1818,12 @@ export class PollerService {
         void this.emitForDevice('device:updated', { deviceId: device.id }, device.id);
       }
     } catch (err) {
-      console.error(`[Poller] Config health audit failed for ${device.name}:`, (err as Error).message);
+      console.error(
+        `[Poller] Config health audit failed for ${device.name}:`,
+        (err as Error).message,
+      );
     }
   }
-
 
   /**
    * Warn about certificates at or past their expiry (#143).
@@ -1566,16 +1839,20 @@ export class PollerService {
 
     const warnDays = rule.threshold ?? 14;
     const rows = await query<{
-      device_id: number; device_name: string; name: string;
-      common_name: string | null; is_authority: boolean;
-      invalid_after: string | null; invalid_before: string | null;
+      device_id: number;
+      device_name: string;
+      name: string;
+      common_name: string | null;
+      is_authority: boolean;
+      invalid_after: string | null;
+      invalid_before: string | null;
       revoked: boolean;
     }>(
       `SELECT c.device_id, d.name AS device_name, c.name, c.common_name,
               c.is_authority, c.invalid_after, c.invalid_before, c.revoked
          FROM device_certificates c
          JOIN devices d ON d.id = c.device_id
-        WHERE c.invalid_after IS NOT NULL`
+        WHERE c.invalid_after IS NOT NULL`,
     );
 
     const now = new Date();
@@ -1591,18 +1868,20 @@ export class PollerService {
 
       const what = describeCert(
         { name: r.name, common_name: r.common_name, is_authority: r.is_authority },
-        verdict
+        verdict,
       );
-      await alertService.dispatch('cert_expiry', `${r.device_name}: ${what}`, {
-        deviceId: r.device_id,
-        deviceName: r.device_name,
-        // Per certificate, not per device — two expiring certificates are two
-        // things to fix.
-        cooldownKey: `cert_expiry:${r.device_id}:${r.name}`,
-        details: r.invalid_after
-          ? `Expires ${new Date(r.invalid_after).toISOString().slice(0, 10)}`
-          : undefined,
-      }).catch(() => {});
+      await alertService
+        .dispatch('cert_expiry', `${r.device_name}: ${what}`, {
+          deviceId: r.device_id,
+          deviceName: r.device_name,
+          // Per certificate, not per device — two expiring certificates are two
+          // things to fix.
+          cooldownKey: `cert_expiry:${r.device_id}:${r.name}`,
+          details: r.invalid_after
+            ? `Expires ${new Date(r.invalid_after).toISOString().slice(0, 10)}`
+            : undefined,
+        })
+        .catch(() => {});
 
       // Logged as well as dispatched. AlertService records history only when a
       // channel actually delivers, so on an install with no channels configured
@@ -1657,20 +1936,29 @@ export class PollerService {
          WHERE from_device_id = $1
            AND to_device_id IS NULL
            AND neighbor_address IS NOT NULL`,
-        [device.id]
+        [device.id],
       );
       for (const nb of unresolved) {
-        alertService.dispatch('device_discovered',
-          `Unmanaged device discovered: ${nb.neighbor_identity || nb.neighbor_address} (${nb.neighbor_address})`,
-          {
-            details: nb.neighbor_identity || undefined,
-            // Per site: the same address at two customers is two devices (P2-19).
-            cooldownKey: `device_discovered:${(device as { site_id?: number | null }).site_id ?? 0}:${nb.neighbor_address}`,
-          }
-        ).catch(() => {});
+        alertService
+          .dispatch(
+            'device_discovered',
+            `Unmanaged device discovered: ${nb.neighbor_identity || nb.neighbor_address} (${nb.neighbor_address})`,
+            {
+              details: nb.neighbor_identity || undefined,
+              // Per site: the same address at two customers is two devices (P2-19).
+              cooldownKey: `device_discovered:${(device as { site_id?: number | null }).site_id ?? 0}:${nb.neighbor_address}`,
+            },
+          )
+          .catch(() => {});
       }
       ok = true;
-      this.notePhases(device.id, 'slow', collector.timings, Date.now() - collectStarted, collector.deviceTime());
+      this.notePhases(
+        device.id,
+        'slow',
+        collector.timings,
+        Date.now() - collectStarted,
+        collector.deviceTime(),
+      );
     } catch (err) {
       // A slow poll that ran out of time was cancelled, which says nothing
       // about whether the device is up; the fast poll decides that. Marking it
@@ -1701,7 +1989,13 @@ export class PollerService {
       const collectStarted = Date.now();
       const stored = await collector.collectLogs();
       ok = true;
-      this.notePhases(device.id, 'logs', collector.timings, Date.now() - collectStarted, collector.deviceTime());
+      this.notePhases(
+        device.id,
+        'logs',
+        collector.timings,
+        Date.now() - collectStarted,
+        collector.deviceTime(),
+      );
       void this.emitForDevice('events:updated', { deviceId: device.id }, device.id);
 
       // Alert on the lines this poll actually stored, not on whatever looks
@@ -1711,19 +2005,26 @@ export class PollerService {
       const recent = logAlertCandidates(stored);
       for (const ev of recent) {
         if (ev.severity === 'error') {
-          alertService.dispatch('log_error', ev.message, {
-            deviceId: device.id,
-            deviceName: device.name,
-          }).catch(() => {});
+          alertService
+            .dispatch('log_error', ev.message, {
+              deviceId: device.id,
+              deviceName: device.name,
+            })
+            .catch(() => {});
         } else if (ev.severity === 'warning') {
-          alertService.dispatch('log_warning', ev.message, {
-            deviceId: device.id,
-            deviceName: device.name,
-          }).catch(() => {});
+          alertService
+            .dispatch('log_warning', ev.message, {
+              deviceId: device.id,
+              deviceName: device.name,
+            })
+            .catch(() => {});
         }
       }
     } catch (err) {
-      console.error(`[PollerService] Log collection failed for device ${device.id} (${device.name}):`, (err as Error).message);
+      console.error(
+        `[PollerService] Log collection failed for device ${device.id} (${device.name}):`,
+        (err as Error).message,
+      );
       throw err; // recorded as a failed log poll (J1)
     } finally {
       collector.release(ok);
@@ -1740,26 +2041,36 @@ export class PollerService {
     try {
       await this.recordDeviceFailure(deviceId, message);
     } catch (err) {
-      console.error(`[Poller] Failed to record device ${deviceId} as offline:`, (err as Error).message);
+      console.error(
+        `[Poller] Failed to record device ${deviceId} as offline:`,
+        (err as Error).message,
+      );
     }
   }
 
   private async recordDeviceFailure(deviceId: number, message: string): Promise<void> {
     const device = await this.getDevice(deviceId);
     const prevStatus = device?.status;
-    await query(`UPDATE devices SET status = 'offline', updated_at = NOW() WHERE id = $1`, [deviceId]);
+    await query(`UPDATE devices SET status = 'offline', updated_at = NOW() WHERE id = $1`, [
+      deviceId,
+    ]);
 
     // Normal devices alert when they go offline. Intermittent ones (#168) alert
     // only once they have been gone longer than their limit.
-    const d = device as (DeviceRow & {
-      intermittent?: boolean; intermittent_alert_after_min?: number; intermittent_alerted_at?: string | null;
-    }) | null;
+    const d = device as
+      | (DeviceRow & {
+          intermittent?: boolean;
+          intermittent_alert_after_min?: number;
+          intermittent_alerted_at?: string | null;
+        })
+      | null;
     let offlineSince: Date | null = null;
     if (d?.intermittent && prevStatus === 'offline') {
       const [open] = await query<{ went_offline_at: string }>(
         `SELECT went_offline_at FROM device_availability
           WHERE device_id = $1 AND came_back_online_at IS NULL
-          ORDER BY went_offline_at DESC LIMIT 1`, [deviceId]
+          ORDER BY went_offline_at DESC LIMIT 1`,
+        [deviceId],
       ).catch(() => []);
       offlineSince = open ? new Date(open.went_offline_at) : null;
     }
@@ -1772,26 +2083,38 @@ export class PollerService {
       now: new Date(),
     });
     if (action === 'alert') {
-      alertService.dispatch('device_offline', `${device?.name ?? `Device #${deviceId}`} is offline: ${message}`, {
-        deviceId,
-        deviceName: device?.name,
-      }).catch(() => {});
+      alertService
+        .dispatch(
+          'device_offline',
+          `${device?.name ?? `Device #${deviceId}`} is offline: ${message}`,
+          {
+            deviceId,
+            deviceName: device?.name,
+          },
+        )
+        .catch(() => {});
     } else if (action === 'alert-long-offline' && offlineSince) {
       const mins = (Date.now() - offlineSince.getTime()) / 60000;
-      alertService.dispatch('device_offline',
-        `${device?.name ?? `Device #${deviceId}`} has been offline for ${describeDuration(mins)}. ` +
-        'It is marked as expected to drop out, but not for this long.', {
-          deviceId,
-          deviceName: device?.name,
-        }).catch(() => {});
-      await query(`UPDATE devices SET intermittent_alerted_at = NOW() WHERE id = $1`, [deviceId]).catch(() => {});
+      alertService
+        .dispatch(
+          'device_offline',
+          `${device?.name ?? `Device #${deviceId}`} has been offline for ${describeDuration(mins)}. ` +
+            'It is marked as expected to drop out, but not for this long.',
+          {
+            deviceId,
+            deviceName: device?.name,
+          },
+        )
+        .catch(() => {});
+      await query(`UPDATE devices SET intermittent_alerted_at = NOW() WHERE id = $1`, [
+        deviceId,
+      ]).catch(() => {});
     }
     if (prevStatus !== 'offline') {
       // Open a new availability outage row
-      query(
-        `INSERT INTO device_availability (device_id, went_offline_at) VALUES ($1, NOW())`,
-        [deviceId]
-      ).catch(() => {});
+      query(`INSERT INTO device_availability (device_id, went_offline_at) VALUES ($1, NOW())`, [
+        deviceId,
+      ]).catch(() => {});
     }
     // Mark all clients for this device inactive — updateClients() never ran because connect() failed.
     await query(`UPDATE clients SET active = FALSE WHERE device_id = $1`, [deviceId]);
@@ -1807,11 +2130,11 @@ export class PollerService {
           .intField('total_clients', 0)
           .intField('wireless_clients', 0)
           .intField('wired_clients', 0)
-          .timestamp(new Date())
+          .timestamp(new Date()),
       );
       // Recompute global deduplicated count after marking this device's clients inactive.
       const dedupedRows = await query<{ count: string }>(
-        `SELECT COUNT(DISTINCT mac_address) AS count FROM clients WHERE active = TRUE`
+        `SELECT COUNT(DISTINCT mac_address) AS count FROM clients WHERE active = TRUE`,
       );
       const globalTotal = parseInt(dedupedRows[0]?.count || '0', 10);
       writeApi.writePoint(
@@ -1819,7 +2142,7 @@ export class PollerService {
           .tag('device_id', '_global')
           .tag('device_name', '_global')
           .intField('total_clients', globalTotal)
-          .timestamp(new Date())
+          .timestamp(new Date()),
       );
       await writeApi.flush().catch(() => {});
     }
@@ -1844,14 +2167,16 @@ export class PollerService {
 
         const hasUpdate = Boolean(
           updateAvailable({
-            installed: installedVersion, latest: latestVersion, status: statusText,
-          })
+            installed: installedVersion,
+            latest: latestVersion,
+            status: statusText,
+          }),
         );
 
         // Read current flag before updating so we can detect first-discovery
         const current = await query<{ firmware_update_available: boolean }>(
           `SELECT firmware_update_available FROM devices WHERE id = $1`,
-          [device.id]
+          [device.id],
         );
         const wasAvailable = current[0]?.firmware_update_available ?? false;
 
@@ -1861,7 +2186,7 @@ export class PollerService {
                latest_ros_version = $2,
                updated_at = NOW()
            WHERE id = $3`,
-          [hasUpdate, latestVersion || null, device.id]
+          [hasUpdate, latestVersion || null, device.id],
         );
 
         if (hasUpdate) {
@@ -1871,12 +2196,18 @@ export class PollerService {
             const msg = latestVersion
               ? `${device.name} has a firmware update available: ${latestVersion}`
               : `${device.name} has a firmware update available`;
-            alertService.dispatch('firmware_update_available', msg, {
-              deviceId: device.id,
-              deviceName: device.name,
-              details: latestVersion ? `Current: ${installedVersion}  →  Latest: ${latestVersion}` : undefined,
-            }).catch(() => {});
-            console.log(`[Poller] Firmware update detected for ${device.name}: ${installedVersion} → ${latestVersion}`);
+            alertService
+              .dispatch('firmware_update_available', msg, {
+                deviceId: device.id,
+                deviceName: device.name,
+                details: latestVersion
+                  ? `Current: ${installedVersion}  →  Latest: ${latestVersion}`
+                  : undefined,
+              })
+              .catch(() => {});
+            console.log(
+              `[Poller] Firmware update detected for ${device.name}: ${installedVersion} → ${latestVersion}`,
+            );
           }
         } else if (wasAvailable) {
           // Update was installed — clear the flag and notify the UI
@@ -1884,15 +2215,17 @@ export class PollerService {
         }
 
         // RouterBOOT check — reuse the existing connection
-        const rbInfo = await collector.checkRouterboardUpgrade().catch(() => ({ upgradeAvailable: false, upgradeFirmware: '', currentFirmware: '' }));
+        const rbInfo = await collector
+          .checkRouterboardUpgrade()
+          .catch(() => ({ upgradeAvailable: false, upgradeFirmware: '', currentFirmware: '' }));
         const rbCurrentRows = await query<{ routerboard_upgrade_available: boolean }>(
           `SELECT routerboard_upgrade_available FROM devices WHERE id = $1`,
-          [device.id]
+          [device.id],
         );
         const rbWasAvailable = rbCurrentRows[0]?.routerboard_upgrade_available ?? false;
         await query(
           `UPDATE devices SET routerboard_upgrade_available = $1, upgrade_firmware_version = $2, updated_at = NOW() WHERE id = $3`,
-          [rbInfo.upgradeAvailable, rbInfo.upgradeFirmware || null, device.id]
+          [rbInfo.upgradeAvailable, rbInfo.upgradeFirmware || null, device.id],
         );
         if (rbInfo.upgradeAvailable) {
           void this.emitForDevice('device:updated', { deviceId: device.id }, device.id);
@@ -1900,12 +2233,18 @@ export class PollerService {
             const rbMsg = rbInfo.upgradeFirmware
               ? `${device.name} has a RouterBOOT upgrade available: ${rbInfo.upgradeFirmware}`
               : `${device.name} has a RouterBOOT upgrade available`;
-            alertService.dispatch('firmware_update_available', rbMsg, {
-              deviceId: device.id,
-              deviceName: device.name,
-              details: rbInfo.upgradeFirmware ? `Current: ${rbInfo.currentFirmware}  →  Upgrade: ${rbInfo.upgradeFirmware}` : undefined,
-            }).catch(() => {});
-            console.log(`[Poller] RouterBOOT upgrade detected for ${device.name}: ${rbInfo.currentFirmware} → ${rbInfo.upgradeFirmware}`);
+            alertService
+              .dispatch('firmware_update_available', rbMsg, {
+                deviceId: device.id,
+                deviceName: device.name,
+                details: rbInfo.upgradeFirmware
+                  ? `Current: ${rbInfo.currentFirmware}  →  Upgrade: ${rbInfo.upgradeFirmware}`
+                  : undefined,
+              })
+              .catch(() => {});
+            console.log(
+              `[Poller] RouterBOOT upgrade detected for ${device.name}: ${rbInfo.currentFirmware} → ${rbInfo.upgradeFirmware}`,
+            );
           }
         } else if (rbWasAvailable) {
           void this.emitForDevice('device:updated', { deviceId: device.id }, device.id);

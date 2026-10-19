@@ -32,16 +32,16 @@ is actually plugged in. Link those by hand if you want them on the map.
 
 LLDP isn't always point to point either: RouterOS bridges forward it, so a device can hear an
 unmanaged switch through the rest of the network as if it were cabled to it. A switch says which
-of its own ports each announcement left from. When two managed devices report the *same* port of
+of its own ports each announcement left from. When two managed devices report the _same_ port of
 the same unmanaged switch, only one can be the cable: the report from a port that faces no other
 managed device is kept, and the one heard on an uplink is dropped (discussion #85). Reports that
 name different ports can both be real cables and are left alone, as are ones where it can't
 tell. A link that's still wrong can be [hidden](#hiding-a-discovered-link).
 
 !!! note "This can be switched off"
-    Neighbour discovery is one round trip per device per cycle. **Settings → Polling →
-    Collectors** can disable it, after which the map stops updating and new devices are no
-    longer discovered automatically.
+Neighbour discovery is one round trip per device per cycle. **Settings → Polling →
+Collectors** can disable it, after which the map stops updating and new devices are no
+longer discovered automatically.
 
 ## Spanning tree
 
@@ -133,7 +133,7 @@ to it, and the access point it's associated with. It is drawn where it actually 
 2. a switch port with no other device behind it (an access port);
 3. behind an unmanaged neighbour, when it's learned on a port facing a switch the platform
    doesn't manage (one seen over LLDP);
-4. otherwise the device that saw it, marked *port not known*.
+4. otherwise the device that saw it, marked _port not known_.
 
 Only active clients are shown. The setting is remembered in your browser.
 
@@ -169,7 +169,7 @@ to type the port at each end and a label, shown on the link as `ether5 ↔ sfp1 
 one, use the × on its label or click it and choose **Remove**. All of them are also listed under
 **Links drawn by hand** below the map, each with a **Remove** button.
 
-A neighbour you linked stays on the map, marked *no longer seen by discovery*, if discovery stops
+A neighbour you linked stays on the map, marked _no longer seen by discovery_, if discovery stops
 seeing it, so the link can still be removed. Links drawn before this release were carried over.
 
 ## Hiding a discovered link
@@ -190,17 +190,17 @@ equipment the platform does not manage, or it genuinely has no neighbours.
 
 ## API
 
-| Method | Path | Purpose |
-|---|---|---|
-| `GET` | `/api/topology` | The map: devices, links, spanning tree, your nodes, hand-drawn links (`handLinks`), the saved arrangement (`layout`) and hidden links (`hiddenLinks`). Add `?clients=1` for client devices |
-| `POST` | `/api/topology/nodes` | Add a node: `name`, `kind`, optional `address` and `notes` |
-| `PUT` / `DELETE` | `/api/topology/nodes/:id` | Edit or delete a node (its links go with it) |
-| `POST` | `/api/topology/hand-links` | Draw a link: `{"a": {"kind": "device", "ref": 1}, "b": {"kind": "node", "ref": 4}, "label": "WAN"}`. `kind` is `device`, `node` or `external` (a neighbour's map id, `ext-…`, with an optional `name`) |
-| `PUT` | `/api/topology/hand-links/:id` | Ports at each end and the label of a hand-drawn link: `a_port`, `b_port`, `label` (null clears) |
-| `DELETE` | `/api/topology/hand-links/:id` | Remove a hand-drawn link |
-| `PUT` | `/api/topology/neighbours/:id` | Name and type for a neighbour discovery found: `{"name": "…", "kind": "computer"}`; both null go back to discovery's |
-| `POST` / `DELETE` | `/api/topology/manual-links` | The older form, for scripts: a link between two managed devices (`from_device_id`, `to_device_id`) |
-| `POST` | `/api/topology/hidden-links` | Hide a discovered link: `{"key": "cable:…", "label": "…"}`, the link's id from the map |
-| `DELETE` | `/api/topology/hidden-links?key=…` | Show a hidden link again |
-| `PUT` | `/api/topology/layout` | Save card positions (`positions: {id: {x, y}}`), link attachment sides (`anchors: {linkId: {sourceHandle, targetHandle}}`, `t`/`b`/`l`/`r`, or `null` for automatic) and link colours (`colors: {linkId: "#rrggbb" or null}`); merged into what's saved |
-| `POST` | `/api/topology/layout/reset` | Forget the arrangement of the given cards (`keys`) and links (`edges`) |
+| Method            | Path                               | Purpose                                                                                                                                                                                                                                                 |
+| ----------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`             | `/api/topology`                    | The map: devices, links, spanning tree, your nodes, hand-drawn links (`handLinks`), the saved arrangement (`layout`) and hidden links (`hiddenLinks`). Add `?clients=1` for client devices                                                              |
+| `POST`            | `/api/topology/nodes`              | Add a node: `name`, `kind`, optional `address` and `notes`                                                                                                                                                                                              |
+| `PUT` / `DELETE`  | `/api/topology/nodes/:id`          | Edit or delete a node (its links go with it)                                                                                                                                                                                                            |
+| `POST`            | `/api/topology/hand-links`         | Draw a link: `{"a": {"kind": "device", "ref": 1}, "b": {"kind": "node", "ref": 4}, "label": "WAN"}`. `kind` is `device`, `node` or `external` (a neighbour's map id, `ext-…`, with an optional `name`)                                                  |
+| `PUT`             | `/api/topology/hand-links/:id`     | Ports at each end and the label of a hand-drawn link: `a_port`, `b_port`, `label` (null clears)                                                                                                                                                         |
+| `DELETE`          | `/api/topology/hand-links/:id`     | Remove a hand-drawn link                                                                                                                                                                                                                                |
+| `PUT`             | `/api/topology/neighbours/:id`     | Name and type for a neighbour discovery found: `{"name": "…", "kind": "computer"}`; both null go back to discovery's                                                                                                                                    |
+| `POST` / `DELETE` | `/api/topology/manual-links`       | The older form, for scripts: a link between two managed devices (`from_device_id`, `to_device_id`)                                                                                                                                                      |
+| `POST`            | `/api/topology/hidden-links`       | Hide a discovered link: `{"key": "cable:…", "label": "…"}`, the link's id from the map                                                                                                                                                                  |
+| `DELETE`          | `/api/topology/hidden-links?key=…` | Show a hidden link again                                                                                                                                                                                                                                |
+| `PUT`             | `/api/topology/layout`             | Save card positions (`positions: {id: {x, y}}`), link attachment sides (`anchors: {linkId: {sourceHandle, targetHandle}}`, `t`/`b`/`l`/`r`, or `null` for automatic) and link colours (`colors: {linkId: "#rrggbb" or null}`); merged into what's saved |
+| `POST`            | `/api/topology/layout/reset`       | Forget the arrangement of the given cards (`keys`) and links (`edges`)                                                                                                                                                                                  |

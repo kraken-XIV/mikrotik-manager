@@ -1,59 +1,67 @@
 version: 2
 updates:
-  # Frontend npm dependencies
-  - package-ecosystem: "npm"
-    directory: "/frontend"
+  # Repo-root npm dependencies (Prettier, husky, lint-staged)
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 5
+
+  # Frontend npm dependencies
+  - package-ecosystem: 'npm'
+    directory: '/frontend'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
     open-pull-requests-limit: 5
 
   # Backend npm dependencies
-  - package-ecosystem: "npm"
-    directory: "/backend"
+  - package-ecosystem: 'npm'
+    directory: '/backend'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     open-pull-requests-limit: 5
 
   # Docker dependencies (docker-compose.yml base images)
-  - package-ecosystem: "docker"
-    directory: "/backend"
+  - package-ecosystem: 'docker'
+    directory: '/backend'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
 
-  - package-ecosystem: "docker"
-    directory: "/nginx"
+  - package-ecosystem: 'docker'
+    directory: '/nginx'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
 
   # Images in docker-compose.yml, pinned by digest (outside review O2).
   # Regenerate docker-compose.ghcr.yml in the same PR: npm run compose:generate.
-  - package-ecosystem: "docker-compose"
-    directory: "/"
+  - package-ecosystem: 'docker-compose'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     # Digest and minor/patch updates only for the databases. A major version
     # can't be taken by bumping the tag: Postgres 18 can't open a 15 data
     # directory without pg_upgrade (and moved its data path), and Redis and
     # InfluxDB majors change behaviour. Those are planned upgrades, not PRs.
     ignore:
-      - dependency-name: "postgres"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "redis"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: 'postgres'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'redis'
+        update-types: ['version-update:semver-major']
       # InfluxDB minors too: 2.8 migrates its metadata one way, so going back
       # needs `influxd downgrade`. Held at 2.7 until there's a reason to move
       # (#181); 2.7.x patch updates still come through.
-      - dependency-name: "influxdb"
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: 'influxdb'
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
 
   # GitHub Actions workflow dependencies (pinned by commit SHA)
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'

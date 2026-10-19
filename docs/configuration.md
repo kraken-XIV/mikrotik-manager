@@ -6,24 +6,24 @@
 
 Set in `.env` at the project root. Changing any of these requires a container restart.
 
-| Variable | Default | Description |
-|---|---|---|
-| `JWT_SECRET` | *auto-generated & persisted* | Signs session tokens. Set it to pin your own value. |
-| `ENCRYPTION_KEY` | *auto-generated & persisted* | Encrypts device passwords at rest. Set it to pin your own value. |
-| `CORS_ORIGIN` | *localhost defaults* | Comma-separated browser origins allowed to call the API. **Required in production.** |
-| `DB_PASSWORD` | `mikrotik_secure_pw` | PostgreSQL password |
-| `INFLUXDB_TOKEN` | `mytoken123456789` | InfluxDB admin token |
-| `INFLUXDB_ORG` | `mikrotik-manager` | InfluxDB organization |
-| `INFLUXDB_BUCKET` | `metrics` | InfluxDB bucket for time-series data |
-| `INFLUXDB_ADMIN_PASSWORD` | `admin_password_123` | InfluxDB admin UI password |
-| `REDIS_PASSWORD` | *none* | Makes Redis require a password. Can be set or changed at any time |
-| `PASSWORD_LOGIN` | `true` | `false` makes sign-in SSO-only. See [SSO-only sign-in](sso-oidc.md#behaviour-and-safety) |
-| `HTTP_PORT` | `80` | Host port for HTTP (redirects to HTTPS, or serves the app with `TLS_MODE=proxy`) |
-| `HTTPS_PORT` | `443` | Host port for HTTPS |
-| `BIND_ADDRESS` | *every interface* | Host address the web UI is published on. See [Network exposure](#network-exposure). |
-| `NETFLOW_BIND_ADDRESS` | *every interface* | Host address the NetFlow collector (UDP 2055) is published on. |
-| `TLS_MODE` | `https` | `proxy` when your own reverse proxy terminates TLS. See [Behind a reverse proxy](#behind-a-reverse-proxy). |
-| `TRUSTED_PROXIES` | *none* | Your reverse proxy's address or range, so the client address it forwards is believed. |
+| Variable                  | Default                      | Description                                                                                                |
+| ------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `JWT_SECRET`              | _auto-generated & persisted_ | Signs session tokens. Set it to pin your own value.                                                        |
+| `ENCRYPTION_KEY`          | _auto-generated & persisted_ | Encrypts device passwords at rest. Set it to pin your own value.                                           |
+| `CORS_ORIGIN`             | _localhost defaults_         | Comma-separated browser origins allowed to call the API. **Required in production.**                       |
+| `DB_PASSWORD`             | `mikrotik_secure_pw`         | PostgreSQL password                                                                                        |
+| `INFLUXDB_TOKEN`          | `mytoken123456789`           | InfluxDB admin token                                                                                       |
+| `INFLUXDB_ORG`            | `mikrotik-manager`           | InfluxDB organization                                                                                      |
+| `INFLUXDB_BUCKET`         | `metrics`                    | InfluxDB bucket for time-series data                                                                       |
+| `INFLUXDB_ADMIN_PASSWORD` | `admin_password_123`         | InfluxDB admin UI password                                                                                 |
+| `REDIS_PASSWORD`          | _none_                       | Makes Redis require a password. Can be set or changed at any time                                          |
+| `PASSWORD_LOGIN`          | `true`                       | `false` makes sign-in SSO-only. See [SSO-only sign-in](sso-oidc.md#behaviour-and-safety)                   |
+| `HTTP_PORT`               | `80`                         | Host port for HTTP (redirects to HTTPS, or serves the app with `TLS_MODE=proxy`)                           |
+| `HTTPS_PORT`              | `443`                        | Host port for HTTPS                                                                                        |
+| `BIND_ADDRESS`            | _every interface_            | Host address the web UI is published on. See [Network exposure](#network-exposure).                        |
+| `NETFLOW_BIND_ADDRESS`    | _every interface_            | Host address the NetFlow collector (UDP 2055) is published on.                                             |
+| `TLS_MODE`                | `https`                      | `proxy` when your own reverse proxy terminates TLS. See [Behind a reverse proxy](#behind-a-reverse-proxy). |
+| `TRUSTED_PROXIES`         | _none_                       | Your reverse proxy's address or range, so the client address it forwards is believed.                      |
 
 > Never commit `.env`. It is already listed in `.gitignore`.
 
@@ -100,7 +100,7 @@ connections are checked again every minute and closed when their session has end
 terminal re-checks the account before it opens a shell. Before 0.24.46 a session kept its
 original role and access for its full 24 hours, whatever happened to the account.
 
-An admin who resets their *own* password from **Settings → Users** is signed out and
+An admin who resets their _own_ password from **Settings → Users** is signed out and
 signs in again with the new one. API tokens are separate and unaffected: revoke those
 under **Settings → Automation → API Tokens**.
 
@@ -169,11 +169,11 @@ still under an older key is re-encrypted with the current one.
 `ENCRYPTION_KEY_PREVIOUS` takes a comma-separated list if you have more than one old key.
 
 !!! danger "Changing `ENCRYPTION_KEY` without `ENCRYPTION_KEY_PREVIOUS`"
-    Before 0.24.46 this silently made every stored credential unreadable. Now the manager
-    notices at startup: it shows **Encryption key missing** to admins, logs it, and refuses to
-    save new credentials, so nothing is written under the wrong key. Put the original key back
-    (in `ENCRYPTION_KEY`, or in `ENCRYPTION_KEY_PREVIOUS`) and restart, and everything reads
-    again. Don't re-enter device passwords first.
+Before 0.24.46 this silently made every stored credential unreadable. Now the manager
+notices at startup: it shows **Encryption key missing** to admins, logs it, and refuses to
+save new credentials, so nothing is written under the wrong key. Put the original key back
+(in `ENCRYPTION_KEY`, or in `ENCRYPTION_KEY_PREVIOUS`) and restart, and everything reads
+again. Don't re-enter device passwords first.
 
 The same happens if the key is lost with the `app_data` volume, for example after moving the
 manager to a new host with only a database dump: restore `secrets.json` and restart.
@@ -189,14 +189,14 @@ if you'd rather back up by hand.
 
 These are edited in the Settings UI and take effect without a restart:
 
-| Area | Settings | Documented in |
-|---|---|---|
-| Change Guard | `change_guard_enabled`, `change_guard_mode`, `change_guard_timeout_sec` | [Change Guard](change-guard.md) |
-| Config Health | `config_health_enabled`, `config_health_interval_min` | [Change Guard](change-guard.md) |
-| Polling | fast / slow / log intervals, MAC scan, spectral and AP scan cadence | Settings → Polling |
-| Config snapshots | `config_snapshot_enabled`, `config_snapshot_interval_min`, `config_snapshot_retention` | Settings → Config History |
-| NetFlow | collector address and port, version, retention, top-N clients | Settings → NetFlow |
-| Alerting | rules, thresholds, cooldowns, channels | [Alerting](alerting.md) |
+| Area             | Settings                                                                               | Documented in                   |
+| ---------------- | -------------------------------------------------------------------------------------- | ------------------------------- |
+| Change Guard     | `change_guard_enabled`, `change_guard_mode`, `change_guard_timeout_sec`                | [Change Guard](change-guard.md) |
+| Config Health    | `config_health_enabled`, `config_health_interval_min`                                  | [Change Guard](change-guard.md) |
+| Polling          | fast / slow / log intervals, MAC scan, spectral and AP scan cadence                    | Settings → Polling              |
+| Config snapshots | `config_snapshot_enabled`, `config_snapshot_interval_min`, `config_snapshot_retention` | Settings → Config History       |
+| NetFlow          | collector address and port, version, retention, top-N clients                          | Settings → NetFlow              |
+| Alerting         | rules, thresholds, cooldowns, channels                                                 | [Alerting](alerting.md)         |
 
 ## Network exposure
 
@@ -287,11 +287,11 @@ CORS_ORIGIN=https://mtm.example.com
 
 Then `docker compose up -d`.
 
-| Variable | Default | What it does |
-|---|---|---|
-| `TLS_MODE` | `https` | `proxy` serves the app over plain HTTP on `HTTP_PORT` instead of redirecting it to HTTPS. HTTPS on `HTTPS_PORT` keeps working with the manager's own certificate. |
-| `TRUSTED_PROXIES` | *none* | Your proxy's address or range (CIDR), comma-separated, IPv4 or IPv6. Only requests from these addresses may say who the client is (`X-Forwarded-For`) and that the browser used HTTPS (`X-Forwarded-Proto`). |
-| `CORS_ORIGIN` | | The address people type in the browser, as the proxy serves it. The browser sends it with every request, and the API refuses origins not on the list. |
+| Variable          | Default | What it does                                                                                                                                                                                                 |
+| ----------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `TLS_MODE`        | `https` | `proxy` serves the app over plain HTTP on `HTTP_PORT` instead of redirecting it to HTTPS. HTTPS on `HTTPS_PORT` keeps working with the manager's own certificate.                                            |
+| `TRUSTED_PROXIES` | _none_  | Your proxy's address or range (CIDR), comma-separated, IPv4 or IPv6. Only requests from these addresses may say who the client is (`X-Forwarded-For`) and that the browser used HTTPS (`X-Forwarded-Proto`). |
+| `CORS_ORIGIN`     |         | The address people type in the browser, as the proxy serves it. The browser sends it with every request, and the API refuses origins not on the list.                                                        |
 
 Point the proxy at `http://<manager host>:<HTTP_PORT>`, and turn on WebSocket support: live
 updates and the device terminal run over `/socket.io/`.
@@ -422,22 +422,21 @@ cosign verify ghcr.io/2gt-media-group-llc/mikrotik-manager-backend:latest \
 Base images and the database images are pinned by digest, so a tag moved upstream can't change
 what's built or run until an update is reviewed.
 
-
 ## Dark Site Mode
 
 **Settings → Dark Site Mode** lists every feature that makes a request to the
 internet on its own, with where each one goes and what stops working without it. Each can be
 turned off individually. All are **on** by default.
 
-| Feature | Destination | When off |
-|---|---|---|
-| Maps and address lookup | `*.tile.openstreetmap.org`, `nominatim.openstreetmap.org` | No location maps; addresses are kept as text |
-| Platform update check | `raw.githubusercontent.com` | The dashboard does not report newer releases |
-| Daily RouterOS update check | MikroTik's update servers, contacted **by each device** | Devices are not asked daily; the on-demand button still works |
-| RouterOS changelogs | `download.mikrotik.com` | Release notes are not shown |
-| MAC vendor database download | `standards-oui.ieee.org` | The vendor list is not refreshed; an existing copy is still used |
-| RouterOS vulnerability list | `services.nvd.nist.gov`, `www.cisa.gov` | The Security page doesn't list known CVEs for the fleet's versions |
-| Documentation link | `2gt-media-group-llc.github.io` | The top-bar documentation button is hidden |
+| Feature                      | Destination                                               | When off                                                           |
+| ---------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------ |
+| Maps and address lookup      | `*.tile.openstreetmap.org`, `nominatim.openstreetmap.org` | No location maps; addresses are kept as text                       |
+| Platform update check        | `raw.githubusercontent.com`                               | The dashboard does not report newer releases                       |
+| Daily RouterOS update check  | MikroTik's update servers, contacted **by each device**   | Devices are not asked daily; the on-demand button still works      |
+| RouterOS changelogs          | `download.mikrotik.com`                                   | Release notes are not shown                                        |
+| MAC vendor database download | `standards-oui.ieee.org`                                  | The vendor list is not refreshed; an existing copy is still used   |
+| RouterOS vulnerability list  | `services.nvd.nist.gov`, `www.cisa.gov`                   | The Security page doesn't list known CVEs for the fleet's versions |
+| Documentation link           | `2gt-media-group-llc.github.io`                           | The top-bar documentation button is hidden                         |
 
 Alert channels — Slack, Discord, Telegram, ntfy, webhooks — are not listed. They send only
 when a destination has been configured, so leaving them unconfigured is already the off switch.

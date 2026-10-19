@@ -1,51 +1,78 @@
-import { useState } from 'react';
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft, RefreshCw, Activity, Cpu, MemoryStick, Clock, ExternalLink, TerminalSquare, ShieldCheck, Copy, Check, GitBranch,
-} from 'lucide-react';
-import { hostPort, winboxAddress } from '../utils/deviceAddress';
-import { devicesApi, metricsApi } from '../services/api';
-import { useCanWrite } from '../hooks/useCanWrite';
-import SwitchPortDiagram from '../components/ports/SwitchPortDiagram';
-import DeviceTagPicker from '../components/devices/DeviceTagPicker';
-import TerminalModal from '../components/TerminalModal';
-import DeviceLocationSection from '../components/device-detail/DeviceLocationSection';
-import VlansTab from '../components/device-detail/VlansTab';
-import RoutingTab from '../components/device-detail/RoutingTab';
-import FirewallTab from '../components/device-detail/FirewallTab';
-import SystemConfigTab from '../components/device-detail/SystemConfigTab';
-import ConfigHistoryTab from '../components/device-detail/ConfigHistoryTab';
-import HardwareTab from '../components/device-detail/HardwareTab';
-import ToolsTab from '../components/device-detail/ToolsTab';
-import RadiosTab from '../components/device-detail/RadiosTab';
-import LteTab from '../components/device-detail/LteTab';
-import ConnectionsTab from '../components/device-detail/ConnectionsTab';
-import QueuesTab from '../components/device-detail/QueuesTab';
-import SecurityTab from '../components/device-detail/SecurityTab';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { displayState, STATE_LABEL } from '../utils/deviceState';
-import DeviceHealthCard from '../components/device-detail/DeviceHealthCard';
-import BridgesTab from '../components/device-detail/BridgesTab';
-import PollingNote from '../components/device-detail/PollingNote';
-import { DeviceIdentityBanner } from '../components/security/IdentityChange';
-import { isWirelessDevice } from '../utils/wireless';
-import SshOnlyBanner from '../components/device-detail/SshOnlyBanner';
+import {
+  Activity,
+  ArrowLeft,
+  Check,
+  Clock,
+  Copy,
+  Cpu,
+  ExternalLink,
+  GitBranch,
+  MemoryStick,
+  RefreshCw,
+  ShieldCheck,
+  TerminalSquare,
+} from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-type TabKey = 'overview' | 'ports' | 'bridges' | 'vlans' | 'routing' | 'firewall' | 'security' | 'queues' | 'connections' | 'config' | 'config-history' | 'hardware' | 'tools' | 'radios' | 'lte';
+import BridgesTab from '../components/device-detail/BridgesTab';
+import ConfigHistoryTab from '../components/device-detail/ConfigHistoryTab';
+import ConnectionsTab from '../components/device-detail/ConnectionsTab';
+import DeviceHealthCard from '../components/device-detail/DeviceHealthCard';
+import DeviceLocationSection from '../components/device-detail/DeviceLocationSection';
+import FirewallTab from '../components/device-detail/FirewallTab';
+import HardwareTab from '../components/device-detail/HardwareTab';
+import LteTab from '../components/device-detail/LteTab';
+import PollingNote from '../components/device-detail/PollingNote';
+import QueuesTab from '../components/device-detail/QueuesTab';
+import RadiosTab from '../components/device-detail/RadiosTab';
+import RoutingTab from '../components/device-detail/RoutingTab';
+import SecurityTab from '../components/device-detail/SecurityTab';
+import SshOnlyBanner from '../components/device-detail/SshOnlyBanner';
+import SystemConfigTab from '../components/device-detail/SystemConfigTab';
+import ToolsTab from '../components/device-detail/ToolsTab';
+import VlansTab from '../components/device-detail/VlansTab';
+import DeviceTagPicker from '../components/devices/DeviceTagPicker';
+import SwitchPortDiagram from '../components/ports/SwitchPortDiagram';
+import { DeviceIdentityBanner } from '../components/security/IdentityChange';
+import TerminalModal from '../components/TerminalModal';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { devicesApi, metricsApi } from '../services/api';
+import { hostPort, winboxAddress } from '../utils/deviceAddress';
+import { displayState, STATE_LABEL } from '../utils/deviceState';
+import { isWirelessDevice } from '../utils/wireless';
+
+type TabKey =
+  | 'overview'
+  | 'ports'
+  | 'bridges'
+  | 'vlans'
+  | 'routing'
+  | 'firewall'
+  | 'security'
+  | 'queues'
+  | 'connections'
+  | 'config'
+  | 'config-history'
+  | 'hardware'
+  | 'tools'
+  | 'radios'
+  | 'lte';
 
 function formatUptime(raw: string): string {
   if (!raw) return '—';
-  const weeks   = parseInt(raw.match(/(\d+)w/)?.[1] ?? '0', 10);
-  const days    = parseInt(raw.match(/(\d+)d/)?.[1] ?? '0', 10);
-  const hours   = parseInt(raw.match(/(\d+)h/)?.[1] ?? '0', 10);
+  const weeks = parseInt(raw.match(/(\d+)w/)?.[1] ?? '0', 10);
+  const days = parseInt(raw.match(/(\d+)d/)?.[1] ?? '0', 10);
+  const hours = parseInt(raw.match(/(\d+)h/)?.[1] ?? '0', 10);
   const minutes = parseInt(raw.match(/(\d+)m/)?.[1] ?? '0', 10);
   const seconds = parseInt(raw.match(/(\d+)s/)?.[1] ?? '0', 10);
 
   const parts: string[] = [];
-  if (weeks)   parts.push(`${weeks} ${weeks   === 1 ? 'Week'   : 'Weeks'}`);
-  if (days)    parts.push(`${days} ${days     === 1 ? 'Day'    : 'Days'}`);
-  if (hours)   parts.push(`${hours} ${hours   === 1 ? 'Hour'   : 'Hours'}`);
+  if (weeks) parts.push(`${weeks} ${weeks === 1 ? 'Week' : 'Weeks'}`);
+  if (days) parts.push(`${days} ${days === 1 ? 'Day' : 'Days'}`);
+  if (hours) parts.push(`${hours} ${hours === 1 ? 'Hour' : 'Hours'}`);
   if (minutes) parts.push(`${minutes} ${minutes === 1 ? 'Minute' : 'Minutes'}`);
 
   // Only show seconds when nothing larger is present (uptime < 1 minute)
@@ -60,9 +87,27 @@ export default function DeviceDetailPage() {
   const queryClient = useQueryClient();
   const canWrite = useCanWrite();
   const [searchParams] = useSearchParams();
-  const VALID_TABS: TabKey[] = ['overview', 'ports', 'bridges', 'vlans', 'routing', 'firewall', 'security', 'queues', 'connections', 'config', 'config-history', 'hardware', 'tools', 'radios', 'lte'];
+  const VALID_TABS: TabKey[] = [
+    'overview',
+    'ports',
+    'bridges',
+    'vlans',
+    'routing',
+    'firewall',
+    'security',
+    'queues',
+    'connections',
+    'config',
+    'config-history',
+    'hardware',
+    'tools',
+    'radios',
+    'lte',
+  ];
   const requestedTab = searchParams.get('tab') as TabKey | null;
-  const [activeTab, setActiveTab] = useState<TabKey>(requestedTab && VALID_TABS.includes(requestedTab) ? requestedTab : 'overview');
+  const [activeTab, setActiveTab] = useState<TabKey>(
+    requestedTab && VALID_TABS.includes(requestedTab) ? requestedTab : 'overview',
+  );
   const [autoOpenBridge, setAutoOpenBridge] = useState<string | null>(null);
   const [showTerminal, setShowTerminal] = useState(false);
   const [addrCopied, setAddrCopied] = useState(false);
@@ -154,7 +199,9 @@ export default function DeviceDetailPage() {
     { key: 'tools', label: 'Tools' },
   ];
   // Added over SSH only (#174): only what works without the API.
-  const tabs = allTabs.filter((t) => !device.ssh_only || t.key === 'overview' || t.key === 'config-history');
+  const tabs = allTabs.filter(
+    (t) => !device.ssh_only || t.key === 'overview' || t.key === 'config-history',
+  );
   // A tab that isn't offered (an SSH-only device, or a link to one) shows the overview.
   const shownTab: TabKey = tabs.some((t) => t.key === activeTab) ? activeTab : 'overview';
 
@@ -189,7 +236,7 @@ export default function DeviceDetailPage() {
                       st === 'online' && 'status-online',
                       st === 'degraded' && 'status-degraded',
                       st === 'offline' && 'status-offline',
-                      (st === 'unknown' || st === 'expected-offline') && 'status-unknown'
+                      (st === 'unknown' || st === 'expected-offline') && 'status-unknown',
                     )}
                   >
                     <span
@@ -198,7 +245,7 @@ export default function DeviceDetailPage() {
                         st === 'online' && 'bg-green-500 animate-pulse',
                         st === 'degraded' && 'bg-amber-500 animate-pulse',
                         st === 'offline' && 'bg-red-500',
-                        (st === 'unknown' || st === 'expected-offline') && 'bg-gray-400'
+                        (st === 'unknown' || st === 'expected-offline') && 'bg-gray-400',
                       )}
                     />
                     {STATE_LABEL[st]}
@@ -206,19 +253,37 @@ export default function DeviceDetailPage() {
                 );
               })()}
               {device.user_manager && (
-                <Link to={`/user-manager?device=${device.id}`} title="This device runs User Manager (RADIUS)"
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 hover:underline">
+                <Link
+                  to={`/user-manager?device=${device.id}`}
+                  title="This device runs User Manager (RADIUS)"
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 hover:underline"
+                >
                   User Manager
                 </Link>
               )}
             </div>
             <p className="text-sm text-gray-500 dark:text-slate-400 font-mono truncate">
               {/* An SSH-only device is reached on its SSH port (#174). */}
-              {device.ssh_only ? `${hostPort(device.ip_address, device.ssh_port ?? 22)} (SSH)` : hostPort(device.ip_address, device.api_port)}
-              <button type="button" title="Copy the address for Winbox" aria-label="Copy the address for Winbox"
-                onClick={() => { void navigator.clipboard.writeText(winboxAddress(device.ip_address)).then(() => { setAddrCopied(true); setTimeout(() => setAddrCopied(false), 1500); }); }}
-                className="inline-flex align-middle ml-1.5 p-0.5 rounded text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
-                {addrCopied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {device.ssh_only
+                ? `${hostPort(device.ip_address, device.ssh_port ?? 22)} (SSH)`
+                : hostPort(device.ip_address, device.api_port)}
+              <button
+                type="button"
+                title="Copy the address for Winbox"
+                aria-label="Copy the address for Winbox"
+                onClick={() => {
+                  void navigator.clipboard.writeText(winboxAddress(device.ip_address)).then(() => {
+                    setAddrCopied(true);
+                    setTimeout(() => setAddrCopied(false), 1500);
+                  });
+                }}
+                className="inline-flex align-middle ml-1.5 p-0.5 rounded text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              >
+                {addrCopied ? (
+                  <Check className="w-3.5 h-3.5 text-green-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
               </button>
               {device.model && ` · ${device.model}`}
               {device.ros_version && ` · ROS ${device.ros_version}`}
@@ -227,10 +292,14 @@ export default function DeviceDetailPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:ml-auto sm:flex-shrink-0">
           <button
-            onClick={() => window.open(
-              // An IPv6 literal needs brackets in a URL (addresses can be IPv6 since #170).
-              `http://${device.ip_address.includes(':') ? `[${device.ip_address}]` : device.ip_address}/`,
-              '_blank', 'noopener,noreferrer')}
+            onClick={() =>
+              window.open(
+                // An IPv6 literal needs brackets in a URL (addresses can be IPv6 since #170).
+                `http://${device.ip_address.includes(':') ? `[${device.ip_address}]` : device.ip_address}/`,
+                '_blank',
+                'noopener,noreferrer',
+              )
+            }
             className="btn-secondary flex items-center gap-2 text-sm"
             title="Open device web interface"
           >
@@ -283,7 +352,7 @@ export default function DeviceDetailPage() {
               'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap',
               shownTab === tab.key
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300',
             )}
           >
             {tab.label}
@@ -296,98 +365,140 @@ export default function DeviceDetailPage() {
         <div className="space-y-4">
           {/* Resource stats (read over the API; none for an SSH-only device, #174) */}
           {!device.ssh_only && (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="card p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Cpu className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">CPU Load</span>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Cpu className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                    CPU Load
+                  </span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {resources ? `${cpuLoad}%` : '—'}
+                </div>
+                {resources && (
+                  <div className="mt-2 h-1.5 bg-gray-200 dark:bg-slate-600 rounded-full">
+                    <div
+                      className={clsx(
+                        'h-full rounded-full transition-all',
+                        cpuLoad > 80
+                          ? 'bg-red-500'
+                          : cpuLoad > 50
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500',
+                      )}
+                      style={{ width: `${cpuLoad}%` }}
+                    />
+                  </div>
+                )}
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {resources ? `${cpuLoad}%` : '—'}
+
+              <div className="card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <MemoryStick className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                    Memory
+                  </span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {resources ? `${memPercent}%` : '—'}
+                </div>
+                {resources && (
+                  <div className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                    {formatMB(memUsed)} / {formatMB(memTotal)}
+                  </div>
+                )}
               </div>
-              {resources && (
-                <div className="mt-2 h-1.5 bg-gray-200 dark:bg-slate-600 rounded-full">
+
+              <div className="card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                    Uptime
+                  </span>
+                </div>
+                <div className="text-xl font-bold text-gray-900 dark:text-white truncate">
+                  {resources ? formatUptime(resources['uptime'] || '') : '—'}
+                </div>
+                {/* Time since it last booted, not availability (#326). */}
+                {device.boot_at && (
                   <div
-                    className={clsx(
-                      'h-full rounded-full transition-all',
-                      cpuLoad > 80 ? 'bg-red-500' : cpuLoad > 50 ? 'bg-yellow-500' : 'bg-green-500'
-                    )}
-                    style={{ width: `${cpuLoad}%` }}
-                  />
-                </div>
-              )}
-            </div>
+                    className="text-xs text-gray-500 dark:text-slate-400 mt-0.5"
+                    title="Worked out from the device's uptime counter"
+                  >
+                    since{' '}
+                    {new Date(device.boot_at).toLocaleString(undefined, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </div>
+                )}
+              </div>
 
-            <div className="card p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <MemoryStick className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Memory</span>
-              </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {resources ? `${memPercent}%` : '—'}
-              </div>
-              {resources && (
+              <div className="card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Activity className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                    Version
+                  </span>
+                </div>
+                <div className="text-sm font-bold text-gray-900 dark:text-white">
+                  {device.ros_version || '—'}
+                </div>
                 <div className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-                  {formatMB(memUsed)} / {formatMB(memTotal)}
+                  {device.firmware_version || ''}
                 </div>
-              )}
-            </div>
-
-            <div className="card p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Uptime</span>
-              </div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white truncate">
-                {resources ? formatUptime(resources['uptime'] || '') : '—'}
-              </div>
-              {/* Time since it last booted, not availability (#326). */}
-              {device.boot_at && (
-                <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5" title="Worked out from the device's uptime counter">
-                  since {new Date(device.boot_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
-                </div>
-              )}
-            </div>
-
-            <div className="card p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Activity className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Version</span>
-              </div>
-              <div className="text-sm font-bold text-gray-900 dark:text-white">
-                {device.ros_version || '—'}
-              </div>
-              <div className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-                {device.firmware_version || ''}
               </div>
             </div>
-          </div>
           )}
 
           {/* Availability card */}
           <div className="card p-4">
             <div className="flex items-center gap-2 mb-3">
               <ShieldCheck className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">30-Day Availability</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                30-Day Availability
+              </span>
             </div>
             {availability ? (
               <div className="flex flex-wrap gap-6">
                 <div>
-                  <div className={clsx(
-                    'text-3xl font-bold',
-                    availability.uptimePct >= 99 ? 'text-green-500' : availability.uptimePct >= 95 ? 'text-yellow-500' : 'text-red-500'
-                  )}>
+                  <div
+                    className={clsx(
+                      'text-3xl font-bold',
+                      availability.uptimePct >= 99
+                        ? 'text-green-500'
+                        : availability.uptimePct >= 95
+                          ? 'text-yellow-500'
+                          : 'text-red-500',
+                    )}
+                  >
                     {availability.uptimePct.toFixed(2)}%
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5" title="Share of the last 30 days the manager could reach this device">Availability</div>
+                  <div
+                    className="text-xs text-gray-500 dark:text-slate-400 mt-0.5"
+                    title="Share of the last 30 days the manager could reach this device"
+                  >
+                    Availability
+                  </div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{availability.totalOutages}</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {availability.totalOutages}
+                  </div>
                   <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Outages</div>
                 </div>
                 {/* Reboots, seen from the uptime counter: one quicker than a poll never shows as an outage (#326). */}
-                <div title={device.last_reboot_at ? `Last: ${new Date(device.last_reboot_at).toLocaleString()}` : 'Counted from the device’s uptime, including reboots too quick to show as outages'}>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{device.reboots_30d ?? 0}</div>
+                <div
+                  title={
+                    device.last_reboot_at
+                      ? `Last: ${new Date(device.last_reboot_at).toLocaleString()}`
+                      : 'Counted from the device’s uptime, including reboots too quick to show as outages'
+                  }
+                >
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {device.reboots_30d ?? 0}
+                  </div>
                   <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Reboots</div>
                 </div>
                 {availability.longestOutageSec > 0 && (
@@ -396,10 +507,12 @@ export default function DeviceDetailPage() {
                       {availability.longestOutageSec < 60
                         ? `${availability.longestOutageSec}s`
                         : availability.longestOutageSec < 3600
-                        ? `${Math.round(availability.longestOutageSec / 60)}m`
-                        : `${(availability.longestOutageSec / 3600).toFixed(1)}h`}
+                          ? `${Math.round(availability.longestOutageSec / 60)}m`
+                          : `${(availability.longestOutageSec / 3600).toFixed(1)}h`}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Longest outage</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                      Longest outage
+                    </div>
                   </div>
                 )}
                 <div className="flex-1 min-w-[120px] self-center">
@@ -407,7 +520,11 @@ export default function DeviceDetailPage() {
                     <div
                       className={clsx(
                         'h-full rounded-full transition-all',
-                        availability.uptimePct >= 99 ? 'bg-green-500' : availability.uptimePct >= 95 ? 'bg-yellow-500' : 'bg-red-500'
+                        availability.uptimePct >= 99
+                          ? 'bg-green-500'
+                          : availability.uptimePct >= 95
+                            ? 'bg-yellow-500'
+                            : 'bg-red-500',
                       )}
                       style={{ width: `${availability.uptimePct}%` }}
                     />
@@ -415,7 +532,9 @@ export default function DeviceDetailPage() {
                 </div>
               </div>
             ) : (
-              <div className="text-sm text-gray-400 dark:text-slate-500">No availability data yet</div>
+              <div className="text-sm text-gray-400 dark:text-slate-500">
+                No availability data yet
+              </div>
             )}
           </div>
 
@@ -426,37 +545,63 @@ export default function DeviceDetailPage() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div className="flex justify-between py-1 border-b border-gray-100 dark:border-slate-700">
-                <span className="text-gray-500 dark:text-slate-400" title="The name shown in the manager">Name</span>
-                <span className="font-medium text-gray-900 dark:text-white text-right">{device.name}</span>
+                <span
+                  className="text-gray-500 dark:text-slate-400"
+                  title="The name shown in the manager"
+                >
+                  Name
+                </span>
+                <span className="font-medium text-gray-900 dark:text-white text-right">
+                  {device.name}
+                </span>
               </div>
               {/* The router's own name, when it differs from the manager's (#253). */}
               {device.ros_identity && device.ros_identity.trim() !== device.name.trim() && (
                 <div className="flex justify-between items-center gap-2 py-1 border-b border-gray-100 dark:border-slate-700">
-                  <span className="text-gray-500 dark:text-slate-400" title="The name set on the router itself (/system identity)">Identity on the router</span>
+                  <span
+                    className="text-gray-500 dark:text-slate-400"
+                    title="The name set on the router itself (/system identity)"
+                  >
+                    Identity on the router
+                  </span>
                   <span className="flex items-center gap-2 min-w-0">
-                    <span className="font-medium text-gray-900 dark:text-white truncate">{device.ros_identity}</span>
+                    <span className="font-medium text-gray-900 dark:text-white truncate">
+                      {device.ros_identity}
+                    </span>
                     {canWrite && (
-                      <button type="button" disabled={adoptIdentity.isPending} onClick={() => adoptIdentity.mutate()}
+                      <button
+                        type="button"
+                        disabled={adoptIdentity.isPending}
+                        onClick={() => adoptIdentity.mutate()}
                         title="Show the router's own name here, and follow it if it changes"
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex-shrink-0 disabled:opacity-50">
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex-shrink-0 disabled:opacity-50"
+                      >
                         {adoptIdentity.isPending ? 'Switching…' : 'Use this name'}
                       </button>
                     )}
                   </span>
                 </div>
               )}
-              {([
-                ['IP Address', device.ip_address],
-                ['Model', device.model || '—'],
-                ['Serial Number', device.serial_number || '—'],
-                ['RouterOS Version', device.ros_version || '—'],
-                ['Firmware', device.firmware_version || '—'],
-                ['Type', device.device_type],
-                ['API Port', device.ssh_only ? 'Not enabled yet' : String(device.api_port)],
-                ['Added', new Date(device.created_at).toLocaleDateString()],
-                ['Last Seen', device.last_seen ? new Date(device.last_seen).toLocaleString() : '—'],
-              ] as [string, string][]).map(([k, v]) => (
-                <div key={k} className="flex justify-between py-1 border-b border-gray-100 dark:border-slate-700">
+              {(
+                [
+                  ['IP Address', device.ip_address],
+                  ['Model', device.model || '—'],
+                  ['Serial Number', device.serial_number || '—'],
+                  ['RouterOS Version', device.ros_version || '—'],
+                  ['Firmware', device.firmware_version || '—'],
+                  ['Type', device.device_type],
+                  ['API Port', device.ssh_only ? 'Not enabled yet' : String(device.api_port)],
+                  ['Added', new Date(device.created_at).toLocaleDateString()],
+                  [
+                    'Last Seen',
+                    device.last_seen ? new Date(device.last_seen).toLocaleString() : '—',
+                  ],
+                ] as [string, string][]
+              ).map(([k, v]) => (
+                <div
+                  key={k}
+                  className="flex justify-between py-1 border-b border-gray-100 dark:border-slate-700"
+                >
                   <span className="text-gray-500 dark:text-slate-400">{k}</span>
                   <span className="font-medium text-gray-900 dark:text-white text-right">{v}</span>
                 </div>
@@ -489,12 +634,21 @@ export default function DeviceDetailPage() {
           deviceId={deviceId}
           deviceName={device?.name}
           deviceType={device?.device_type}
-          onGoToPorts={(bridgeName) => { setAutoOpenBridge(bridgeName); setActiveTab('ports'); }}
+          onGoToPorts={(bridgeName) => {
+            setAutoOpenBridge(bridgeName);
+            setActiveTab('ports');
+          }}
         />
       )}
       {shownTab === 'bridges' && (
-        <BridgesTab deviceId={deviceId} deviceName={device.name}
-          onGoToPorts={(bridgeName) => { if (bridgeName) setAutoOpenBridge(bridgeName); setActiveTab('ports'); }} />
+        <BridgesTab
+          deviceId={deviceId}
+          deviceName={device.name}
+          onGoToPorts={(bridgeName) => {
+            if (bridgeName) setAutoOpenBridge(bridgeName);
+            setActiveTab('ports');
+          }}
+        />
       )}
       {shownTab === 'routing' && <RoutingTab deviceId={deviceId} deviceName={device.name} />}
       {shownTab === 'firewall' && <FirewallTab deviceId={deviceId} deviceName={device.name} />}

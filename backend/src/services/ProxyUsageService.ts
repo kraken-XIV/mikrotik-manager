@@ -1,4 +1,5 @@
 import type { PoolClient } from 'pg';
+
 import { pool, query } from '../config/database';
 import { GROUPS, type ProxyBy, type ProxyGroup } from '../utils/proxyQuery';
 
@@ -18,7 +19,12 @@ import { GROUPS, type ProxyBy, type ProxyGroup } from '../utils/proxyQuery';
  */
 
 /** One value per tab, stored in proxy_usage_hourly.kind. */
-export const USAGE_KIND: Record<ProxyBy, number> = { client: 1, user: 2, destination: 3, denied: 4 };
+export const USAGE_KIND: Record<ProxyBy, number> = {
+  client: 1,
+  user: 2,
+  destination: 3,
+  denied: 4,
+};
 
 const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
@@ -28,9 +34,11 @@ const ENABLED_KEY = 'proxy_usage_rollup';
 export const SOURCES_READY_KEY = 'proxy_sources_ready';
 
 /** Hour boundary in UTC, independent of the session time zone. */
-const hourBucket = (col: string) => `(date_trunc('hour', ${col} AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')`;
+const hourBucket = (col: string) =>
+  `(date_trunc('hour', ${col} AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')`;
 
-const COLUMNS = '(kind, bucket, device_id, source, proxy_port, key, peer, requests, bytes_in, bytes_out, last_seen)';
+const COLUMNS =
+  '(kind, bucket, device_id, source, proxy_port, key, peer, requests, bytes_in, bytes_out, last_seen)';
 
 // Additive, so a batch landing on an hour that already has rows adds to them.
 const ON_CONFLICT = `ON CONFLICT (kind, bucket, device_id, source, proxy_port, key, peer) DO UPDATE SET
@@ -60,7 +68,10 @@ export function aggregateSql(by: ProxyBy, from: string, extraWhere = ''): string
 /** The ", name AS (INSERT ...)" CTEs that fold the rows of `from` into the rollup. */
 export function usageUpsertCtes(from: string): string {
   return (Object.keys(USAGE_KIND) as ProxyBy[])
-    .map((by) => `, rollup_${by} AS (INSERT INTO proxy_usage_hourly ${COLUMNS}\n${aggregateSql(by, from)}\n${ON_CONFLICT})`)
+    .map(
+      (by) =>
+        `, rollup_${by} AS (INSERT INTO proxy_usage_hourly ${COLUMNS}\n${aggregateSql(by, from)}\n${ON_CONFLICT})`,
+    )
     .join('\n');
 }
 
@@ -121,7 +132,9 @@ export async function backfillProxyUsage(client: PoolClient): Promise<number> {
   const done = await client.query('SELECT 1 FROM app_settings WHERE key = $1', [READY_KEY]);
   if (done.rowCount) return 0;
 
-  const lo = (await client.query<{ lo: Date | null }>('SELECT MIN(event_time) AS lo FROM proxy_connections')).rows[0]?.lo;
+  const lo = (
+    await client.query<{ lo: Date | null }>('SELECT MIN(event_time) AS lo FROM proxy_connections')
+  ).rows[0]?.lo;
   let chunks = 0;
   if (lo) {
     // Through the end of the current hour: rows stored before this process began writing
@@ -129,7 +142,11 @@ export async function backfillProxyUsage(client: PoolClient): Promise<number> {
     const hourStart = floorHour(new Date());
     const end = new Date(hourStart.getTime() + HOUR_MS);
     for (let a = floorHour(new Date(lo)); a < hourStart; a = new Date(a.getTime() + DAY_MS)) {
-      await rebuildWithRetry(client, a, new Date(Math.min(a.getTime() + DAY_MS, hourStart.getTime())));
+      await rebuildWithRetry(
+        client,
+        a,
+        new Date(Math.min(a.getTime() + DAY_MS, hourStart.getTime())),
+      );
       chunks++;
       await sleep(50); // leave the pool and the disk to live traffic between chunks
     }
@@ -169,21 +186,37 @@ export async function reconcileProxyUsage(hours = 48): Promise<void> {
   } finally {
     client.release();
   }
-  if (failed.length) throw new Error(`proxy usage reconcile gave up on ${failed.length} chunk(s) starting ${failed.join(', ')}`);
+  if (failed.length)
+    throw new Error(
+      `proxy usage reconcile gave up on ${failed.length} chunk(s) starting ${failed.join(', ')}`,
+    );
 }
 
-let settingsCache: { at: number; ready: boolean; enabled: boolean; sourcesReady: boolean } | null = null;
+let settingsCache: { at: number; ready: boolean; enabled: boolean; sourcesReady: boolean } | null =
+  null;
 const SETTINGS_TTL_MS = 30_000;
 
-async function readSettings(): Promise<{ ready: boolean; enabled: boolean; sourcesReady: boolean }> {
+async function readSettings(): Promise<{
+  ready: boolean;
+  enabled: boolean;
+  sourcesReady: boolean;
+}> {
   if (settingsCache && Date.now() - settingsCache.at < SETTINGS_TTL_MS) return settingsCache;
   const rows = await query<{ key: string; value: unknown }>(
-    'SELECT key, value FROM app_settings WHERE key IN ($1, $2, $3)', [READY_KEY, ENABLED_KEY, SOURCES_READY_KEY],
+    'SELECT key, value FROM app_settings WHERE key IN ($1, $2, $3)',
+    [READY_KEY, ENABLED_KEY, SOURCES_READY_KEY],
   );
   const ready = rows.some((r) => r.key === READY_KEY);
   // On unless explicitly switched off, so it can be disabled without a deploy.
-  const enabled = !rows.some((r) => r.key === ENABLED_KEY && (r.value === false || r.value === 'false'));
-  settingsCache = { at: Date.now(), ready, enabled, sourcesReady: rows.some((r) => r.key === SOURCES_READY_KEY) };
+  const enabled = !rows.some(
+    (r) => r.key === ENABLED_KEY && (r.value === false || r.value === 'false'),
+  );
+  settingsCache = {
+    at: Date.now(),
+    ready,
+    enabled,
+    sourcesReady: rows.some((r) => r.key === SOURCES_READY_KEY),
+  };
   return settingsCache;
 }
 

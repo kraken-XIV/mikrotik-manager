@@ -8,9 +8,14 @@
  * channel automatically). Sending only what differs from what was loaded means
  * a save changes exactly what the operator changed.
  */
-export function changedFields<T extends Record<string, unknown>>(initial: T, current: T): Partial<T> {
+export function changedFields<T extends Record<string, unknown>>(
+  initial: T,
+  current: T,
+): Partial<T> {
   const before = new Map(Object.entries(initial));
-  const changed = Object.entries(current).filter(([key, value]) => !sameValue(before.get(key), value));
+  const changed = Object.entries(current).filter(
+    ([key, value]) => !sameValue(before.get(key), value),
+  );
   return Object.fromEntries(changed) as Partial<T>;
 }
 
@@ -19,6 +24,7 @@ function sameValue(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) === JSON.stringify(b);
   }
   // A number field and its string form ("5" vs 5) are the same value.
-  if ((typeof a === 'number' || typeof b === 'number') && a !== '' && b !== '') return String(a) === String(b);
+  if ((typeof a === 'number' || typeof b === 'number') && a !== '' && b !== '')
+    return String(a) === String(b);
   return a === b;
 }

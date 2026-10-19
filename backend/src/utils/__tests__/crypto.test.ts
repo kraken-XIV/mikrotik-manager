@@ -1,4 +1,4 @@
-import { encrypt, decrypt } from '../crypto';
+import { decrypt, encrypt } from '../crypto';
 
 describe('encrypt / decrypt', () => {
   it('round-trips plaintext', () => {

@@ -36,7 +36,10 @@ export type VlanWrite =
   | { action: 'noop' };
 
 const list = (v: string | undefined): string[] =>
-  (v || '').split(',').map((s) => s.trim()).filter(Boolean);
+  (v || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
 /**
  * What to do with one VLAN for one port.
@@ -48,18 +51,16 @@ const list = (v: string | undefined): string[] =>
 export function planVlanWrite(
   existing: BridgeVlanRow | undefined,
   port: string,
-  role: PortRole
+  role: PortRole,
 ): VlanWrite {
   const current = existing ?? {};
   const tagged = list(current.tagged);
   const untagged = list(current.untagged);
 
-  const nextTagged = role === 'tagged'
-    ? [...new Set([...tagged, port])]
-    : tagged.filter((p) => p !== port);
-  const nextUntagged = role === 'untagged'
-    ? [...new Set([...untagged, port])]
-    : untagged.filter((p) => p !== port);
+  const nextTagged =
+    role === 'tagged' ? [...new Set([...tagged, port])] : tagged.filter((p) => p !== port);
+  const nextUntagged =
+    role === 'untagged' ? [...new Set([...untagged, port])] : untagged.filter((p) => p !== port);
 
   const t = nextTagged.join(',');
   const u = nextUntagged.join(',');
@@ -137,7 +138,7 @@ export function planTaggedRemovals(
   rows: BridgeVlanTableRow[],
   bridge: string,
   port: string,
-  keep: number[]
+  keep: number[],
 ): TaggedRemovalPlan {
   const keepSet = new Set(keep);
   const plan: TaggedRemovalPlan = { writes: [], mixed: [] };

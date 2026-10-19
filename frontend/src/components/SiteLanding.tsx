@@ -1,5 +1,6 @@
-import { Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Navigate } from 'react-router-dom';
+
 import { sitesApi } from '../services/api';
 import { useSiteStore } from '../store/siteStore';
 
@@ -22,6 +23,7 @@ export default function SiteLanding() {
   // Don't bounce through /sites while the list is still in flight.
   if (isLoading) return null;
   // A group chosen (#306) is one customer: its dashboard.
-  if (currentSiteId == null && currentGroupId == null && (sites?.length ?? 0) > 1) return <Navigate to="/sites" replace />;
+  if (currentSiteId == null && currentGroupId == null && (sites?.length ?? 0) > 1)
+    return <Navigate to="/sites" replace />;
   return <Navigate to="/dashboard" replace />;
 }

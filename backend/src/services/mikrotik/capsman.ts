@@ -47,7 +47,10 @@ export const WIRELESS_ROLES: readonly WifiRole[] = [...RADIO_ROLES, 'controller'
  * radios wins; without radios, an existing wifi menu still means the device
  * can be a CAPsMAN controller.
  */
-export function chooseWifiPackage(wifiCount: number | null, wirelessCount: number | null): 'wifi' | 'wireless' | 'none' {
+export function chooseWifiPackage(
+  wifiCount: number | null,
+  wirelessCount: number | null,
+): 'wifi' | 'wireless' | 'none' {
   if (wifiCount !== null && wifiCount > 0) return 'wifi';
   if (wirelessCount !== null && wirelessCount > 0) return 'wireless';
   if (wifiCount !== null) return 'wifi';
@@ -57,7 +60,9 @@ export function chooseWifiPackage(wifiCount: number | null, wirelessCount: numbe
 
 /** Does this device have radios, whatever type it was added as? */
 export function hasRadios(d: { device_type?: string; wifi_role?: string | null }): boolean {
-  return d.device_type === 'wireless_ap' || RADIO_ROLES.includes((d.wifi_role ?? 'none') as WifiRole);
+  return (
+    d.device_type === 'wireless_ap' || RADIO_ROLES.includes((d.wifi_role ?? 'none') as WifiRole)
+  );
 }
 
 /** SQL: a device the wireless pages cover. `alias` is the devices table alias, if any. */
@@ -89,7 +94,7 @@ const isYes = (v: string | undefined): boolean => v === 'yes' || v === 'true';
 export function classifyWifiRole(
   capsman: Record<string, string>[] | null,
   cap: Record<string, string>[] | null,
-  hasWifiInterfaces: boolean
+  hasWifiInterfaces: boolean,
 ): WifiRole {
   const isController = !!capsman?.some((r) => isYes(r['enabled']));
   const isCap = !!cap?.some((r) => isYes(r['enabled']));
@@ -157,7 +162,7 @@ function labelled(text: string, label: string): string | null {
  */
 export function parseCapsmanStatus(row: Record<string, string>): CapsmanStatus | null {
   const text = Object.values(row).find(
-    (v) => typeof v === 'string' && /managed by CAPsMAN/i.test(v)
+    (v) => typeof v === 'string' && /managed by CAPsMAN/i.test(v),
   );
   if (!text) return null;
 
@@ -175,10 +180,10 @@ export function parseCapsmanStatus(row: Record<string, string>): CapsmanStatus |
  * The controller-side counterpart: `operated by CAP <mac>%<interface>`. Used to
  * label radios on a controller that physically live on a remote AP.
  */
-export function parseCapStatus(row: Record<string, string>): { capMac: string | null; capInterface: string | null } | null {
-  const text = Object.values(row).find(
-    (v) => typeof v === 'string' && /operated by CAP/i.test(v)
-  );
+export function parseCapStatus(
+  row: Record<string, string>,
+): { capMac: string | null; capInterface: string | null } | null {
+  const text = Object.values(row).find((v) => typeof v === 'string' && /operated by CAP/i.test(v));
   if (!text) return null;
   const ref = parseNodeRef(text, /operated by CAP/i);
   return { capMac: ref.mac, capInterface: ref.iface };
@@ -236,7 +241,7 @@ export function normalizeRadios(rows: Record<string, string>[]): RadioRow[] {
  * shuffled between polls (#94).
  */
 export function buildMacIndex(
-  rows: { device_id: number; mac_address: string | null }[]
+  rows: { device_id: number; mac_address: string | null }[],
 ): Map<string, number[]> {
   const index = new Map<string, number[]>();
   for (const row of rows) {
@@ -261,7 +266,7 @@ export function buildMacIndex(
 export function matchRadiosToDevices(
   radios: RadioRow[],
   macToDevice: Map<string, number[]>,
-  controllerDeviceId: number
+  controllerDeviceId: number,
 ): { radio: RadioRow; deviceId: number | null }[] {
   return radios.map((radio) => {
     if (radio.local) return { radio, deviceId: controllerDeviceId };
@@ -293,7 +298,7 @@ export function macIndexKeys(mac: string): string[] {
 export function lookupDeviceForMac(
   mac: string | null,
   index: Map<string, number[]>,
-  excludeDeviceId?: number
+  excludeDeviceId?: number,
 ): number | null {
   if (!mac) return null;
   for (const key of macIndexKeys(mac)) {
@@ -347,7 +352,7 @@ export function parseRadioMonitor(row: Record<string, string> | undefined): Radi
  */
 export function resolveDatapath(
   iface: Record<string, string>,
-  datapaths: Record<string, string>[]
+  datapaths: Record<string, string>[],
 ): { bridge: string | null; vlanId: string | null } {
   const inlineBridge = iface['datapath.bridge'];
   const inlineVlan = iface['datapath.vlan-id'];
@@ -383,7 +388,7 @@ export function resolveDatapath(
  */
 export function clientsPerRadio(
   interfaces: Record<string, string>[],
-  registrations: Record<string, string>[]
+  registrations: Record<string, string>[],
 ): Map<string, number> {
   const byName = new Map(interfaces.filter((i) => i['name']).map((i) => [i['name'], i]));
 
@@ -439,17 +444,26 @@ export function legacyManagerEnabled(rows: Record<string, string>[] | null): boo
 export function legacyCapInterfaces(rows: Record<string, string>[] | null): string[] {
   const row = rows?.find((r) => isYes(r['enabled']));
   if (!row) return [];
-  return (row['interfaces'] || '').split(',').map((s) => s.trim()).filter(Boolean);
+  return (row['interfaces'] || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 /** "2412/20/gn(30dBm)" → channel "2412/20/gn", 30 dBm. */
-export function parseLegacyChannel(v: string | undefined): { channel: string | null; txPower: number | null } {
+export function parseLegacyChannel(v: string | undefined): {
+  channel: string | null;
+  txPower: number | null;
+} {
   const s = (v || '').trim();
   if (!s) return { channel: null, txPower: null };
   const open = s.indexOf('(');
   if (open < 0) return { channel: s, txPower: null };
   const power = parseInt(s.slice(open + 1), 10);
-  return { channel: s.slice(0, open).trim() || null, txPower: Number.isFinite(power) ? power : null };
+  return {
+    channel: s.slice(0, open).trim() || null,
+    txPower: Number.isFinite(power) ? power : null,
+  };
 }
 
 export interface LegacyRadio {
@@ -494,9 +508,12 @@ export function legacyRadios(
   registrations: Record<string, string>[] | null,
 ): LegacyRadio[] {
   const counts = registrations ? clientsPerRadio(interfaces, registrations) : null;
-  const ssidOfConfig = new Map((configurations ?? []).filter((c) => c['name']).map((c) => [c['name'], c['ssid'] || null]));
+  const ssidOfConfig = new Map(
+    (configurations ?? []).filter((c) => c['name']).map((c) => [c['name'], c['ssid'] || null]),
+  );
   const ssidSeen = new Map<string, string>();
-  for (const r of registrations ?? []) if (r['interface'] && r['ssid']) ssidSeen.set(r['interface'], r['ssid']);
+  for (const r of registrations ?? [])
+    if (r['interface'] && r['ssid']) ssidSeen.set(r['interface'], r['ssid']);
   const prefix = (mac: string) => mac.toUpperCase().split(':').slice(0, 5).join(':');
 
   return interfaces.filter(isRadioRow).map((r) => {
@@ -505,7 +522,9 @@ export function legacyRadios(
     const radio = radios?.find((x) => (x['radio-mac'] || '').toUpperCase() === radioMac);
     let capIdentity = radio?.['remote-cap-identity'] || radio?.['remote-cap-name'] || null;
     if (!capIdentity && remoteCaps) {
-      const hits = remoteCaps.filter((c) => c['base-mac'] && prefix(c['base-mac']) === prefix(radioMac));
+      const hits = remoteCaps.filter(
+        (c) => c['base-mac'] && prefix(c['base-mac']) === prefix(radioMac),
+      );
       if (hits.length === 1) capIdentity = hits[0]['identity'] || hits[0]['name'] || null;
     }
     const name = r['name'] || null;
@@ -517,7 +536,11 @@ export function legacyRadios(
       txPower,
       registeredPeers: counts ? (counts.get(radioMac) ?? 0) : num(r['current-registered-clients']),
       authorizedPeers: num(r['current-authorized-clients']),
-      ssid: r['configuration.ssid'] || ssidOfConfig.get(r['configuration'] || '') || (name ? ssidSeen.get(name) : undefined) || null,
+      ssid:
+        r['configuration.ssid'] ||
+        ssidOfConfig.get(r['configuration'] || '') ||
+        (name ? ssidSeen.get(name) : undefined) ||
+        null,
       capIdentity,
       raw: r,
     };

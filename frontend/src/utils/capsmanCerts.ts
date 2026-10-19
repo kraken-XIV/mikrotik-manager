@@ -12,6 +12,10 @@ export function isCapsmanCertificate(c: { name: string; common_name: string | nu
 }
 
 /** A CAPsMAN certificate that can be hidden: it's still valid. */
-export function isQuietCapsmanCertificate(c: { name: string; common_name: string | null; state: string }): boolean {
+export function isQuietCapsmanCertificate(c: {
+  name: string;
+  common_name: string | null;
+  state: string;
+}): boolean {
   return c.state === 'valid' && isCapsmanCertificate(c);
 }

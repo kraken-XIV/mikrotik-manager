@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { apiErrorMessage } from './apiError';
 
 describe('apiErrorMessage (#180)', () => {
   it("prefers the server's message", () => {
-    const err = Object.assign(new Error('Request failed with status code 500'), { response: { data: { error: 'no such command prefix' } } });
+    const err = Object.assign(new Error('Request failed with status code 500'), {
+      response: { data: { error: 'no such command prefix' } },
+    });
     expect(apiErrorMessage(err)).toBe('no such command prefix');
   });
   it('falls back to the error, then the fallback', () => {

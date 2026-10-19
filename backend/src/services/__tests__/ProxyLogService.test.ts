@@ -1,5 +1,10 @@
-import { backfillProxyConnections, backfillProxySources, collectProxySources, storeProxyConnections } from '../ProxyLogService';
 import { query } from '../../config/database';
+import {
+  backfillProxyConnections,
+  backfillProxySources,
+  collectProxySources,
+  storeProxyConnections,
+} from '../ProxyLogService';
 
 jest.mock('../../config/database', () => ({ query: jest.fn() }));
 
@@ -48,16 +53,23 @@ describe('backfillProxyConnections', () => {
       throw new Error('boom');
     });
     await expect(backfillProxyConnections(c as any)).rejects.toThrow('boom');
-    expect(c.query.mock.calls.some(([t]) => String(t).includes('INSERT INTO app_settings'))).toBe(false);
+    expect(c.query.mock.calls.some(([t]) => String(t).includes('INSERT INTO app_settings'))).toBe(
+      false,
+    );
   });
 });
 
 describe('collectProxySources', () => {
-  const conn = (source: string, proxyType: string, proxyPort: number | null, ms: number) =>
-    ({ c: { source, proxyType, proxyPort, eventTime: new Date(ms) } as any });
+  const conn = (source: string, proxyType: string, proxyPort: number | null, ms: number) => ({
+    c: { source, proxyType, proxyPort, eventTime: new Date(ms) } as any,
+  });
 
   it('keeps one entry per instance with its latest event time', () => {
-    const out = collectProxySources([conn('3proxy', 'PROXY', 3128, 1000), conn('3proxy', 'PROXY', 3128, 5000), conn('3proxy', 'SOCKS', 1080, 2000)]);
+    const out = collectProxySources([
+      conn('3proxy', 'PROXY', 3128, 1000),
+      conn('3proxy', 'PROXY', 3128, 5000),
+      conn('3proxy', 'SOCKS', 1080, 2000),
+    ]);
     expect(out).toHaveLength(2);
     expect(out.find((s) => s.proxyType === 'PROXY')!.lastSeen.getTime()).toBe(5000);
   });
@@ -69,7 +81,10 @@ describe('collectProxySources', () => {
 
 describe('storeProxyConnections', () => {
   const run = query as unknown as jest.Mock;
-  beforeEach(() => { run.mockReset(); run.mockResolvedValue([]); });
+  beforeEach(() => {
+    run.mockReset();
+    run.mockResolvedValue([]);
+  });
 
   it('records the instances of a batch alongside the connections', async () => {
     const n = await storeProxyConnections(7, [
@@ -88,14 +103,20 @@ describe('storeProxyConnections', () => {
   });
 
   it('writes nothing when no line is a proxy log', async () => {
-    expect(await storeProxyConnections(7, [{ logId: '1', topics: 'system,info', message: 'hello' }])).toBe(0);
+    expect(
+      await storeProxyConnections(7, [{ logId: '1', topics: 'system,info', message: 'hello' }]),
+    ).toBe(0);
     expect(run).not.toHaveBeenCalled();
   });
 
   it('still succeeds when recording the instances fails', async () => {
     const err = jest.spyOn(console, 'error').mockImplementation(() => {});
     run.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('boom'));
-    await expect(storeProxyConnections(7, [{ logId: '1', topics: T, message: line('3proxy-1', 'PROXY', 3128, 100) }])).resolves.toBe(1);
+    await expect(
+      storeProxyConnections(7, [
+        { logId: '1', topics: T, message: line('3proxy-1', 'PROXY', 3128, 100) },
+      ]),
+    ).resolves.toBe(1);
     expect(err).toHaveBeenCalled();
     err.mockRestore();
   });
@@ -111,7 +132,8 @@ describe('backfillProxySources', () => {
   it('merges stored connections into the list, keeps the later last_seen, then marks it ready', async () => {
     const c = {
       query: jest.fn(async (text: string, _params?: unknown[]) =>
-        text.includes('FROM app_settings') ? { rowCount: 0, rows: [] } : { rowCount: 3, rows: [] }),
+        text.includes('FROM app_settings') ? { rowCount: 0, rows: [] } : { rowCount: 3, rows: [] },
+      ),
     };
     expect(await backfillProxySources(c as any)).toBe(3);
     const insert = String(c.query.mock.calls[1][0]);
@@ -132,6 +154,8 @@ describe('backfillProxySources', () => {
       }),
     };
     await expect(backfillProxySources(c as any)).rejects.toThrow('boom');
-    expect(c.query.mock.calls.some(([t]) => String(t).includes('INSERT INTO app_settings'))).toBe(false);
+    expect(c.query.mock.calls.some(([t]) => String(t).includes('INSERT INTO app_settings'))).toBe(
+      false,
+    );
   });
 });

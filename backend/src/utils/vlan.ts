@@ -10,7 +10,10 @@
 /** Split a RouterOS comma-separated field into trimmed, non-empty parts. */
 export function rosList(val: string | undefined): string[] {
   if (!val) return [];
-  return val.split(',').map((s) => s.trim()).filter(Boolean);
+  return val
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 /** The valid 802.1Q range; RouterOS accepts nothing outside it. */
@@ -77,7 +80,10 @@ export interface AggregatedVlan {
  * the VLAN's existence so it appears in the list.
  */
 export function aggregateBridgeVlans(rows: Record<string, string>[]): AggregatedVlan[] {
-  const out = new Map<string, AggregatedVlan & { specs: Set<string>; t: Set<string>; u: Set<string> }>();
+  const out = new Map<
+    string,
+    AggregatedVlan & { specs: Set<string>; t: Set<string>; u: Set<string> }
+  >();
 
   for (const row of rows) {
     const bridge = row['bridge'] || '';
@@ -87,8 +93,16 @@ export function aggregateBridgeVlans(rows: Record<string, string>[]): Aggregated
     for (const vlanId of expandVlanIds(spec)) {
       const key = `${bridge}:${vlanId}`;
       const entry = out.get(key) ?? {
-        bridge, vlanId, spec: '', tagged: [], untagged: [], name: null, rows: [],
-        specs: new Set<string>(), t: new Set<string>(), u: new Set<string>(),
+        bridge,
+        vlanId,
+        spec: '',
+        tagged: [],
+        untagged: [],
+        name: null,
+        rows: [],
+        specs: new Set<string>(),
+        t: new Set<string>(),
+        u: new Set<string>(),
       };
       entry.rows.push(row);
       if (!dynamic) {
@@ -117,7 +131,9 @@ export function aggregateBridgeVlans(rows: Record<string, string>[]): Aggregated
  * round-trip reason as above: these lists prefill the port editor, and
  * `setPortVlanConfig` rewrites whatever it is handed.
  */
-export function portVlanMembership(rows: Record<string, string>[]): Map<string, { tagged: number[]; untagged: number[] }> {
+export function portVlanMembership(
+  rows: Record<string, string>[],
+): Map<string, { tagged: number[]; untagged: number[] }> {
   const out = new Map<string, { tagged: Set<number>; untagged: Set<number> }>();
   const slot = (port: string) => {
     const existing = out.get(port) ?? { tagged: new Set<number>(), untagged: new Set<number>() };
@@ -134,9 +150,12 @@ export function portVlanMembership(rows: Record<string, string>[]): Map<string, 
 
   const asc = (a: number, b: number) => a - b;
   return new Map(
-    [...out.entries()].map(([port, m]) => [port, {
-      tagged: [...m.tagged].sort(asc),
-      untagged: [...m.untagged].sort(asc),
-    }])
+    [...out.entries()].map(([port, m]) => [
+      port,
+      {
+        tagged: [...m.tagged].sort(asc),
+        untagged: [...m.untagged].sort(asc),
+      },
+    ]),
   );
 }

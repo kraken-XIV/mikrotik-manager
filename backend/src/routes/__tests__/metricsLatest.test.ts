@@ -4,11 +4,12 @@ jest.mock('../../middleware/auth', () => ({
   requireAuth: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
-import request from 'supertest';
 import express from 'express';
-import metricsRoutes from '../metrics';
+import request from 'supertest';
+
 import { query } from '../../config/database';
 import { getQueryApi } from '../../config/influxdb';
+import metricsRoutes from '../metrics';
 
 const mockedQuery = jest.mocked(query);
 const mockedGetQueryApi = jest.mocked(getQueryApi);
@@ -17,11 +18,20 @@ type Row = Record<string, unknown>;
 
 /** A query API whose queryRows replays `rows`, or fails with `error`. */
 function fakeInflux(rows: Row[], error?: Error) {
-  const queryRows = jest.fn((_flux: string, observer: { next: (r: Row, m: { toObject: (r: Row) => Row }) => void; error: (e: Error) => void; complete: () => void }) => {
-    if (error) return observer.error(error);
-    for (const r of rows) observer.next(r, { toObject: (x) => x });
-    observer.complete();
-  });
+  const queryRows = jest.fn(
+    (
+      _flux: string,
+      observer: {
+        next: (r: Row, m: { toObject: (r: Row) => Row }) => void;
+        error: (e: Error) => void;
+        complete: () => void;
+      },
+    ) => {
+      if (error) return observer.error(error);
+      for (const r of rows) observer.next(r, { toObject: (x) => x });
+      observer.complete();
+    },
+  );
   mockedGetQueryApi.mockReturnValue({ queryRows } as never);
   return queryRows;
 }
@@ -48,7 +58,14 @@ describe('GET /api/metrics/resources/latest', () => {
     const res = await request(app()).get('/api/metrics/resources/latest');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
-      devices: { '1': { cpu_load: 12.5, memory_used: 400, memory_total: 1000, time: '2026-10-17T10:00:00.000Z' } },
+      devices: {
+        '1': {
+          cpu_load: 12.5,
+          memory_used: 400,
+          memory_total: 1000,
+          time: '2026-10-17T10:00:00.000Z',
+        },
+      },
     });
   });
 
@@ -74,10 +91,34 @@ describe('GET /api/metrics/interfaces/latest', () => {
 
   it('groups cumulative counters by device and interface, in scope only, with one query', async () => {
     const queryRows = fakeInflux([
-      { device_id: '1', interface: 'ether1', _field: 'rx_bytes', _value: 5000, _time: '2026-10-17T10:00:00Z' },
-      { device_id: '1', interface: 'ether1', _field: 'tx_bytes', _value: 9000, _time: '2026-10-17T10:00:00Z' },
-      { device_id: '1', interface: 'sfp1', _field: 'rx_bytes', _value: 1, _time: '2026-10-17T10:00:05Z' },
-      { device_id: '7', interface: 'ether1', _field: 'rx_bytes', _value: 3, _time: '2026-10-17T10:00:00Z' },
+      {
+        device_id: '1',
+        interface: 'ether1',
+        _field: 'rx_bytes',
+        _value: 5000,
+        _time: '2026-10-17T10:00:00Z',
+      },
+      {
+        device_id: '1',
+        interface: 'ether1',
+        _field: 'tx_bytes',
+        _value: 9000,
+        _time: '2026-10-17T10:00:00Z',
+      },
+      {
+        device_id: '1',
+        interface: 'sfp1',
+        _field: 'rx_bytes',
+        _value: 1,
+        _time: '2026-10-17T10:00:05Z',
+      },
+      {
+        device_id: '7',
+        interface: 'ether1',
+        _field: 'rx_bytes',
+        _value: 3,
+        _time: '2026-10-17T10:00:00Z',
+      },
     ]);
     const res = await request(app()).get('/api/metrics/interfaces/latest');
     expect(res.status).toBe(200);
@@ -104,13 +145,33 @@ describe('GET /api/metrics/interfaces/latest', () => {
 
   it('keeps interfaces named __proto__ and constructor in the JSON output', async () => {
     fakeInflux([
-      { device_id: '1', interface: '__proto__', _field: 'rx_bytes', _value: 11, _time: '2026-10-17T10:00:00Z' },
-      { device_id: '1', interface: 'constructor', _field: 'rx_bytes', _value: 22, _time: '2026-10-17T10:00:00Z' },
-      { device_id: '1', interface: 'ether1', _field: 'rx_bytes', _value: 33, _time: '2026-10-17T10:00:00Z' },
+      {
+        device_id: '1',
+        interface: '__proto__',
+        _field: 'rx_bytes',
+        _value: 11,
+        _time: '2026-10-17T10:00:00Z',
+      },
+      {
+        device_id: '1',
+        interface: 'constructor',
+        _field: 'rx_bytes',
+        _value: 22,
+        _time: '2026-10-17T10:00:00Z',
+      },
+      {
+        device_id: '1',
+        interface: 'ether1',
+        _field: 'rx_bytes',
+        _value: 33,
+        _time: '2026-10-17T10:00:00Z',
+      },
     ]);
     const res = await request(app()).get('/api/metrics/interfaces/latest');
     expect(res.status).toBe(200);
-    const raw = JSON.parse(res.text) as { devices: Record<string, Record<string, { rx_bytes: number }>> };
+    const raw = JSON.parse(res.text) as {
+      devices: Record<string, Record<string, { rx_bytes: number }>>;
+    };
     const dev = raw.devices['1'];
     expect(Object.keys(dev).sort()).toEqual(['__proto__', 'constructor', 'ether1']);
     expect(Object.getOwnPropertyDescriptor(dev, '__proto__')?.value.rx_bytes).toBe(11);

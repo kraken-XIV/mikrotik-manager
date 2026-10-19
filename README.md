@@ -52,7 +52,7 @@ SSH where RouterOS requires it), and stores nothing outside your network.
 
 ## What makes it different
 
-Plenty of tools can *show* you a MikroTik fleet. The hard part is **changing** one safely.
+Plenty of tools can _show_ you a MikroTik fleet. The hard part is **changing** one safely.
 
 ### RouterOS will happily lock you out of your own device
 
@@ -115,15 +115,15 @@ links the relevant MikroTik documentation.
 
 ### And the rest of the toolbox
 
-|  | |
-|---|---|
-| **Staged firmware rollouts** | Canary waves, pre-upgrade backup, reboot verification, and halt-on-failure so a bad build never reaches the fleet |
-| **Built-in NetFlow collector** | Traffic analytics with per-client attribution and application breakdown — no external collector to run |
-| **CAPsMAN aware** | Centrally provisioned APs are recognised, grouped under their controller, and protected from local writes the controller would discard |
-| **Rogue AP detection** | A foreign BSSID broadcasting one of your SSIDs is flagged as an evil twin |
-| **Anomaly insights** | Client counts and CPU compared against each device's own same-hour 14-day baseline, not a fixed threshold |
-| **Multi-site** | Group devices into sites and view each one's clients, events and topology separately, with an all-sites map. One install, many customer networks |
-| **Enterprise auth** | OIDC/SSO, TOTP two-factor, role-based access, and scoped API tokens |
+|                                |                                                                                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Staged firmware rollouts**   | Canary waves, pre-upgrade backup, reboot verification, and halt-on-failure so a bad build never reaches the fleet                                |
+| **Built-in NetFlow collector** | Traffic analytics with per-client attribution and application breakdown — no external collector to run                                           |
+| **CAPsMAN aware**              | Centrally provisioned APs are recognised, grouped under their controller, and protected from local writes the controller would discard           |
+| **Rogue AP detection**         | A foreign BSSID broadcasting one of your SSIDs is flagged as an evil twin                                                                        |
+| **Anomaly insights**           | Client counts and CPU compared against each device's own same-hour 14-day baseline, not a fixed threshold                                        |
+| **Multi-site**                 | Group devices into sites and view each one's clients, events and topology separately, with an all-sites map. One install, many customer networks |
+| **Enterprise auth**            | OIDC/SSO, TOTP two-factor, role-based access, and scoped API tokens                                                                              |
 
 ---
 
@@ -283,7 +283,7 @@ modes differ, and how to choose a timeout — see
 - **Switch faceplate** — a live front-panel view with copper staggered odd-above-even as the hardware is, SFP cages and QSFP breakout lanes grouped separately, and bridges and bonds alongside. Ports are classified by whether they physically have an SFP cage and by RouterOS's factory name, not by their display name, so renaming a port to something useful does not move it into the wrong group or cost it its label or its position. Every group wraps to the width available — set ports-per-row, or leave it to fit the card
 - **Optics inventory** — negotiated link rate, module type, connector and vendor part number per port, read from the device rather than guessed from the port's name. An empty cage is distinguished from a copper port, which nothing derived from naming can do
 - **VLAN management** — create, edit and delete VLANs; per-port membership with tagged/untagged control
-- **Per-port connected clients** — selecting a port shows who is *physically* on it. Uplink and trunk ports are auto-detected (via an LLDP/MNDP neighbour, MACs spanning multiple VLANs, or a high MAC count) and show an explainer rather than every MAC reachable through them, with one-click disclosure of the full table
+- **Per-port connected clients** — selecting a port shows who is _physically_ on it. Uplink and trunk ports are auto-detected (via an LLDP/MNDP neighbour, MACs spanning multiple VLANs, or a high MAC count) and show an explainer rather than every MAC reachable through them, with one-click disclosure of the full table
 - **Copy VLANs between switches** — a three-step wizard with click-to-cycle port assignment, conflict detection, and a review summary before anything is applied
 - **Wireless management** — SSID create/edit/enable/disable/delete, bulk SSID deployment across APs, WPA2/WPA3 security profiles, and support for both the RouterOS 7 `wifi` package and the legacy `wlan` package
 - **RF Health** — channel usage across 2.4/5/6 GHz with co-channel overlap highlighting, AP deployment density plotted against RSSI, TX-retry histograms, and a connectivity funnel (association → authentication → DHCP) derived from device logs
@@ -309,14 +309,14 @@ A Meraki/UniFi-grade firewall experience on the full RouterOS feature set.
 
 Each network service supports multi-device management with conflict detection:
 
-| Service | Capabilities |
-|---|---|
-| **DHCP** | IPv4 &amp; IPv6 servers, address pools, static leases, live lease table |
-| **DNS** | Upstream servers, static records (A/AAAA/CNAME/MX/NS/PTR/TXT/SRV), cache flush, DoH |
-| **NTP** | Server (broadcast/manycast), client (unicast/multicast), sync status |
-| **WireGuard** | Interface management, peer configuration, public keys, RX/TX stats |
-| **Logging** | Syslog actions and routing rules, single-device or push-to-all with per-entry coverage |
-| **NetFlow** | One-toggle Traffic Flow export per device, pointed at the built-in collector |
+| Service                  | Capabilities                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| **DHCP**                 | IPv4 &amp; IPv6 servers, address pools, static leases, live lease table                |
+| **DNS**                  | Upstream servers, static records (A/AAAA/CNAME/MX/NS/PTR/TXT/SRV), cache flush, DoH    |
+| **NTP**                  | Server (broadcast/manycast), client (unicast/multicast), sync status                   |
+| **WireGuard**            | Interface management, peer configuration, public keys, RX/TX stats                     |
+| **Logging**              | Syslog actions and routing rules, single-device or push-to-all with per-entry coverage |
+| **NetFlow**              | One-toggle Traffic Flow export per device, pointed at the built-in collector           |
 | **Discovery &amp; SNMP** | Fleet-wide LLDP toggle and SNMP v1/v2c/v3, scoped to all devices, routers, or switches |
 
 ### Visibility and troubleshooting
@@ -332,21 +332,21 @@ Each network service supports multi-device management with conflict detection:
 - **Global search** — devices, clients and events from the top bar
 - **Per-device tools**:
 
-| Tool | Description |
-|---|---|
-| **Ping** | ICMP reachability with RTT and loss |
-| **Traceroute** | Hop-by-hop path trace |
-| **IP Scan** | ARP sweep of a subnet to find live hosts |
-| **Wake-on-LAN** | Magic packet sent from the MikroTik device |
-| **Packet Capture** | RouterOS sniffer for 5–60s, downloaded as a `.pcap` for Wireshark (requires SSH) |
+| Tool               | Description                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| **Ping**           | ICMP reachability with RTT and loss                                                            |
+| **Traceroute**     | Hop-by-hop path trace                                                                          |
+| **IP Scan**        | ARP sweep of a subnet to find live hosts                                                       |
+| **Wake-on-LAN**    | Magic packet sent from the MikroTik device                                                     |
+| **Packet Capture** | RouterOS sniffer for 5–60s, downloaded as a `.pcap` for Wireshark (requires SSH)               |
 | **Bandwidth Test** | Throughput between two devices; the target's test server is enabled and disabled automatically |
 
 ### Fleet operations
 
-- **Firmware orchestration** — fleet version overview, live update checks, and MikroTik's official release notes in-app. Staged rollouts run in **waves** (wave 1 = canary) through a verified pipeline per device: pre-upgrade backup → download and confirm the image landed → reboot → prove it restarted and came back healthy on the new version → next. **Halt on failure** stops the rollout if any device fails, and a device that comes back on the *old* version counts as a failure. Devices in a wave upgrade one at a time by default; raise **at once** to run them concurrently when a fleet of five-minute reboots would otherwise take all evening — waves stay sequential either way, so the canary still gates the rest. Rollouts can be scheduled, and cancelling never interrupts an in-flight flash
+- **Firmware orchestration** — fleet version overview, live update checks, and MikroTik's official release notes in-app. Staged rollouts run in **waves** (wave 1 = canary) through a verified pipeline per device: pre-upgrade backup → download and confirm the image landed → reboot → prove it restarted and came back healthy on the new version → next. **Halt on failure** stops the rollout if any device fails, and a device that comes back on the _old_ version counts as a failure. Devices in a wave upgrade one at a time by default; raise **at once** to run them concurrently when a fleet of five-minute reboots would otherwise take all evening — waves stay sequential either way, so the canary still gates the rest. Rollouts can be scheduled, and cancelling never interrupts an in-flight flash
 - **Backups** — on demand or on a daily/weekly/monthly schedule for all online devices. Filter by device, type and date range; read one in place instead of downloading it; and compare any two as a diff — they are `/export` text, not opaque blobs. Config snapshots and their restorable `.rsc` are one artifact: delete either and both go, so they never drift apart, and a bulk delete says how many snapshots it will take with it
 - **Configuration templates** — reusable sets (DNS, NTP, syslog) pushed to many devices with per-device result reporting
-- **Device adoption** — a factory-default MikroTik is visible the moment it is plugged in but unreachable: RouterOS ships on `192.168.88.1/24` with no DHCP client and no route, so adding it used to mean Winbox and a MAC address. **Adopt Device** borrows a managed neighbour on the same broadcast domain, reaches the new device through it, and gives it an address on your network — static or DHCP, optionally on a tagged management VLAN. The platform decides from the device's own address and identity whether it is new or already in service, and re-checks properly after connecting so a wrong choice cannot rewrite a switch that is already carrying traffic. A chosen address is verified free by both ARP *and* ping, operations are additive so a failure leaves the device as reachable as it was, and the borrowed neighbour is returned untouched on every path. See [the adoption guide](docs/adoption.md)
+- **Device adoption** — a factory-default MikroTik is visible the moment it is plugged in but unreachable: RouterOS ships on `192.168.88.1/24` with no DHCP client and no route, so adding it used to mean Winbox and a MAC address. **Adopt Device** borrows a managed neighbour on the same broadcast domain, reaches the new device through it, and gives it an address on your network — static or DHCP, optionally on a tagged management VLAN. The platform decides from the device's own address and identity whether it is new or already in service, and re-checks properly after connecting so a wrong choice cannot rewrite a switch that is already carrying traffic. A chosen address is verified free by both ARP _and_ ping, operations are additive so a failure leaves the device as reachable as it was, and the borrowed neighbour is returned untouched on every path. See [the adoption guide](docs/adoption.md)
 - **Bulk device add** — "Try All" on discovered devices runs as a server-side job that survives a closed browser tab, with live progress and cancel
 - **Device organisation** — colour-coded tags assigned from the device page, renamed or recoloured in Settings, and usable as a selector for bulk commands, rack location, physical address with map support, and per-device notes. Tags are the one grouping that crosses sites and device types, which is what makes them worth having alongside both
 - **Dark Site Mode** — every feature that reaches the internet on its own (maps, update checks, changelogs, the MAC vendor database, the docs link) listed with its destination and individually switchable, so an isolated network can be audited against a firewall log. All on by default. See [configuration](docs/configuration.md#dark-site-mode)
@@ -371,38 +371,38 @@ Each network service supports multi-device management with conflict detection:
 Deeper reference material lives at **[the documentation site](https://2gt-media-group-llc.github.io/mikrotik-manager/)**, published per release so it matches the version you are running. The same pages are in [`docs/`](docs/README.md) if you would rather read them here.
 so it moves when behaviour does.
 
-| Document | Covers |
-|---|---|
-| [Configuration](docs/configuration.md) | Environment variables, secret management, key rotation, TLS |
-| [Devices](docs/devices.md) | The device list, device tabs, ports and VLANs, per-device tools |
-| [Clients](docs/clients.md) | Where client data comes from, identification, history, per-port clients |
-| [Topology](docs/topology.md) | How links are discovered, spanning-tree resolution, manual links |
-| [Traffic analytics](docs/traffic.md) | The NetFlow collector, top talkers, application breakdown, retention |
-| [Wireless](docs/wireless.md) | Radios and SSIDs, RF health, signal bands, rogue APs, guest WiFi |
-| [Network services](docs/network-services.md) | DHCP, DNS, NTP, WireGuard, logging, discovery and SNMP |
-| [Adopting devices](docs/adoption.md) | Adding configured devices, and configuring factory-default ones so they can be managed |
-| [Change Guard and Config Health](docs/change-guard.md) | How the safety system works, its settings, and what to expect when it fires |
-| [Sites](docs/sites.md) | Grouping devices into sites, switching between them, and what each site scopes |
-| [Firmware rollouts](docs/firmware.md) | Waves, the upgrade pipeline, and what upgrading several at once costs |
-| [Backups](docs/backups.md) | Finding, reading, comparing and deleting configuration backups |
-| [Alerting](docs/alerting.md) | Rules, channels, ntfy priority mapping, webhooks, maintenance windows |
-| [Single sign-on (OIDC)](docs/sso-oidc.md) | Identity provider setup, group-to-role mapping, break-glass behaviour |
-| [CAPsMAN](docs/capsman.md) | How centrally provisioned APs are modelled, and current limits |
-| [API and automation](docs/api.md) | Scoped tokens, preflighting a change, driving the platform from scripts |
-| [Architecture](docs/architecture.md) | Data stores, polling model, and where the interesting logic lives |
+| Document                                               | Covers                                                                                 |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| [Configuration](docs/configuration.md)                 | Environment variables, secret management, key rotation, TLS                            |
+| [Devices](docs/devices.md)                             | The device list, device tabs, ports and VLANs, per-device tools                        |
+| [Clients](docs/clients.md)                             | Where client data comes from, identification, history, per-port clients                |
+| [Topology](docs/topology.md)                           | How links are discovered, spanning-tree resolution, manual links                       |
+| [Traffic analytics](docs/traffic.md)                   | The NetFlow collector, top talkers, application breakdown, retention                   |
+| [Wireless](docs/wireless.md)                           | Radios and SSIDs, RF health, signal bands, rogue APs, guest WiFi                       |
+| [Network services](docs/network-services.md)           | DHCP, DNS, NTP, WireGuard, logging, discovery and SNMP                                 |
+| [Adopting devices](docs/adoption.md)                   | Adding configured devices, and configuring factory-default ones so they can be managed |
+| [Change Guard and Config Health](docs/change-guard.md) | How the safety system works, its settings, and what to expect when it fires            |
+| [Sites](docs/sites.md)                                 | Grouping devices into sites, switching between them, and what each site scopes         |
+| [Firmware rollouts](docs/firmware.md)                  | Waves, the upgrade pipeline, and what upgrading several at once costs                  |
+| [Backups](docs/backups.md)                             | Finding, reading, comparing and deleting configuration backups                         |
+| [Alerting](docs/alerting.md)                           | Rules, channels, ntfy priority mapping, webhooks, maintenance windows                  |
+| [Single sign-on (OIDC)](docs/sso-oidc.md)              | Identity provider setup, group-to-role mapping, break-glass behaviour                  |
+| [CAPsMAN](docs/capsman.md)                             | How centrally provisioned APs are modelled, and current limits                         |
+| [API and automation](docs/api.md)                      | Scoped tokens, preflighting a change, driving the platform from scripts                |
+| [Architecture](docs/architecture.md)                   | Data stores, polling model, and where the interesting logic lives                      |
 
 ### Tech stack
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS |
-| **State / data** | TanStack Query v5, React Router v6, Zustand |
-| **Charts / topology / maps** | Recharts, @xyflow/react, Leaflet |
-| **Backend** | Node.js, Express, TypeScript |
-| **Data stores** | PostgreSQL 15, InfluxDB 2.7, Redis 7 + BullMQ |
-| **Real-time** | Socket.IO |
-| **Device comms** | RouterOS API (8728 / 8729), SSH2 |
-| **Proxy / container** | nginx, Docker Compose |
+| Layer                        | Technology                                    |
+| ---------------------------- | --------------------------------------------- |
+| **Frontend**                 | React 18, TypeScript, Vite, Tailwind CSS      |
+| **State / data**             | TanStack Query v5, React Router v6, Zustand   |
+| **Charts / topology / maps** | Recharts, @xyflow/react, Leaflet              |
+| **Backend**                  | Node.js, Express, TypeScript                  |
+| **Data stores**              | PostgreSQL 15, InfluxDB 2.7, Redis 7 + BullMQ |
+| **Real-time**                | Socket.IO                                     |
+| **Device comms**             | RouterOS API (8728 / 8729), SSH2              |
+| **Proxy / container**        | nginx, Docker Compose                         |
 
 ---
 

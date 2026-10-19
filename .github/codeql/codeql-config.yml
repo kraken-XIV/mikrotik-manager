@@ -1,4 +1,4 @@
-name: "MikroTik Manager CodeQL config"
+name: 'MikroTik Manager CodeQL config'
 
 # Rate limiting is enforced globally in Express — `app.use('/api', rateLimitRedis(...))`
 # in backend/src/index.ts, plus dedicated limiters on auth/login/TOTP/OIDC routes.

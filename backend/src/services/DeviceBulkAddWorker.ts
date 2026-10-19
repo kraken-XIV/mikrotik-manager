@@ -1,10 +1,11 @@
-import { Queue, Worker, Job } from 'bullmq';
+import { Job, Queue, Worker } from 'bullmq';
+
 import { createRedisConnection } from '../config/redis';
 import { redis } from '../config/redis';
+import { openItem, sealItems } from '../utils/bulkAddSecrets';
+import type { PresetCaller } from '../utils/presetAccess';
 import { createDeviceFromBody, type CreateDeviceInput } from './deviceCreation';
 import type { PollerService } from './PollerService';
-import { sealItems, openItem } from '../utils/bulkAddSecrets';
-import type { PresetCaller } from '../utils/presetAccess';
 
 const QUEUE_NAME = 'bulk-add-devices';
 const JOB_TTL_SEC = 86400;
@@ -113,7 +114,12 @@ async function processJob(job: Job<BulkJobPayload>): Promise<void> {
       // Without the role, an operator could use an admin-only preset here, and
       // since the add connects to the address in the item, send that preset's
       // credentials to a host of their choosing.
-      { siteId: typeof rowSite === 'number' ? rowSite : siteId ?? null, requestingUserRole, allowedSites: allowedSites ?? null, presetCaller }
+      {
+        siteId: typeof rowSite === 'number' ? rowSite : (siteId ?? null),
+        requestingUserRole,
+        allowedSites: allowedSites ?? null,
+        presetCaller,
+      },
     );
 
     let failMsg = 'Failed';
@@ -130,7 +136,9 @@ async function processJob(job: Job<BulkJobPayload>): Promise<void> {
       identity,
       ok: result.ok,
       message: result.ok
-        ? (result.body.merged_from_duplicate ? 'Updated (duplicate serial)' : 'Added')
+        ? result.body.merged_from_duplicate
+          ? 'Updated (duplicate serial)'
+          : 'Added'
         : failMsg,
     };
     await appendResults(jobId, [row]);
@@ -158,11 +166,22 @@ export async function enqueueBulkAddJob(
   }
   // Passwords are encrypted before they reach Redis, and a finished job is
   // removed at once: progress and results live in their own keys.
-  await queue.add('run', { jobId, items: sealItems(items), siteId, requestingUserRole, allowedSites, presetCaller } satisfies BulkJobPayload, {
-    attempts: 1,
-    removeOnComplete: true,
-    removeOnFail: { age: 86400 },
-  });
+  await queue.add(
+    'run',
+    {
+      jobId,
+      items: sealItems(items),
+      siteId,
+      requestingUserRole,
+      allowedSites,
+      presetCaller,
+    } satisfies BulkJobPayload,
+    {
+      attempts: 1,
+      removeOnComplete: true,
+      removeOnFail: { age: 86400 },
+    },
+  );
 }
 
 export async function getBulkAddJobState(jobId: string): Promise<{
@@ -196,7 +215,7 @@ export async function startBulkAddWorker(): Promise<void> {
         throw err;
       }
     },
-    { connection: createRedisConnection(), concurrency: 1 }
+    { connection: createRedisConnection(), concurrency: 1 },
   );
   worker.on('failed', (job, err) => {
     console.error('[BulkAddWorker] job failed:', job?.id, err);

@@ -7,7 +7,13 @@ export function rosDurationSeconds(v: string | undefined | null): number | null 
   if (!t) return null;
   if (/^\d+$/.test(t)) return Number(t);
   const clock = /^(?:(\d+)d\s*)?(\d{1,2}):(\d{2}):(\d{2})$/.exec(t);
-  if (clock) return Number(clock[1] ?? 0) * 86400 + Number(clock[2]) * 3600 + Number(clock[3]) * 60 + Number(clock[4]);
+  if (clock)
+    return (
+      Number(clock[1] ?? 0) * 86400 +
+      Number(clock[2]) * 3600 +
+      Number(clock[3]) * 60 +
+      Number(clock[4])
+    );
   const units: Record<string, number> = { w: 604800, d: 86400, h: 3600, m: 60, s: 1 };
   let total = 0;
   let rest = t;

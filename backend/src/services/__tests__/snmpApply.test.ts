@@ -1,8 +1,8 @@
 jest.mock('../../config/database');
 jest.mock('../mikrotik/DeviceCollector');
 
-import { validateSnmpInput, applySnmpConfig, SnmpInputError } from '../snmpApply';
 import { query } from '../../config/database';
+import { applySnmpConfig, SnmpInputError, validateSnmpInput } from '../snmpApply';
 
 describe('validateSnmpInput (fleet SNMP changes)', () => {
   it('accepts a single chosen change, such as only a trap destination', () => {
@@ -22,12 +22,14 @@ describe('validateSnmpInput (fleet SNMP changes)', () => {
 
 describe('applySnmpConfig targets', () => {
   it('refuses an empty device selection before touching anything', async () => {
-    await expect(applySnmpConfig({ deviceIds: [] }, { trap_target: '10.0.0.5' }, null)).rejects.toThrow(/at least one device/);
+    await expect(
+      applySnmpConfig({ deviceIds: [] }, { trap_target: '10.0.0.5' }, null),
+    ).rejects.toThrow(/at least one device/);
     expect(query).not.toHaveBeenCalled();
   });
 
   it('lists chosen devices it could not reach as skipped', async () => {
-    jest.mocked(query).mockResolvedValueOnce([] as never);   // e.g. offline or in another site
+    jest.mocked(query).mockResolvedValueOnce([] as never); // e.g. offline or in another site
     const r = await applySnmpConfig({ deviceIds: [7, 9] }, { trap_target: '10.0.0.5' }, null);
     expect(r).toMatchObject({ applied: 0, total: 0, skipped: [7, 9] });
     const [sql, params] = jest.mocked(query).mock.calls[0];

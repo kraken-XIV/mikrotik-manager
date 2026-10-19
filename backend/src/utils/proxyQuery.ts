@@ -1,12 +1,29 @@
 /** Validated inputs for GET /api/proxy/top. Only trusted literals reach the SQL. */
 
-const RANGES: Record<string, string> = { '1h': '1 hour', '24h': '24 hours', '7d': '7 days', '30d': '30 days' };
+const RANGES: Record<string, string> = {
+  '1h': '1 hour',
+  '24h': '24 hours',
+  '7d': '7 days',
+  '30d': '30 days',
+};
 
 export const GROUPS = {
   client: { key: 'client_ip', where: `status = 'ok'`, distinct: 'COALESCE(hostname, server_ip)' },
-  user: { key: 'auth_user', where: `status = 'ok' AND auth_user IS NOT NULL`, distinct: 'client_ip' },
-  destination: { key: 'COALESCE(hostname, server_ip)', where: `status = 'ok' AND COALESCE(hostname, server_ip) IS NOT NULL`, distinct: 'client_ip' },
-  denied: { key: 'client_ip', where: `status <> 'ok' AND auth_user IS NULL`, distinct: 'proxy_port::text' },
+  user: {
+    key: 'auth_user',
+    where: `status = 'ok' AND auth_user IS NOT NULL`,
+    distinct: 'client_ip',
+  },
+  destination: {
+    key: 'COALESCE(hostname, server_ip)',
+    where: `status = 'ok' AND COALESCE(hostname, server_ip) IS NOT NULL`,
+    distinct: 'client_ip',
+  },
+  denied: {
+    key: 'client_ip',
+    where: `status <> 'ok' AND auth_user IS NULL`,
+    distinct: 'proxy_port::text',
+  },
 } as const;
 
 export type ProxyGroup = (typeof GROUPS)[keyof typeof GROUPS];
@@ -14,8 +31,7 @@ export type ProxyGroup = (typeof GROUPS)[keyof typeof GROUPS];
 export type ProxyBy = keyof typeof GROUPS;
 
 export type ProxyQueryChoice =
-  | { by: ProxyBy; range: string; group: ProxyGroup; interval: string }
-  | { error: string };
+  { by: ProxyBy; range: string; group: ProxyGroup; interval: string } | { error: string };
 
 /**
  * Resolve the `by` and `range` query values. Own-property checks are required:

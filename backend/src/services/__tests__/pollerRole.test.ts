@@ -7,6 +7,7 @@ describe('POLLER_ROLE (#301)', () => {
   });
 
   it('anything else is everything, so a typo cannot stop polling', () => {
-    for (const v of [undefined, '', 'all', 'workers', 'none']) expect(parsePollerRole(v)).toBe('all');
+    for (const v of [undefined, '', 'all', 'workers', 'none'])
+      expect(parsePollerRole(v)).toBe('all');
   });
 });

@@ -1,4 +1,4 @@
-import { parseImportOutput, countCommandsBefore } from '../importResult';
+import { countCommandsBefore, parseImportOutput } from '../importResult';
 
 // Output captured from RouterOS 7.24.4 (the TEST switch).
 const OK = 'Script file loaded and executed successfully\n';
@@ -12,7 +12,8 @@ describe('parseImportOutput', () => {
   });
 
   it('reports a partial import, with the line it stopped at', () => {
-    const script = '/system identity set name=x\n/interface bridge add name=bridge\n/system identity set name=x\n';
+    const script =
+      '/system identity set name=x\n/interface bridge add name=bridge\n/system identity set name=x\n';
     const r = parseImportOutput(FAIL_LINE_2, script);
     expect(r.status).toBe('partial');
     expect(r.failedLine).toBe(2);
@@ -24,7 +25,8 @@ describe('parseImportOutput', () => {
     // What replaying a real export usually looks like: header comment, a section
     // path, then an add of something that already exists.
     const script = '# 2026-09-27 by RouterOS 7.24.4\n/interface bridge\nadd name=bridge\n';
-    const out = 'Script Error: failure: already have interface with name bridge (/interface/bridge/add; line 3) (:import; line 1)';
+    const out =
+      'Script Error: failure: already have interface with name bridge (/interface/bridge/add; line 3) (:import; line 1)';
     const r = parseImportOutput(out, script);
     expect(r.status).toBe('nothing_applied');
     expect(r.failedLine).toBe(3);

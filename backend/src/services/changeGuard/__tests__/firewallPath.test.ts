@@ -1,19 +1,37 @@
-import { evaluateInputChain, addressMatches, portMatches, ruleMatches, referencedAddressLists, type MgmtConnection } from '../firewallPath';
 import { analyzeChange } from '../analyzeChange';
-import type { DeviceSnapshot, RosRow } from '../pathModel';
 import type { GuardDevice } from '../ChangeGuard';
+import {
+  addressMatches,
+  evaluateInputChain,
+  type MgmtConnection,
+  portMatches,
+  referencedAddressLists,
+  ruleMatches,
+} from '../firewallPath';
+import type { DeviceSnapshot, RosRow } from '../pathModel';
 
 const device: GuardDevice = {
-  id: 1, name: 'test-switch', ip_address: '192.168.0.40', api_port: 8728,
-  api_username: 'admin', api_password_encrypted: 'x',
+  id: 1,
+  name: 'test-switch',
+  ip_address: '192.168.0.40',
+  api_port: 8728,
+  api_username: 'admin',
+  api_password_encrypted: 'x',
 };
 
-const conn: MgmtConnection = { srcIp: '10.9.0.5', dstIp: '192.168.0.40', dstPort: 8728, inInterface: 'bridge' };
+const conn: MgmtConnection = {
+  srcIp: '10.9.0.5',
+  dstIp: '192.168.0.40',
+  dstPort: 8728,
+  inInterface: 'bridge',
+};
 
 /** A device reached on its bridge by a manager at 10.9.0.5, per connection tracking. */
 function snapshot(filter: RosRow[], over: Partial<DeviceSnapshot> = {}): DeviceSnapshot {
   return {
-    addresses: [{ '.id': '*1', address: '192.168.0.40/24', interface: 'bridge', disabled: 'false' }],
+    addresses: [
+      { '.id': '*1', address: '192.168.0.40/24', interface: 'bridge', disabled: 'false' },
+    ],
     interfaces: [
       { name: 'bridge', type: 'bridge', disabled: 'false' },
       { name: 'ether1', type: 'ether', disabled: 'false' },
@@ -29,7 +47,9 @@ function snapshot(filter: RosRow[], over: Partial<DeviceSnapshot> = {}): DeviceS
     bridgeHosts: [{ 'mac-address': 'AA:BB:CC:00:00:01', 'on-interface': 'ether2', local: 'false' }],
     services: [{ '.id': '*1', name: 'api', port: '8728', disabled: 'false' }],
     firewallFilter: filter,
-    mgmtConnections: [{ protocol: 'tcp', 'src-address': '10.9.0.5:51000', 'dst-address': '192.168.0.40:8728' }],
+    mgmtConnections: [
+      { protocol: 'tcp', 'src-address': '10.9.0.5:51000', 'dst-address': '192.168.0.40:8728' },
+    ],
     interfaceLists: [{ name: 'LAN' }, { name: 'WAN' }],
     interfaceListMembers: [
       { list: 'LAN', interface: 'bridge', disabled: 'false' },
@@ -43,10 +63,34 @@ function snapshot(filter: RosRow[], over: Partial<DeviceSnapshot> = {}): DeviceS
 
 /** RouterOS's default input chain (defconf), trimmed to what matters here. */
 const DEFCONF: RosRow[] = [
-  { '.id': '*1', chain: 'input', action: 'accept', 'connection-state': 'established,related,untracked', comment: 'defconf: accept established,related,untracked' },
-  { '.id': '*2', chain: 'input', action: 'drop', 'connection-state': 'invalid', comment: 'defconf: drop invalid' },
-  { '.id': '*3', chain: 'input', action: 'accept', protocol: 'icmp', comment: 'defconf: accept ICMP' },
-  { '.id': '*4', chain: 'input', action: 'drop', 'in-interface-list': '!LAN', comment: 'defconf: drop all not coming from LAN' },
+  {
+    '.id': '*1',
+    chain: 'input',
+    action: 'accept',
+    'connection-state': 'established,related,untracked',
+    comment: 'defconf: accept established,related,untracked',
+  },
+  {
+    '.id': '*2',
+    chain: 'input',
+    action: 'drop',
+    'connection-state': 'invalid',
+    comment: 'defconf: drop invalid',
+  },
+  {
+    '.id': '*3',
+    chain: 'input',
+    action: 'accept',
+    protocol: 'icmp',
+    comment: 'defconf: accept ICMP',
+  },
+  {
+    '.id': '*4',
+    chain: 'input',
+    action: 'drop',
+    'in-interface-list': '!LAN',
+    comment: 'defconf: drop all not coming from LAN',
+  },
   { '.id': '*5', chain: 'forward', action: 'drop', 'connection-state': 'invalid' },
 ];
 
@@ -130,22 +174,30 @@ describe('evaluateInputChain', () => {
       { '.id': '*a', chain: 'input', action: 'accept', 'src-address-list': 'mgmt' },
       { '.id': '*d', chain: 'input', action: 'drop' },
     ];
-    const read = { addressLists: [{ '.id': '*L1', list: 'mgmt', address: '10.9.0.0/24' }], addressListsRead: ['mgmt'] };
+    const read = {
+      addressLists: [{ '.id': '*L1', list: 'mgmt', address: '10.9.0.0/24' }],
+      addressListsRead: ['mgmt'],
+    };
     expect(evaluateInputChain(snapshot(filter, read), conn).outcome).toBe('accepted');
     // A list that couldn't be read can't say no.
     expect(evaluateInputChain(snapshot(filter), conn).outcome).toBe('unknown');
   });
 
   it('does not apply the IPv4 filter to a manager on IPv6', () => {
-    const v = evaluateInputChain(snapshot([{ '.id': '*d', chain: 'input', action: 'drop' }]), { ...conn, dstIp: '2001:db8::40' });
+    const v = evaluateInputChain(snapshot([{ '.id': '*d', chain: 'input', action: 'drop' }]), {
+      ...conn,
+      dstIp: '2001:db8::40',
+    });
     expect(v.outcome).toBe('accepted');
   });
 
   it('reads address lists named by disabled rules too', () => {
-    expect(referencedAddressLists([
-      { chain: 'input', 'src-address-list': 'a' },
-      { chain: 'input', 'src-address-list': '!b', disabled: 'true' },
-    ]).sort()).toEqual(['a', 'b']);
+    expect(
+      referencedAddressLists([
+        { chain: 'input', 'src-address-list': 'a' },
+        { chain: 'input', 'src-address-list': '!b', disabled: 'true' },
+      ]).sort(),
+    ).toEqual(['a', 'b']);
   });
 });
 
@@ -153,7 +205,14 @@ describe('evaluateInputChain', () => {
 describe('analyzeChange for firewall edits', () => {
   const staged: RosRow[] = [
     ...DEFCONF.slice(0, 3),
-    { '.id': '*m', chain: 'input', action: 'accept', protocol: 'tcp', 'dst-port': '8728', comment: 'manager' },
+    {
+      '.id': '*m',
+      chain: 'input',
+      action: 'accept',
+      protocol: 'tcp',
+      'dst-port': '8728',
+      comment: 'manager',
+    },
     { '.id': '*x', chain: 'input', action: 'drop', disabled: 'true', comment: 'staged drop-all' },
   ];
 
@@ -163,19 +222,31 @@ describe('analyzeChange for firewall edits', () => {
       { '.id': '*x', chain: 'input', action: 'drop', disabled: 'true', comment: 'staged drop-all' },
       { '.id': '*m', chain: 'input', action: 'accept', protocol: 'tcp', 'dst-port': '8728' },
     ];
-    const v = analyzeChange(snapshot(lockout), device, { kind: 'firewall.set', ruleId: '*x', fields: { disabled: 'no' } });
+    const v = analyzeChange(snapshot(lockout), device, {
+      kind: 'firewall.set',
+      ruleId: '*x',
+      fields: { disabled: 'no' },
+    });
     expect(v.severity).toBe('critical');
     expect(v.violations[0].detail).toMatch(/staged drop-all/);
   });
 
   it('allows enabling the same drop when the manager is accepted above it', () => {
-    const v = analyzeChange(snapshot(staged), device, { kind: 'firewall.set', ruleId: '*x', fields: { disabled: 'no' } });
+    const v = analyzeChange(snapshot(staged), device, {
+      kind: 'firewall.set',
+      ruleId: '*x',
+      fields: { disabled: 'no' },
+    });
     expect(v.severity).toBe('safe');
   });
 
   it('catches moving a drop above the rule that accepts the manager', () => {
     const on = staged.map((r) => (r['.id'] === '*x' ? { ...r, disabled: 'false' } : r));
-    const v = analyzeChange(snapshot(on), device, { kind: 'firewall.move', ruleId: '*x', destination: '*m' });
+    const v = analyzeChange(snapshot(on), device, {
+      kind: 'firewall.move',
+      ruleId: '*x',
+      destination: '*m',
+    });
     expect(v.severity).toBe('critical');
   });
 
@@ -198,40 +269,70 @@ describe('analyzeChange for firewall edits', () => {
     expect(v.severity).toBe('critical');
   });
 
-  it('catches disabling the manager\'s entry in the address list it is accepted by (D85)', () => {
+  it("catches disabling the manager's entry in the address list it is accepted by (D85)", () => {
     const filter: RosRow[] = [
       { '.id': '*a', chain: 'input', action: 'accept', 'src-address-list': 'mgmt' },
       { '.id': '*d', chain: 'input', action: 'drop' },
     ];
-    const lists = { addressLists: [{ '.id': '*L1', list: 'mgmt', address: '10.9.0.5' }, { '.id': '*L2', list: 'mgmt', address: '10.9.0.77' }], addressListsRead: ['mgmt'] };
-    const off = analyzeChange(snapshot(filter, lists), device, { kind: 'address-list.set', entryId: '*L1', fields: { disabled: 'yes' } });
+    const lists = {
+      addressLists: [
+        { '.id': '*L1', list: 'mgmt', address: '10.9.0.5' },
+        { '.id': '*L2', list: 'mgmt', address: '10.9.0.77' },
+      ],
+      addressListsRead: ['mgmt'],
+    };
+    const off = analyzeChange(snapshot(filter, lists), device, {
+      kind: 'address-list.set',
+      entryId: '*L1',
+      fields: { disabled: 'yes' },
+    });
     expect(off.severity).toBe('critical');
     // Another entry in the same list can be turned off safely.
-    const other = analyzeChange(snapshot(filter, lists), device, { kind: 'address-list.set', entryId: '*L2', fields: { disabled: 'yes' } });
+    const other = analyzeChange(snapshot(filter, lists), device, {
+      kind: 'address-list.set',
+      entryId: '*L2',
+      fields: { disabled: 'yes' },
+    });
     expect(other.severity).toBe('safe');
   });
 
   it('catches appending a drop-all to the default config, which relies on the default accept for LAN', () => {
-    const v = analyzeChange(snapshot(DEFCONF), device, { kind: 'firewall.add', fields: { chain: 'input', action: 'drop' } });
+    const v = analyzeChange(snapshot(DEFCONF), device, {
+      kind: 'firewall.add',
+      fields: { chain: 'input', action: 'drop' },
+    });
     expect(v.severity).toBe('critical');
   });
 
   it('allows appending a drop-all below a rule that accepts the manager', () => {
-    const v = analyzeChange(snapshot(staged), device, { kind: 'firewall.add', fields: { chain: 'input', action: 'drop' } });
+    const v = analyzeChange(snapshot(staged), device, {
+      kind: 'firewall.add',
+      fields: { chain: 'input', action: 'drop' },
+    });
     expect(v.severity).toBe('safe');
   });
 
   it('warns, and so requires auto-revert, when the result depends on something unmodelled', () => {
     const v = analyzeChange(snapshot(staged), device, {
-      kind: 'firewall.add', placeBefore: '*m', fields: { chain: 'input', action: 'drop', 'tcp-flags': 'syn' },
+      kind: 'firewall.add',
+      placeBefore: '*m',
+      fields: { chain: 'input', action: 'drop', 'tcp-flags': 'syn' },
     });
     expect(v.severity).toBe('warning');
   });
 
   it('warns about unsimulated changes to objects on the management path', () => {
-    const v = analyzeChange(snapshot(DEFCONF), device, { kind: 'path-object.change', name: 'ether2', what: 'Changing speed' });
+    const v = analyzeChange(snapshot(DEFCONF), device, {
+      kind: 'path-object.change',
+      name: 'ether2',
+      what: 'Changing speed',
+    });
     expect(v.severity).toBe('warning');
-    const off = analyzeChange(snapshot(DEFCONF), device, { kind: 'path-object.change', name: 'ether1', what: 'Changing speed' });
+    const off = analyzeChange(snapshot(DEFCONF), device, {
+      kind: 'path-object.change',
+      name: 'ether1',
+      what: 'Changing speed',
+    });
     expect(off.severity).toBe('safe');
   });
 

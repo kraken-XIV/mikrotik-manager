@@ -87,7 +87,10 @@ export function buildAttributionMaps(devices: DeviceRow[], clients: ClientRow[])
   for (const d of [...devices].sort((a, b) => a.id - b.id)) {
     sites.add(d.site_id);
     let own = deviceIpsBySite.get(siteKey(d.site_id));
-    if (!own) { own = new Set(); deviceIpsBySite.set(siteKey(d.site_id), own); }
+    if (!own) {
+      own = new Set();
+      deviceIpsBySite.set(siteKey(d.site_id), own);
+    }
     for (const ip of deviceAddresses(d)) {
       own.add(ip);
       allDeviceIps.add(ip);
@@ -105,14 +108,20 @@ export function buildAttributionMaps(devices: DeviceRow[], clients: ClientRow[])
   }
 
   const clientBySite = new Map<number, Map<string, string>>();
-  const clientAnySite = new Map<string, { siteId: number | null; mac: string } | typeof AMBIGUOUS>();
+  const clientAnySite = new Map<
+    string,
+    { siteId: number | null; mac: string } | typeof AMBIGUOUS
+  >();
   for (const c of clients) {
     if (!c.ip_address) continue;
     const key = siteKey(c.site_id);
     // A device's own addresses are not client endpoints we can bill to a MAC.
     if (deviceIpsBySite.get(key)?.has(c.ip_address)) continue;
     let map = clientBySite.get(key);
-    if (!map) { map = new Map(); clientBySite.set(key, map); }
+    if (!map) {
+      map = new Map();
+      clientBySite.set(key, map);
+    }
     if (map.has(c.ip_address)) continue; // an older holder of the address in this site
     const mac = c.mac_address.toLowerCase();
     map.set(c.ip_address, mac);
@@ -120,7 +129,8 @@ export function buildAttributionMaps(devices: DeviceRow[], clients: ClientRow[])
     if (allDeviceIps.has(c.ip_address)) continue;
     const any = clientAnySite.get(c.ip_address);
     if (any === undefined) clientAnySite.set(c.ip_address, { siteId: c.site_id, mac });
-    else if (any !== AMBIGUOUS && any.siteId !== c.site_id) clientAnySite.set(c.ip_address, AMBIGUOUS);
+    else if (any !== AMBIGUOUS && any.siteId !== c.site_id)
+      clientAnySite.set(c.ip_address, AMBIGUOUS);
   }
 
   const soleSite = sites.size === 1 ? [...sites][0] : null;
@@ -137,7 +147,11 @@ export interface ClientMatch {
  * couldn't be identified to one site). Unmatched addresses keep the
  * exporter's site, so a site's "unknown" traffic stays in that site.
  */
-export function matchClient(maps: AttributionMaps, exporter: ExporterInfo | null, ip: string): ClientMatch {
+export function matchClient(
+  maps: AttributionMaps,
+  exporter: ExporterInfo | null,
+  ip: string,
+): ClientMatch {
   if (exporter) {
     const mac = maps.clientBySite.get(siteKey(exporter.siteId))?.get(ip);
     return { mac, siteId: exporter.siteId };

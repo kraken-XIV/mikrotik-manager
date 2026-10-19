@@ -1,14 +1,24 @@
 import {
-  parseRosId, highestStoredId, isLogReset, selectNewLogLines,
-  surrogateLogId, isSurrogateLogId, storedLogId, type RawLogLine,
+  highestStoredId,
+  isLogReset,
+  isSurrogateLogId,
+  parseRosId,
+  type RawLogLine,
+  selectNewLogLines,
+  storedLogId,
+  surrogateLogId,
 } from '../logDedup';
 
 // Fixed clock so timestamp comparisons are deterministic.
 const T = (iso: string) => new Date(iso);
 const parseTime = (raw: string) => (raw ? T(raw) : new Date(0));
 
-const line = (id: string, time = '', message = 'm'): RawLogLine =>
-  ({ '.id': id, time, message, topics: 'system,info' });
+const line = (id: string, time = '', message = 'm'): RawLogLine => ({
+  '.id': id,
+  time,
+  message,
+  topics: 'system,info',
+});
 
 describe('parseRosId', () => {
   it('reads RouterOS hex ids', () => {
@@ -89,7 +99,9 @@ describe('selectNewLogLines', () => {
 
   it('treats a line exactly on the boundary as already stored', () => {
     const logs = [{ time: '2026-09-08T00:00:00Z', message: 'boundary' }];
-    expect(selectNewLogLines(logs, { lastStoredId: 0, latestStoredTime, parseTime })).toHaveLength(0);
+    expect(selectNewLogLines(logs, { lastStoredId: 0, latestStoredTime, parseTime })).toHaveLength(
+      0,
+    );
   });
 });
 

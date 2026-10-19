@@ -7,7 +7,7 @@ name: Publish to GHCR
 # token, which does not start other workflows.)
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ['CI']
     types: [completed]
     branches: [main]
   workflow_dispatch:

@@ -1,6 +1,11 @@
-import { validateSession, endAllSessions, revokeSessionToken, forgetSessionAccount } from '../sessionState';
 import { query, queryOne } from '../../config/database';
 import { redis } from '../../config/redis';
+import {
+  endAllSessions,
+  forgetSessionAccount,
+  revokeSessionToken,
+  validateSession,
+} from '../sessionState';
 
 jest.mock('../../config/database', () => ({ query: jest.fn(), queryOne: jest.fn() }));
 jest.mock('../../config/redis', () => ({ redis: { set: jest.fn(), exists: jest.fn() } }));
@@ -10,8 +15,13 @@ const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockExists = redis.exists as unknown as jest.Mock;
 const mockSet = redis.set as unknown as jest.Mock;
 
-const account = (over: Record<string, unknown> = {}) =>
-  ({ username: 'alice', role: 'admin', session_version: 2, must_change_password: false, ...over });
+const account = (over: Record<string, unknown> = {}) => ({
+  username: 'alice',
+  role: 'admin',
+  session_version: 2,
+  must_change_password: false,
+  ...over,
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -61,13 +71,18 @@ describe('validateSession', () => {
     expect((await validateSession(session))?.mustChangePassword).toBe(true);
     forgetSessionAccount(1);
     mockQueryOne.mockResolvedValueOnce(account());
-    expect((await validateSession({ ...session, mustChangePassword: true }))?.mustChangePassword).toBeUndefined();
+    expect(
+      (await validateSession({ ...session, mustChangePassword: true }))?.mustChangePassword,
+    ).toBeUndefined();
   });
 
   // P1-7: site roles come from the account on every request, never the token.
   it('attaches per-site roles for a site-scoped account', async () => {
     mockQueryOne.mockResolvedValueOnce(account());
-    mockQuery.mockResolvedValueOnce([{ site_id: 3, role: 'operator' }, { site_id: 5, role: 'viewer' }] as never);
+    mockQuery.mockResolvedValueOnce([
+      { site_id: 3, role: 'operator' },
+      { site_id: 5, role: 'viewer' },
+    ] as never);
     expect((await validateSession(session))?.siteRoles).toEqual({ 3: 'operator', 5: 'viewer' });
   });
 

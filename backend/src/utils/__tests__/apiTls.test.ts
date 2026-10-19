@@ -1,4 +1,4 @@
-import { usesApiTls, managementService, parseApiTls, checkPort } from '../apiTls';
+import { checkPort, managementService, parseApiTls, usesApiTls } from '../apiTls';
 
 describe('usesApiTls', () => {
   it('keeps the 8729 rule for devices without a choice', () => {

@@ -1,6 +1,7 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
-import { requireAuth, requireWrite, requireAdmin } from '../middleware/auth';
+import { requireAdmin, requireAuth, requireWrite } from '../middleware/auth';
 import { windowCovers } from '../utils/maintenance';
 
 const router = Router();
@@ -24,8 +25,12 @@ export interface MaintenanceWindow {
  */
 export async function isDeviceInMaintenance(deviceId: number): Promise<boolean> {
   const [windows, tz] = await Promise.all([
-    query<MaintenanceWindow>(`SELECT * FROM maintenance_windows WHERE active = true`).catch(() => []),
-    query<{ value: unknown }>(`SELECT value FROM app_settings WHERE key = 'app_timezone'`).catch(() => []),
+    query<MaintenanceWindow>(`SELECT * FROM maintenance_windows WHERE active = true`).catch(
+      () => [],
+    ),
+    query<{ value: unknown }>(`SELECT value FROM app_settings WHERE key = 'app_timezone'`).catch(
+      () => [],
+    ),
   ]);
   const timeZone = typeof tz[0]?.value === 'string' ? tz[0].value : 'UTC';
   const now = new Date();
@@ -35,7 +40,7 @@ export async function isDeviceInMaintenance(deviceId: number): Promise<boolean> 
 // GET /api/maintenance-windows
 router.get('/', async (_req: Request, res: Response) => {
   const rows = await query<MaintenanceWindow>(
-    `SELECT * FROM maintenance_windows ORDER BY start_at DESC`
+    `SELECT * FROM maintenance_windows ORDER BY start_at DESC`,
   );
   res.json(rows);
 });
@@ -54,25 +59,33 @@ function validateWindow(startAt: string, endAt: string, cron?: string | null): s
 // POST /api/maintenance-windows (admin)
 router.post('/', requireAdmin, async (req: Request, res: Response) => {
   const { name, device_ids, start_at, end_at, recurring_cron } = req.body as {
-    name: string; device_ids: number[]; start_at: string; end_at: string; recurring_cron?: string;
+    name: string;
+    device_ids: number[];
+    start_at: string;
+    end_at: string;
+    recurring_cron?: string;
   };
   if (!name?.trim() || !start_at || !end_at) {
     res.status(400).json({ error: 'name, start_at, and end_at are required' });
     return;
   }
   const invalid = validateWindow(start_at, end_at, recurring_cron);
-  if (invalid) { res.status(400).json({ error: invalid }); return; }
+  if (invalid) {
+    res.status(400).json({ error: invalid });
+    return;
+  }
   const rows = await query<MaintenanceWindow>(
     `INSERT INTO maintenance_windows (name, device_ids, start_at, end_at, recurring_cron)
      VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [name.trim(), device_ids ?? [], start_at, end_at, recurring_cron || null]
+    [name.trim(), device_ids ?? [], start_at, end_at, recurring_cron || null],
   );
   res.status(201).json(rows[0]);
 });
 
 // PUT /api/maintenance-windows/:id (admin)
 router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
-  const { name, device_ids, start_at, end_at, recurring_cron, active } = req.body as Partial<MaintenanceWindow>;
+  const { name, device_ids, start_at, end_at, recurring_cron, active } =
+    req.body as Partial<MaintenanceWindow>;
   const rows = await query<MaintenanceWindow>(
     `UPDATE maintenance_windows SET
        name           = COALESCE($1, name),
@@ -82,9 +95,12 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
        recurring_cron = COALESCE($5, recurring_cron),
        active         = COALESCE($6, active)
      WHERE id = $7 RETURNING *`,
-    [name, device_ids, start_at, end_at, recurring_cron, active, req.params.id]
+    [name, device_ids, start_at, end_at, recurring_cron, active, req.params.id],
   );
-  if (!rows[0]) { res.status(404).json({ error: 'Not found' }); return; }
+  if (!rows[0]) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
   res.json(rows[0]);
 });
 
@@ -97,7 +113,7 @@ router.delete('/:id', requireAdmin, async (req: Request, res: Response) => {
 // GET /api/maintenance-windows/active — currently active windows (used by AlertService)
 router.get('/active', requireWrite, async (_req: Request, res: Response) => {
   const rows = await query<MaintenanceWindow>(
-    `SELECT * FROM maintenance_windows WHERE active = true AND NOW() BETWEEN start_at AND end_at`
+    `SELECT * FROM maintenance_windows WHERE active = true AND NOW() BETWEEN start_at AND end_at`,
   );
   res.json(rows);
 });

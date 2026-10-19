@@ -23,12 +23,12 @@ usually your modem not reporting it, not a fault.
 
 Four measurements are collected on the fast poll and kept as a time series:
 
-| Field | Unit | Meaning |
-|---|---|---|
-| RSRP | dBm | Power of the reference signal — how loud the tower is |
-| RSRQ | dB | Quality of that signal |
-| SINR | dB | Signal against noise — how *usable* it is |
-| RSSI | dBm | Wideband received power |
+| Field | Unit | Meaning                                               |
+| ----- | ---- | ----------------------------------------------------- |
+| RSRP  | dBm  | Power of the reference signal — how loud the tower is |
+| RSRQ  | dB   | Quality of that signal                                |
+| SINR  | dB   | Signal against noise — how _usable_ it is             |
+| RSSI  | dBm  | Wideband received power                               |
 
 The panel grades the link rather than only printing numbers, and **SINR leads that
 grade**. RSRP alone misleads: the reference device reports −97 dBm — nominally "fair" —
@@ -71,7 +71,7 @@ for stranding a device on a mast.
 ## Tower and band movement
 
 Handovers, re-registrations and band changes are reconstructed by comparing consecutive
-polls. A session uptime that runs *backwards* means the modem re-registered; a changed
+polls. A session uptime that runs _backwards_ means the modem re-registered; a changed
 cell id means it handed over.
 
 This is deliberately not log-based. The modem this was built for may log nothing at all,
@@ -86,7 +86,7 @@ Two properties are worth understanding:
 
 **Aggregated carriers each count for the whole stretch.** A period spent on B1
 and B3 together credits both with the full duration, so band shares describe how
-much of the window each band was *in use* rather than dividing the window between
+much of the window each band was _in use_ rather than dividing the window between
 them. The totals can therefore exceed 100%, which is the honest description of
 carrier aggregation.
 
@@ -111,7 +111,7 @@ Interface byte counters do not survive a reboot, so there is no running total to
 usage is accumulated poll to poll. That makes the figure a permanent **undercount**:
 traffic during a reboot, a missed poll, or before the device was adopted is invisible.
 
-Undercounting fires *late*, and late means already throttled. So the trigger fires below
+Undercounting fires _late_, and late means already throttled. So the trigger fires below
 the configured allowance, 5% by default. Firing early costs one message; firing late costs
 the evening.
 
@@ -133,7 +133,7 @@ The **Send now** button is independent of everything else — not gated on the r
 enabled, on a threshold, or on the usage estimate. It is the trustworthy half: one known
 action for a reason you already have. The automatic trigger is a convenience layer on top.
 
-The automatic side carries a cooldown, because usage sits *at* the cap once reached rather
+The automatic side carries a cooldown, because usage sits _at_ the cap once reached rather
 than above it. Without one, a link parked on its limit would text the carrier on every
 poll.
 

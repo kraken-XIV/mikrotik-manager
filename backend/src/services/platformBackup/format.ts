@@ -12,10 +12,10 @@
  */
 import * as crypto from 'crypto';
 import * as fs from 'fs';
-import * as zlib from 'zlib';
 import * as readline from 'readline';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
+import * as zlib from 'zlib';
 
 export const MAGIC = Buffer.from('MTMBACKUP1\n', 'utf8');
 const TAG_LEN = 16;
@@ -44,15 +44,24 @@ export type BackupRecord = Record<string, unknown> & { type: string };
 const ROW_PREFIX = '{"type":"row","r":';
 
 export class DamagedBackupError extends Error {
-  constructor(public detail?: string) { super('The backup file is damaged or has been changed since it was made.'); }
+  constructor(public detail?: string) {
+    super('The backup file is damaged or has been changed since it was made.');
+  }
 }
 
 export class WrongPassphraseError extends Error {
-  constructor() { super('The passphrase is wrong, or this isn’t a MikroTik Manager backup.'); }
+  constructor() {
+    super('The passphrase is wrong, or this isn’t a MikroTik Manager backup.');
+  }
 }
 
 function deriveKey(passphrase: string, salt: Buffer, kdf = SCRYPT): Buffer {
-  return crypto.scryptSync(passphrase.normalize('NFC'), salt, 32, { N: kdf.N, r: kdf.r, p: kdf.p, maxmem: SCRYPT.maxmem });
+  return crypto.scryptSync(passphrase.normalize('NFC'), salt, 32, {
+    N: kdf.N,
+    r: kdf.r,
+    p: kdf.p,
+    maxmem: SCRYPT.maxmem,
+  });
 }
 
 /**
@@ -60,7 +69,9 @@ function deriveKey(passphrase: string, salt: Buffer, kdf = SCRYPT): Buffer {
  * whole way, so a large database backup never sits in memory.
  */
 export async function writeBackup(
-  path: string, passphrase: string, meta: { appVersion: string; contents: BackupContents },
+  path: string,
+  passphrase: string,
+  meta: { appVersion: string; contents: BackupContents },
   records: AsyncIterable<BackupRecord>,
 ): Promise<BackupHeader> {
   const salt = crypto.randomBytes(16);
@@ -76,7 +87,11 @@ export async function writeBackup(
     contents: meta.contents,
     kdf: { name: 'scrypt', N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p, salt: salt.toString('base64') },
     iv: iv.toString('base64'),
-    check: { iv: checkIv.toString('base64'), tag: checkCipher.getAuthTag().toString('base64'), data: checkData.toString('base64') },
+    check: {
+      iv: checkIv.toString('base64'),
+      tag: checkCipher.getAuthTag().toString('base64'),
+      data: checkData.toString('base64'),
+    },
   };
   const headerBuf = Buffer.from(JSON.stringify(header), 'utf8');
   const len = Buffer.alloc(4);
@@ -86,28 +101,40 @@ export async function writeBackup(
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   async function* lines() {
     for await (const r of records) {
-      yield r.type === 'row' && typeof r.raw === 'string' ? `${ROW_PREFIX}${r.raw}}\n` : `${JSON.stringify(r)}\n`;
+      yield r.type === 'row' && typeof r.raw === 'string'
+        ? `${ROW_PREFIX}${r.raw}}\n`
+        : `${JSON.stringify(r)}\n`;
     }
   }
-  await pipeline(Readable.from(lines()), zlib.createGzip({ level: 6 }), cipher, fs.createWriteStream(path, { flags: 'a' }));
+  await pipeline(
+    Readable.from(lines()),
+    zlib.createGzip({ level: 6 }),
+    cipher,
+    fs.createWriteStream(path, { flags: 'a' }),
+  );
   await fs.promises.appendFile(path, cipher.getAuthTag());
   return header;
 }
 
 /** The header, without the passphrase. Throws on anything that isn't a backup. */
-export async function readHeader(path: string): Promise<{ header: BackupHeader; payloadStart: number; size: number }> {
+export async function readHeader(
+  path: string,
+): Promise<{ header: BackupHeader; payloadStart: number; size: number }> {
   const fh = await fs.promises.open(path, 'r');
   try {
     const size = (await fh.stat()).size;
     const head = Buffer.alloc(MAGIC.length + 4);
     await fh.read(head, 0, head.length, 0);
-    if (!head.subarray(0, MAGIC.length).equals(MAGIC)) throw new Error('This isn’t a MikroTik Manager backup file.');
+    if (!head.subarray(0, MAGIC.length).equals(MAGIC))
+      throw new Error('This isn’t a MikroTik Manager backup file.');
     const hlen = head.readUInt32BE(MAGIC.length);
-    if (hlen <= 0 || hlen > 64 * 1024 || MAGIC.length + 4 + hlen + TAG_LEN > size) throw new Error('The backup file is damaged.');
+    if (hlen <= 0 || hlen > 64 * 1024 || MAGIC.length + 4 + hlen + TAG_LEN > size)
+      throw new Error('The backup file is damaged.');
     const hbuf = Buffer.alloc(hlen);
     await fh.read(hbuf, 0, hlen, MAGIC.length + 4);
     const header = JSON.parse(hbuf.toString('utf8')) as BackupHeader;
-    if (header.format !== 1 || header.kdf?.name !== 'scrypt') throw new Error('This backup was made by a newer MikroTik Manager.');
+    if (header.format !== 1 || header.kdf?.name !== 'scrypt')
+      throw new Error('This backup was made by a newer MikroTik Manager.');
     return { header, payloadStart: MAGIC.length + 4 + hlen, size };
   } finally {
     await fh.close();
@@ -116,11 +143,19 @@ export async function readHeader(path: string): Promise<{ header: BackupHeader; 
 
 /** Derive the key and check the passphrase against the header. */
 export function unlock(header: BackupHeader, passphrase: string): Buffer {
-  const key = deriveKey(passphrase, Buffer.from(header.kdf.salt, 'base64'), { ...SCRYPT, N: header.kdf.N, r: header.kdf.r, p: header.kdf.p });
+  const key = deriveKey(passphrase, Buffer.from(header.kdf.salt, 'base64'), {
+    ...SCRYPT,
+    N: header.kdf.N,
+    r: header.kdf.r,
+    p: header.kdf.p,
+  });
   try {
     const d = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(header.check.iv, 'base64'));
     d.setAuthTag(Buffer.from(header.check.tag, 'base64'));
-    const text = Buffer.concat([d.update(Buffer.from(header.check.data, 'base64')), d.final()]).toString('utf8');
+    const text = Buffer.concat([
+      d.update(Buffer.from(header.check.data, 'base64')),
+      d.final(),
+    ]).toString('utf8');
     if (text !== CHECK_TEXT) throw new Error('check');
   } catch {
     throw new WrongPassphraseError();
@@ -142,7 +177,10 @@ export async function* readRecords(path: string, passphrase: string): AsyncGener
   await fh.close();
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(header.iv, 'base64'));
   decipher.setAuthTag(tag);
-  const plain = fs.createReadStream(path, { start: payloadStart, end: size - TAG_LEN - 1 }).pipe(decipher).pipe(zlib.createGunzip());
+  const plain = fs
+    .createReadStream(path, { start: payloadStart, end: size - TAG_LEN - 1 })
+    .pipe(decipher)
+    .pipe(zlib.createGunzip());
   // Errors from the decipher (a failed tag) surface on the gunzip stream's
   // consumer through this forward.
   decipher.on('error', (e) => plain.destroy(e));
@@ -150,7 +188,8 @@ export async function* readRecords(path: string, passphrase: string): AsyncGener
   try {
     for await (const line of rl) {
       if (!line) continue;
-      if (line.startsWith(ROW_PREFIX) && line.endsWith('}')) yield { type: 'row', raw: line.slice(ROW_PREFIX.length, -1) };
+      if (line.startsWith(ROW_PREFIX) && line.endsWith('}'))
+        yield { type: 'row', raw: line.slice(ROW_PREFIX.length, -1) };
       else yield JSON.parse(line) as BackupRecord;
     }
   } catch (err) {

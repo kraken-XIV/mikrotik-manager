@@ -11,7 +11,10 @@ export function formatRate(bps: number | string | null | undefined): string | nu
 }
 
 /** "TX 577 / RX 721 Mbps", or null when neither is known. */
-export function formatRatePair(tx: number | string | null | undefined, rx: number | string | null | undefined): string | null {
+export function formatRatePair(
+  tx: number | string | null | undefined,
+  rx: number | string | null | undefined,
+): string | null {
   const t = formatRate(tx);
   const r = formatRate(rx);
   if (!t && !r) return null;

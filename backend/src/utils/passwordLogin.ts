@@ -23,7 +23,9 @@ export async function passwordLoginEnabled(): Promise<boolean> {
   const ssoReady = !!(sso?.enabled && sso.issuer_url && sso.client_id);
   if (!ssoReady) {
     if (!warned) {
-      console.warn('[auth] PASSWORD_LOGIN=false is ignored: SSO is not configured, so password sign-in stays on.');
+      console.warn(
+        '[auth] PASSWORD_LOGIN=false is ignored: SSO is not configured, so password sign-in stays on.',
+      );
       warned = true;
     }
     return true;

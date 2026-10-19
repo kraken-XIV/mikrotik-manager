@@ -72,7 +72,9 @@ export function buildSegments(
     // that never really held; counting it would inflate the visit count.
     if (seconds === 0 && next) continue;
     segments.push({
-      start, end, seconds,
+      start,
+      end,
+      seconds,
       cellId: ordered[i].cellId,
       enbId: ordered[i].enbId,
       bands: ordered[i].bands,
@@ -88,7 +90,10 @@ export function summarise(
   pick: (s: DwellSegment) => string | null,
   label?: (key: string, s: DwellSegment) => string,
 ): DwellTotal[] {
-  const totals = new Map<string, { seconds: number; visits: number; lastSeen: Date; label: string }>();
+  const totals = new Map<
+    string,
+    { seconds: number; visits: number; lastSeen: Date; label: string }
+  >();
 
   for (const s of segments) {
     const key = pick(s);
@@ -102,7 +107,9 @@ export function summarise(
       if (s.end > existing.lastSeen) existing.lastSeen = s.end;
     } else {
       totals.set(key, {
-        seconds: s.seconds, visits: 1, lastSeen: s.end,
+        seconds: s.seconds,
+        visits: 1,
+        lastSeen: s.end,
         label: label ? label(key, s) : key,
       });
     }
@@ -126,7 +133,14 @@ export function expandBands(bands: string | null): string[] {
   if (!bands) return [];
   // Each band once: two carriers on B3 (intra-band aggregation) are still
   // one stretch of time on B3, not two (outside review J7).
-  return [...new Set(bands.split(',').map((b) => b.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      bands
+        .split(',')
+        .map((b) => b.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 /**

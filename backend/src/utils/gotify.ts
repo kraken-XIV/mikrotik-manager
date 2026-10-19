@@ -24,8 +24,19 @@ export interface GotifyRequest {
  * that mean something is down or failing are high.
  */
 export function gotifyPriority(eventType: string): number {
-  if (['device_offline', 'device_degraded', 'device_identity_changed', 'log_error', 'high_cpu', 'high_memory'].includes(eventType)) return 8;
-  if (['device_online', 'device_health_restored', 'device_discovered'].includes(eventType)) return 2;
+  if (
+    [
+      'device_offline',
+      'device_degraded',
+      'device_identity_changed',
+      'log_error',
+      'high_cpu',
+      'high_memory',
+    ].includes(eventType)
+  )
+    return 8;
+  if (['device_online', 'device_health_restored', 'device_discovered'].includes(eventType))
+    return 2;
   return 5;
 }
 
@@ -34,9 +45,11 @@ export function buildGotifyRequest(
   eventType: string,
   title: string,
   message: string,
-  deviceId?: number | null
+  deviceId?: number | null,
 ): GotifyRequest {
-  const server = String(cfg.server_url ?? '').trim().replace(/\/+$/, '');
+  const server = String(cfg.server_url ?? '')
+    .trim()
+    .replace(/\/+$/, '');
   if (!server) throw new Error('Gotify channel missing server URL');
   let parsed: URL;
   try {
@@ -56,7 +69,9 @@ export function buildGotifyRequest(
     priority: gotifyPriority(eventType),
     extras: { 'client::display': { contentType: 'text/plain' } } as Record<string, unknown>,
   };
-  const click = String(cfg.click_url ?? '').trim().replace(/\/+$/, '');
+  const click = String(cfg.click_url ?? '')
+    .trim()
+    .replace(/\/+$/, '');
   if (click) {
     (body.extras as Record<string, unknown>)['client::notification'] = {
       click: { url: deviceId != null ? `${click}/devices/${deviceId}` : click },

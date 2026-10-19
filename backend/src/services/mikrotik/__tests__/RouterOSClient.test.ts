@@ -1,6 +1,7 @@
 import * as net from 'net';
-import { RouterOSClient, RouterOSSentence, REPEATED_ATTRIBUTES_KEY } from '../RouterOSClient';
-import { REPEATED_KEY, parseBandSpecs } from '../../../utils/lte';
+
+import { parseBandSpecs, REPEATED_KEY } from '../../../utils/lte';
+import { REPEATED_ATTRIBUTES_KEY, RouterOSClient, RouterOSSentence } from '../RouterOSClient';
 
 /** Encode one word using RouterOS's variable-length prefix (short form only). */
 const word = (s: string): Buffer => {
@@ -11,11 +12,11 @@ const word = (s: string): Buffer => {
 
 /** Build a complete `!re` sentence from raw `key=value` words. */
 const sentence = (...kv: string[]): Buffer =>
-  Buffer.concat([word('!re'), ...kv.map(p => word('=' + p)), Buffer.from([0x00])]);
+  Buffer.concat([word('!re'), ...kv.map((p) => word('=' + p)), Buffer.from([0x00])]);
 
 /** Build a complete sentence of any type (`!trap`, `!done`, ...) from raw `key=value` words. */
 const rawSentence = (type: string, ...kv: string[]): Buffer =>
-  Buffer.concat([word(type), ...kv.map(p => word('=' + p)), Buffer.from([0x00])]);
+  Buffer.concat([word(type), ...kv.map((p) => word('=' + p)), Buffer.from([0x00])]);
 const trap = (message: string): Buffer => rawSentence('!trap', `message=${message}`);
 const done = (): Buffer => rawSentence('!done');
 
@@ -47,30 +48,30 @@ describe('sentence parsing', () => {
     // A Cat-18 modem reports one `ca-band` per aggregated carrier. A flat object
     // keeps only the last, which under-reports aggregation exactly when the link
     // is performing best.
-    const s = parse(sentence(
-      'primary-band=B1@20Mhz earfcn: 500',
-      'ca-band=B3@20Mhz earfcn: 1800',
-      'ca-band=B7@20Mhz earfcn: 3350',
-      'ca-band=B20@10Mhz earfcn: 6300',
-    ))!;
+    const s = parse(
+      sentence(
+        'primary-band=B1@20Mhz earfcn: 500',
+        'ca-band=B3@20Mhz earfcn: 1800',
+        'ca-band=B7@20Mhz earfcn: 3350',
+        'ca-band=B20@10Mhz earfcn: 6300',
+      ),
+    )!;
 
-    expect(s.words['ca-band']).toBe('B20@10Mhz earfcn: 6300');   // unchanged
+    expect(s.words['ca-band']).toBe('B20@10Mhz earfcn: 6300'); // unchanged
     expect(JSON.parse(s.words[REPEATED_ATTRIBUTES_KEY])).toEqual({
-      'ca-band': [
-        'B3@20Mhz earfcn: 1800',
-        'B7@20Mhz earfcn: 3350',
-        'B20@10Mhz earfcn: 6300',
-      ],
+      'ca-band': ['B3@20Mhz earfcn: 1800', 'B7@20Mhz earfcn: 3350', 'B20@10Mhz earfcn: 6300'],
     });
   });
 
   it('hands the LTE parser all three carriers', () => {
-    const s = parse(sentence(
-      'ca-band=B3@20Mhz earfcn: 1800',
-      'ca-band=B7@20Mhz earfcn: 3350',
-      'ca-band=B20@10Mhz earfcn: 6300',
-    ))!;
-    expect(parseBandSpecs(s.words, 'ca-band').map(b => b.band)).toEqual([3, 7, 20]);
+    const s = parse(
+      sentence(
+        'ca-band=B3@20Mhz earfcn: 1800',
+        'ca-band=B7@20Mhz earfcn: 3350',
+        'ca-band=B20@10Mhz earfcn: 6300',
+      ),
+    )!;
+    expect(parseBandSpecs(s.words, 'ca-band').map((b) => b.band)).toEqual([3, 7, 20]);
   });
 
   it('tracks repeats of several different attributes independently', () => {
@@ -125,7 +126,7 @@ describe('read timeout', () => {
   // it. "Not yet connected" and "abandoned" are different states.
   it('delivers replies that arrive before login has completed', () => {
     const { internals } = makeClient();
-    internals.connected = false;          // mid-login, as connect() leaves it
+    internals.connected = false; // mid-login, as connect() leaves it
     internals.buffer = sentence('ret=abc123');
     internals.processBuffer();
     expect(internals.sentenceQueue).toHaveLength(1);
@@ -207,7 +208,7 @@ describe('!trap draining', () => {
     return { client, internals };
   };
 
-  it('rejects with the first trap\'s message on a single !trap', async () => {
+  it("rejects with the first trap's message on a single !trap", async () => {
     const { client, internals } = makeExecClient();
     internals.buffer = Buffer.concat([trap('no such command'), done()]);
     internals.processBuffer();
@@ -215,7 +216,7 @@ describe('!trap draining', () => {
     await expect(client.execute('/nonexistent/print')).rejects.toThrow('no such command');
   });
 
-  it('does not let a double !trap steal the next command\'s reply', async () => {
+  it("does not let a double !trap steal the next command's reply", async () => {
     const { client, internals } = makeExecClient();
 
     internals.buffer = Buffer.concat([
@@ -225,14 +226,14 @@ describe('!trap draining', () => {
     ]);
     internals.processBuffer();
 
-    await expect(client.execute('/system/routerboard/print'))
-      .rejects.toThrow('no such command or directory (routerboard)');
+    await expect(client.execute('/system/routerboard/print')).rejects.toThrow(
+      'no such command or directory (routerboard)',
+    );
 
     // The next command's real reply must not have been eaten by the drain.
     internals.buffer = Buffer.concat([sentence('name=MikroTik'), done()]);
     internals.processBuffer();
-    await expect(client.execute('/system/identity/print'))
-      .resolves.toEqual([{ name: 'MikroTik' }]);
+    await expect(client.execute('/system/identity/print')).resolves.toEqual([{ name: 'MikroTik' }]);
   });
 
   // Never observed in practice — RouterOS has only ever sent at most two
@@ -301,10 +302,19 @@ describe('hostile replies', () => {
 
 describe('streaming cancel', () => {
   const tagged = (type: string, tag: string, ...kv: string[]): Buffer =>
-    Buffer.concat([word(type), ...kv.map(p => word('=' + p)), word(`.tag=${tag}`), Buffer.from([0x00])]);
+    Buffer.concat([
+      word(type),
+      ...kv.map((p) => word('=' + p)),
+      word(`.tag=${tag}`),
+      Buffer.from([0x00]),
+    ]);
 
   type Internals = {
-    buffer: Buffer; connected: boolean; poisoned: boolean; socket: unknown; processBuffer(): void;
+    buffer: Buffer;
+    connected: boolean;
+    poisoned: boolean;
+    socket: unknown;
+    processBuffer(): void;
   };
 
   /** A client whose fake socket answers /cancel with `onCancel(cmdTag, cancelTag)`. */
@@ -320,7 +330,10 @@ describe('streaming cancel', () => {
         if (text.includes('/cancel')) {
           const cmdTag = /=tag=(\d+)/.exec(text)![1];
           const cancelTag = /\.tag=(\d+)/.exec(text)![1];
-          setImmediate(() => { internals.buffer = Buffer.concat([internals.buffer, onCancel(cmdTag, cancelTag)]); internals.processBuffer(); });
+          setImmediate(() => {
+            internals.buffer = Buffer.concat([internals.buffer, onCancel(cmdTag, cancelTag)]);
+            internals.processBuffer();
+          });
         }
       },
     };
@@ -328,12 +341,14 @@ describe('streaming cancel', () => {
   }
 
   it("leaves nothing of the cancelled command for the next one's reply", async () => {
-    const { client, internals } = streamingClient((cmd, cancel) => Buffer.concat([
-      tagged('!re', cmd, 'mac-address=AA:BB:CC:00:00:02'), // a late row
-      tagged('!trap', cmd, 'category=2', 'message=interrupted'),
-      tagged('!done', cmd),
-      tagged('!done', cancel),
-    ]));
+    const { client, internals } = streamingClient((cmd, cancel) =>
+      Buffer.concat([
+        tagged('!re', cmd, 'mac-address=AA:BB:CC:00:00:02'), // a late row
+        tagged('!trap', cmd, 'category=2', 'message=interrupted'),
+        tagged('!done', cmd),
+        tagged('!done', cancel),
+      ]),
+    );
     const rows = await client.executeStreaming('/tool/mac-scan', { interface: 'ether1' }, 20);
     expect(rows).toEqual([]);
     expect(internals.poisoned).toBe(false);
@@ -346,7 +361,9 @@ describe('streaming cancel', () => {
   });
 
   it('drops the connection if the cancel never completes', async () => {
-    const { client, internals } = streamingClient((cmd) => tagged('!trap', cmd, 'message=interrupted'));
+    const { client, internals } = streamingClient((cmd) =>
+      tagged('!trap', cmd, 'message=interrupted'),
+    );
     await client.executeStreaming('/tool/mac-scan', {}, 20);
     // Waits out the drain window rather than trusting the stream.
     expect(internals.poisoned).toBe(true);
@@ -357,11 +374,25 @@ describe('streaming cancel', () => {
 
 describe('executeMany and prefetch', () => {
   const tagged = (type: string, tag: string, ...kv: string[]): Buffer =>
-    Buffer.concat([word(type), ...kv.map(p => word('=' + p)), word(`.tag=${tag}`), Buffer.from([0x00])]);
-  type Internals = { buffer: Buffer; connected: boolean; poisoned: boolean; socket: unknown; processBuffer(): void };
+    Buffer.concat([
+      word(type),
+      ...kv.map((p) => word('=' + p)),
+      word(`.tag=${tag}`),
+      Buffer.from([0x00]),
+    ]);
+  type Internals = {
+    buffer: Buffer;
+    connected: boolean;
+    poisoned: boolean;
+    socket: unknown;
+    processBuffer(): void;
+  };
 
   /** A client whose fake device answers each sentence written with `reply(command, tag)`. */
-  function batchClient(reply: (command: string, tag: string | undefined) => Buffer | null, opts: { hold?: boolean } = {}) {
+  function batchClient(
+    reply: (command: string, tag: string | undefined) => Buffer | null,
+    opts: { hold?: boolean } = {},
+  ) {
     const client = new RouterOSClient('127.0.0.1', 8728, 'x', 'x');
     const internals = client as unknown as Internals;
     const written: string[] = [];
@@ -378,23 +409,40 @@ describe('executeMany and prefetch', () => {
         const out = reply(command, tag);
         if (!out) return;
         if (opts.hold) held.push(out);
-        else setImmediate(() => { internals.buffer = Buffer.concat([internals.buffer, out]); internals.processBuffer(); });
+        else
+          setImmediate(() => {
+            internals.buffer = Buffer.concat([internals.buffer, out]);
+            internals.processBuffer();
+          });
       },
     };
     /** Deliver held replies in the given order (to interleave them). */
-    const release = (order: number[]) => setImmediate(() => {
-      internals.buffer = Buffer.concat([internals.buffer, ...order.map((i) => held[i])]);
-      internals.processBuffer();
-    });
+    const release = (order: number[]) =>
+      setImmediate(() => {
+        internals.buffer = Buffer.concat([internals.buffer, ...order.map((i) => held[i])]);
+        internals.processBuffer();
+      });
     return { client, internals, written, release };
   }
 
   it('sorts interleaved replies back to their commands; one failing read fails only itself', async () => {
-    const { client, release } = batchClient((cmd, tag) => {
-      if (cmd === '/interface/print') return Buffer.concat([tagged('!re', tag!, 'name=ether1'), tagged('!re', tag!, 'name=ether2'), tagged('!done', tag!)]);
-      if (cmd === '/system/resource/print') return Buffer.concat([tagged('!re', tag!, 'cpu-load=7'), tagged('!done', tag!)]);
-      return Buffer.concat([tagged('!trap', tag!, 'message=no such command prefix'), tagged('!done', tag!)]);
-    }, { hold: true });
+    const { client, release } = batchClient(
+      (cmd, tag) => {
+        if (cmd === '/interface/print')
+          return Buffer.concat([
+            tagged('!re', tag!, 'name=ether1'),
+            tagged('!re', tag!, 'name=ether2'),
+            tagged('!done', tag!),
+          ]);
+        if (cmd === '/system/resource/print')
+          return Buffer.concat([tagged('!re', tag!, 'cpu-load=7'), tagged('!done', tag!)]);
+        return Buffer.concat([
+          tagged('!trap', tag!, 'message=no such command prefix'),
+          tagged('!done', tag!),
+        ]);
+      },
+      { hold: true },
+    );
     const p = client.executeMany([
       { command: '/interface/print', params: { stats: '' } },
       { command: '/system/resource/print' },
@@ -409,21 +457,30 @@ describe('executeMany and prefetch', () => {
   });
 
   it('drops the connection on a reply for no command it sent', async () => {
-    const { client, internals } = batchClient((_cmd, tag) => Buffer.concat([tagged('!re', '999', 'x=1'), tagged('!done', tag!)]));
-    await expect(client.executeMany([{ command: '/system/resource/print' }])).rejects.toThrow('Unexpected reply');
+    const { client, internals } = batchClient((_cmd, tag) =>
+      Buffer.concat([tagged('!re', '999', 'x=1'), tagged('!done', tag!)]),
+    );
+    await expect(client.executeMany([{ command: '/system/resource/print' }])).rejects.toThrow(
+      'Unexpected reply',
+    );
     expect(internals.poisoned).toBe(true);
   });
 
   it('refuses writes', async () => {
     const { client } = batchClient(() => null);
-    await expect(client.executeMany([{ command: '/interface/set', params: { numbers: 'ether1', disabled: 'yes' } }]))
-      .rejects.toThrow('reads only');
+    await expect(
+      client.executeMany([
+        { command: '/interface/set', params: { numbers: 'ether1', disabled: 'yes' } },
+      ]),
+    ).rejects.toThrow('reads only');
   });
 
   it('serves the same read from a prefetch, each caller its own copy, and nothing else', async () => {
-    const { client, written } = batchClient((cmd, tag) => tag
-      ? Buffer.concat([tagged('!re', tag, 'name=a'), tagged('!done', tag)])
-      : Buffer.concat([sentence(`name=fresh-${cmd}`), done()]));
+    const { client, written } = batchClient((cmd, tag) =>
+      tag
+        ? Buffer.concat([tagged('!re', tag, 'name=a'), tagged('!done', tag)])
+        : Buffer.concat([sentence(`name=fresh-${cmd}`), done()]),
+    );
     await client.prefetch([{ command: '/interface/print', params: { stats: '' } }]);
     expect(written).toEqual(['/interface/print']);
 
@@ -438,9 +495,11 @@ describe('executeMany and prefetch', () => {
   });
 
   it('a write, or the end of the poll, forgets the prefetch', async () => {
-    const { client, written } = batchClient((cmd, tag) => tag
-      ? Buffer.concat([tagged('!re', tag, 'v=old'), tagged('!done', tag)])
-      : Buffer.concat([cmd.endsWith('/print') ? sentence('v=new') : Buffer.alloc(0), done()]));
+    const { client, written } = batchClient((cmd, tag) =>
+      tag
+        ? Buffer.concat([tagged('!re', tag, 'v=old'), tagged('!done', tag)])
+        : Buffer.concat([cmd.endsWith('/print') ? sentence('v=new') : Buffer.alloc(0), done()]),
+    );
     await client.prefetch([{ command: '/system/identity/print' }]);
     await client.execute('/system/identity/set', { name: 'x' });
     expect(await client.execute('/system/identity/print')).toEqual([{ v: 'new' }]);
@@ -452,9 +511,11 @@ describe('executeMany and prefetch', () => {
   });
 
   it('counts time waiting on the device, but not answers served from a prefetch (#301)', async () => {
-    const { client } = batchClient((_cmd, tag) => tag
-      ? Buffer.concat([tagged('!re', tag, 'v=1'), tagged('!done', tag)])
-      : Buffer.concat([sentence('v=2'), done()]));
+    const { client } = batchClient((_cmd, tag) =>
+      tag
+        ? Buffer.concat([tagged('!re', tag, 'v=1'), tagged('!done', tag)])
+        : Buffer.concat([sentence('v=2'), done()]),
+    );
     client.takeDeviceTime();
     await client.prefetch([{ command: '/system/resource/print' }]);
     await client.execute('/system/identity/print');
@@ -465,7 +526,9 @@ describe('executeMany and prefetch', () => {
   });
 
   it('rethrows a prefetched read that failed, as the device would have', async () => {
-    const { client } = batchClient((_cmd, tag) => Buffer.concat([tagged('!trap', tag!, 'message=no such command'), tagged('!done', tag!)]));
+    const { client } = batchClient((_cmd, tag) =>
+      Buffer.concat([tagged('!trap', tag!, 'message=no such command'), tagged('!done', tag!)]),
+    );
     await client.prefetch([{ command: '/interface/wifi/print' }]);
     await expect(client.execute('/interface/wifi/print')).rejects.toThrow('no such command');
   });

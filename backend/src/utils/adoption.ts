@@ -108,7 +108,11 @@ export function collectCandidates(rows: NeighborRow[]): AdoptionCandidate[] {
  * subnet with a device we already manage, which is the best proxy available
  * without attempting a connection.
  */
-export function needsJumpHost(targetAddress: string, managedAddresses: string[], prefix = 24): boolean {
+export function needsJumpHost(
+  targetAddress: string,
+  managedAddresses: string[],
+  prefix = 24,
+): boolean {
   return !managedAddresses.some((m) => sameSubnet(targetAddress, m, prefix));
 }
 
@@ -122,7 +126,7 @@ export function needsJumpHost(targetAddress: string, managedAddresses: string[],
 export function pickTempAddress(
   targetAddress: string,
   taken: string[],
-  prefix = 24
+  prefix = 24,
 ): string | null {
   return tempAddressCandidates(targetAddress, taken, prefix)[0] ?? null;
 }
@@ -132,7 +136,11 @@ export function pickTempAddress(
  * know who else is on the target's segment, so each is checked for occupancy
  * on the wire before it's used (outside review C9).
  */
-export function tempAddressCandidates(targetAddress: string, taken: string[], prefix = 24): string[] {
+export function tempAddressCandidates(
+  targetAddress: string,
+  taken: string[],
+  prefix = 24,
+): string[] {
   if (!isIpv4(targetAddress)) return [];
   const used = new Set([targetAddress, ...taken.map(stripPrefix)]);
   const base = targetAddress.split('.').slice(0, 3).join('.');
@@ -158,7 +166,9 @@ export function jumpInterface(
   const found = new Set<string>();
   for (const raw of seenOn) {
     // LLDP can report "bridge/ether2": the bridge, then the port.
-    const [first, port] = raw.includes('/') ? [raw.slice(0, raw.indexOf('/')), raw.slice(raw.lastIndexOf('/') + 1)] : [null, raw];
+    const [first, port] = raw.includes('/')
+      ? [raw.slice(0, raw.indexOf('/')), raw.slice(raw.lastIndexOf('/') + 1)]
+      : [null, raw];
     const member = bridgePorts.find((p) => p.interface === port)?.bridge;
     const iface = member ?? (first && names.has(first) ? first : port);
     if (names.has(iface)) found.add(iface);
@@ -167,8 +177,13 @@ export function jumpInterface(
 }
 
 /** The device type to register an adopted device under, from what it reports. */
-export function detectDeviceType(boardName: string | undefined, interfaces: { type?: string; name?: string }[]): 'router' | 'switch' | 'wireless_ap' {
-  const wireless = interfaces.some((i) => /^(wlan|wifi)/i.test(i.type || '') || /^(wlan|wifi)\d/i.test(i.name || ''));
+export function detectDeviceType(
+  boardName: string | undefined,
+  interfaces: { type?: string; name?: string }[],
+): 'router' | 'switch' | 'wireless_ap' {
+  const wireless = interfaces.some(
+    (i) => /^(wlan|wifi)/i.test(i.type || '') || /^(wlan|wifi)\d/i.test(i.name || ''),
+  );
   if (wireless) return 'wireless_ap';
   if (/^(CRS|CSS)/i.test((boardName || '').trim())) return 'switch';
   return 'router';
@@ -197,13 +212,14 @@ export function validateTargetAddress(
   address: string,
   managerSubnetPeer: string,
   prefix = 24,
-  knownInUse: string[] = []
+  knownInUse: string[] = [],
 ): AddressVerdict {
   const bare = stripPrefix(address);
   if (!isIpv4(bare)) return { ok: false, reason: `${address} is not a valid IPv4 address` };
 
   const role = hostRole(bare, prefix);
-  if (role === 'network') return { ok: false, reason: 'that is a network address, not a host address' };
+  if (role === 'network')
+    return { ok: false, reason: 'that is a network address, not a host address' };
   if (role === 'broadcast') return { ok: false, reason: 'that is the broadcast address' };
 
   if (!sameSubnet(bare, managerSubnetPeer, prefix)) {
@@ -307,7 +323,11 @@ export function hostRole(ip: string, prefix: number): 'network' | 'broadcast' | 
 }
 
 export function ipToInt(ip: string): number {
-  return stripPrefix(ip).split('.').reduce((acc, o) => (acc << 8) + Number(o), 0) >>> 0;
+  return (
+    stripPrefix(ip)
+      .split('.')
+      .reduce((acc, o) => (acc << 8) + Number(o), 0) >>> 0
+  );
 }
 
 // ── Telling a new device from an established one ───────────────────────────
@@ -423,13 +443,11 @@ export function assessFactoryState(state: {
   const defconf = addresses.filter((a) => (a.comment || '').includes('defconf'));
   if (defconf.length > 0) signals.push('address carries RouterOS defconf comment');
 
-  const nonFactory = addresses.filter(
-    (a) => stripPrefix(a.address || '') !== FACTORY_ADDRESS
-  );
+  const nonFactory = addresses.filter((a) => stripPrefix(a.address || '') !== FACTORY_ADDRESS);
   if (nonFactory.length > 0) {
     warnings.push(
       `has ${nonFactory.length} address(es) beyond the factory one: ` +
-      nonFactory.map((a) => a.address).join(', ')
+        nonFactory.map((a) => a.address).join(', '),
     );
   }
 
@@ -487,8 +505,10 @@ export function validatePlan(plan: AddressPlan): AddressVerdict {
     }
   }
   if (plan.mode === 'static') {
-    if (!isIpv4(plan.address)) return { ok: false, reason: `${plan.address} is not a valid IPv4 address` };
-    if (!isIpv4(plan.gateway)) return { ok: false, reason: 'a gateway is required for a static address' };
+    if (!isIpv4(plan.address))
+      return { ok: false, reason: `${plan.address} is not a valid IPv4 address` };
+    if (!isIpv4(plan.gateway))
+      return { ok: false, reason: 'a gateway is required for a static address' };
     if (!Number.isInteger(plan.prefix) || plan.prefix < 8 || plan.prefix > 30) {
       return { ok: false, reason: `prefix /${plan.prefix} is out of range` };
     }
@@ -502,8 +522,10 @@ export function validatePlan(plan: AddressPlan): AddressVerdict {
     // With the real prefix (outside review C9): 10.0.1.0 is a host on a /16
     // and 10.0.0.127 is the broadcast of a /25.
     const role = hostRole(plan.address, plan.prefix);
-    if (role === 'network') return { ok: false, reason: `that is the network address of its /${plan.prefix}` };
-    if (role === 'broadcast') return { ok: false, reason: `that is the broadcast address of its /${plan.prefix}` };
+    if (role === 'network')
+      return { ok: false, reason: `that is the network address of its /${plan.prefix}` };
+    if (role === 'broadcast')
+      return { ok: false, reason: `that is the broadcast address of its /${plan.prefix}` };
   }
   return { ok: true };
 }
@@ -591,7 +613,9 @@ export function buildPlanOps(opts: {
  * With DHCP the manager does not know where the device landed until it asks,
  * so the address has to be read back before the device can be registered.
  */
-export function leasedAddress(rows: { address?: string; status?: string; interface?: string }[]): string | null {
+export function leasedAddress(
+  rows: { address?: string; status?: string; interface?: string }[],
+): string | null {
   for (const r of rows) {
     if (r.status && r.status !== 'bound') continue;
     const bare = stripPrefix(r.address || '');
@@ -633,15 +657,23 @@ export function judgeConflict(opts: {
   arpResolved: boolean;
   pingReplies: number;
 }): ConflictCheck {
-  if (opts.arpResolved) return { free: false, reason: 'another host is answering ARP for this address' };
+  if (opts.arpResolved)
+    return { free: false, reason: 'another host is answering ARP for this address' };
   if (opts.pingReplies > 0) {
-    return { free: false, reason: 'something replied to ping at this address, though it is not in ARP' };
+    return {
+      free: false,
+      reason: 'something replied to ping at this address, though it is not in ARP',
+    };
   }
   return { free: true };
 }
 
 /** Did this ARP row actually resolve, or is it a record of failure? */
-export function arpRowResolved(row: { 'mac-address'?: string; complete?: string; status?: string }): boolean {
+export function arpRowResolved(row: {
+  'mac-address'?: string;
+  complete?: string;
+  status?: string;
+}): boolean {
   if ((row.complete || '').toLowerCase() === 'false') return false;
   if ((row.status || '').toLowerCase() === 'failed') return false;
   return !!(row['mac-address'] || '').trim();

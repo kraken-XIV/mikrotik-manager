@@ -61,8 +61,8 @@ possibly v6: its backups are marked as holding secrets, and no snapshot is taken
 version is known.
 
 !!! warning "Keep ENCRYPTION_KEY safe"
-    An encrypted backup can only be read with the key it was written under (or an older key
-    still configured for rotation). Lose the key and those backups can't be read.
+An encrypted backup can only be read with the key it was written under (or an older key
+still configured for rotation). Lose the key and those backups can't be read.
 
 ## Finding one
 
@@ -72,12 +72,12 @@ covers everything that happened on the 3rd.
 
 Types:
 
-| Type | Created by |
-|---|---|
-| `manual` | The Create Backup button |
-| `scheduled` | The daily/weekly/monthly schedule |
-| `pre-upgrade` | A firmware rollout, before it touches the device |
-| `config-snapshot` | Config History, when it captures a change |
+| Type              | Created by                                       |
+| ----------------- | ------------------------------------------------ |
+| `manual`          | The Create Backup button                         |
+| `scheduled`       | The daily/weekly/monthly schedule                |
+| `pre-upgrade`     | A firmware rollout, before it touches the device |
+| `config-snapshot` | Config History, when it captures a change        |
 
 ## Reading and comparing
 
@@ -120,7 +120,7 @@ so the import can finish. With Change Guard turned off in Settings it runs witho
 result says so. It signs in with the device's SSH key when one is deployed.
 
 **Know what `/import` does before relying on it.** It replays the backup's commands onto
-the *running* configuration, one line at a time, and stops at the first one that fails.
+the _running_ configuration, one line at a time, and stops at the first one that fails.
 A full backup starts by creating things (`/interface bridge add name=bridge`), and on a
 device that still has them the very first `add` fails. So on a working device, a restore
 usually changes nothing. It is most useful on a device that has been reset, or for a
@@ -128,12 +128,12 @@ backup trimmed down to the part you want back.
 
 The result tells you exactly what happened:
 
-| Result | Meaning |
-|---|---|
-| **Restored** | RouterOS ran every line, and the device was confirmed reachable afterwards |
-| **Nothing was changed** | It stopped before running any command, and the message gives the line and reason |
-| **Partly restored** | With Change Guard off only: it ran some commands, then stopped at the line given. The device now has a mix of the backup and its previous configuration |
-| **Restoring itself** | The device stopped responding, or the import stopped partway, so Change Guard is putting the previous configuration back |
+| Result                  | Meaning                                                                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Restored**            | RouterOS ran every line, and the device was confirmed reachable afterwards                                                                              |
+| **Nothing was changed** | It stopped before running any command, and the message gives the line and reason                                                                        |
+| **Partly restored**     | With Change Guard off only: it ran some commands, then stopped at the line given. The device now has a mix of the backup and its previous configuration |
+| **Restoring itself**    | The device stopped responding, or the import stopped partway, so Change Guard is putting the previous configuration back                                |
 
 `/import` exits successfully even when it fails, so before 0.24.36 every restore reported
 success. Each restore also uploads under a name of its own and deletes the file afterwards,
@@ -141,15 +141,15 @@ since a backup can hold secrets.
 
 ## API
 
-| Method | Path | Purpose |
-|---|---|---|
-| `GET` | `/api/backups` | List, with `deviceId`, `type`, `from`, `to`, `search`; add `limit` (up to 500) and `offset` to page it, with the total in the `X-Total-Count` header |
-| `GET` | `/api/backups/types` | Types present, with counts |
-| `POST` | `/api/backups` | Create one for a device |
-| `GET` | `/api/backups/:id/content` | Read the text (capped at 2 MB) |
-| `GET` | `/api/backups/:from/diff/:to` | Both texts, for a client-side diff |
-| `GET` | `/api/backups/:id/download` | Download the `.rsc` |
-| `POST` | `/api/backups/:id/restore` | Apply it to the device |
-| `DELETE` | `/api/backups/:id` | Delete one |
-| `GET` | `/api/backups/bulk-delete/preview` | What a bulk delete would remove |
-| `POST` | `/api/backups/bulk-delete` | Delete many |
+| Method   | Path                               | Purpose                                                                                                                                              |
+| -------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/backups`                     | List, with `deviceId`, `type`, `from`, `to`, `search`; add `limit` (up to 500) and `offset` to page it, with the total in the `X-Total-Count` header |
+| `GET`    | `/api/backups/types`               | Types present, with counts                                                                                                                           |
+| `POST`   | `/api/backups`                     | Create one for a device                                                                                                                              |
+| `GET`    | `/api/backups/:id/content`         | Read the text (capped at 2 MB)                                                                                                                       |
+| `GET`    | `/api/backups/:from/diff/:to`      | Both texts, for a client-side diff                                                                                                                   |
+| `GET`    | `/api/backups/:id/download`        | Download the `.rsc`                                                                                                                                  |
+| `POST`   | `/api/backups/:id/restore`         | Apply it to the device                                                                                                                               |
+| `DELETE` | `/api/backups/:id`                 | Delete one                                                                                                                                           |
+| `GET`    | `/api/backups/bulk-delete/preview` | What a bulk delete would remove                                                                                                                      |
+| `POST`   | `/api/backups/bulk-delete`         | Delete many                                                                                                                                          |

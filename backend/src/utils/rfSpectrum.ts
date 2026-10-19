@@ -42,8 +42,8 @@ export interface BandRange {
  */
 export const BAND_RANGES: BandRange[] = [
   { band: '2.4', label: '2.4 GHz', startMhz: 2390, endMhz: 2500 },
-  { band: '5',   label: '5 GHz',   startMhz: 5150, endMhz: 5895 },
-  { band: '6',   label: '6 GHz',   startMhz: 5925, endMhz: 7125 },
+  { band: '5', label: '5 GHz', startMhz: 5150, endMhz: 5895 },
+  { band: '6', label: '6 GHz', startMhz: 5925, endMhz: 7125 },
 ];
 
 export function bandForFreq(freq: number): RfBand | null {
@@ -182,7 +182,7 @@ export interface RadioVerdict {
  * itself — a single AP is `clear`, not co-channel with its own reflection.
  */
 export function analyzeSpectrum(
-  radios: { frequency: number; channel_width?: string | null }[]
+  radios: { frequency: number; channel_width?: string | null }[],
 ): RadioVerdict[] {
   const spectra = radios.map((r) => spectrumFor(r.frequency, r.channel_width));
 
@@ -230,14 +230,17 @@ export function summarize(verdicts: RadioVerdict[]): SpectrumSummary {
 export function freeSpans(
   verdicts: RadioVerdict[],
   band: RfBand,
-  minWidth = 20
+  minWidth = 20,
 ): { startMhz: number; endMhz: number }[] {
   const range = BAND_RANGES.find((b) => b.band === band);
   if (!range) return [];
 
   const occupied = verdicts
     .filter((v) => v.spectrum.band === band)
-    .map((v) => ({ lo: Math.max(v.spectrum.lowMhz, range.startMhz), hi: Math.min(v.spectrum.highMhz, range.endMhz) }))
+    .map((v) => ({
+      lo: Math.max(v.spectrum.lowMhz, range.startMhz),
+      hi: Math.min(v.spectrum.highMhz, range.endMhz),
+    }))
     .filter((o) => o.hi > o.lo)
     .sort((a, b) => a.lo - b.lo);
 
@@ -262,7 +265,9 @@ export function freeSpans(
  * Needed because a CAPsMAN-managed AP stores no frequency of its own: the
  * controller owns the channel, and reports it only in this form (issue #97).
  */
-export function parseChannelSpec(spec: string | null | undefined): { frequency: number; widthMhz: number } | null {
+export function parseChannelSpec(
+  spec: string | null | undefined,
+): { frequency: number; widthMhz: number } | null {
   if (!spec) return null;
   const segs = spec.split('/');
   const frequency = parseInt(segs[0], 10);
