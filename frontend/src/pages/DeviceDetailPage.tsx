@@ -420,6 +420,19 @@ export default function DeviceDetailPage() {
                 <div className="text-xl font-bold text-gray-900 dark:text-white truncate">
                   {resources ? formatUptime(resources['uptime'] || '') : '—'}
                 </div>
+                {/* Time since it last booted, not availability (#326). */}
+                {device.boot_at && (
+                  <div
+                    className="text-xs text-gray-500 dark:text-slate-400 mt-0.5"
+                    title="Worked out from the device's uptime counter"
+                  >
+                    since{' '}
+                    {new Date(device.boot_at).toLocaleString(undefined, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="card p-4">
@@ -436,19 +449,6 @@ export default function DeviceDetailPage() {
                   {device.firmware_version || ''}
                 </div>
               </div>
-              {/* Time since it last booted, not availability (#326). */}
-              {device.boot_at && (
-                <div
-                  className="text-xs text-gray-500 dark:text-slate-400 mt-0.5"
-                  title="Worked out from the device's uptime counter"
-                >
-                  since{' '}
-                  {new Date(device.boot_at).toLocaleString(undefined, {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </div>
-              )}
             </div>
           )}
 
