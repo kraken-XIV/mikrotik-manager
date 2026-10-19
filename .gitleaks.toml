@@ -1,0 +1,20 @@
+# Exact synthetic values only, under their reviewed rule AND anchored file.
+# Review rationale and removal conditions: docs/security-scanning.md.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = 'Disposable PostgreSQL round-trip fixture constants; never real credentials.'
+condition = 'AND'
+targetRules = ['generic-api-key']
+paths = ['''^backend/src/services/platformBackup/__tests__/roundtrip\.pg\.test\.ts$''']
+regexTarget = 'secret'
+regexes = ['''^e2e-key-(a-0123456789abcdef0123456789|b-fedcba9876543210fedcba9876)$''']
+
+[[allowlists]]
+description = 'Literal API documentation placeholder, not an issued bearer token.'
+condition = 'AND'
+targetRules = ['curl-auth-header']
+paths = ['''^docs/api\.md$''']
+regexTarget = 'secret'
+regexes = ['''^mtm_your_token_here$''']

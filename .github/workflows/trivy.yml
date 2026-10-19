@@ -1,0 +1,45 @@
+name: Vulnerability & IaC Scan (Trivy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '47 6 * * 4'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trivy:
+    name: Trivy — vuln & misconfig
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install checksum-verified scanners
+        run: |
+          bash scripts/install-security-tools.sh all "$RUNNER_TEMP/security-bin"
+          echo "$RUNNER_TEMP/security-bin" >> "$GITHUB_PATH"
+      - name: Prove exception boundaries using actual scanners
+        run: python3 scripts/test-security-exceptions.py
+      - name: Gate actionable HIGH and CRITICAL findings, including dev dependencies
+        run: >-
+          trivy fs --scanners vuln,misconfig --severity HIGH,CRITICAL
+          --include-dev-deps --ignore-unfixed --skip-dirs '**/node_modules/**'
+          --ignorefile .trivyignore.yaml --exit-code 1 --no-progress .
+      # Report unfixed debt as well, without representing it as remediated.
+      # Scanner/download/parse failures still fail this step.
+      - name: Report HIGH and CRITICAL findings including unfixed advisories
+        run: >-
+          trivy fs --scanners vuln --severity HIGH,CRITICAL --include-dev-deps
+          --skip-dirs '**/node_modules/**' --ignorefile .trivyignore.yaml
+          --no-progress .

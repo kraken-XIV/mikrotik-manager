@@ -2,3 +2,10 @@
 # which still gates pushes on the full local CI suite — this hook keeps every
 # commit clean without paying for a whole-tree lint on each one.
 npx lint-staged
+
+# Optional secret scan on the staged diff. Skips silently when gitleaks is not
+# installed locally (brew install gitleaks); a found secret blocks the commit.
+# CI runs the same ruleset over every commit — see docs/security-scanning.md.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --staged --redact
+fi
