@@ -1,0 +1,26 @@
+name: Bug report
+description: Something in the fork is broken or behaving unexpectedly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If this bug also exists in upstream, please report it upstream first:
+        https://github.com/2GT-Media-Group-LLC/mikrotik-manager/issues
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Expected vs actual behaviour, and whether it reproduces on upstream v0.72.0-beta
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / screenshots
+      description: Redact site names, hostnames, IPs, and any secrets first
+  - type: input
+    id: version
+    attributes:
+      label: Fork commit
+      placeholder: e.g. 19c6ea0 + governance overlay

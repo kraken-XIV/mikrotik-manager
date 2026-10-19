@@ -1,0 +1,5 @@
+# Fork default owner. Update @kraken-XIV if the fork moves to another account.
+# Note: branch protection on this fork intentionally does NOT require owner review
+# (solo maintainer cannot approve their own PR). CODEOWNERS is used for
+# automatic review requests and routing only.
+* @kraken-XIV

@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest a change for the fork
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to achieve, and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+  - type: markdown
+    attributes:
+      value: |
+        Note: features useful to everyone belong **upstream** (issue-first, then PR).
+        Fork-only features should be developed on a `fork/*` branch instead.
