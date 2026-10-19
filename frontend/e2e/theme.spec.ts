@@ -205,3 +205,23 @@ test('invalid persisted custom colour cannot inject CSS or replace its setter', 
     'true',
   );
 });
+
+test('mobile login picker stays above the logo and every colour control is clickable', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openThemeMenu(page);
+  for (const label of ['Blue', 'Violet', 'Emerald', 'Rose', 'Amber', 'Teal']) {
+    const bubble = page.getByRole('button', { name: `Accent colour: ${label}` });
+    const onTop = await bubble.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      return el.contains(
+        document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2),
+      );
+    });
+    expect(onTop, `${label} must not be covered by the login logo`).toBe(true);
+    await bubble.click();
+  }
+  await page.getByLabel('Pick custom accent colour').fill('#ff8800');
+  await page.getByRole('button', { name: 'Use custom accent' }).click();
+});
