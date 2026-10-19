@@ -19,9 +19,12 @@ export function isPreviewRequest(req: Request): boolean {
  * input, device unreachable) passes through unchanged.
  */
 export function changePreview(req: Request, res: Response, next: NextFunction): void {
-  if (!isPreviewRequest(req)) { next(); return; }
+  if (!isPreviewRequest(req)) {
+    next();
+    return;
+  }
   if (!isPreviewableRoute(req.method, req.originalUrl)) {
-    res.status(400).json({ error: 'This action can\'t be previewed', code: 'preview_unsupported' });
+    res.status(400).json({ error: "This action can't be previewed", code: 'preview_unsupported' });
     return;
   }
   const ctx: PreviewContext = { steps: [], skippedDbWrites: 0 };

@@ -42,10 +42,14 @@ export function parseApiTls(value: unknown): boolean | null {
  * number from 1 to 65535. Used to fall back silently to the default for
  * anything unparseable, and accepted negative or out-of-range numbers.
  */
-export function checkPort(value: unknown, label: string): { ok: true; port: number | null } | { ok: false; error: string } {
+export function checkPort(
+  value: unknown,
+  label: string,
+): { ok: true; port: number | null } | { ok: false; error: string } {
   if (value == null || value === '') return { ok: true, port: null };
   const s = typeof value === 'number' ? String(value) : String(value).trim();
-  if (!/^\d{1,5}$/.test(s)) return { ok: false, error: `${label} must be a number from 1 to 65535.` };
+  if (!/^\d{1,5}$/.test(s))
+    return { ok: false, error: `${label} must be a number from 1 to 65535.` };
   const n = Number(s);
   if (n < 1 || n > 65535) return { ok: false, error: `${label} must be a number from 1 to 65535.` };
   return { ok: true, port: n };

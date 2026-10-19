@@ -14,20 +14,20 @@ router.use(fleetOnly);
 // ── Default rules seed ─────────────────────────────────────────────────────
 
 const DEFAULT_RULES = [
-  { event_type: 'device_offline',    enabled: true,  threshold: null, cooldown_min: 5  },
-  { event_type: 'device_online',     enabled: true,  threshold: null, cooldown_min: 5  },
-  { event_type: 'log_error',         enabled: false, threshold: null, cooldown_min: 15 },
-  { event_type: 'log_warning',       enabled: false, threshold: null, cooldown_min: 30 },
-  { event_type: 'high_cpu',          enabled: false, threshold: 90,   cooldown_min: 30 },
-  { event_type: 'high_memory',       enabled: false, threshold: 90,   cooldown_min: 30 },
-  { event_type: 'cert_expiry',       enabled: false, threshold: 14,   cooldown_min: 1440 },
-  { event_type: 'device_discovered',        enabled: false, threshold: null, cooldown_min: 60   },
-  { event_type: 'firmware_update_available', enabled: true,  threshold: null, cooldown_min: 1440 },
-  { event_type: 'config_drift',      enabled: false, threshold: null, cooldown_min: 15   },
+  { event_type: 'device_offline', enabled: true, threshold: null, cooldown_min: 5 },
+  { event_type: 'device_online', enabled: true, threshold: null, cooldown_min: 5 },
+  { event_type: 'log_error', enabled: false, threshold: null, cooldown_min: 15 },
+  { event_type: 'log_warning', enabled: false, threshold: null, cooldown_min: 30 },
+  { event_type: 'high_cpu', enabled: false, threshold: 90, cooldown_min: 30 },
+  { event_type: 'high_memory', enabled: false, threshold: 90, cooldown_min: 30 },
+  { event_type: 'cert_expiry', enabled: false, threshold: 14, cooldown_min: 1440 },
+  { event_type: 'device_discovered', enabled: false, threshold: null, cooldown_min: 60 },
+  { event_type: 'firmware_update_available', enabled: true, threshold: null, cooldown_min: 1440 },
+  { event_type: 'config_drift', enabled: false, threshold: null, cooldown_min: 15 },
   // Hardware health (#168). On by default: a failed PSU or fan is exactly what
   // someone wants to hear about, and it only fires on a change.
-  { event_type: 'device_degraded',         enabled: true, threshold: null, cooldown_min: 60 },
-  { event_type: 'device_health_restored',  enabled: true, threshold: null, cooldown_min: 60 },
+  { event_type: 'device_degraded', enabled: true, threshold: null, cooldown_min: 60 },
+  { event_type: 'device_health_restored', enabled: true, threshold: null, cooldown_min: 60 },
   // A changed certificate or host key could be someone posing as the device
   // (outside review P1-4). On by default; it fires once per change.
   { event_type: 'device_identity_changed', enabled: true, threshold: null, cooldown_min: 60 },
@@ -66,7 +66,7 @@ export async function ensureDefaultRules(): Promise<void> {
       `INSERT INTO alert_rules (event_type, enabled, threshold, cooldown_min)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (event_type) DO NOTHING`,
-      [rule.event_type, rule.enabled, rule.threshold, rule.cooldown_min]
+      [rule.event_type, rule.enabled, rule.threshold, rule.cooldown_min],
     );
   }
 }
@@ -78,7 +78,7 @@ router.get('/rules', async (_req, res) => {
   await ensureDefaultRules();
   const rules = await query(
     `SELECT event_type, enabled, threshold, cooldown_min, updated_at
-     FROM alert_rules ORDER BY event_type`
+     FROM alert_rules ORDER BY event_type`,
   );
   res.json(rules);
 });
@@ -89,14 +89,16 @@ router.put('/rules/:type', requireWrite, async (req, res) => {
   const { enabled, threshold, cooldown_min } = req.body;
 
   const row = await alertService.upsertRule(type, {
-    enabled:     enabled     !== undefined ? Boolean(enabled)         : undefined,
-    threshold:   threshold   !== undefined ? (Number(threshold) || null) : undefined,
-    cooldown_min: cooldown_min !== undefined ? Number(cooldown_min)    : undefined,
+    enabled: enabled !== undefined ? Boolean(enabled) : undefined,
+    threshold: threshold !== undefined ? Number(threshold) || null : undefined,
+    cooldown_min: cooldown_min !== undefined ? Number(cooldown_min) : undefined,
   });
   // Turning CVE alerts on checks straight away instead of at the next daily
   // feed refresh (#224).
   if (type === 'cve_active' && row?.enabled) {
-    void import('../services/cveAlerts').then(({ checkCveAlerts }) => checkCveAlerts()).catch(() => {});
+    void import('../services/cveAlerts')
+      .then(({ checkCveAlerts }) => checkCveAlerts())
+      .catch(() => {});
   }
   res.json(row);
 });
@@ -107,7 +109,7 @@ router.put('/rules/:type', requireWrite, async (req, res) => {
 router.get('/channels', async (_req, res) => {
   const channels = await query(
     `SELECT id, name, type, enabled, config, created_at, updated_at
-     FROM alert_channels ORDER BY id`
+     FROM alert_channels ORDER BY id`,
   );
   // Mask sensitive fields before returning
   const masked = channels.map((ch: Record<string, unknown>) => ({
@@ -132,7 +134,7 @@ router.post('/channels', requireWrite, async (req, res) => {
     `INSERT INTO alert_channels (name, type, enabled, config)
      VALUES ($1, $2, $3, $4) RETURNING *`,
     // Secrets are stored encrypted (outside review S7).
-    [name, type, Boolean(enabled), JSON.stringify(sealConfig(type, config))]
+    [name, type, Boolean(enabled), JSON.stringify(sealConfig(type, config))],
   );
   const ch = rows[0] as Record<string, unknown>;
   res.status(201).json({
@@ -149,12 +151,12 @@ router.put('/channels/:id', requireWrite, async (req, res) => {
   // Fetch existing so we can merge config (preserve masked/unchanged fields)
   const existing = await query<{ config: Record<string, unknown>; type: string }>(
     `SELECT config, type FROM alert_channels WHERE id = $1`,
-    [id]
+    [id],
   );
   if (!existing[0]) return res.status(404).json({ error: 'Channel not found' });
 
   const existingConfig = existing[0].config as Record<string, unknown>;
-  const type           = existing[0].type;
+  const type = existing[0].type;
 
   // Merge new config over existing, preserving existing passwords when placeholders sent
   const merge = mergeConfig(type, existingConfig, config ?? {});
@@ -168,7 +170,12 @@ router.put('/channels/:id', requireWrite, async (req, res) => {
          config = $4,
          updated_at = NOW()
      WHERE id = $1 RETURNING *`,
-    [id, name ?? null, enabled !== undefined ? Boolean(enabled) : null, JSON.stringify(sealConfig(type, mergedConfig))]
+    [
+      id,
+      name ?? null,
+      enabled !== undefined ? Boolean(enabled) : null,
+      JSON.stringify(sealConfig(type, mergedConfig)),
+    ],
   );
   if (!rows[0]) return res.status(404).json({ error: 'Channel not found' });
 
@@ -204,7 +211,7 @@ router.get('/history', async (req, res) => {
             h.channels_notified, h.sent_at
      FROM alert_history h
      ORDER BY h.sent_at DESC LIMIT $1`,
-    [limit]
+    [limit],
   );
   res.json(rows);
 });

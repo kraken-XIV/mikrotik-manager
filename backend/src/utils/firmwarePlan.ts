@@ -15,9 +15,7 @@ import { compareRosVersions, parseRosVersion } from './rosVersion';
  *     started whenever the manager got to it, rebooting devices in business hours.
  */
 
-export type UpgradeDecision =
-  | { action: 'upgrade' }
-  | { action: 'skip'; reason: string };
+export type UpgradeDecision = { action: 'upgrade' } | { action: 'skip'; reason: string };
 
 /** Whether to upgrade a device from `installed` to what its channel offers. */
 export function upgradeDecision(installed: string, latest: string): UpgradeDecision {
@@ -27,14 +25,18 @@ export function upgradeDecision(installed: string, latest: string): UpgradeDecis
   if (!parseRosVersion(inst) || !parseRosVersion(next)) {
     return next === inst
       ? { action: 'skip', reason: 'Already up to date' }
-      : { action: 'skip', reason: `Could not compare the installed version (${inst || 'unknown'}) with ${next}, so nothing was changed` };
+      : {
+          action: 'skip',
+          reason: `Could not compare the installed version (${inst || 'unknown'}) with ${next}, so nothing was changed`,
+        };
   }
   const cmp = compareRosVersions(next, inst);
   if (cmp === 0) return { action: 'skip', reason: 'Already up to date' };
   if (cmp < 0) {
     return {
       action: 'skip',
-      reason: `The update channel offers ${next}, which is older than the installed ${inst}. ` +
+      reason:
+        `The update channel offers ${next}, which is older than the installed ${inst}. ` +
         'Nothing is downgraded automatically; change the channel if that was not intended.',
     };
   }
@@ -42,13 +44,24 @@ export function upgradeDecision(installed: string, latest: string): UpgradeDecis
 }
 
 /** After the reboot: did the device end up on the version we installed? */
-export function verifyUpgrade(target: string, reported: string, from: string): { ok: true } | { ok: false; error: string } {
+export function verifyUpgrade(
+  target: string,
+  reported: string,
+  from: string,
+): { ok: true } | { ok: false; error: string } {
   const want = target.trim();
   const got = reported.trim();
-  if (!got) return { ok: false, error: `The device came back but its version could not be read, so the upgrade to ${want} can't be confirmed` };
+  if (!got)
+    return {
+      ok: false,
+      error: `The device came back but its version could not be read, so the upgrade to ${want} can't be confirmed`,
+    };
   if (compareRosVersions(got, want) === 0 && parseRosVersion(got)) return { ok: true };
   if (from && compareRosVersions(got, from) === 0) {
-    return { ok: false, error: `The device still reports ${got}; the upgrade to ${want} did not apply` };
+    return {
+      ok: false,
+      error: `The device still reports ${got}; the upgrade to ${want} did not apply`,
+    };
   }
   return { ok: false, error: `Expected ${want} after the upgrade, but the device reports ${got}` };
 }
@@ -63,7 +76,11 @@ export type ScheduleDecision = 'wait' | 'start' | 'missed';
  * scheduled time and its "don't start after" time (or the default window),
  * never later: a missed window is recorded, not caught up.
  */
-export function scheduleDecision(scheduledAt: Date, notAfter: Date | null, now: Date = new Date()): ScheduleDecision {
+export function scheduleDecision(
+  scheduledAt: Date,
+  notAfter: Date | null,
+  now: Date = new Date(),
+): ScheduleDecision {
   if (now < scheduledAt) return 'wait';
   const end = notAfter ?? new Date(scheduledAt.getTime() + DEFAULT_START_WINDOW_MIN * 60_000);
   return now <= end ? 'start' : 'missed';

@@ -2,8 +2,15 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import LoadError from '../common/LoadError';
 import {
-  Activity, AlertTriangle, ChevronDown, ChevronRight, CircleCheck,
-  ExternalLink, RefreshCw, ShieldAlert, Wrench,
+  Activity,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  CircleCheck,
+  ExternalLink,
+  RefreshCw,
+  ShieldAlert,
+  Wrench,
 } from 'lucide-react';
 import { devicesApi, type ConfigFinding } from '../../services/api';
 import { useCanWrite } from '../../hooks/useCanWrite';
@@ -37,7 +44,15 @@ function since(iso: string | null): string {
   return `present for ${days} days`;
 }
 
-function Finding({ f, deviceId, deviceName }: { f: ConfigFinding; deviceId: number; deviceName?: string }) {
+function Finding({
+  f,
+  deviceId,
+  deviceName,
+}: {
+  f: ConfigFinding;
+  deviceId: number;
+  deviceName?: string;
+}) {
   const [open, setOpen] = useState(f.severity === 'critical');
   const style = SEV[f.severity];
   const canWrite = useCanWrite();
@@ -48,7 +63,8 @@ function Finding({ f, deviceId, deviceName }: { f: ConfigFinding; deviceId: numb
   const [confirming, setConfirming] = useState(false);
   const [fixError, setFixError] = useState('');
   const fix = useMutation({
-    mutationFn: (confirm: boolean) => devicesApi.fixConfigHealth(deviceId, f.rule, f.objects, confirm),
+    mutationFn: (confirm: boolean) =>
+      devicesApi.fixConfigHealth(deviceId, f.rule, f.objects, confirm),
     onSuccess: (res) => {
       setConfirming(false);
       setFixError('');
@@ -56,10 +72,14 @@ function Finding({ f, deviceId, deviceName }: { f: ConfigFinding; deviceId: numb
       void qc.invalidateQueries({ queryKey: ['config-health', deviceId] });
     },
   });
-  const runFix = () => fix.mutate(false, {
-    onError: guard.onError(() => fix.mutate(true, { onError: (e) => setFixError(apiErrorMessage(e, 'The fix failed')) }),
-      (e) => setFixError(apiErrorMessage(e, 'The fix failed'))),
-  });
+  const runFix = () =>
+    fix.mutate(false, {
+      onError: guard.onError(
+        () =>
+          fix.mutate(true, { onError: (e) => setFixError(apiErrorMessage(e, 'The fix failed')) }),
+        (e) => setFixError(apiErrorMessage(e, 'The fix failed')),
+      ),
+    });
 
   return (
     <div className={clsx('rounded-lg border', style.card)}>
@@ -67,12 +87,19 @@ function Finding({ f, deviceId, deviceName }: { f: ConfigFinding; deviceId: numb
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-start gap-2.5 p-3 text-left"
       >
-        {open
-          ? <ChevronDown className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-          : <ChevronRight className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />}
+        {open ? (
+          <ChevronDown className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
+        ) : (
+          <ChevronRight className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={clsx('text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded', style.chip)}>
+            <span
+              className={clsx(
+                'text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded',
+                style.chip,
+              )}
+            >
               {style.label}
             </span>
             <span className="text-sm font-medium text-gray-900 dark:text-white">{f.title}</span>
@@ -92,35 +119,60 @@ function Finding({ f, deviceId, deviceName }: { f: ConfigFinding; deviceId: numb
               <Wrench className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" />
               <p className="text-sm text-gray-700 dark:text-slate-200 flex-1">{f.remediation}</p>
               {f.fix && canWrite && !confirming && (
-                <button onClick={() => setConfirming(true)} className="btn-primary text-xs py-1 flex-shrink-0">Fix it</button>
+                <button
+                  onClick={() => setConfirming(true)}
+                  className="btn-primary text-xs py-1 flex-shrink-0"
+                >
+                  Fix it
+                </button>
               )}
             </div>
           )}
           {f.fix && confirming && (
             <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-2.5 space-y-2">
-              <p className="text-sm text-blue-900 dark:text-blue-200">{f.fix.summary}. This runs on the device:</p>
-              <code className="block text-xs font-mono text-blue-900 dark:text-blue-100 break-all">{f.fix.command}</code>
+              <p className="text-sm text-blue-900 dark:text-blue-200">
+                {f.fix.summary}. This runs on the device:
+              </p>
+              <code className="block text-xs font-mono text-blue-900 dark:text-blue-100 break-all">
+                {f.fix.command}
+              </code>
               <p className="text-xs text-blue-800/80 dark:text-blue-300/80">
-                It runs under Change Guard, so if it cuts the manager off the device undoes it by itself.
+                It runs under Change Guard, so if it cuts the manager off the device undoes it by
+                itself.
               </p>
               <div className="flex items-center gap-2">
-                <button onClick={runFix} disabled={fix.isPending} className="btn-primary text-xs py-1">
+                <button
+                  onClick={runFix}
+                  disabled={fix.isPending}
+                  className="btn-primary text-xs py-1"
+                >
                   {fix.isPending ? 'Applying…' : 'Apply fix'}
                 </button>
-                <button onClick={() => setConfirming(false)} disabled={fix.isPending} className="btn-secondary text-xs py-1">Cancel</button>
+                <button
+                  onClick={() => setConfirming(false)}
+                  disabled={fix.isPending}
+                  className="btn-secondary text-xs py-1"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           )}
           {fixError && <p className="text-xs text-red-600 dark:text-red-400">{fixError}</p>}
-          <GuardedWriteUi state={guard} deviceId={deviceId} deviceName={deviceName} pending={fix.isPending} />
+          <GuardedWriteUi
+            state={guard}
+            deviceId={deviceId}
+            deviceName={deviceName}
+            pending={fix.isPending}
+          />
           {!f.fix && f.no_fix_reason && (
-            <p className="text-xs text-gray-400 dark:text-slate-500">No one-click fix: {f.no_fix_reason}</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500">
+              No one-click fix: {f.no_fix_reason}
+            </p>
           )}
 
           <div className="flex items-center gap-3 flex-wrap text-xs text-gray-400">
-            {f.objects.length > 0 && (
-              <span className="mono">{f.objects.join(' · ')}</span>
-            )}
+            {f.objects.length > 0 && <span className="mono">{f.objects.join(' · ')}</span>}
             {f.first_seen && <span>{since(f.first_seen)}</span>}
             {f.doc_url && (
               <a
@@ -147,7 +199,13 @@ function Finding({ f, deviceId, deviceName }: { f: ConfigFinding; deviceId: numb
  * port, a PVID that a frame-type makes inert — so this panel is the only place
  * they become visible.
  */
-export default function ConfigHealthCard({ deviceId, deviceName }: { deviceId: number; deviceName?: string }) {
+export default function ConfigHealthCard({
+  deviceId,
+  deviceName,
+}: {
+  deviceId: number;
+  deviceName?: string;
+}) {
   const qc = useQueryClient();
   const canWrite = useCanWrite();
   const [scanError, setScanError] = useState('');
@@ -182,12 +240,22 @@ export default function ConfigHealthCard({ deviceId, deviceName }: { deviceId: n
           </div>
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Config Health</h3>
           {critical > 0 && (
-            <span className={clsx('text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded', SEV.critical.chip)}>
+            <span
+              className={clsx(
+                'text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded',
+                SEV.critical.chip,
+              )}
+            >
               {critical} broken
             </span>
           )}
           {warnings > 0 && (
-            <span className={clsx('text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded', SEV.warning.chip)}>
+            <span
+              className={clsx(
+                'text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded',
+                SEV.warning.chip,
+              )}
+            >
               {warnings} fragile
             </span>
           )}
@@ -219,7 +287,8 @@ export default function ConfigHealthCard({ deviceId, deviceName }: { deviceId: n
         <LoadError what="configuration findings" error={error} />
       ) : isLoading ? (
         <div className="text-center py-6 text-gray-400 text-sm">
-          <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />Loading findings…
+          <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
+          Loading findings…
         </div>
       ) : findings.length === 0 ? (
         <div className="card p-4 flex items-start gap-2.5">
@@ -238,7 +307,14 @@ export default function ConfigHealthCard({ deviceId, deviceName }: { deviceId: n
       ) : (
         <>
           <div className="space-y-2">
-            {findings.map((f) => <Finding key={`${f.rule}:${f.objects.join(',')}`} f={f} deviceId={deviceId} deviceName={deviceName} />)}
+            {findings.map((f) => (
+              <Finding
+                key={`${f.rule}:${f.objects.join(',')}`}
+                f={f}
+                deviceId={deviceId}
+                deviceName={deviceName}
+              />
+            ))}
           </div>
           {data?.checked_at && (
             <div className="flex items-center gap-1.5 text-xs text-gray-400">

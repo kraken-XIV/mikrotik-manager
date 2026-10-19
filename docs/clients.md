@@ -8,12 +8,12 @@ Clients are assembled on the fast poll from several sources on each managed devi
 leases, the ARP table, the bridge host table, and wireless registrations. A single client
 usually appears in more than one of these, and they are merged by MAC address.
 
-That merge is why a client shows a switch port *and* an access point: the MAC is known to both.
+That merge is why a client shows a switch port _and_ an access point: the MAC is known to both.
 
 !!! note "This can be switched off"
-    Client tracking is the heaviest collector on most fleets. **Settings → Polling →
-    Collectors** can disable it, at the cost of this page and everything fed by it. See
-    [Polling and scaling](scaling.md).
+Client tracking is the heaviest collector on most fleets. **Settings → Polling →
+Collectors** can disable it, at the cost of this page and everything fed by it. See
+[Polling and scaling](scaling.md).
 
 ## The list
 
@@ -47,13 +47,13 @@ is kept alongside.
 
 Selecting a client opens its own page:
 
-| Section | Shows |
-|---|---|
-| **Connectivity** | Where it is attached now, and on which port or radio |
-| **Presence** | When it has been seen, as a timeline |
-| **Traffic** | Per-client throughput history |
-| **Signal** | For wireless clients, RSSI over time |
-| **Roaming** | Movement between access points, with the signal at each |
+| Section          | Shows                                                   |
+| ---------------- | ------------------------------------------------------- |
+| **Connectivity** | Where it is attached now, and on which port or radio    |
+| **Presence**     | When it has been seen, as a timeline                    |
+| **Traffic**      | Per-client throughput history                           |
+| **Signal**       | For wireless clients, RSSI over time                    |
+| **Roaming**      | Movement between access points, with the signal at each |
 
 Roaming and signal history are the two that answer questions nothing else can: a client that
 keeps dropping is usually either roaming between two APs that both hear it weakly, or sitting
@@ -76,11 +76,11 @@ table is one click away if you want it.
   row: the router's firewall address lists, ticked where the client's address is already a
   member. Tick or untick, or type a new list name, then **Apply**. An address can be in several
   lists at once.
-    - Entries a firewall rule added (dynamic) are shown but can't be changed here.
-    - Lists a firewall rule matches on are marked *used by rules*. Every change runs through
-      Change Guard, which asks before anything it predicts would lock the manager out.
-    - If the address is a **dynamic** DHCP lease, a warning says so: the lists follow the
-      address, not the device. Make the lease static to keep them together.
+  - Entries a firewall rule added (dynamic) are shown but can't be changed here.
+  - Lists a firewall rule matches on are marked _used by rules_. Every change runs through
+    Change Guard, which asks before anything it predicts would lock the manager out.
+  - If the address is a **dynamic** DHCP lease, a warning says so: the lists follow the
+    address, not the device. Make the lease static to keep them together.
 - **Wake-on-LAN** sends a magic packet from the MikroTik nearest the client, not from the
   manager, so it reaches devices the manager cannot route to.
 - **Notes** are free text kept against the MAC.

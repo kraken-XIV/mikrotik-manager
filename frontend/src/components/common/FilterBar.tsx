@@ -7,12 +7,25 @@ import { Search } from 'lucide-react';
  * small selects and segmented toggles.
  */
 export function FilterBar({ children }: { children: ReactNode }) {
-  return <div className="card-subtle flex flex-wrap items-center gap-[6px] p-[6px]">{children}</div>;
+  return (
+    <div className="card-subtle flex flex-wrap items-center gap-[6px] p-[6px]">{children}</div>
+  );
 }
 
-export function FilterSearch({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+export function FilterSearch({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
   return (
-    <div className="flex items-center gap-2 flex-1 min-w-[160px] px-[10px] py-[6px]" style={{ color: 'var(--ink-3)' }}>
+    <div
+      className="flex items-center gap-2 flex-1 min-w-[160px] px-[10px] py-[6px]"
+      style={{ color: 'var(--ink-3)' }}
+    >
       <Search className="w-3.5 h-3.5 flex-shrink-0" />
       <input
         type="text"
@@ -29,8 +42,18 @@ export function FilterSearch({ value, onChange, placeholder }: { value: string; 
 
 /** A small select; its text darkens while it filters anything. */
 export function FilterSelect({
-  value, onChange, children, title, className = '',
-}: { value: string; onChange: (v: string) => void; children: ReactNode; title?: string; className?: string }) {
+  value,
+  onChange,
+  children,
+  title,
+  className = '',
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  children: ReactNode;
+  title?: string;
+  className?: string;
+}) {
   return (
     <select
       value={value}
@@ -47,8 +70,14 @@ export function FilterSelect({
 
 /** Mutually exclusive pills, like the status filter on Devices. */
 export function FilterSegment<T extends string>({
-  options, value, onChange,
-}: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
   return (
     <div className="flex items-center">
       {options.map((o) => (

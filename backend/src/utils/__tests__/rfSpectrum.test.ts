@@ -1,9 +1,18 @@
 import {
-  channelCenter, spectrumFor, classifyPair, overlapMhz, analyzeSpectrum, summarize, freeSpans,
-  widthMhz, channelForFreq, bandForFreq, parseChannelSpec,
+  channelCenter,
+  spectrumFor,
+  classifyPair,
+  overlapMhz,
+  analyzeSpectrum,
+  summarize,
+  freeSpans,
+  widthMhz,
+  channelForFreq,
+  bandForFreq,
+  parseChannelSpec,
 } from '../rfSpectrum';
 
-const ch = (n: number) => 2407 + n * 5;          // 2.4 GHz channel → centre MHz
+const ch = (n: number) => 2407 + n * 5; // 2.4 GHz channel → centre MHz
 const radio = (frequency: number, channel_width = '20mhz') => ({ frequency, channel_width });
 
 describe('widthMhz', () => {
@@ -139,7 +148,8 @@ describe('classifyPair — the heart of issue #98', () => {
   });
 
   it('is symmetric', () => {
-    const a = spectrumFor(ch(1)), b = spectrumFor(ch(3));
+    const a = spectrumFor(ch(1)),
+      b = spectrumFor(ch(3));
     expect(classifyPair(a, b)).toBe(classifyPair(b, a));
     expect(overlapMhz(a, b)).toBe(overlapMhz(b, a));
   });
@@ -168,7 +178,7 @@ describe('analyzeSpectrum', () => {
     // ch6 twice (co-channel) plus a ch8 that partially overlaps them.
     const v = analyzeSpectrum([radio(ch(6)), radio(ch(6)), radio(ch(8))]);
     expect(v[0].kind).toBe('partial');
-    expect(v[0].clashes[0].kind).toBe('partial');   // worst first
+    expect(v[0].clashes[0].kind).toBe('partial'); // worst first
     expect(v[0].clashes.map((c) => c.kind)).toContain('co-channel');
   });
 
@@ -181,8 +191,8 @@ describe('analyzeSpectrum', () => {
     const v = analyzeSpectrum([radio(ch(1)), radio(ch(1)), radio(ch(4)), radio(ch(11))]);
     const s = summarize(v);
     expect(s.radios).toBe(4);
-    expect(s.partial).toBe(3);   // both ch1s and the ch4 overlap each other
-    expect(s.clear).toBe(1);     // ch11 is untouched
+    expect(s.partial).toBe(3); // both ch1s and the ch4 overlap each other
+    expect(s.clear).toBe(1); // ch11 is untouched
   });
 });
 
@@ -195,7 +205,7 @@ describe('freeSpans', () => {
   });
 
   it('reports no usable gap when a band is saturated', () => {
-    const v = analyzeSpectrum([radio(2450, '160mhz')]);   // swamps 2370–2530
+    const v = analyzeSpectrum([radio(2450, '160mhz')]); // swamps 2370–2530
     expect(freeSpans(v, '2.4')).toHaveLength(0);
   });
 

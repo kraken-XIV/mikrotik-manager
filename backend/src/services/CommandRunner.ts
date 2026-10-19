@@ -58,13 +58,14 @@ export class CommandRunner {
    */
   async reconcileInterrupted(): Promise<void> {
     const stale = await query<{ id: number; name: string }>(
-      `SELECT id, name FROM command_runs WHERE status = 'running'`
+      `SELECT id, name FROM command_runs WHERE status = 'running'`,
     );
     if (stale.length === 0) return;
 
     for (const r of stale) {
       const devices = await query<{ id: number; status: string }>(
-        `SELECT id, status FROM command_run_devices WHERE run_id = $1`, [r.id]
+        `SELECT id, status FROM command_run_devices WHERE run_id = $1`,
+        [r.id],
       );
       for (const d of devices) {
         const outcome = interruptedOutcome(d.status);
@@ -73,15 +74,15 @@ export class CommandRunner {
           `UPDATE command_run_devices
               SET status = $2, error = $3, finished_at = NOW()
             WHERE id = $1`,
-          [d.id, outcome.status, outcome.error]
+          [d.id, outcome.status, outcome.error],
         );
       }
-      await query(
-        `UPDATE command_runs SET status = 'failed', finished_at = NOW() WHERE id = $1`, [r.id]
-      );
+      await query(`UPDATE command_runs SET status = 'failed', finished_at = NOW() WHERE id = $1`, [
+        r.id,
+      ]);
       console.warn(
         `[Command] run #${r.id} ("${r.name}") was still marked running at startup — ` +
-        `closing it out as interrupted.`
+          `closing it out as interrupted.`,
       );
     }
   }
@@ -95,10 +96,17 @@ export class CommandRunner {
     let run: RunRow | null;
     try {
       run = await queryOne<RunRow>(
-        `UPDATE command_runs SET status='running', started_at=NOW() WHERE id=$1 AND status='pending' RETURNING *`, [runId]);
+        `UPDATE command_runs SET status='running', started_at=NOW() WHERE id=$1 AND status='pending' RETURNING *`,
+        [runId],
+      );
       if (!run) {
-        const cur = await queryOne<{ status: string }>(`SELECT status FROM command_runs WHERE id = $1`, [runId]);
-        throw new Error(cur ? `Run is ${cur.status} — only pending runs can start` : 'Run not found');
+        const cur = await queryOne<{ status: string }>(
+          `SELECT status FROM command_runs WHERE id = $1`,
+          [runId],
+        );
+        throw new Error(
+          cur ? `Run is ${cur.status} — only pending runs can start` : 'Run not found',
+        );
       }
     } catch (e) {
       this.activeRunId = null;
@@ -110,9 +118,13 @@ export class CommandRunner {
     void this.run(run)
       .catch(async (e) => {
         console.error(`[Command] run #${runId} crashed:`, e);
-        await query(`UPDATE command_runs SET status='failed', finished_at=NOW() WHERE id=$1`, [runId]);
+        await query(`UPDATE command_runs SET status='failed', finished_at=NOW() WHERE id=$1`, [
+          runId,
+        ]);
       })
-      .finally(() => { this.activeRunId = null; });
+      .finally(() => {
+        this.activeRunId = null;
+      });
   }
 
   cancel(runId: number): void {
@@ -122,7 +134,7 @@ export class CommandRunner {
   private async run(run: RunRow): Promise<void> {
     const items = await query<RunDeviceRow>(
       `SELECT id, device_id, wave FROM command_run_devices WHERE run_id = $1 ORDER BY wave, id`,
-      [run.id]
+      [run.id],
     );
 
     const waves = [...new Set(items.map((i) => i.wave))].sort((a, b) => a - b);
@@ -145,10 +157,15 @@ export class CommandRunner {
     // Anything not reached is skipped, not failed — it never ran.
     await query(
       `UPDATE command_run_devices SET status='skipped', finished_at=NOW()
-        WHERE run_id=$1 AND status='pending'`, [run.id]);
+        WHERE run_id=$1 AND status='pending'`,
+      [run.id],
+    );
 
     const status = this.cancelRequested ? 'cancelled' : halted ? 'halted' : 'completed';
-    await query(`UPDATE command_runs SET status=$2, finished_at=NOW() WHERE id=$1`, [run.id, status]);
+    await query(`UPDATE command_runs SET status=$2, finished_at=NOW() WHERE id=$1`, [
+      run.id,
+      status,
+    ]);
     console.log(`[Command] run #${run.id} ${status}`);
   }
 
@@ -158,7 +175,7 @@ export class CommandRunner {
       `SELECT id, name, ip_address, api_port, api_tls, api_username, api_password_encrypted,
               ssh_port, ssh_username, ssh_password_encrypted, ssh_only
          FROM devices WHERE id = $1`,
-      [item.device_id]
+      [item.device_id],
     );
     if (!device) {
       await this.finish(item.id, 'failed', null, 'Device no longer exists');
@@ -167,7 +184,7 @@ export class CommandRunner {
 
     await query(
       `UPDATE command_run_devices SET status='running', started_at=NOW(), guarded=$2 WHERE id=$1`,
-      [item.id, run.use_change_guard]
+      [item.id, run.use_change_guard],
     );
 
     // {{secret:name}} filled in only here, at the last moment (#259); what's
@@ -195,9 +212,13 @@ export class CommandRunner {
       // over SSH only doesn't have yet (#174). Said plainly, not as the
       // connection error arming would give.
       if ((device as { ssh_only?: boolean }).ssh_only) {
-        await this.finish(item.id, 'failed', null,
-          'Change Guard needs the RouterOS API, which isn\'t enabled on this device yet (it was added over SSH only). '
-          + 'Run the command without Change Guard, for example to turn on api-ssl.');
+        await this.finish(
+          item.id,
+          'failed',
+          null,
+          "Change Guard needs the RouterOS API, which isn't enabled on this device yet (it was added over SSH only). " +
+            'Run the command without Change Guard, for example to turn on api-ssl.',
+        );
         return false;
       }
 
@@ -205,27 +226,39 @@ export class CommandRunner {
       // arm it is failed rather than quietly run without it. The failure also
       // counts toward halt-on-failure, so a fleet of unprotectable devices
       // stops at the first wave.
-      const outcome = await withSafeApply(device, {
-        kind: 'command.bulk',
-        summary: `Bulk command: ${run.command.slice(0, 80)}`,
-        requireProtection: true,
-      }, execute);
+      const outcome = await withSafeApply(
+        device,
+        {
+          kind: 'command.bulk',
+          summary: `Bulk command: ${run.command.slice(0, 80)}`,
+          requireProtection: true,
+        },
+        execute,
+      );
 
       if (outcome.autoReverting) {
         // The device stopped answering and is restoring itself. That is the
         // guard working, and it must be reported as loudly as a failure.
         await this.finish(
-          item.id, 'reverted', outcome.result ?? null,
+          item.id,
+          'reverted',
+          outcome.result ?? null,
           'Device stopped responding after the command and is restoring itself.',
-          true
+          true,
         );
         return false;
       }
 
-      await this.finish(item.id, 'success', outcome.result ?? null,
+      await this.finish(
+        item.id,
+        'success',
+        outcome.result ?? null,
         outcome.revertMayFireAt
           ? `Applied, but the auto-revert could not be confirmed removed; the device may restore its previous configuration at about ${new Date(outcome.revertMayFireAt).toLocaleTimeString()}.`
-          : outcome.unprotectedReason ? `Ran unprotected: ${outcome.unprotectedReason}` : null);
+          : outcome.unprotectedReason
+            ? `Ran unprotected: ${outcome.unprotectedReason}`
+            : null,
+      );
       return true;
     } catch (e) {
       await this.finish(item.id, 'failed', null, maskSecrets((e as Error).message, secretValues));
@@ -234,13 +267,17 @@ export class CommandRunner {
   }
 
   private async finish(
-    id: number, status: string, output: string | null, error: string | null, reverted = false,
+    id: number,
+    status: string,
+    output: string | null,
+    error: string | null,
+    reverted = false,
   ): Promise<void> {
     await query(
       `UPDATE command_run_devices
           SET status=$2, output=$3, error=$4, auto_reverted=$5, finished_at=NOW()
         WHERE id=$1`,
-      [id, status, output, error, reverted]
+      [id, status, output, error, reverted],
     );
   }
 }

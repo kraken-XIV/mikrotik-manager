@@ -21,11 +21,13 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
 
   // A draft while typing; otherwise the saved value.
   const [hoursDraft, setHoursDraft] = useState<string | null>(null);
-  const hours = hoursDraft ?? String(Math.round((device.intermittent_alert_after_min ?? 1440) / 60));
+  const hours =
+    hoursDraft ?? String(Math.round((device.intermittent_alert_after_min ?? 1440) / 60));
 
   const save = useMutation({
     meta: { inlineError: true },
-    mutationFn: (data: Parameters<typeof devicesApi.patchMonitoring>[1]) => devicesApi.patchMonitoring(device.id, data),
+    mutationFn: (data: Parameters<typeof devicesApi.patchMonitoring>[1]) =>
+      devicesApi.patchMonitoring(device.id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['device', device.id] });
       qc.invalidateQueries({ queryKey: ['devices'] });
@@ -43,12 +45,17 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
     <div className="card p-5 space-y-4">
       <div className="flex items-center gap-2">
         <HeartPulse className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex-1">Hardware health</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex-1">
+          Hardware health
+        </h3>
         {save.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
       </div>
 
       {status === 'degraded' ? (
-        <div className="rounded-lg p-3 space-y-2" style={{ background: 'var(--warn-bg)', color: 'var(--warn)' }}>
+        <div
+          className="rounded-lg p-3 space-y-2"
+          style={{ background: 'var(--warn-bg)', color: 'var(--warn)' }}
+        >
           <div className="flex items-center gap-2 text-sm font-medium">
             <AlertTriangle className="w-4 h-4" /> Degraded
           </div>
@@ -87,7 +94,11 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
             <div key={i.item} className="flex items-center gap-3">
               <span className="flex-1">{i.message}</span>
               {canWrite && (
-                <button onClick={() => setIgnored(i.item, false)} disabled={save.isPending} className="flex items-center gap-1 underline">
+                <button
+                  onClick={() => setIgnored(i.item, false)}
+                  disabled={save.isPending}
+                  className="flex items-center gap-1 underline"
+                >
                   <Eye className="w-3 h-3" /> Stop ignoring
                 </button>
               )}
@@ -126,7 +137,11 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
               onBlur={() => {
                 setHoursDraft(null);
                 const h = Number(hours);
-                if (Number.isFinite(h) && h >= 0 && Math.round(h * 60) !== device.intermittent_alert_after_min) {
+                if (
+                  Number.isFinite(h) &&
+                  h >= 0 &&
+                  Math.round(h * 60) !== device.intermittent_alert_after_min
+                ) {
                   save.mutate({ intermittent_alert_after_min: Math.round(h * 60) });
                 }
               }}

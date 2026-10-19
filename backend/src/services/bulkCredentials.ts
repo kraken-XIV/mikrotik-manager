@@ -36,22 +36,34 @@ export interface BulkCredentialsResult {
 }
 
 interface DeviceRow {
-  id: number; name: string; ip_address: string; site_id: number | null;
-  api_port: number; api_tls: boolean | null; ssh_only: boolean; ssh_port: number | null;
-  ssh_username: string | null; ssh_password_encrypted: string | null;
-  api_username: string; api_password_encrypted: string;
+  id: number;
+  name: string;
+  ip_address: string;
+  site_id: number | null;
+  api_port: number;
+  api_tls: boolean | null;
+  ssh_only: boolean;
+  ssh_port: number | null;
+  ssh_username: string | null;
+  ssh_password_encrypted: string | null;
+  api_username: string;
+  api_password_encrypted: string;
 }
 
 /** Devices tested at once: each test is a login, and a big fleet shouldn't flood the network. */
 const CONCURRENCY = 4;
 
 export async function bulkUpdateCredentials(
-  ids: number[], input: BulkCredentialsInput, caller: { role?: string; presetCaller: PresetCaller },
+  ids: number[],
+  input: BulkCredentialsInput,
+  caller: { role?: string; presetCaller: PresetCaller },
 ): Promise<BulkCredentialsResult[]> {
   const rows = await query<DeviceRow>(
     `SELECT id, name, ip_address, site_id, api_port, api_tls, ssh_only, ssh_port, ssh_username,
             ssh_password_encrypted, api_username, api_password_encrypted
-       FROM devices WHERE id = ANY($1::int[]) ORDER BY name`, [ids]);
+       FROM devices WHERE id = ANY($1::int[]) ORDER BY name`,
+    [ids],
+  );
 
   const results: BulkCredentialsResult[] = [];
   let next = 0;
@@ -66,16 +78,26 @@ export async function bulkUpdateCredentials(
 }
 
 async function updateOne(
-  d: DeviceRow, input: BulkCredentialsInput, caller: { role?: string; presetCaller: PresetCaller },
+  d: DeviceRow,
+  input: BulkCredentialsInput,
+  caller: { role?: string; presetCaller: PresetCaller },
 ): Promise<BulkCredentialsResult> {
-  const fail = (error: string): BulkCredentialsResult => ({ id: d.id, name: d.name, ok: false, error });
+  const fail = (error: string): BulkCredentialsResult => ({
+    id: d.id,
+    name: d.name,
+    ok: false,
+    error,
+  });
 
   // The same preset rules as adding and editing: a site's preset only on that
   // site's devices, admin-only presets only for admins.
   let preset: Awaited<ReturnType<typeof loadCredentialPreset>>;
   try {
-    preset = await loadCredentialPreset(input.credential_preset_id ?? null,
-      { requestingUserRole: caller.role, presetCaller: caller.presetCaller }, d.site_id);
+    preset = await loadCredentialPreset(
+      input.credential_preset_id ?? null,
+      { requestingUserRole: caller.role, presetCaller: caller.presetCaller },
+      d.site_id,
+    );
   } catch (err) {
     return fail((err as Error).message);
   }
@@ -86,15 +108,22 @@ async function updateOne(
   // fields replace it when given and leave it alone when not.
   const sshGiven = !!preset || input.ssh_username != null || input.ssh_password != null;
   const sshUser = preset ? preset.ssh_username : (input.ssh_username ?? d.ssh_username);
-  const sshPass = preset ? preset.ssh_password
-    : input.ssh_password != null ? input.ssh_password
-      : d.ssh_password_encrypted ? decrypt(d.ssh_password_encrypted) : null;
+  const sshPass = preset
+    ? preset.ssh_password
+    : input.ssh_password != null
+      ? input.ssh_password
+      : d.ssh_password_encrypted
+        ? decrypt(d.ssh_password_encrypted)
+        : null;
 
   // Log in with the new login before saving anything.
   if (d.ssh_only) {
     try {
       await readSshInfo({
-        id: d.id, name: d.name, ip_address: d.ip_address, ssh_port: d.ssh_port ?? 22,
+        id: d.id,
+        name: d.name,
+        ip_address: d.ip_address,
+        ssh_port: d.ssh_port ?? 22,
         ssh_username: sshUser || apiUser,
         ssh_password_encrypted: encrypt(sshPass || apiPass),
       });
@@ -102,7 +131,15 @@ async function updateOne(
       return fail(describeSshFailure(err, d.ssh_port ?? 22));
     }
   } else {
-    const client = new RouterOSClient(d.ip_address, d.api_port, apiUser, apiPass, 10_000, 30_000, usesApiTls(d));
+    const client = new RouterOSClient(
+      d.ip_address,
+      d.api_port,
+      apiUser,
+      apiPass,
+      10_000,
+      30_000,
+      usesApiTls(d),
+    );
     try {
       await client.connect();
       await client.execute('/system/identity/print');
@@ -119,7 +156,8 @@ async function updateOne(
             ssh_password_encrypted = CASE WHEN $4 THEN $6 ELSE ssh_password_encrypted END,
             updated_at = NOW()
       WHERE id = $1`,
-    [d.id, apiUser, encrypt(apiPass), sshGiven, sshUser || null, sshPass ? encrypt(sshPass) : null]);
+    [d.id, apiUser, encrypt(apiPass), sshGiven, sshUser || null, sshPass ? encrypt(sshPass) : null],
+  );
   console.log(`[bulk-credentials] ${logSafe(d.name)}: login updated`);
   return { id: d.id, name: d.name, ok: true };
 }

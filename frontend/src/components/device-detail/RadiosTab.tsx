@@ -2,12 +2,34 @@ import { useState, useEffect, useRef } from 'react';
 import ReviewChangesButton from '../common/ReviewChangesButton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Wifi, Activity, Users, Radio, RefreshCw, Pencil, ChevronDown, ChevronRight,
-  Signal, Zap, Globe, Cpu, ScanLine, Lock, Unlock, AlertTriangle,
+  Wifi,
+  Activity,
+  Users,
+  Radio,
+  RefreshCw,
+  Pencil,
+  ChevronDown,
+  ChevronRight,
+  Signal,
+  Zap,
+  Globe,
+  Cpu,
+  ScanLine,
+  Lock,
+  Unlock,
+  AlertTriangle,
 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
 } from 'recharts';
 import { chartTooltip } from '../common/chartTooltip';
 import { wirelessApi } from '../../services/api';
@@ -29,33 +51,32 @@ function bandLabel(band: string | undefined): string {
 
 function statusDot(iface: WirelessInterface) {
   if (iface.disabled) return <span className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0" />;
-  if (iface.running)  return <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 animate-pulse" />;
-  return                     <span className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" />;
+  if (iface.running)
+    return <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 animate-pulse" />;
+  return <span className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" />;
 }
 
 function SignalBar({ dbm }: { dbm: number | undefined }) {
   if (dbm == null) return <span className="text-gray-400">—</span>;
   const quality = Math.max(0, Math.min(100, 2 * (dbm + 100)));
   const color = quality > 60 ? 'text-green-500' : quality > 30 ? 'text-yellow-500' : 'text-red-500';
-  return (
-    <span className={clsx('font-mono text-xs', color)}>
-      {dbm} dBm
-    </span>
-  );
+  return <span className={clsx('font-mono text-xs', color)}>{dbm} dBm</span>;
 }
 
 // ─── Radio edit modal ─────────────────────────────────────────────────────────
 
 const BANDS_EDIT = [
-  { value: '2ghz-b/g/n',  label: '2.4 GHz (b/g/n)' },
-  { value: '2ghz-onlyn',  label: '2.4 GHz (n only)' },
+  { value: '2ghz-b/g/n', label: '2.4 GHz (b/g/n)' },
+  { value: '2ghz-onlyn', label: '2.4 GHz (n only)' },
   { value: '5ghz-a/n/ac', label: '5 GHz (a/n/ac)' },
   { value: '5ghz-onlyac', label: '5 GHz (ac only)' },
 ];
 const WIDTHS = ['20mhz', '40mhz', '80mhz', '20/40mhz-XX', '20/40mhz-Ce', '20/40/80mhz'];
 
 function RadioEditModal({
-  deviceId, iface, onClose,
+  deviceId,
+  iface,
+  onClose,
 }: {
   deviceId: number;
   iface: WirelessInterface;
@@ -63,20 +84,19 @@ function RadioEditModal({
 }) {
   const qc = useQueryClient();
   const loaded = {
-    ssid:          iface.ssid || '',
-    band:          iface.band || '2ghz-b/g/n',
-    frequency:     String(iface.frequency || ''),
+    ssid: iface.ssid || '',
+    band: iface.band || '2ghz-b/g/n',
+    frequency: String(iface.frequency || ''),
     channel_width: iface.channel_width || '20mhz',
-    tx_power:      String(iface.tx_power || ''),
+    tx_power: String(iface.tx_power || ''),
     tx_power_mode: iface.tx_power_mode || 'default',
-    antenna_gain:  String(iface.antenna_gain ?? 0),
-    country:       iface.country || 'united states',
-    installation:  iface.installation || 'indoor',
-    disabled:      iface.disabled,
+    antenna_gain: String(iface.antenna_gain ?? 0),
+    country: iface.country || 'united states',
+    installation: iface.installation || 'indoor',
+    disabled: iface.disabled,
   };
   const [form, setForm] = useState(loaded);
-  const set = (k: keyof typeof form) => (v: string | boolean) =>
-    setForm(f => ({ ...f, [k]: v }));
+  const set = (k: keyof typeof form) => (v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
   const [advOpen, setAdvOpen] = useState(false);
 
@@ -95,11 +115,19 @@ function RadioEditModal({
     // on now; re-sending it on every save pinned a radio set to choose its
     // channel automatically to that frequency.
     const changes = changedFields(loaded, form);
-    if (!Object.keys(changes).length) { onClose(); return; }
+    if (!Object.keys(changes).length) {
+      onClose();
+      return;
+    }
     // Taking a radio off the air asks first (#294).
-    if (changes.disabled === true && !confirm(
-      `Disable ${iface.name}${iface.ssid ? ` ("${iface.ssid}")` : ''}? Clients connected to it will be disconnected, `
-      + 'and if this device is managed over that wireless link, the manager may lose contact.')) return;
+    if (
+      changes.disabled === true &&
+      !confirm(
+        `Disable ${iface.name}${iface.ssid ? ` ("${iface.ssid}")` : ''}? Clients connected to it will be disconnected, ` +
+          'and if this device is managed over that wireless link, the manager may lose contact.',
+      )
+    )
+      return;
     mutation.mutate(changes);
   };
 
@@ -115,30 +143,57 @@ function RadioEditModal({
           {/* Basic */}
           <div>
             <label className="label">SSID</label>
-            <input className="input" value={form.ssid} onChange={e => set('ssid')(e.target.value)} />
+            <input
+              className="input"
+              value={form.ssid}
+              onChange={(e) => set('ssid')(e.target.value)}
+            />
           </div>
           <div>
             <label className="label">Band</label>
-            <select className="input" value={form.band} onChange={e => set('band')(e.target.value)}>
-              {BANDS_EDIT.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
+            <select
+              className="input"
+              value={form.band}
+              onChange={(e) => set('band')(e.target.value)}
+            >
+              {BANDS_EDIT.map((b) => (
+                <option key={b.value} value={b.value}>
+                  {b.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
             <label className="label">Channel Width</label>
-            <select className="input" value={form.channel_width} onChange={e => set('channel_width')(e.target.value)}>
-              {WIDTHS.map(w => <option key={w} value={w}>{w}</option>)}
+            <select
+              className="input"
+              value={form.channel_width}
+              onChange={(e) => set('channel_width')(e.target.value)}
+            >
+              {WIDTHS.map((w) => (
+                <option key={w} value={w}>
+                  {w}
+                </option>
+              ))}
             </select>
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 rounded"
-              checked={form.disabled} onChange={e => set('disabled')(e.target.checked)} />
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded"
+              checked={form.disabled}
+              onChange={(e) => set('disabled')(e.target.checked)}
+            />
             <span className="text-sm text-gray-600 dark:text-slate-400">Disabled</span>
           </label>
 
           {/* Advanced */}
           <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
-            <button type="button" onClick={() => setAdvOpen(o => !o)}
-              className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-slate-800/60 text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700/50">
+            <button
+              type="button"
+              onClick={() => setAdvOpen((o) => !o)}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-slate-800/60 text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700/50"
+            >
               <span>Advanced</span>
               {advOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
@@ -146,17 +201,31 @@ function RadioEditModal({
               <div className="p-4 space-y-3 bg-white dark:bg-slate-800/20">
                 <div>
                   <label className="label">Frequency (MHz)</label>
-                  <input className="input" type="number" value={form.frequency}
-                    onChange={e => set('frequency')(e.target.value)} placeholder="auto" />
+                  <input
+                    className="input"
+                    type="number"
+                    value={form.frequency}
+                    onChange={(e) => set('frequency')(e.target.value)}
+                    placeholder="auto"
+                  />
                 </div>
                 <div>
                   <label className="label">TX Power (dBm)</label>
-                  <input className="input" type="number" value={form.tx_power}
-                    onChange={e => set('tx_power')(e.target.value)} placeholder="default" />
+                  <input
+                    className="input"
+                    type="number"
+                    value={form.tx_power}
+                    onChange={(e) => set('tx_power')(e.target.value)}
+                    placeholder="default"
+                  />
                 </div>
                 <div>
                   <label className="label">TX Power Mode</label>
-                  <select className="input" value={form.tx_power_mode} onChange={e => set('tx_power_mode')(e.target.value)}>
+                  <select
+                    className="input"
+                    value={form.tx_power_mode}
+                    onChange={(e) => set('tx_power_mode')(e.target.value)}
+                  >
                     <option value="default">Default</option>
                     <option value="card-rates">Card Rates</option>
                     <option value="all-rates-once">All Rates Once</option>
@@ -165,17 +234,29 @@ function RadioEditModal({
                 </div>
                 <div>
                   <label className="label">Antenna Gain (dBi)</label>
-                  <input className="input" type="number" value={form.antenna_gain}
-                    onChange={e => set('antenna_gain')(e.target.value)} />
+                  <input
+                    className="input"
+                    type="number"
+                    value={form.antenna_gain}
+                    onChange={(e) => set('antenna_gain')(e.target.value)}
+                  />
                 </div>
                 <div>
                   <label className="label">Country</label>
-                  <input className="input" value={form.country}
-                    onChange={e => set('country')(e.target.value)} placeholder="united states" />
+                  <input
+                    className="input"
+                    value={form.country}
+                    onChange={(e) => set('country')(e.target.value)}
+                    placeholder="united states"
+                  />
                 </div>
                 <div>
                   <label className="label">Installation</label>
-                  <select className="input" value={form.installation} onChange={e => set('installation')(e.target.value)}>
+                  <select
+                    className="input"
+                    value={form.installation}
+                    onChange={(e) => set('installation')(e.target.value)}
+                  >
                     <option value="indoor">Indoor</option>
                     <option value="outdoor">Outdoor</option>
                     <option value="any">Any</option>
@@ -187,14 +268,22 @@ function RadioEditModal({
 
           {mutation.error && (
             <p className="text-sm text-red-500">
-              {(mutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to save'}
+              {(mutation.error as { response?: { data?: { error?: string } } })?.response?.data
+                ?.error || 'Failed to save'}
             </p>
           )}
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-            <ReviewChangesButton applyLabel="Save" disabled={mutation.isPending}
-              request={() => wirelessApi.updateInterface(deviceId, iface.name, changedFields(loaded, form))}
-              onApply={() => mutation.mutate(changedFields(loaded, form))} />
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <ReviewChangesButton
+              applyLabel="Save"
+              disabled={mutation.isPending}
+              request={() =>
+                wirelessApi.updateInterface(deviceId, iface.name, changedFields(loaded, form))
+              }
+              onApply={() => mutation.mutate(changedFields(loaded, form))}
+            />
             <button type="submit" className="btn-primary" disabled={mutation.isPending}>
               {mutation.isPending ? 'Saving…' : 'Save'}
             </button>
@@ -216,15 +305,16 @@ function WirelessCharts({ deviceId, ifaces }: { deviceId: number; ifaces: Wirele
   const { data: raw = [] } = useQuery({
     queryKey: ['wireless-metrics', deviceId, selectedIface, range],
     queryFn: () =>
-      wirelessApi.getMetrics(deviceId, selectedIface || undefined, range)
-        .then(r => r.data as WirelessMetricPoint[]),
+      wirelessApi
+        .getMetrics(deviceId, selectedIface || undefined, range)
+        .then((r) => r.data as WirelessMetricPoint[]),
     refetchInterval: 60_000,
     enabled: ifaces.length > 0,
   });
 
-  const chartData = raw.map(p => ({
+  const chartData = raw.map((p) => ({
     time: format(new Date(p.time), range === '7d' ? 'MMM d HH:mm' : 'HH:mm'),
-    clients:     p.registered_clients ?? null,
+    clients: p.registered_clients ?? null,
     noise_floor: p.noise_floor ?? null,
   }));
 
@@ -236,13 +326,17 @@ function WirelessCharts({ deviceId, ifaces }: { deviceId: number; ifaces: Wirele
           <select
             className="input w-auto text-sm"
             value={selectedIface}
-            onChange={e => setSelectedIface(e.target.value)}
+            onChange={(e) => setSelectedIface(e.target.value)}
           >
-            {ifaces.map(i => <option key={i.name} value={i.name}>{i.name} ({i.ssid || 'no SSID'})</option>)}
+            {ifaces.map((i) => (
+              <option key={i.name} value={i.name}>
+                {i.name} ({i.ssid || 'no SSID'})
+              </option>
+            ))}
           </select>
         )}
         <div className="flex items-center gap-1 border border-gray-200 dark:border-slate-700 rounded-lg p-0.5">
-          {RANGES.map(r => (
+          {RANGES.map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
@@ -250,7 +344,7 @@ function WirelessCharts({ deviceId, ifaces }: { deviceId: number; ifaces: Wirele
                 'px-2.5 py-1 rounded text-xs font-medium transition-colors',
                 range === r
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
               )}
             >
               {r}
@@ -272,10 +366,22 @@ function WirelessCharts({ deviceId, ifaces }: { deviceId: number; ifaces: Wirele
               <XAxis dataKey="time" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
               <Tooltip
-                contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px' }}
+                contentStyle={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                }}
                 formatter={(v: number) => [v, 'Clients']}
               />
-              <Line type="monotone" dataKey="clients" stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={{ r: 3 }} />
+              <Line
+                type="monotone"
+                dataKey="clients"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 3 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         ) : (
@@ -286,11 +392,13 @@ function WirelessCharts({ deviceId, ifaces }: { deviceId: number; ifaces: Wirele
       </div>
 
       {/* Noise Floor chart (only if data exists) */}
-      {chartData.some(p => p.noise_floor != null) && (
+      {chartData.some((p) => p.noise_floor != null) && (
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-3">
             <Signal className="w-4 h-4 text-amber-500" />
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Noise Floor (dBm)</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              Noise Floor (dBm)
+            </h3>
           </div>
           <ResponsiveContainer width="100%" height={180}>
             <LineChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
@@ -298,10 +406,22 @@ function WirelessCharts({ deviceId, ifaces }: { deviceId: number; ifaces: Wirele
               <XAxis dataKey="time" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} domain={['auto', 'auto']} reversed />
               <Tooltip
-                contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px' }}
+                contentStyle={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                }}
                 formatter={(v: number) => [`${v} dBm`, 'Noise Floor']}
               />
-              <Line type="monotone" dataKey="noise_floor" stroke="#f59e0b" strokeWidth={2} dot={false} activeDot={{ r: 3 }} />
+              <Line
+                type="monotone"
+                dataKey="noise_floor"
+                stroke="#f59e0b"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 3 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -342,15 +462,19 @@ function ScanWarningModal({
             All wireless clients connected to this AP will be briefly disconnected during the scan.
           </p>
           <p className="text-xs text-gray-500 dark:text-slate-400">
-            The scan takes approximately {isSpectral ? '10' : '20'} seconds. Clients will
-            reconnect automatically once the radio returns to its channel.
+            The scan takes approximately {isSpectral ? '10' : '20'} seconds. Clients will reconnect
+            automatically once the radio returns to its channel.
           </p>
         </div>
         <div className="px-5 py-4 border-t border-gray-200 dark:border-slate-700 flex justify-end gap-2">
           <button type="button" className="btn-secondary" onClick={onCancel}>
             Cancel
           </button>
-          <button type="button" className="btn-primary bg-amber-600 hover:bg-amber-700 border-amber-600 hover:border-amber-700" onClick={onConfirm}>
+          <button
+            type="button"
+            className="btn-primary bg-amber-600 hover:bg-amber-700 border-amber-600 hover:border-amber-700"
+            onClick={onConfirm}
+          >
             Run Scan Anyway
           </button>
         </div>
@@ -370,7 +494,11 @@ function powerColor(dbm: number): string {
   return '#22c55e';
 }
 
-interface SpectralPoint { frequency: number; power: number; barValue: number }
+interface SpectralPoint {
+  frequency: number;
+  power: number;
+  barValue: number;
+}
 interface SpectralScanRecord {
   id: number;
   scanned_at: string;
@@ -382,37 +510,44 @@ interface SpectralScanRecord {
 // (same fields, but averaged) saved by the backend.
 function parseSpectralRows(rows: Record<string, string | number>[]): SpectralPoint[] {
   return rows
-    .map(row => {
-      const freq  = parseFloat(String(row['freq']  || row['frequency'] || '0'));
-      const power = parseInt(  String(row['magn']  || row['spectral-power'] || row['power'] || '-120'), 10);
+    .map((row) => {
+      const freq = parseFloat(String(row['freq'] || row['frequency'] || '0'));
+      const power = parseInt(
+        String(row['magn'] || row['spectral-power'] || row['power'] || '-120'),
+        10,
+      );
       return { frequency: freq, power, barValue: Math.max(0, power - SPECTRAL_BASELINE) };
     })
-    .filter(p => p.frequency > 0)
+    .filter((p) => p.frequency > 0)
     .sort((a, b) => a.frequency - b.frequency);
 }
 
 function SpectrumAnalyzer({ deviceId, ifaces }: { deviceId: number; ifaces: WirelessInterface[] }) {
   const [selectedIface, setSelectedIface] = useState(ifaces[0]?.name || '');
-  const [scanning, setScanning]           = useState(false);
-  const [scanError, setScanError]         = useState<string | null>(null);
-  const [chartData, setChartData]         = useState<SpectralPoint[]>([]);
-  const [scanTime, setScanTime]           = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [chartData, setChartData] = useState<SpectralPoint[]>([]);
+  const [scanTime, setScanTime] = useState<string | null>(null);
   const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(null);
-  const [showWarning, setShowWarning]     = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
   // The chart belongs to one radio (outside review U14): switching radios
   // clears it, and a scan that finishes after a switch isn't shown under the
   // radio that is selected now.
   const ifaceRef = useRef(selectedIface);
   useEffect(() => {
     ifaceRef.current = selectedIface;
-    setChartData([]); setScanTime(null); setSelectedHistoryId(null); setScanError(null);
+    setChartData([]);
+    setScanTime(null);
+    setSelectedHistoryId(null);
+    setScanError(null);
   }, [selectedIface]);
 
   const { data: history = [], refetch: refetchHistory } = useQuery({
     queryKey: ['spectral-history', deviceId, selectedIface],
     queryFn: () =>
-      wirelessApi.getSpectralHistory(deviceId, selectedIface, 5)
-        .then(r => r.data as SpectralScanRecord[]),
+      wirelessApi
+        .getSpectralHistory(deviceId, selectedIface, 5)
+        .then((r) => r.data as SpectralScanRecord[]),
     enabled: !!selectedIface,
   });
 
@@ -421,7 +556,7 @@ function SpectrumAnalyzer({ deviceId, ifaces }: { deviceId: number; ifaces: Wire
     if (history.length > 0 && chartData.length === 0 && selectedHistoryId === null) {
       loadScanRecord(history[0]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history]);
 
   function loadScanRecord(scan: SpectralScanRecord) {
@@ -437,15 +572,20 @@ function SpectrumAnalyzer({ deviceId, ifaces }: { deviceId: number; ifaces: Wire
     setScanError(null);
     try {
       const result = await wirelessApi.runSpectralScan(deviceId, iface);
-      const scan = result.data as { id: number; scanned_at: string; data: Record<string, string>[] };
+      const scan = result.data as {
+        id: number;
+        scanned_at: string;
+        data: Record<string, string>[];
+      };
       if (ifaceRef.current !== iface) return; // the user moved to another radio meanwhile
       setChartData(parseSpectralRows(scan.data));
       setScanTime(scan.scanned_at);
       setSelectedHistoryId(scan.id);
       await refetchHistory();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        || 'Scan failed';
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Scan failed';
       setScanError(msg);
     } finally {
       setScanning(false);
@@ -469,16 +609,17 @@ function SpectrumAnalyzer({ deviceId, ifaces }: { deviceId: number; ifaces: Wire
             <select
               className="input w-auto text-xs"
               value={selectedIface}
-              onChange={e => {
+              onChange={(e) => {
                 setSelectedIface(e.target.value);
                 setChartData([]);
                 setScanTime(null);
                 setSelectedHistoryId(null);
               }}
             >
-              {ifaces.map(i => (
+              {ifaces.map((i) => (
                 <option key={i.name} value={i.name}>
-                  {i.name}{i.band ? ` (${bandLabel(i.band)})` : ''}
+                  {i.name}
+                  {i.band ? ` (${bandLabel(i.band)})` : ''}
                 </option>
               ))}
             </select>
@@ -487,13 +628,13 @@ function SpectrumAnalyzer({ deviceId, ifaces }: { deviceId: number; ifaces: Wire
             <select
               className="input w-auto text-xs"
               value={selectedHistoryId ?? ''}
-              onChange={e => {
+              onChange={(e) => {
                 const id = Number(e.target.value);
-                const scan = history.find(s => s.id === id);
+                const scan = history.find((s) => s.id === id);
                 if (scan) loadScanRecord(scan);
               }}
             >
-              {history.map(s => (
+              {history.map((s) => (
                 <option key={s.id} value={s.id}>
                   {format(new Date(s.scanned_at), 'MMM d HH:mm')} ({s.scan_type})
                 </option>
@@ -514,7 +655,10 @@ function SpectrumAnalyzer({ deviceId, ifaces }: { deviceId: number; ifaces: Wire
       {showWarning && (
         <ScanWarningModal
           scanType="spectral"
-          onConfirm={() => { setShowWarning(false); handleScanNow(); }}
+          onConfirm={() => {
+            setShowWarning(false);
+            handleScanNow();
+          }}
           onCancel={() => setShowWarning(false)}
         />
       )}
@@ -544,7 +688,8 @@ function SpectrumAnalyzer({ deviceId, ifaces }: { deviceId: number; ifaces: Wire
               <span className="w-3 h-3 rounded-sm bg-yellow-400 inline-block" /> Light (−85 to −70)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-sm bg-orange-400 inline-block" /> Moderate (−70 to −50)
+              <span className="w-3 h-3 rounded-sm bg-orange-400 inline-block" /> Moderate (−70 to
+              −50)
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-sm bg-red-500 inline-block" /> Busy (&gt; −50 dBm)
@@ -556,19 +701,33 @@ function SpectrumAnalyzer({ deviceId, ifaces }: { deviceId: number; ifaces: Wire
               margin={{ top: 4, right: 12, bottom: 28, left: 12 }}
               barCategoryGap={1}
             >
-              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray="3 3"
+                stroke="rgba(148,163,184,0.15)"
+              />
               <XAxis
                 dataKey="frequency"
                 type="category"
                 tick={{ fontSize: 9 }}
                 interval="preserveStartEnd"
-                label={{ value: 'Frequency (MHz)', position: 'insideBottomRight', offset: -4, style: { fontSize: 10, fill: '#94a3b8' } }}
+                label={{
+                  value: 'Frequency (MHz)',
+                  position: 'insideBottomRight',
+                  offset: -4,
+                  style: { fontSize: 10, fill: '#94a3b8' },
+                }}
               />
               <YAxis
-                tickFormatter={v => String(v + SPECTRAL_BASELINE)}
+                tickFormatter={(v) => String(v + SPECTRAL_BASELINE)}
                 tick={{ fontSize: 9 }}
                 domain={[0, 90]}
-                label={{ value: 'dBm', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: '#94a3b8' } }}
+                label={{
+                  value: 'dBm',
+                  angle: -90,
+                  position: 'insideLeft',
+                  style: { fontSize: 10, fill: '#94a3b8' },
+                }}
               />
               <Tooltip
                 formatter={(value: number) => [`${value + SPECTRAL_BASELINE} dBm`, 'Power']}
@@ -626,29 +785,32 @@ function signalColor(dbm: number): string {
 }
 
 function BandPill({ band }: { band: string }) {
-  const color = band === '5 GHz'
-    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-    : band === '6 GHz'
-    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300';
+  const color =
+    band === '5 GHz'
+      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+      : band === '6 GHz'
+        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+        : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300';
   return (
-    <span className={clsx('inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', color)}>
+    <span
+      className={clsx('inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', color)}
+    >
       {band}
     </span>
   );
 }
 
 function APScanner({ deviceId }: { deviceId: number }) {
-  const [scanning, setScanning]                   = useState(false);
-  const [scanError, setScanError]                 = useState<string | null>(null);
-  const [networks, setNetworks]                   = useState<APNetworkEntry[] | null>(null);
-  const [scanTime, setScanTime]                   = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [networks, setNetworks] = useState<APNetworkEntry[] | null>(null);
+  const [scanTime, setScanTime] = useState<string | null>(null);
   const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(null);
-  const [showWarning, setShowWarning]             = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
 
   const { data: history = [], refetch: refetchHistory } = useQuery({
     queryKey: ['ap-scan-history', deviceId],
-    queryFn: () => wirelessApi.getAPScanHistory(deviceId, 5).then(r => r.data as APScanRecord[]),
+    queryFn: () => wirelessApi.getAPScanHistory(deviceId, 5).then((r) => r.data as APScanRecord[]),
   });
 
   // Auto-load most recent history entry
@@ -656,7 +818,7 @@ function APScanner({ deviceId }: { deviceId: number }) {
     if (history.length > 0 && networks === null && selectedHistoryId === null) {
       loadRecord(history[0]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history]);
 
   function loadRecord(record: APScanRecord) {
@@ -677,8 +839,9 @@ function APScanner({ deviceId }: { deviceId: number }) {
       setSelectedHistoryId(scan.id);
       await refetchHistory();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        || 'Scan failed';
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Scan failed';
       setScanError(msg);
     } finally {
       setScanning(false);
@@ -692,7 +855,9 @@ function APScanner({ deviceId }: { deviceId: number }) {
       <div className="px-5 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <Radio className="w-4 h-4 text-blue-500" />
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Nearby Access Points</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+            Nearby Access Points
+          </h2>
           {networks !== null && (
             <span className="text-xs text-gray-400 dark:text-slate-500">
               {totalNets} network{totalNets !== 1 ? 's' : ''}
@@ -705,13 +870,13 @@ function APScanner({ deviceId }: { deviceId: number }) {
             <select
               className="input w-auto text-xs"
               value={selectedHistoryId ?? ''}
-              onChange={e => {
+              onChange={(e) => {
                 const id = Number(e.target.value);
-                const rec = history.find(s => s.id === id);
+                const rec = history.find((s) => s.id === id);
                 if (rec) loadRecord(rec);
               }}
             >
-              {history.map(s => (
+              {history.map((s) => (
                 <option key={s.id} value={s.id}>
                   {format(new Date(s.scanned_at), 'MMM d HH:mm')} ({s.scan_type})
                 </option>
@@ -732,7 +897,10 @@ function APScanner({ deviceId }: { deviceId: number }) {
       {showWarning && (
         <ScanWarningModal
           scanType="ap"
-          onConfirm={() => { setShowWarning(false); handleScanNow(); }}
+          onConfirm={() => {
+            setShowWarning(false);
+            handleScanNow();
+          }}
           onCancel={() => setShowWarning(false)}
         />
       )}
@@ -761,45 +929,70 @@ function APScanner({ deviceId }: { deviceId: number }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">SSID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Bands</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Best Signal</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Freq (MHz)</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">BSSID / Vendor</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">Security</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
+                  SSID
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
+                  Bands
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
+                  Best Signal
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
+                  Freq (MHz)
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
+                  BSSID / Vendor
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
+                  Security
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
               {networks.map((net, i) => {
-                const bestSignal = Math.max(...net.entries.map(e => e.signal));
-                const bands = [...new Set(net.entries.map(e => e.band))];
+                const bestSignal = Math.max(...net.entries.map((e) => e.signal));
+                const bands = [...new Set(net.entries.map((e) => e.band))];
                 return (
-                  <tr key={i} className={clsx(
-                    'transition-colors hover:bg-blue-50/40 dark:hover:bg-slate-700/30',
-                    i % 2 === 0 ? 'bg-white dark:bg-slate-900/20' : 'bg-gray-50 dark:bg-slate-800/40',
-                  )}>
+                  <tr
+                    key={i}
+                    className={clsx(
+                      'transition-colors hover:bg-blue-50/40 dark:hover:bg-slate-700/30',
+                      i % 2 === 0
+                        ? 'bg-white dark:bg-slate-900/20'
+                        : 'bg-gray-50 dark:bg-slate-800/40',
+                    )}
+                  >
                     {/* SSID */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        {net.security === 'open'
-                          ? <Unlock className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                          : net.security === 'unknown'
-                            ? null
-                            : <Lock className="w-3 h-3 text-gray-400 flex-shrink-0" />}
-                        {net.hidden
-                          ? <span className="text-gray-400 italic text-xs">Hidden network</span>
-                          : <span className="font-medium text-gray-900 dark:text-white">{net.ssid}</span>}
+                        {net.security === 'open' ? (
+                          <Unlock className="w-3 h-3 text-amber-400 flex-shrink-0" />
+                        ) : net.security === 'unknown' ? null : (
+                          <Lock className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                        )}
+                        {net.hidden ? (
+                          <span className="text-gray-400 italic text-xs">Hidden network</span>
+                        ) : (
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {net.ssid}
+                          </span>
+                        )}
                       </div>
                     </td>
                     {/* Bands */}
                     <td className="px-4 py-3">
                       <div className="flex gap-1 flex-wrap">
-                        {bands.map(b => <BandPill key={b} band={b} />)}
+                        {bands.map((b) => (
+                          <BandPill key={b} band={b} />
+                        ))}
                       </div>
                     </td>
                     {/* Best signal */}
                     <td className="px-4 py-3">
-                      <span className={clsx('font-mono text-xs font-medium', signalColor(bestSignal))}>
+                      <span
+                        className={clsx('font-mono text-xs font-medium', signalColor(bestSignal))}
+                      >
                         {bestSignal} dBm
                       </span>
                     </td>
@@ -808,7 +1001,11 @@ function APScanner({ deviceId }: { deviceId: number }) {
                       {net.entries.map((e, j) => (
                         <div key={j} className="font-mono">
                           {e.freq > 0 ? `${e.freq}` : '—'}
-                          {e.channel_width ? <span className="text-gray-400 ml-1">/{e.channel_width}</span> : ''}
+                          {e.channel_width ? (
+                            <span className="text-gray-400 ml-1">/{e.channel_width}</span>
+                          ) : (
+                            ''
+                          )}
                         </div>
                       ))}
                     </td>
@@ -816,9 +1013,13 @@ function APScanner({ deviceId }: { deviceId: number }) {
                     <td className="px-4 py-3 text-xs">
                       {net.entries.map((e, j) => (
                         <div key={j}>
-                          <span className="font-mono text-gray-800 dark:text-slate-200">{e.bssid}</span>
+                          <span className="font-mono text-gray-800 dark:text-slate-200">
+                            {e.bssid}
+                          </span>
                           {e.vendor && (
-                            <span className="ml-1 text-gray-400 dark:text-slate-500">({e.vendor})</span>
+                            <span className="ml-1 text-gray-400 dark:text-slate-500">
+                              ({e.vendor})
+                            </span>
                           )}
                         </div>
                       ))}
@@ -856,9 +1057,7 @@ function parseRateMbps(raw: string | undefined): string {
   const bps = parseFloat(raw);
   if (!isNaN(bps) && bps > 0) {
     const mbps = bps / 1_000_000;
-    return mbps >= 1000
-      ? `${(mbps / 1000).toFixed(2)} Gbps`
-      : `${mbps.toFixed(1)} Mbps`;
+    return mbps >= 1000 ? `${(mbps / 1000).toFixed(2)} Gbps` : `${mbps.toFixed(1)} Mbps`;
   }
   return raw;
 }
@@ -866,28 +1065,54 @@ function parseRateMbps(raw: string | undefined): string {
 function ClientsTable({ deviceId, ifaces }: { deviceId: number; ifaces: WirelessInterface[] }) {
   const { data: regTable = [], isLoading } = useQuery({
     queryKey: ['wireless-reg-table', deviceId],
-    queryFn: () => wirelessApi.getRegistrationTable(deviceId).then(r => r.data as Record<string, string>[]),
+    queryFn: () =>
+      wirelessApi.getRegistrationTable(deviceId).then((r) => r.data as Record<string, string>[]),
     refetchInterval: 30_000,
   });
 
-  if (isLoading) return <div className="p-4 text-center text-gray-400 text-sm"><RefreshCw className="w-4 h-4 animate-spin inline mr-1" />Loading…</div>;
-  if (regTable.length === 0) return <div className="p-6 text-center text-gray-400 dark:text-slate-500 text-sm">No wireless clients currently connected.</div>;
+  if (isLoading)
+    return (
+      <div className="p-4 text-center text-gray-400 text-sm">
+        <RefreshCw className="w-4 h-4 animate-spin inline mr-1" />
+        Loading…
+      </div>
+    );
+  if (regTable.length === 0)
+    return (
+      <div className="p-6 text-center text-gray-400 dark:text-slate-500 text-sm">
+        No wireless clients currently connected.
+      </div>
+    );
 
   // Build interface → SSID lookup from cached interface data
-  const ssidByIface = Object.fromEntries(ifaces.map(i => [i.name, i.ssid || '']));
+  const ssidByIface = Object.fromEntries(ifaces.map((i) => [i.name, i.ssid || '']));
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
-            <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-slate-400">MAC Address</th>
-            <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-slate-400">Interface</th>
-            <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-slate-400">SSID</th>
-            <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-slate-400">Signal</th>
-            <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-slate-400">TX Rate</th>
-            <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-slate-400">RX Rate</th>
-            <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-slate-400">Uptime</th>
+            <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-slate-400">
+              MAC Address
+            </th>
+            <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-slate-400">
+              Interface
+            </th>
+            <th className="px-4 py-2.5 text-left font-medium text-gray-500 dark:text-slate-400">
+              SSID
+            </th>
+            <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-slate-400">
+              Signal
+            </th>
+            <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-slate-400">
+              TX Rate
+            </th>
+            <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-slate-400">
+              RX Rate
+            </th>
+            <th className="px-4 py-2.5 text-right font-medium text-gray-500 dark:text-slate-400">
+              Uptime
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
@@ -897,10 +1122,13 @@ function ClientsTable({ deviceId, ifaces }: { deviceId: number; ifaces: Wireless
             const ifaceName = r['interface'] || '';
             const ssid = ssidByIface[ifaceName] || r['ssid'] || '';
             return (
-              <tr key={i} className={clsx(
-                'transition-colors hover:bg-blue-50/40 dark:hover:bg-slate-700/30',
-                i % 2 === 0 ? 'bg-white dark:bg-slate-900/20' : 'bg-gray-50 dark:bg-slate-800/40',
-              )}>
+              <tr
+                key={i}
+                className={clsx(
+                  'transition-colors hover:bg-blue-50/40 dark:hover:bg-slate-700/30',
+                  i % 2 === 0 ? 'bg-white dark:bg-slate-900/20' : 'bg-gray-50 dark:bg-slate-800/40',
+                )}
+              >
                 <td className="px-4 py-2.5 font-mono text-xs text-gray-700 dark:text-slate-300">
                   {r['mac-address'] || '—'}
                 </td>
@@ -944,34 +1172,48 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const toggleCard = (name: string) =>
-    setExpandedCards(prev => {
+    setExpandedCards((prev) => {
       const next = new Set(prev);
-      if (next.has(name)) { next.delete(name); } else { next.add(name); }
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
       return next;
     });
 
-  const { data: ifaces = [], isLoading, refetch } = useQuery({
+  const {
+    data: ifaces = [],
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['device-wireless', deviceId],
-    queryFn: () => wirelessApi.getCachedInterfaces(deviceId).then(r => r.data as WirelessInterface[]),
+    queryFn: () =>
+      wirelessApi.getCachedInterfaces(deviceId).then((r) => r.data as WirelessInterface[]),
     refetchInterval: 30_000,
   });
 
   const isOffline = deviceStatus !== 'online';
 
   const infoItems = (iface: WirelessInterface) => [
-    { icon: Radio,  label: 'Band',          value: bandLabel(iface.band) },
-    { icon: Zap,    label: 'Frequency',      value: iface.frequency ? `${iface.frequency} MHz` : 'Auto' },
+    { icon: Radio, label: 'Band', value: bandLabel(iface.band) },
+    { icon: Zap, label: 'Frequency', value: iface.frequency ? `${iface.frequency} MHz` : 'Auto' },
     { icon: Activity, label: 'Channel Width', value: iface.channel_width || '—' },
-    { icon: Cpu,    label: 'TX Power',       value: iface.tx_power ? `${iface.tx_power} dBm` : 'Default' },
-    { icon: Globe,  label: 'Country',        value: iface.country || '—' },
-    { icon: Signal, label: 'Noise Floor',    value: iface.noise_floor ? `${iface.noise_floor} dBm` : '—' },
-    { icon: Users,  label: 'Clients',        value: String(iface.registered_clients) },
+    { icon: Cpu, label: 'TX Power', value: iface.tx_power ? `${iface.tx_power} dBm` : 'Default' },
+    { icon: Globe, label: 'Country', value: iface.country || '—' },
+    {
+      icon: Signal,
+      label: 'Noise Floor',
+      value: iface.noise_floor ? `${iface.noise_floor} dBm` : '—',
+    },
+    { icon: Users, label: 'Clients', value: String(iface.registered_clients) },
   ];
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-40 text-gray-400">
-        <RefreshCw className="w-5 h-5 animate-spin mr-2" />Loading radio data…
+        <RefreshCw className="w-5 h-5 animate-spin mr-2" />
+        Loading radio data…
       </div>
     );
   }
@@ -981,7 +1223,9 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
       <div className="card p-10 text-center text-gray-400 dark:text-slate-500 text-sm space-y-2">
         <Wifi className="w-8 h-8 mx-auto opacity-40" />
         <p>No wireless interfaces found for this device.</p>
-        <p className="text-xs">They will appear here after the first slow poll cycle (up to 5 minutes).</p>
+        <p className="text-xs">
+          They will appear here after the first slow poll cycle (up to 5 minutes).
+        </p>
       </div>
     );
   }
@@ -1001,7 +1245,7 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
                 if (expandedCards.size === ifaces.length) {
                   setExpandedCards(new Set());
                 } else {
-                  setExpandedCards(new Set(ifaces.map(i => i.name)));
+                  setExpandedCards(new Set(ifaces.map((i) => i.name)));
                 }
               }}
               className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors px-2 py-1 rounded"
@@ -1024,7 +1268,12 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
             const isVirtual = !!iface.config_json?.['master-interface'];
             const isEven = idx % 2 === 0;
             return (
-              <div key={iface.name} className={isEven ? 'bg-white dark:bg-slate-900/20' : 'bg-gray-50 dark:bg-slate-800/40'}>
+              <div
+                key={iface.name}
+                className={
+                  isEven ? 'bg-white dark:bg-slate-900/20' : 'bg-gray-50 dark:bg-slate-800/40'
+                }
+              >
                 {/* Clickable header */}
                 <button
                   type="button"
@@ -1060,19 +1309,23 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={clsx(
-                      'text-xs font-medium px-2 py-0.5 rounded-full',
-                      iface.disabled
-                        ? 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
-                        : iface.running
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                          : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                    )}>
+                    <span
+                      className={clsx(
+                        'text-xs font-medium px-2 py-0.5 rounded-full',
+                        iface.disabled
+                          ? 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
+                          : iface.running
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                            : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+                      )}
+                    >
                       {iface.disabled ? 'Disabled' : iface.running ? 'Running' : 'Enabled'}
                     </span>
-                    {isExpanded
-                      ? <ChevronDown className="w-4 h-4 text-gray-400" />
-                      : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    )}
                   </div>
                 </button>
 
@@ -1084,7 +1337,13 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
                         <p className="text-xs text-amber-800 dark:text-amber-300">
                           Provisioned by CAPsMAN
                           {iface.capsman_controller_mac && (
-                            <> from controller <span className="font-mono font-medium">{iface.capsman_controller_mac}</span></>
+                            <>
+                              {' '}
+                              from controller{' '}
+                              <span className="font-mono font-medium">
+                                {iface.capsman_controller_mac}
+                              </span>
+                            </>
                           )}
                           . This access point holds no local configuration for the interface, so any
                           blank fields below live on the controller — edit them there.
@@ -1093,7 +1352,10 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
                     )}
                     {isVirtual && iface.config_json?.['master-interface'] && (
                       <p className="text-xs text-purple-600 dark:text-purple-400 mb-3">
-                        Virtual AP — shares radio with <span className="font-mono font-medium">{iface.config_json['master-interface']}</span>
+                        Virtual AP — shares radio with{' '}
+                        <span className="font-mono font-medium">
+                          {iface.config_json['master-interface']}
+                        </span>
                       </p>
                     )}
 
@@ -1102,8 +1364,12 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
                       {infoItems(iface).map(({ icon: Icon, label, value }) => (
                         <div key={label} className="flex items-center gap-2">
                           <Icon className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                          <span className="text-xs text-gray-500 dark:text-slate-400">{label}:</span>
-                          <span className="text-xs font-medium text-gray-700 dark:text-slate-300 truncate">{value}</span>
+                          <span className="text-xs text-gray-500 dark:text-slate-400">
+                            {label}:
+                          </span>
+                          <span className="text-xs font-medium text-gray-700 dark:text-slate-300 truncate">
+                            {value}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -1111,7 +1377,10 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
                     {iface.security_profile && (
                       <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700 flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
                         <Wifi className="w-3.5 h-3.5 text-blue-400" />
-                        Security: <span className="font-medium text-gray-700 dark:text-slate-300">{iface.security_profile}</span>
+                        Security:{' '}
+                        <span className="font-medium text-gray-700 dark:text-slate-300">
+                          {iface.security_profile}
+                        </span>
                       </div>
                     )}
 
@@ -1169,7 +1438,9 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
         <div className="card overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
             <Users className="w-4 h-4 text-blue-500" />
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Connected Wireless Clients</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+              Connected Wireless Clients
+            </h2>
           </div>
           <ClientsTable deviceId={deviceId} ifaces={ifaces} />
         </div>
@@ -1177,11 +1448,7 @@ export default function RadiosTab({ deviceId, deviceStatus }: Props) {
 
       {/* Edit modal */}
       {editIface && (
-        <RadioEditModal
-          deviceId={deviceId}
-          iface={editIface}
-          onClose={() => setEditIface(null)}
-        />
+        <RadioEditModal deviceId={deviceId} iface={editIface} onClose={() => setEditIface(null)} />
       )}
     </div>
   );

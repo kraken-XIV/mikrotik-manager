@@ -23,7 +23,10 @@ router.use(deviceSiteAccess(deviceIdParam));
 // The :id a handler acts on must be the plain number the site check read
 // (GHSA-6xq3-q9m5-7hxp); anything else is answered as not found.
 router.param('id', (_req, res, next, id) => {
-  if (!/^\d{1,10}$/.test(String(id))) { res.status(404).json({ error: 'Device not found' }); return; }
+  if (!/^\d{1,10}$/.test(String(id))) {
+    res.status(404).json({ error: 'Device not found' });
+    return;
+  }
   next();
 });
 // The fleet RF views also take ?deviceId=.
@@ -39,7 +42,7 @@ router.use(deviceWriteLock(deviceIdFromPath));
 async function getAP(id: number): Promise<DeviceRow | null> {
   const rows = await query<DeviceRow>(
     `SELECT * FROM devices WHERE id = $1 AND ${wirelessDeviceSql()}`,
-    [id]
+    [id],
   );
   return rows[0] ?? null;
 }
@@ -54,7 +57,10 @@ router.post('/ssid/bulk', requireWrite, async (req: Request, res: Response) => {
     return res.status(400).json({ error: '"apIds" must be a non-empty array' });
   }
   // Every AP must be one the caller operates (P1-7).
-  if (req.user?.siteRoles && (await devicesDenied(req.user, apIds.map(Number), 'operator')).length > 0) {
+  if (
+    req.user?.siteRoles &&
+    (await devicesDenied(req.user, apIds.map(Number), 'operator')).length > 0
+  ) {
     return res.status(404).json({ error: 'Some of those access points were not found.' });
   }
   if (!ssidBody.ssid) {
@@ -64,71 +70,77 @@ router.post('/ssid/bulk', requireWrite, async (req: Request, res: Response) => {
   const placeholders = apIds.map((_, i) => `$${i + 1}`).join(',');
   const aps = await query<DeviceRow>(
     `SELECT * FROM devices WHERE id IN (${placeholders}) AND ${wirelessDeviceSql()}`,
-    apIds
+    apIds,
   );
 
   // A limited number at a time (#302).
-  const settled = await settleWithConcurrency(aps, FLEET_ACTION_CONCURRENCY,
-    async (ap) => {
-      const collector = new DeviceCollector(ap);
-      try {
-        await collector.connect();
-        const pkg = await collector.detectWifiPackage();
+  const settled = await settleWithConcurrency(aps, FLEET_ACTION_CONCURRENCY, async (ap) => {
+    const collector = new DeviceCollector(ap);
+    try {
+      await collector.connect();
+      const pkg = await collector.detectWifiPackage();
 
-        // Widening the device selector so CAPsMAN controllers stop being invisible
-        // also let CAPs through here. An SSID created on a provisioned radio is
-        // discarded by the controller, so refuse rather than report success.
-        const { local: localRadios, capsmanOwned } = await collector.partitionRadios();
-        if (localRadios.length === 0 && capsmanOwned.length > 0) {
-          throw new Error(
-            `${ap.name}: every radio is provisioned by CAPsMAN (${capsmanOwned.join(', ')}). `
-            + `Add this SSID to the controller's configuration instead.`
-          );
-        }
-
-        const autoName = await collector.getNextInterfaceName();
-
-        // Normalize mode to the correct value for this AP's package type
-        let resolvedMode = String(ssidBody.mode || 'ap-bridge');
-        if (pkg === 'wifi' && (resolvedMode === 'ap-bridge' || resolvedMode === 'bridge')) {
-          resolvedMode = 'ap';
-        } else if (pkg !== 'wifi' && resolvedMode === 'ap') {
-          resolvedMode = 'ap-bridge';
-        }
-
-        const params: Record<string, string> = {
-          name: autoName,
-          ssid: String(ssidBody.ssid),
-          mode: resolvedMode,
-          disabled: ssidBody.disabled ? 'yes' : 'no',
-        };
-        const fieldMap: Record<string, string> = {
-          band: 'band', frequency: 'frequency', channel_width: 'channel-width',
-          tx_power: 'tx-power', tx_power_mode: 'tx-power-mode',
-          antenna_gain: 'antenna-gain', country: 'country', installation: 'installation',
-          security_profile: 'security-profile', passphrase: 'passphrase',
-        };
-        for (const [key, rosKey] of Object.entries(fieldMap)) {
-          if (ssidBody[key]) params[rosKey] = String(ssidBody[key]);
-        }
-        if (ssidBody.authentication_types) {
-          params['authentication-types'] = Array.isArray(ssidBody.authentication_types)
-            ? (ssidBody.authentication_types as string[]).join(',')
-            : String(ssidBody.authentication_types);
-        }
-        await collector.addWirelessInterface(params);
-        await collector.collectWirelessInterfaces();
-        return { id: ap.id, name: ap.name as string, ok: true };
-      } catch (err) {
-        return { id: ap.id, name: ap.name as string, ok: false, error: (err as Error).message };
-      } finally {
-        collector.disconnect();
+      // Widening the device selector so CAPsMAN controllers stop being invisible
+      // also let CAPs through here. An SSID created on a provisioned radio is
+      // discarded by the controller, so refuse rather than report success.
+      const { local: localRadios, capsmanOwned } = await collector.partitionRadios();
+      if (localRadios.length === 0 && capsmanOwned.length > 0) {
+        throw new Error(
+          `${ap.name}: every radio is provisioned by CAPsMAN (${capsmanOwned.join(', ')}). ` +
+            `Add this SSID to the controller's configuration instead.`,
+        );
       }
-    }
-  );
 
-  const results = settled.map(r =>
-    r.status === 'fulfilled' ? r.value : { id: 0, name: 'unknown', ok: false, error: String(r.reason) }
+      const autoName = await collector.getNextInterfaceName();
+
+      // Normalize mode to the correct value for this AP's package type
+      let resolvedMode = String(ssidBody.mode || 'ap-bridge');
+      if (pkg === 'wifi' && (resolvedMode === 'ap-bridge' || resolvedMode === 'bridge')) {
+        resolvedMode = 'ap';
+      } else if (pkg !== 'wifi' && resolvedMode === 'ap') {
+        resolvedMode = 'ap-bridge';
+      }
+
+      const params: Record<string, string> = {
+        name: autoName,
+        ssid: String(ssidBody.ssid),
+        mode: resolvedMode,
+        disabled: ssidBody.disabled ? 'yes' : 'no',
+      };
+      const fieldMap: Record<string, string> = {
+        band: 'band',
+        frequency: 'frequency',
+        channel_width: 'channel-width',
+        tx_power: 'tx-power',
+        tx_power_mode: 'tx-power-mode',
+        antenna_gain: 'antenna-gain',
+        country: 'country',
+        installation: 'installation',
+        security_profile: 'security-profile',
+        passphrase: 'passphrase',
+      };
+      for (const [key, rosKey] of Object.entries(fieldMap)) {
+        if (ssidBody[key]) params[rosKey] = String(ssidBody[key]);
+      }
+      if (ssidBody.authentication_types) {
+        params['authentication-types'] = Array.isArray(ssidBody.authentication_types)
+          ? (ssidBody.authentication_types as string[]).join(',')
+          : String(ssidBody.authentication_types);
+      }
+      await collector.addWirelessInterface(params);
+      await collector.collectWirelessInterfaces();
+      return { id: ap.id, name: ap.name as string, ok: true };
+    } catch (err) {
+      return { id: ap.id, name: ap.name as string, ok: false, error: (err as Error).message };
+    } finally {
+      collector.disconnect();
+    }
+  });
+
+  const results = settled.map((r) =>
+    r.status === 'fulfilled'
+      ? r.value
+      : { id: 0, name: 'unknown', ok: false, error: String(r.reason) },
   );
 
   return res.json({ results });
@@ -196,8 +208,12 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/capsman', async (req: Request, res: Response) => {
   const siteFilter = siteScopeDevices(activeSite(req));
   const controllers = await query<{
-    id: number; name: string; ip_address: string; model: string | null;
-    status: string; wifi_role: string | null;
+    id: number;
+    name: string;
+    ip_address: string;
+    model: string | null;
+    status: string;
+    wifi_role: string | null;
   }>(`
     SELECT id, name, ip_address, model, status, wifi_role
     FROM devices
@@ -210,7 +226,8 @@ router.get('/capsman', async (req: Request, res: Response) => {
 
   const ids = controllers.map((c) => c.id);
   const [radios, configs, provisioning] = await Promise.all([
-    query(`
+    query(
+      `
       SELECT r.controller_device_id, r.radio_mac, r.interface_name, r.local, r.hw_type,
              r.current_channel, r.remote_cap_name, r.matched_device_id,
              r.state, r.registered_peers, r.authorized_peers, r.tx_power, r.ssid,
@@ -219,20 +236,28 @@ router.get('/capsman', async (req: Request, res: Response) => {
       LEFT JOIN devices d ON d.id = r.matched_device_id
       WHERE r.controller_device_id = ANY($1::int[])
       ORDER BY r.local DESC, d.name NULLS LAST, r.interface_name
-    `, [ids]),
-    query(`
+    `,
+      [ids],
+    ),
+    query(
+      `
       SELECT controller_device_id, name, ssid, mode, band, security, authentication_types
       FROM capsman_configurations
       WHERE controller_device_id = ANY($1::int[])
       ORDER BY name
-    `, [ids]),
-    query(`
+    `,
+      [ids],
+    ),
+    query(
+      `
       SELECT controller_device_id, ros_id, action, master_configuration,
              slave_configurations, radio_mac, comment, disabled
       FROM capsman_provisioning
       WHERE controller_device_id = ANY($1::int[])
       ORDER BY ros_id
-    `, [ids]),
+    `,
+      [ids],
+    ),
   ]);
 
   // Interfaces provisioned onto the CAPs, joined to their radio so the UI can show
@@ -251,17 +276,33 @@ router.get('/capsman', async (req: Request, res: Response) => {
 
   res.json({
     controllers: controllers.map((c) => {
-      const cRadios = byController(radios as { controller_device_id: number; matched_device_id: number | null; matched_device_name: string | null }[], c.id);
+      const cRadios = byController(
+        radios as {
+          controller_device_id: number;
+          matched_device_id: number | null;
+          matched_device_name: string | null;
+        }[],
+        c.id,
+      );
 
       // Group radios by the AP they sit on. An unmatched radio means a CAP that is
       // not a managed device — worth showing rather than hiding, since it is often
       // the reason an AP is missing from the fleet.
-      const groups = new Map<string, { device_id: number | null; device_name: string; radios: unknown[] }>();
+      const groups = new Map<
+        string,
+        { device_id: number | null; device_name: string; radios: unknown[] }
+      >();
       for (const r of cRadios) {
-        const key = r.matched_device_id != null ? `d:${r.matched_device_id}` : `u:${(r as { remote_cap_name?: string }).remote_cap_name ?? 'unknown'}`;
+        const key =
+          r.matched_device_id != null
+            ? `d:${r.matched_device_id}`
+            : `u:${(r as { remote_cap_name?: string }).remote_cap_name ?? 'unknown'}`;
         const g = groups.get(key) ?? {
           device_id: r.matched_device_id,
-          device_name: r.matched_device_name ?? (r as { remote_cap_name?: string }).remote_cap_name ?? 'Unmanaged CAP',
+          device_name:
+            r.matched_device_name ??
+            (r as { remote_cap_name?: string }).remote_cap_name ??
+            'Unmanaged CAP',
           radios: [],
         };
         g.radios.push(r);
@@ -269,7 +310,7 @@ router.get('/capsman', async (req: Request, res: Response) => {
       }
 
       const ssids = (interfaces as { device_id: number }[]).filter((i) =>
-        cRadios.some((r) => r.matched_device_id === i.device_id)
+        cRadios.some((r) => r.matched_device_id === i.device_id),
       );
 
       // Peer counts come from the controller's own monitor output. The CAP's local
@@ -285,17 +326,29 @@ router.get('/capsman', async (req: Request, res: Response) => {
           ...g,
           client_count: peers(g.radios as { registered_peers?: number | null }[]),
         })),
-        configurations: byController(configs as { controller_device_id: number; name: string }[], c.id)
-          .map((cfg) => ({
-            ...cfg,
-            // The rule and the configuration it applies are one idea; showing them in
-            // separate boxes made the reader join them by eye (#94).
-            rules: byController(provisioning as { controller_device_id: number; master_configuration: string | null }[], c.id)
-              .filter((p) => p.master_configuration === cfg.name),
-          })),
-        provisioning: byController(provisioning as { controller_device_id: number; master_configuration: string | null }[], c.id)
-          .filter((p) => !configs.some((cfg) => (cfg as { controller_device_id: number; name: string }).controller_device_id === c.id
-            && (cfg as { name: string }).name === p.master_configuration)),
+        configurations: byController(
+          configs as { controller_device_id: number; name: string }[],
+          c.id,
+        ).map((cfg) => ({
+          ...cfg,
+          // The rule and the configuration it applies are one idea; showing them in
+          // separate boxes made the reader join them by eye (#94).
+          rules: byController(
+            provisioning as { controller_device_id: number; master_configuration: string | null }[],
+            c.id,
+          ).filter((p) => p.master_configuration === cfg.name),
+        })),
+        provisioning: byController(
+          provisioning as { controller_device_id: number; master_configuration: string | null }[],
+          c.id,
+        ).filter(
+          (p) =>
+            !configs.some(
+              (cfg) =>
+                (cfg as { controller_device_id: number; name: string }).controller_device_id ===
+                  c.id && (cfg as { name: string }).name === p.master_configuration,
+            ),
+        ),
         ssids,
       };
     }),
@@ -347,11 +400,22 @@ router.post('/:id/interfaces', requireWrite, async (req: Request, res: Response)
   if (!ap) return res.status(404).json({ error: 'Wireless AP not found' });
 
   const {
-    ssid, mode = 'ap-bridge', band, frequency, channel_width,
-    tx_power, tx_power_mode, antenna_gain, country, installation,
-    security_profile, disabled = false,
-    passphrase, authentication_types,
-    bridge, vlan_id,
+    ssid,
+    mode = 'ap-bridge',
+    band,
+    frequency,
+    channel_width,
+    tx_power,
+    tx_power_mode,
+    antenna_gain,
+    country,
+    installation,
+    security_profile,
+    disabled = false,
+    passphrase,
+    authentication_types,
+    bridge,
+    vlan_id,
     // advanced
     master_interface,
   } = req.body as Record<string, string | boolean | number | string[] | undefined>;
@@ -369,8 +433,9 @@ router.post('/:id/interfaces', requireWrite, async (req: Request, res: Response)
     const { local: localRadios, capsmanOwned } = await collector.partitionRadios();
     if (localRadios.length === 0 && capsmanOwned.length > 0) {
       return res.status(409).json({
-        error: `Every radio on ${ap.name} is provisioned by CAPsMAN (${capsmanOwned.join(', ')}). `
-          + `Add this SSID to the controller's configuration so it is provisioned to the access points.`,
+        error:
+          `Every radio on ${ap.name} is provisioned by CAPsMAN (${capsmanOwned.join(', ')}). ` +
+          `Add this SSID to the controller's configuration so it is provisioned to the access points.`,
       });
     }
 
@@ -383,16 +448,16 @@ router.post('/:id/interfaces', requireWrite, async (req: Request, res: Response)
       mode: String(mode),
       disabled: disabled ? 'yes' : 'no',
     };
-    if (band)             params['band']             = String(band);
-    if (frequency)        params['frequency']        = String(frequency);
-    if (channel_width)    params['channel-width']    = String(channel_width);
-    if (tx_power)         params['tx-power']         = String(tx_power);
-    if (tx_power_mode)    params['tx-power-mode']    = String(tx_power_mode);
+    if (band) params['band'] = String(band);
+    if (frequency) params['frequency'] = String(frequency);
+    if (channel_width) params['channel-width'] = String(channel_width);
+    if (tx_power) params['tx-power'] = String(tx_power);
+    if (tx_power_mode) params['tx-power-mode'] = String(tx_power_mode);
     if (antenna_gain !== undefined) params['antenna-gain'] = String(antenna_gain);
-    if (country)          params['country']          = String(country);
-    if (installation)     params['installation']     = String(installation);
+    if (country) params['country'] = String(country);
+    if (installation) params['installation'] = String(installation);
     if (security_profile) params['security-profile'] = String(security_profile);
-    if (passphrase)       params['passphrase']       = String(passphrase);
+    if (passphrase) params['passphrase'] = String(passphrase);
     if (authentication_types) {
       params['authentication-types'] = Array.isArray(authentication_types)
         ? authentication_types.join(',')
@@ -433,11 +498,18 @@ router.put('/:id/interfaces/:name', requireWrite, async (req: Request, res: Resp
 
   const params: Record<string, string> = {};
   const map: Record<string, string> = {
-    ssid: 'ssid', mode: 'mode', band: 'band', frequency: 'frequency',
-    channel_width: 'channel-width', tx_power: 'tx-power',
-    tx_power_mode: 'tx-power-mode', antenna_gain: 'antenna-gain',
-    country: 'country', installation: 'installation',
-    security_profile: 'security-profile', master_interface: 'master-interface',
+    ssid: 'ssid',
+    mode: 'mode',
+    band: 'band',
+    frequency: 'frequency',
+    channel_width: 'channel-width',
+    tx_power: 'tx-power',
+    tx_power_mode: 'tx-power-mode',
+    antenna_gain: 'antenna-gain',
+    country: 'country',
+    installation: 'installation',
+    security_profile: 'security-profile',
+    master_interface: 'master-interface',
     passphrase: 'passphrase',
   };
 
@@ -454,14 +526,19 @@ router.put('/:id/interfaces/:name', requireWrite, async (req: Request, res: Resp
   // Guarded (outside review P2-8): an AP managed over its own wireless link is
   // cut off by a change to that interface, so it is flagged when it's on the
   // management path, and undone automatically either way.
-  await withGuardedChange(ap.id, req, res,
+  await withGuardedChange(
+    ap.id,
+    req,
+    res,
     {
       kind: 'wireless.interface.set',
       summary: `Change wireless interface ${ifaceName}`,
       change: {
         kind: 'batch',
         changes: [
-          ...(body.disabled !== undefined ? [{ kind: 'interface.disable' as const, name: ifaceName, disabled: !!body.disabled }] : []),
+          ...(body.disabled !== undefined
+            ? [{ kind: 'interface.disable' as const, name: ifaceName, disabled: !!body.disabled }]
+            : []),
           { kind: 'path-object.change', name: ifaceName, what: 'Changing this wireless interface' },
         ],
       },
@@ -481,7 +558,10 @@ router.put('/:id/interfaces/:name', requireWrite, async (req: Request, res: Resp
       }
       return { ok: true };
     },
-    async (c) => { await c.collectWirelessInterfaces(); });
+    async (c) => {
+      await c.collectWirelessInterfaces();
+    },
+  );
 });
 
 // DELETE /api/wireless/:id/interfaces/:name
@@ -490,7 +570,10 @@ router.delete('/:id/interfaces/:name', requireWrite, async (req: Request, res: R
   if (!ap) return res.status(404).json({ error: 'Wireless AP not found' });
 
   const ifaceName = req.params.name;
-  await withGuardedChange(ap.id, req, res,
+  await withGuardedChange(
+    ap.id,
+    req,
+    res,
     {
       kind: 'wireless.interface.remove',
       summary: `Delete wireless interface ${ifaceName}`,
@@ -503,7 +586,13 @@ router.delete('/:id/interfaces/:name', requireWrite, async (req: Request, res: R
       return { ok: true };
     },
     // Only forget it locally once the device is confirmed to have kept the change.
-    async () => { await query(`DELETE FROM wireless_interfaces WHERE device_id=$1 AND name=$2`, [ap.id, ifaceName]); });
+    async () => {
+      await query(`DELETE FROM wireless_interfaces WHERE device_id=$1 AND name=$2`, [
+        ap.id,
+        ifaceName,
+      ]);
+    },
+  );
 });
 
 // ─── Security Profiles ────────────────────────────────────────────────────────
@@ -531,9 +620,13 @@ router.post('/:id/security-profiles', requireWrite, async (req: Request, res: Re
   if (!ap) return res.status(404).json({ error: 'Wireless AP not found' });
 
   const {
-    name, mode = 'dynamic-keys',
-    authentication_types, passphrase,
-    unicast_ciphers, group_ciphers, management_protection = 'disabled',
+    name,
+    mode = 'dynamic-keys',
+    authentication_types,
+    passphrase,
+    unicast_ciphers,
+    group_ciphers,
+    management_protection = 'disabled',
     management_protection_key,
   } = req.body as Record<string, string | string[] | undefined>;
 
@@ -560,8 +653,9 @@ router.post('/:id/security-profiles', requireWrite, async (req: Request, res: Re
       ? group_ciphers.join(',')
       : String(group_ciphers);
   }
-  if (passphrase)               params['passphrase']               = String(passphrase);
-  if (management_protection_key) params['management-protection-key'] = String(management_protection_key);
+  if (passphrase) params['passphrase'] = String(passphrase);
+  if (management_protection_key)
+    params['management-protection-key'] = String(management_protection_key);
 
   const collector = new DeviceCollector(ap);
   try {
@@ -585,10 +679,12 @@ router.put('/:id/security-profiles/:name', requireWrite, async (req: Request, re
   const body = req.body as Record<string, string | string[] | undefined>;
 
   const params: Record<string, string> = {};
-  if (body.mode)                      params['mode']                      = String(body.mode);
-  if (body.management_protection)     params['management-protection']     = String(body.management_protection);
-  if (body.management_protection_key) params['management-protection-key'] = String(body.management_protection_key);
-  if (body.passphrase)                params['passphrase']                = String(body.passphrase);
+  if (body.mode) params['mode'] = String(body.mode);
+  if (body.management_protection)
+    params['management-protection'] = String(body.management_protection);
+  if (body.management_protection_key)
+    params['management-protection-key'] = String(body.management_protection_key);
+  if (body.passphrase) params['passphrase'] = String(body.passphrase);
 
   if (body.authentication_types !== undefined) {
     params['authentication-types'] = Array.isArray(body.authentication_types)
@@ -608,10 +704,19 @@ router.put('/:id/security-profiles/:name', requireWrite, async (req: Request, re
 
   // Guarded: a profile change reaches every interface using it, including a
   // wireless uplink the AP is managed through.
-  await withGuardedChange(ap.id, req, res,
+  await withGuardedChange(
+    ap.id,
+    req,
+    res,
     { kind: 'wireless.security-profile.set', summary: `Change security profile ${profileName}` },
-    async (collector) => { await collector.setSecurityProfile(profileName, params); return { ok: true }; },
-    async (c) => { await c.collectSecurityProfiles(); });
+    async (collector) => {
+      await collector.setSecurityProfile(profileName, params);
+      return { ok: true };
+    },
+    async (c) => {
+      await c.collectSecurityProfiles();
+    },
+  );
 });
 
 // DELETE /api/wireless/:id/security-profiles/:name
@@ -620,10 +725,22 @@ router.delete('/:id/security-profiles/:name', requireWrite, async (req: Request,
   if (!ap) return res.status(404).json({ error: 'Wireless AP not found' });
 
   const profileName = req.params.name;
-  await withGuardedChange(ap.id, req, res,
+  await withGuardedChange(
+    ap.id,
+    req,
+    res,
     { kind: 'wireless.security-profile.remove', summary: `Delete security profile ${profileName}` },
-    async (collector) => { await collector.removeSecurityProfile(profileName); return { ok: true }; },
-    async () => { await query(`DELETE FROM wireless_security_profiles WHERE device_id=$1 AND name=$2`, [ap.id, profileName]); });
+    async (collector) => {
+      await collector.removeSecurityProfile(profileName);
+      return { ok: true };
+    },
+    async () => {
+      await query(`DELETE FROM wireless_security_profiles WHERE device_id=$1 AND name=$2`, [
+        ap.id,
+        profileName,
+      ]);
+    },
+  );
 });
 
 // ─── Radio monitoring / diagnostics ──────────────────────────────────────────
@@ -702,7 +819,7 @@ router.post('/:id/scan/:iface', requireWrite, async (req: Request, res: Response
 // per unique frequency. Each row has: freq (MHz, string), magn (dBm, string),
 // peak (dBm, string). We average magn and keep the highest peak per frequency.
 function aggregateSpectralRows(
-  rows: Record<string, string>[]
+  rows: Record<string, string>[],
 ): { freq: number; magn: number; peak: number }[] {
   const map = new Map<number, { sum: number; count: number; peak: number }>();
   for (const row of rows) {
@@ -712,9 +829,9 @@ function aggregateSpectralRows(
     if (freq <= 0) continue;
     const existing = map.get(freq);
     if (existing) {
-      existing.sum   += magn;
+      existing.sum += magn;
       existing.count += 1;
-      existing.peak   = Math.max(existing.peak, peak);
+      existing.peak = Math.max(existing.peak, peak);
     } else {
       map.set(freq, { sum: magn, count: 1, peak });
     }
@@ -739,14 +856,16 @@ router.post('/:id/spectral-scan/:iface', requireWrite, async (req: Request, res:
     await collector.connect();
     const rows = await collector.collectSpectralScan(req.params.iface);
     if (rows.length === 0) {
-      return res.status(422).json({ error: 'No spectral data returned — interface may not support spectral scan' });
+      return res
+        .status(422)
+        .json({ error: 'No spectral data returned — interface may not support spectral scan' });
     }
     const aggregated = aggregateSpectralRows(rows);
     const saved = await query<{ id: number; scanned_at: string }>(
       `INSERT INTO spectral_scan_data (device_id, interface_name, data, scan_type)
        VALUES ($1, $2, $3, 'manual')
        RETURNING id, scanned_at`,
-      [ap.id, req.params.iface, JSON.stringify(aggregated)]
+      [ap.id, req.params.iface, JSON.stringify(aggregated)],
     );
     return res.json({ id: saved[0].id, scanned_at: saved[0].scanned_at, data: aggregated });
   } catch (err) {
@@ -768,7 +887,7 @@ router.get('/:id/spectral-history/:iface', async (req: Request, res: Response) =
      WHERE device_id = $1 AND interface_name = $2
      ORDER BY scanned_at DESC
      LIMIT $3`,
-    [deviceId, iface, limit]
+    [deviceId, iface, limit],
   );
   return res.json(scans);
 });
@@ -787,7 +906,7 @@ router.post('/:id/ap-scan', requireWrite, async (req: Request, res: Response) =>
      WHERE device_id = $1
        AND disabled = FALSE
        AND (config_json->>'master' IS NULL OR config_json->>'master' != 'false')`,
-    [ap.id]
+    [ap.id],
   );
   if (ifaces.length === 0) {
     return res.status(422).json({ error: 'No active wireless interfaces found' });
@@ -818,7 +937,7 @@ router.post('/:id/ap-scan', requireWrite, async (req: Request, res: Response) =>
     const saved = await query<{ id: number; scanned_at: string }>(
       `INSERT INTO ap_scan_data (device_id, data, scan_type)
        VALUES ($1, $2, 'manual') RETURNING id, scanned_at`,
-      [ap.id, JSON.stringify(aggregated)]
+      [ap.id, JSON.stringify(aggregated)],
     );
     return res.json({ id: saved[0].id, scanned_at: saved[0].scanned_at, data: aggregated });
   } catch (err) {
@@ -837,7 +956,7 @@ router.get('/:id/ap-scan-history', async (req: Request, res: Response) => {
      WHERE device_id = $1
      ORDER BY scanned_at DESC
      LIMIT $2`,
-    [deviceId, limit]
+    [deviceId, limit],
   );
   return res.json(scans);
 });
@@ -873,12 +992,19 @@ router.get('/rf/channels', async (req: Request, res: Response) => {
   // every managed radio, which left them out of the analysis entirely and pushed
   // whatever remained into "standalone" (issue #97).
   const rows = await query<{
-    device_id: number; device_name: string; name: string; ssid: string | null;
-    frequency: number | null; channel_width: string | null;
+    device_id: number;
+    device_name: string;
+    name: string;
+    ssid: string | null;
+    frequency: number | null;
+    channel_width: string | null;
     registered_clients: number | null;
-    controller_device_id: number | null; controller_name: string | null;
-    capsman_channel: string | null; capsman_peers: number | null;
-  }>(`
+    controller_device_id: number | null;
+    controller_name: string | null;
+    capsman_channel: string | null;
+    capsman_peers: number | null;
+  }>(
+    `
     SELECT wi.device_id, d.name AS device_name, wi.name, wi.ssid,
            wi.frequency, wi.channel_width, wi.registered_clients,
            cr.controller_device_id,
@@ -900,20 +1026,24 @@ router.get('/rf/channels', async (req: Request, res: Response) => {
       ${deviceId ? 'AND wi.device_id = $1' : ''}
       ${siteFilter ? `AND ${siteFilter}` : ''}
     ORDER BY d.name ASC, wi.name ASC
-  `, deviceId ? [deviceId] : []);
+  `,
+    deviceId ? [deviceId] : [],
+  );
 
   // Resolve each radio's operating channel, preferring what the controller reports.
-  const resolved = rows.map((r) => {
-    const fromController = parseChannelSpec(r.capsman_channel);
-    const frequency = fromController?.frequency ?? r.frequency ?? 0;
-    const channel_width = fromController ? `${fromController.widthMhz}mhz` : r.channel_width;
-    return {
-      ...r,
-      frequency,
-      channel_width,
-      registered_clients: r.capsman_peers ?? r.registered_clients ?? 0,
-    };
-  }).filter((r) => r.frequency > 0);
+  const resolved = rows
+    .map((r) => {
+      const fromController = parseChannelSpec(r.capsman_channel);
+      const frequency = fromController?.frequency ?? r.frequency ?? 0;
+      const channel_width = fromController ? `${fromController.widthMhz}mhz` : r.channel_width;
+      return {
+        ...r,
+        frequency,
+        channel_width,
+        registered_clients: r.capsman_peers ?? r.registered_clients ?? 0,
+      };
+    })
+    .filter((r) => r.frequency > 0);
 
   // Interference is only meaningful between radios that can hear each other, so
   // the analysis runs per location: each controller separately, and everything
@@ -962,7 +1092,8 @@ router.get('/rf/channels', async (req: Request, res: Response) => {
 router.get('/rf/signals', async (req: Request, res: Response) => {
   const deviceId = deviceScope(req);
   const siteFilter = siteScopeByDevice(activeSite(req), 'c.device_id');
-  const rows = await query(`
+  const rows = await query(
+    `
     SELECT c.mac_address, c.signal_strength, c.device_id, d.name AS device_name,
            c.custom_name, c.hostname
     FROM clients c
@@ -974,7 +1105,9 @@ router.get('/rf/signals', async (req: Request, res: Response) => {
       ${deviceId ? 'AND c.device_id = $1' : ''}
       ${siteFilter ? `AND ${siteFilter}` : ''}
     ORDER BY c.signal_strength DESC
-  `, deviceId ? [deviceId] : []);
+  `,
+    deviceId ? [deviceId] : [],
+  );
   res.json(rows);
 });
 
@@ -1008,13 +1141,21 @@ router.get('/rf/capabilities', async (req: Request, res: Response) => {
 // GET /api/wireless/rf/tx-quality?range=6h — latest per-radio TX retry % (from CCQ)
 router.get('/rf/tx-quality', async (req: Request, res: Response) => {
   const deviceId = deviceScope(req);
-  const ranges: Record<string, string> = { '1h': '1h', '3h': '3h', '6h': '6h', '12h': '12h', '24h': '24h' };
+  const ranges: Record<string, string> = {
+    '1h': '1h',
+    '3h': '3h',
+    '6h': '6h',
+    '12h': '12h',
+    '24h': '24h',
+  };
   const fluxRange = ranges[String(req.query.range || '6h')] || '6h';
 
   const { getQueryApi } = await import('../config/influxdb');
   const queryApi = getQueryApi();
   const bucket = process.env.INFLUXDB_BUCKET || 'mikrotik';
-  const deviceFilter = deviceId ? `|> filter(fn: (r) => r["device_id"] == ${fluxString(String(deviceId))})` : '';
+  const deviceFilter = deviceId
+    ? `|> filter(fn: (r) => r["device_id"] == ${fluxString(String(deviceId))})`
+    : '';
 
   const flux = `
     from(bucket: "${bucket}")
@@ -1027,7 +1168,13 @@ router.get('/rf/tx-quality', async (req: Request, res: Response) => {
   `;
 
   try {
-    const rows: { device_id: string; device_name?: string; interface: string; band: string; tx_retry_pct: number }[] = [];
+    const rows: {
+      device_id: string;
+      device_name?: string;
+      interface: string;
+      band: string;
+      tx_retry_pct: number;
+    }[] = [];
     await new Promise<void>((resolve, reject) => {
       queryApi.queryRows(flux, {
         next(row, tableMeta) {
@@ -1063,8 +1210,14 @@ router.get('/rf/rogue', async (req: Request, res: Response) => {
   const { classifyLatestScans } = await import('../services/rogueScan');
   const { rogues, neighbors, scans } = await classifyLatestScans(activeSite(req));
   res.json({
-    rogues, neighbors,
-    lastScanAt: scans.length ? scans.map(s => String(s.scanned_at)).sort().pop() : null,
+    rogues,
+    neighbors,
+    lastScanAt: scans.length
+      ? scans
+          .map((s) => String(s.scanned_at))
+          .sort()
+          .pop()
+      : null,
     scannedDevices: scans.length,
   });
 });

@@ -46,11 +46,9 @@ async function readKernelArpCache(): Promise<Record<string, string>> {
 async function runArpScan(): Promise<Record<string, string>> {
   const map: Record<string, string> = {};
   try {
-    const { stdout } = await execFileAsync(
-      'arp-scan',
-      ['--localnet', '--quiet', '--retry=2'],
-      { timeout: 12000 }
-    );
+    const { stdout } = await execFileAsync('arp-scan', ['--localnet', '--quiet', '--retry=2'], {
+      timeout: 12000,
+    });
     for (const line of stdout.split('\n')) {
       // Output lines: "<IP>\t<MAC>\t<description>"
       const parts = line.trim().split(/\s+/);
@@ -95,19 +93,30 @@ let arpScanResult: Record<string, string> = {};
 let arpScanAt = 0;
 let arpScanRunning: Promise<void> | null = null;
 
-function sharedArpScan(now = Date.now(), scan: () => Promise<Record<string, string>> = runArpScan): Record<string, string> {
+function sharedArpScan(
+  now = Date.now(),
+  scan: () => Promise<Record<string, string>> = runArpScan,
+): Record<string, string> {
   if (!arpScanRunning && now - arpScanAt > ARP_SCAN_TTL_MS) {
     arpScanAt = now;
     arpScanRunning = scan()
-      .then((r) => { arpScanResult = r; })
-      .catch(() => { /* keep the last result */ })
-      .finally(() => { arpScanRunning = null; });
+      .then((r) => {
+        arpScanResult = r;
+      })
+      .catch(() => {
+        /* keep the last result */
+      })
+      .finally(() => {
+        arpScanRunning = null;
+      });
   }
   return arpScanResult;
 }
 
 /** For tests: the scan in progress, if any. */
-export function _arpScanInProgress(): Promise<void> | null { return arpScanRunning; }
+export function _arpScanInProgress(): Promise<void> | null {
+  return arpScanRunning;
+}
 export { sharedArpScan as _sharedArpScan };
 
 /** For tests. */

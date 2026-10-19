@@ -9,7 +9,11 @@ import { commandTemplatesApi, type CommandTemplate } from '../../services/api';
  * Loading only fills the command box. Nothing runs until the operator picks
  * devices and presses Run, with the same waves and guards as a typed command.
  */
-export default function CommandTemplateBar({ command, onLoad, initialTemplateId }: {
+export default function CommandTemplateBar({
+  command,
+  onLoad,
+  initialTemplateId,
+}: {
   command: string;
   onLoad: (command: string) => void;
   /** From the Templates page's Run button (/commands?template=ID). */
@@ -34,30 +38,52 @@ export default function CommandTemplateBar({ command, onLoad, initialTemplateId 
     qc.fetchQuery({
       queryKey: ['command-templates'],
       queryFn: () => commandTemplatesApi.list().then((r) => r.data),
-    }).then((list) => {
-      const t = list.find((x) => x.id === initialTemplateId);
-      if (!cancelled && t) { setLoaded(t); onLoad(t.command); }
-    }).catch(() => {});
-    return () => { cancelled = true; };
+    })
+      .then((list) => {
+        const t = list.find((x) => x.id === initialTemplateId);
+        if (!cancelled && t) {
+          setLoaded(t);
+          onLoad(t.command);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [initialTemplateId, onLoad, qc]);
 
-  const done = () => { qc.invalidateQueries({ queryKey: ['command-templates'] }); setError(''); };
+  const done = () => {
+    qc.invalidateQueries({ queryKey: ['command-templates'] });
+    setError('');
+  };
   const errMsg = (e: unknown) =>
-    (e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not save the template';
+    (e as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+    'Could not save the template';
 
   const create = useMutation({
-    mutationFn: () => commandTemplatesApi.create({ name, command, description }).then((r) => r.data),
-    onSuccess: (t) => { done(); setLoaded(t); setSaving(false); },
+    mutationFn: () =>
+      commandTemplatesApi.create({ name, command, description }).then((r) => r.data),
+    onSuccess: (t) => {
+      done();
+      setLoaded(t);
+      setSaving(false);
+    },
     onError: (e) => setError(errMsg(e)),
   });
   const update = useMutation({
     mutationFn: () => commandTemplatesApi.update(loaded!.id, { command }).then((r) => r.data),
-    onSuccess: (t) => { done(); setLoaded(t); },
+    onSuccess: (t) => {
+      done();
+      setLoaded(t);
+    },
     onError: (e) => setError(errMsg(e)),
   });
   const remove = useMutation({
     mutationFn: () => commandTemplatesApi.delete(loaded!.id),
-    onSuccess: () => { done(); setLoaded(null); },
+    onSuccess: () => {
+      done();
+      setLoaded(null);
+    },
   });
 
   const changed = loaded && loaded.command !== command.trim();
@@ -76,23 +102,48 @@ export default function CommandTemplateBar({ command, onLoad, initialTemplateId 
             if (t) onLoad(t.command);
           }}
         >
-          <option value="">{templates.length ? 'Load a saved template…' : 'No saved templates yet'}</option>
-          {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          <option value="">
+            {templates.length ? 'Load a saved template…' : 'No saved templates yet'}
+          </option>
+          {templates.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
         </select>
         {command.trim() && !saving && (
-          <button type="button" className="btn-secondary text-xs py-1 flex items-center gap-1"
-                  onClick={() => { setSaving(true); setName(''); setDescription(''); setError(''); }}>
+          <button
+            type="button"
+            className="btn-secondary text-xs py-1 flex items-center gap-1"
+            onClick={() => {
+              setSaving(true);
+              setName('');
+              setDescription('');
+              setError('');
+            }}
+          >
             <Save className="w-3.5 h-3.5" /> Save as template
           </button>
         )}
         {loaded && changed && (
-          <button type="button" className="btn-secondary text-xs py-1" disabled={update.isPending} onClick={() => update.mutate()}>
+          <button
+            type="button"
+            className="btn-secondary text-xs py-1"
+            disabled={update.isPending}
+            onClick={() => update.mutate()}
+          >
             Update &ldquo;{loaded.name}&rdquo;
           </button>
         )}
         {loaded && (
-          <button type="button" className="text-xs text-red-600 flex items-center gap-1" disabled={remove.isPending}
-                  onClick={() => { if (confirm(`Delete the template "${loaded.name}"?`)) remove.mutate(); }}>
+          <button
+            type="button"
+            className="text-xs text-red-600 flex items-center gap-1"
+            disabled={remove.isPending}
+            onClick={() => {
+              if (confirm(`Delete the template "${loaded.name}"?`)) remove.mutate();
+            }}
+          >
             <Trash2 className="w-3.5 h-3.5" /> Delete template
           </button>
         )}
@@ -102,13 +153,35 @@ export default function CommandTemplateBar({ command, onLoad, initialTemplateId 
       )}
       {saving && (
         <div className="flex flex-wrap items-center gap-2">
-          <input className="input py-1 text-sm w-56" placeholder="Template name" value={name}
-                 onChange={(e) => setName(e.target.value)} autoFocus />
-          <input className="input py-1 text-sm flex-1 min-w-[12rem]" placeholder="What it's for (optional)"
-                 value={description} onChange={(e) => setDescription(e.target.value)} />
-          <button type="button" className="btn-primary text-xs py-1.5" disabled={!name.trim() || create.isPending}
-                  onClick={() => create.mutate()}>Save</button>
-          <button type="button" className="text-gray-400" onClick={() => setSaving(false)} aria-label="Cancel"><X className="w-4 h-4" /></button>
+          <input
+            className="input py-1 text-sm w-56"
+            placeholder="Template name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+          />
+          <input
+            className="input py-1 text-sm flex-1 min-w-[12rem]"
+            placeholder="What it's for (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          <button
+            type="button"
+            className="btn-primary text-xs py-1.5"
+            disabled={!name.trim() || create.isPending}
+            onClick={() => create.mutate()}
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            className="text-gray-400"
+            onClick={() => setSaving(false)}
+            aria-label="Cancel"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
       {error && <p className="text-xs text-red-600">{error}</p>}

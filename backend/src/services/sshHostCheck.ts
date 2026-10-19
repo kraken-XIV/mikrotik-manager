@@ -13,17 +13,26 @@ import { verifyDeviceIdentity, sshHostKeyFingerprint, IdentityMismatchError } fr
 const lastRefusal = new Map<string, string>();
 const key = (host: string, port: number): string => `${host}:${port}`;
 
-export function sshHostCheck(host: string, port: number): {
+export function sshHostCheck(
+  host: string,
+  port: number,
+): {
   hostVerifier: (hostKey: Buffer, verify: (ok: boolean) => void) => void;
 } {
   return {
     hostVerifier: (hostKey, verify) => {
       verifyDeviceIdentity('ssh-host', host, port, sshHostKeyFingerprint(hostKey))
-        .then(() => { lastRefusal.delete(key(host, port)); verify(true); })
+        .then(() => {
+          lastRefusal.delete(key(host, port));
+          verify(true);
+        })
         .catch((err: unknown) => {
-          lastRefusal.set(key(host, port), err instanceof IdentityMismatchError
-            ? err.message
-            : `The SSH host key could not be checked: ${(err as Error).message}`);
+          lastRefusal.set(
+            key(host, port),
+            err instanceof IdentityMismatchError
+              ? err.message
+              : `The SSH host key could not be checked: ${(err as Error).message}`,
+          );
           verify(false);
         });
     },

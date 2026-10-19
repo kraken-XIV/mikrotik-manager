@@ -1819,7 +1819,7 @@ export async function runMigrations(): Promise<void> {
     for (const setting of DEFAULT_SETTINGS) {
       await client.query(
         `INSERT INTO app_settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`,
-        [setting.key, JSON.stringify(setting.value)]
+        [setting.key, JSON.stringify(setting.value)],
       );
     }
 
@@ -1828,17 +1828,16 @@ export async function runMigrations(): Promise<void> {
     // it, nothing moved. Idempotent -- reruns are a no-op.
     const siteCount = await client.query('SELECT COUNT(*) FROM sites');
     if (parseInt(siteCount.rows[0].count, 10) === 0) {
-      await client.query(
-        `INSERT INTO sites (name, is_default) VALUES ($1, TRUE)`,
-        ['Default Site']
-      );
+      await client.query(`INSERT INTO sites (name, is_default) VALUES ($1, TRUE)`, [
+        'Default Site',
+      ]);
       console.log('Default Site created');
     }
     // Adopt any device without a site (covers both the initial backfill and
     // devices added by an older build mid-upgrade).
     const adopted = await client.query(
       `UPDATE devices SET site_id = (SELECT id FROM sites WHERE is_default = TRUE ORDER BY id LIMIT 1)
-       WHERE site_id IS NULL`
+       WHERE site_id IS NULL`,
     );
     if (adopted.rowCount) console.log(`Assigned ${adopted.rowCount} device(s) to the default site`);
 
@@ -1848,7 +1847,7 @@ export async function runMigrations(): Promise<void> {
       const hash = await bcrypt.hash('admin', 12);
       await client.query(
         `INSERT INTO users (username, password_hash, role, must_change_password) VALUES ($1, $2, $3, TRUE)`,
-        ['admin', hash, 'admin']
+        ['admin', hash, 'admin'],
       );
       console.log('Default admin user created (username: admin, password: admin)');
       console.log('The password must be changed at first login.');
@@ -1856,13 +1855,23 @@ export async function runMigrations(): Promise<void> {
 
     // Existing installs still on admin/admin get the same forced change. Checked
     // against the hash, so it clears itself once the password is changed.
-    const admin = await client.query<{ id: number; password_hash: string | null; must_change_password: boolean }>(
-      `SELECT id, password_hash, must_change_password FROM users WHERE username = 'admin' LIMIT 1`
+    const admin = await client.query<{
+      id: number;
+      password_hash: string | null;
+      must_change_password: boolean;
+    }>(
+      `SELECT id, password_hash, must_change_password FROM users WHERE username = 'admin' LIMIT 1`,
     );
     const a = admin.rows[0];
-    if (a?.password_hash && !a.must_change_password && (await bcrypt.compare('admin', a.password_hash))) {
+    if (
+      a?.password_hash &&
+      !a.must_change_password &&
+      (await bcrypt.compare('admin', a.password_hash))
+    ) {
       await client.query(`UPDATE users SET must_change_password = TRUE WHERE id = $1`, [a.id]);
-      console.log('The admin account still uses the default password; it must be changed at next login.');
+      console.log(
+        'The admin account still uses the default password; it must be changed at next login.',
+      );
     }
 
     // One-time backfill of proxy connections from events already collected.

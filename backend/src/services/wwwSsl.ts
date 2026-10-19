@@ -45,11 +45,18 @@ const CHECK_ATTEMPTS = 3;
  * answers / with a page or a redirect. The certificate isn't verified, since
  * it's self-signed; this only proves the service is up and reachable.
  */
-export function httpsAnswers(host: string, port: number, timeoutMs = CHECK_TIMEOUT_MS): Promise<string | null> {
+export function httpsAnswers(
+  host: string,
+  port: number,
+  timeoutMs = CHECK_TIMEOUT_MS,
+): Promise<string | null> {
   return new Promise((resolve) => {
     const req = https.request(
       { host, port, path: '/', method: 'GET', rejectUnauthorized: false, timeout: timeoutMs },
-      (res) => { res.resume(); resolve(null); },
+      (res) => {
+        res.resume();
+        resolve(null);
+      },
     );
     req.on('timeout', () => req.destroy(new Error('no answer')));
     req.on('error', (e) => resolve((e as Error).message || 'no answer'));
@@ -81,9 +88,11 @@ export async function enableWwwSsl(deviceId: number): Promise<WwwSslResult> {
 
     // Keep a usable certificate www-ssl already has; else share api-ssl's;
     // else make the manager's own.
-    const assigned = ssl['certificate'] && ssl['certificate'] !== 'none' ? ssl['certificate'] : null;
+    const assigned =
+      ssl['certificate'] && ssl['certificate'] !== 'none' ? ssl['certificate'] : null;
     const apiSsl = services.find((r) => r['name'] === 'api-ssl');
-    const apiCert = apiSsl?.['certificate'] && apiSsl['certificate'] !== 'none' ? apiSsl['certificate'] : null;
+    const apiCert =
+      apiSsl?.['certificate'] && apiSsl['certificate'] !== 'none' ? apiSsl['certificate'] : null;
     let certName: string;
     if (assigned && usable(await certByName(run, assigned))) {
       certName = assigned;
@@ -101,13 +110,15 @@ export async function enableWwwSsl(deviceId: number): Promise<WwwSslResult> {
     // www-ssl takes over www's job, so it inherits www's allowed addresses
     // when it has none of its own (as api-ssl does from api, #192).
     const wwwList = www ? allowedFrom(www) : [];
-    if (wwwList.length > 0 && allowedFrom(ssl).length === 0) changes[allowedFromKey(ssl)] = wwwList.join(',');
+    if (wwwList.length > 0 && allowedFrom(ssl).length === 0)
+      changes[allowedFromKey(ssl)] = wwwList.join(',');
 
     if (Object.keys(changes).length > 0) {
       await run.execute('/ip/service/set', { '.id': ssl['.id'], ...changes });
       if (changes['certificate']) steps.push(`Assigned "${certName}" to www-ssl`);
       if (changes['disabled']) steps.push(`Enabled www-ssl on port ${port}`);
-      if (changes[allowedFromKey(ssl)] !== undefined) steps.push(`Limited www-ssl to the addresses www allows: ${wwwList.join(', ')}`);
+      if (changes[allowedFromKey(ssl)] !== undefined)
+        steps.push(`Limited www-ssl to the addresses www allows: ${wwwList.join(', ')}`);
     } else {
       steps.push(`www-ssl was already enabled on port ${port} with "${certName}"`);
     }
@@ -123,7 +134,8 @@ export async function enableWwwSsl(deviceId: number): Promise<WwwSslResult> {
       return {
         switched: false,
         steps,
-        message: `www-ssl is on, but WebFig didn't answer at ${url} (${failure}), so plain www was left on. ` +
+        message:
+          `www-ssl is on, but WebFig didn't answer at ${url} (${failure}), so plain www was left on. ` +
           `The usual cause is a firewall rule, or www-ssl's "available from" list, allowing port 80 but not ${port}.`,
       };
     }
@@ -137,7 +149,8 @@ export async function enableWwwSsl(deviceId: number): Promise<WwwSslResult> {
       switched: true,
       steps,
       url,
-      message: `${name}'s WebFig is now HTTPS only, at ${url}. The certificate is self-signed, so browsers ` +
+      message:
+        `${name}'s WebFig is now HTTPS only, at ${url}. The certificate is self-signed, so browsers ` +
         `warn the first time.`,
     };
   } finally {

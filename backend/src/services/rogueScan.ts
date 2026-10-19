@@ -14,15 +14,29 @@ import { classifyScans, type ScannedNetwork } from '../utils/rogueAp';
 export async function classifyLatestScans(scope: SiteScope) {
   const scanFilter = siteScopeByDevice(scope, 'a.device_id');
   const [scans, radios, ifaceMacs] = await Promise.all([
-    query<{ device_id: number; device_name: string; site_id: number | null; scanned_at: string; data: unknown }>(`
+    query<{
+      device_id: number;
+      device_name: string;
+      site_id: number | null;
+      scanned_at: string;
+      data: unknown;
+    }>(`
       SELECT DISTINCT ON (a.device_id) a.device_id, d.name AS device_name, d.site_id, a.scanned_at, a.data
       FROM ap_scan_data a JOIN devices d ON d.id = a.device_id
       ${scanFilter ? `WHERE ${scanFilter}` : ''}
       ORDER BY a.device_id, a.scanned_at DESC`),
-    query<{ ssid: string | null; mac_address: string | null; frequency: number | null; site_id: number | null }>(
+    query<{
+      ssid: string | null;
+      mac_address: string | null;
+      frequency: number | null;
+      site_id: number | null;
+    }>(
       `SELECT wi.ssid, wi.mac_address, wi.frequency, d.site_id
-         FROM wireless_interfaces wi JOIN devices d ON d.id = wi.device_id`),
-    query<{ mac_address: string }>(`SELECT mac_address FROM interfaces WHERE mac_address IS NOT NULL`),
+         FROM wireless_interfaces wi JOIN devices d ON d.id = wi.device_id`,
+    ),
+    query<{ mac_address: string }>(
+      `SELECT mac_address FROM interfaces WHERE mac_address IS NOT NULL`,
+    ),
   ]);
 
   const ownSsidsBySite = new Map<number | null, Set<string>>();
@@ -38,7 +52,8 @@ export async function classifyLatestScans(scope: SiteScope) {
   ]);
   const ownRadioFreqs = new Map<string, number>();
   for (const r of radios) {
-    if (r.mac_address && r.frequency) ownRadioFreqs.set(r.mac_address.toLowerCase(), Number(r.frequency));
+    if (r.mac_address && r.frequency)
+      ownRadioFreqs.set(r.mac_address.toLowerCase(), Number(r.frequency));
   }
 
   const records = scans.map((s) => ({

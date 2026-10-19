@@ -11,11 +11,21 @@ describe('device cards order (#303)', () => {
       { name: 'sw-1', status: 'online' },
       { name: 'ap-0', status: 'offline' },
     ];
-    expect(byAttention(ds).map((d) => d.name)).toEqual(['ap-0', 'rtr-1', 'ap-1', 'sw-2', 'sw-1', 'sw-10']);
+    expect(byAttention(ds).map((d) => d.name)).toEqual([
+      'ap-0',
+      'rtr-1',
+      'ap-1',
+      'sw-2',
+      'sw-1',
+      'sw-10',
+    ]);
   });
 
-  it('does not reorder the caller\'s array', () => {
-    const ds = [{ name: 'b', status: 'online' }, { name: 'a', status: 'offline' }];
+  it("does not reorder the caller's array", () => {
+    const ds = [
+      { name: 'b', status: 'online' },
+      { name: 'a', status: 'offline' },
+    ];
     byAttention(ds);
     expect(ds[0].name).toBe('b');
   });

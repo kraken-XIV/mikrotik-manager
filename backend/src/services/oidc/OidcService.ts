@@ -14,7 +14,12 @@ import { query, queryOne } from '../../config/database';
 import { loadOidcConfig, getClientSecret, type OidcConfig, type AppRole } from './oidcConfig';
 import { endAllSessions } from '../../utils/sessionState';
 import {
-  extractGroups, mapGroupsToRole, deriveUsername, getEmail, isEmailVerified, emailDomainAllowed,
+  extractGroups,
+  mapGroupsToRole,
+  deriveUsername,
+  getEmail,
+  isEmailVerified,
+  emailDomainAllowed,
 } from './claimMapping';
 
 const TX_TTL_SECONDS = 600; // 10 minutes
@@ -45,7 +50,11 @@ let clientCache: { key: string; client: Client } | null = null;
 
 function configFingerprint(config: OidcConfig, redirectUri: string): string {
   return createHash('sha256')
-    .update([config.issuer_url, config.client_id, config.client_secret_encrypted ?? '', redirectUri].join('|'))
+    .update(
+      [config.issuer_url, config.client_id, config.client_secret_encrypted ?? '', redirectUri].join(
+        '|',
+      ),
+    )
     .digest('hex');
 }
 
@@ -80,7 +89,11 @@ export function resetOidcClientCache(): void {
  * someone could send a victim the callback link of a login they started and
  * sign the victim in to the attacker's account.
  */
-export async function beginLogin(redirectUri: string, returnTo: string, binding: string): Promise<string> {
+export async function beginLogin(
+  redirectUri: string,
+  returnTo: string,
+  binding: string,
+): Promise<string> {
   const config = await loadOidcConfig();
   if (!config.enabled) throw new Error('OIDC login is not enabled');
   const client = await getClient(config, redirectUri);
@@ -90,7 +103,13 @@ export async function beginLogin(redirectUri: string, returnTo: string, binding:
   const code_verifier = generators.codeVerifier();
   const code_challenge = generators.codeChallenge(code_verifier);
 
-  const tx: Transaction = { nonce, code_verifier, redirectUri, returnTo, bindHash: bindingHash(binding) };
+  const tx: Transaction = {
+    nonce,
+    code_verifier,
+    redirectUri,
+    returnTo,
+    bindHash: bindingHash(binding),
+  };
   await redis.set(txKey(state), JSON.stringify(tx), 'EX', TX_TTL_SECONDS);
 
   return client.authorizationUrl({
@@ -103,7 +122,8 @@ export async function beginLogin(redirectUri: string, returnTo: string, binding:
 }
 
 export async function completeLogin(
-  params: Record<string, string>, binding: string | null,
+  params: Record<string, string>,
+  binding: string | null,
 ): Promise<{ user: ResolvedUser; returnTo: string; bindHash: string }> {
   const state = params.state;
   if (!state) throw new Error('Missing state');
@@ -115,7 +135,9 @@ export async function completeLogin(
 
   // Only the browser that started this login may finish it (S2).
   if (!tx.bindHash || !binding || bindingHash(binding) !== tx.bindHash) {
-    throw new Error('This sign-in was started in a different browser or has expired. Start it again from the login page.');
+    throw new Error(
+      'This sign-in was started in a different browser or has expired. Start it again from the login page.',
+    );
   }
 
   // An admin may have turned SSO off since the login began (S2).
@@ -135,20 +157,28 @@ export async function completeLogin(
     try {
       const userinfo = await client.userinfo(tokenSet);
       claims = { ...claims, ...userinfo };
-    } catch { /* userinfo optional */ }
+    } catch {
+      /* userinfo optional */
+    }
   }
 
   const user = await resolveUser(claims, config);
   return { user, returnTo: tx.returnTo, bindHash: tx.bindHash };
 }
 
-async function resolveUser(claims: Record<string, unknown>, config: OidcConfig): Promise<ResolvedUser> {
+async function resolveUser(
+  claims: Record<string, unknown>,
+  config: OidcConfig,
+): Promise<ResolvedUser> {
   const sub = String(claims.sub ?? '');
   const issuer = String(claims.iss ?? '');
   if (!sub || !issuer) throw new Error('ID token missing sub/iss');
 
   const email = getEmail(claims, config);
-  const mappedRole = mapGroupsToRole(extractGroups(claims, config.groups_claim), config.group_role_map);
+  const mappedRole = mapGroupsToRole(
+    extractGroups(claims, config.groups_claim),
+    config.group_role_map,
+  );
   // With group mappings configured, the identity provider decides the role at
   // every sign-in: a user whose mapped group was removed falls back to the
   // default role instead of keeping it (outside review S3). Without mappings,
@@ -157,7 +187,7 @@ async function resolveUser(claims: Record<string, unknown>, config: OidcConfig):
   const roleFor = async (current: AppRole, userId: number | null): Promise<AppRole> => {
     if (!groupsDecide) return mappedRole ?? current;
     const next = mappedRole ?? config.default_role;
-    if (current === 'admin' && next !== 'admin' && userId !== null && await isLastAdmin(userId)) {
+    if (current === 'admin' && next !== 'admin' && userId !== null && (await isLastAdmin(userId))) {
       console.warn(`[OIDC] kept admin for user ${userId}: no other admin account would remain`);
       return current;
     }
@@ -168,11 +198,13 @@ async function resolveUser(claims: Record<string, unknown>, config: OidcConfig):
   // verified (S3). An unverified one is whatever the user typed in.
   const linked = await queryOne<{ id: number; username: string; role: AppRole }>(
     `SELECT id, username, role FROM users WHERE oidc_issuer = $1 AND oidc_subject = $2`,
-    [issuer, sub]
+    [issuer, sub],
   );
   if (config.allowed_email_domains?.length && !linked) {
     if (!email || !isEmailVerified(claims)) {
-      throw new Error('Your identity provider did not confirm your email address is verified, so its domain cannot be checked');
+      throw new Error(
+        'Your identity provider did not confirm your email address is verified, so its domain cannot be checked',
+      );
     }
   }
   if (!emailDomainAllowed(email, config.allowed_email_domains)) {
@@ -188,7 +220,8 @@ async function resolveUser(claims: Record<string, unknown>, config: OidcConfig):
       // does when an admin changes it here (P2-1).
       await endAllSessions(linked.id);
     }
-    if (email) await query(`UPDATE users SET email = $1 WHERE id = $2`, [email, linked.id]).catch(() => {});
+    if (email)
+      await query(`UPDATE users SET email = $1 WHERE id = $2`, [email, linked.id]).catch(() => {});
     return { id: linked.id, username: linked.username, role };
   }
 
@@ -196,13 +229,13 @@ async function resolveUser(claims: Record<string, unknown>, config: OidcConfig):
   if (config.link_by_verified_email && email && isEmailVerified(claims)) {
     const byEmail = await queryOne<{ id: number; username: string; role: AppRole }>(
       `SELECT id, username, role FROM users WHERE lower(email) = lower($1) AND oidc_subject IS NULL`,
-      [email]
+      [email],
     );
     if (byEmail) {
       const role = await roleFor(byEmail.role, byEmail.id);
       await query(
         `UPDATE users SET oidc_issuer = $1, oidc_subject = $2, auth_provider = 'oidc', role = $3 WHERE id = $4`,
-        [issuer, sub, role, byEmail.id]
+        [issuer, sub, role, byEmail.id],
       );
       return { id: byEmail.id, username: byEmail.username, role };
     }
@@ -216,7 +249,7 @@ async function resolveUser(claims: Record<string, unknown>, config: OidcConfig):
       `INSERT INTO users (username, email, role, auth_provider, oidc_issuer, oidc_subject)
        VALUES ($1, $2, $3, 'oidc', $4, $5)
        RETURNING id, username, role`,
-      [username, email, role, issuer, sub]
+      [username, email, role, issuer, sub],
     );
     if (!created) throw new Error('Failed to provision user');
     return created;
@@ -231,7 +264,9 @@ async function isLastAdmin(userId: number): Promise<boolean> {
   const row = await queryOne<{ n: string }>(
     `SELECT COUNT(*)::text AS n FROM users WHERE role = 'admin' AND id <> $1
        AND NOT EXISTS (SELECT 1 FROM user_site_roles r WHERE r.user_id = users.id)
-       AND NOT EXISTS (SELECT 1 FROM user_group_roles g WHERE g.user_id = users.id)`, [userId]);
+       AND NOT EXISTS (SELECT 1 FROM user_group_roles g WHERE g.user_id = users.id)`,
+    [userId],
+  );
   return Number(row?.n ?? 0) === 0;
 }
 

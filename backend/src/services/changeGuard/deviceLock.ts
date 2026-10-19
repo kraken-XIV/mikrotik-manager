@@ -38,13 +38,24 @@ const RELEASE_IF_OWNER =
 function withTimeout<T>(p: Promise<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('redis timeout')), REDIS_TIMEOUT_MS);
-    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
   });
 }
 
 /** Put the lock back to `token` after a guarded change inside this request released it. */
 export async function restoreHeldLock(deviceId: number, token: string): Promise<void> {
-  await withTimeout(redis.set(deviceLockKey(deviceId), token, 'EX', WRITE_LOCK_TTL_SEC)).catch(() => {});
+  await withTimeout(redis.set(deviceLockKey(deviceId), token, 'EX', WRITE_LOCK_TTL_SEC)).catch(
+    () => {},
+  );
 }
 
 /**
@@ -54,16 +65,26 @@ export async function restoreHeldLock(deviceId: number, token: string): Promise<
  */
 export function deviceWriteLock(getDeviceId: (req: Request) => number | null) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') { next(); return; }
+    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+      next();
+      return;
+    }
     const deviceId = getDeviceId(req);
-    if (!deviceId) { next(); return; }
-    if (heldLockToken(deviceId)) { next(); return; }
+    if (!deviceId) {
+      next();
+      return;
+    }
+    if (heldLockToken(deviceId)) {
+      next();
+      return;
+    }
 
     const key = deviceLockKey(deviceId);
     const token = randomBytes(8).toString('hex');
     let acquired: boolean;
     try {
-      acquired = (await withTimeout(redis.set(key, token, 'EX', WRITE_LOCK_TTL_SEC, 'NX'))) === 'OK';
+      acquired =
+        (await withTimeout(redis.set(key, token, 'EX', WRITE_LOCK_TTL_SEC, 'NX'))) === 'OK';
     } catch {
       // Redis unavailable: don't block writes, as Change Guard itself doesn't.
       next();
@@ -77,10 +98,11 @@ export function deviceWriteLock(getDeviceId: (req: Request) => number | null) {
       const ttl = holder === '1' ? await withTimeout(redis.ttl(key)).catch(() => -1) : -1;
       res.status(409).json({
         code: 'device_busy',
-        error: ttl > 0
-          ? `A protected change to this device is still in progress or being verified (for up to ${ttl}s). ` +
-            'Try again after that.'
-          : 'Another change to this device is being applied right now. Try again in a few seconds.',
+        error:
+          ttl > 0
+            ? `A protected change to this device is still in progress or being verified (for up to ${ttl}s). ` +
+              'Try again after that.'
+            : 'Another change to this device is being applied right now. Try again in a few seconds.',
       });
       return;
     }

@@ -45,13 +45,16 @@ export function parseRosVersion(raw: string | null | undefined): Parsed | null {
     parts,
     // Final releases outrank every pre-release of the same number, so they sort
     // last rather than first.
-    preRank: pre ? PRERELEASE_RANK[pre] ?? 1 : Number.MAX_SAFE_INTEGER,
+    preRank: pre ? (PRERELEASE_RANK[pre] ?? 1) : Number.MAX_SAFE_INTEGER,
     preNum: m[3] ? parseInt(m[3], 10) : 0,
   };
 }
 
 /** -1 if a < b, 0 if equal, 1 if a > b. Unparseable versions compare as equal. */
-export function compareRosVersions(a: string | null | undefined, b: string | null | undefined): number {
+export function compareRosVersions(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): number {
   const pa = parseRosVersion(a);
   const pb = parseRosVersion(b);
   if (!pa || !pb) return 0;
@@ -72,7 +75,7 @@ export function compareRosVersions(a: string | null | undefined, b: string | nul
 /** True only when `candidate` is genuinely later than `current`. */
 export function isNewerRosVersion(
   candidate: string | null | undefined,
-  current: string | null | undefined
+  current: string | null | undefined,
 ): boolean {
   return compareRosVersions(candidate, current) > 0;
 }

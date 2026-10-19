@@ -12,12 +12,13 @@ const DEFAULT_DEV_ORIGINS = [
   'https://127.0.0.1',
 ];
 
-type Resolved =
-  | { kind: 'wildcard' }
-  | { kind: 'list'; allowed: string[] };
+type Resolved = { kind: 'wildcard' } | { kind: 'list'; allowed: string[] };
 
 function parseList(raw: string): string[] {
-  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 function resolveCors(): Resolved {

@@ -16,7 +16,9 @@ const ids = (s: Set<string>) => [...s].sort();
 
 describe('device view of the topology (#305)', () => {
   it('one hop is the device and its direct neighbours', () => {
-    expect(ids(nodesWithinHops('dist1', edges, 1))).toEqual(['access1', 'clients-access1', 'client-aa', 'core', 'dist1', 'ext-1'].sort());
+    expect(ids(nodesWithinHops('dist1', edges, 1))).toEqual(
+      ['access1', 'clients-access1', 'client-aa', 'core', 'dist1', 'ext-1'].sort(),
+    );
   });
 
   it('two hops go through unmanaged neighbours too', () => {

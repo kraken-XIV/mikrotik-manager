@@ -19,9 +19,19 @@ import { Issuer } from 'openid-client';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 import { rateLimitRedis } from '../middleware/rateLimitRedis';
 import {
-  loadOidcConfig, saveOidcConfig, maskedConfig, APP_ROLES, type AppRole, type OidcConfig,
+  loadOidcConfig,
+  saveOidcConfig,
+  maskedConfig,
+  APP_ROLES,
+  type AppRole,
+  type OidcConfig,
 } from '../services/oidc/oidcConfig';
-import { beginLogin, completeLogin, resetOidcClientCache, bindingHash } from '../services/oidc/OidcService';
+import {
+  beginLogin,
+  completeLogin,
+  resetOidcClientCache,
+  bindingHash,
+} from '../services/oidc/OidcService';
 import { logSafe } from '../utils/logSafe';
 
 const router = Router();
@@ -48,9 +58,10 @@ export function ssoErrorCode(message: string, fromProvider = false): string {
 
 // ─── Browser binding and the single-use code (S2, S4) ───────────────────────────
 const BIND_COOKIE = 'mtm_oidc';
-const BIND_TTL_S = 600;          // as long as a login may take at the provider
-const CODE_TTL_S = 60;           // the SPA exchanges the code straight away
-const codeKey = (code: string): string => `oidc:code:${createHash('sha256').update(code).digest('hex')}`;
+const BIND_TTL_S = 600; // as long as a login may take at the provider
+const CODE_TTL_S = 60; // the SPA exchanges the code straight away
+const codeKey = (code: string): string =>
+  `oidc:code:${createHash('sha256').update(code).digest('hex')}`;
 
 function bindingCookie(req: Request): string | null {
   for (const part of (req.headers.cookie || '').split(';')) {
@@ -63,7 +74,13 @@ function bindingCookie(req: Request): string | null {
 function setBindingCookie(req: Request, res: Response, value: string, maxAgeS: number): void {
   // Only the SSO endpoints receive it. Lax, because the provider's redirect
   // back is a top-level navigation from another site.
-  const attrs = [`${BIND_COOKIE}=${encodeURIComponent(value)}`, 'Path=/api/auth/oidc', 'HttpOnly', 'SameSite=Lax', `Max-Age=${maxAgeS}`];
+  const attrs = [
+    `${BIND_COOKIE}=${encodeURIComponent(value)}`,
+    'Path=/api/auth/oidc',
+    'HttpOnly',
+    'SameSite=Lax',
+    `Max-Age=${maxAgeS}`,
+  ];
   if (req.secure) attrs.push('Secure');
   res.append('Set-Cookie', attrs.join('; '));
 }
@@ -106,7 +123,7 @@ router.get(
       console.warn('[OIDC] login could not start:', (e as Error).message);
       res.redirect(`/login?error=sso&code=${ssoErrorCode((e as Error).message)}`);
     }
-  }
+  },
 );
 
 // ─── Public: IdP redirect target ────────────────────────────────────────────────
@@ -118,7 +135,11 @@ router.get(
       const params = req.query as Record<string, string>;
       if (params.error) {
         // Provider-supplied text, so made log-safe (CodeQL #110/#111).
-        console.warn('[OIDC] the provider returned an error:', logSafe(params.error), logSafe(params.error_description || ''));
+        console.warn(
+          '[OIDC] the provider returned an error:',
+          logSafe(params.error),
+          logSafe(params.error_description || ''),
+        );
         res.redirect('/login?error=sso&code=provider');
         return;
       }
@@ -126,14 +147,21 @@ router.get(
       // A single-use code, good for a minute and only in this browser. The
       // session itself is issued when the SPA exchanges it.
       const code = randomBytes(32).toString('base64url');
-      await redis.set(codeKey(code), JSON.stringify({ userId: user.id, bindHash }), 'EX', CODE_TTL_S);
+      await redis.set(
+        codeKey(code),
+        JSON.stringify({ userId: user.id, bindHash }),
+        'EX',
+        CODE_TTL_S,
+      );
       const dest = safeReturnTo(returnTo);
-      res.redirect(`/auth/callback#code=${encodeURIComponent(code)}&returnTo=${encodeURIComponent(dest)}`);
+      res.redirect(
+        `/auth/callback#code=${encodeURIComponent(code)}&returnTo=${encodeURIComponent(dest)}`,
+      );
     } catch (e) {
       console.warn('[OIDC] sign-in failed:', (e as Error).message);
       res.redirect(`/login?error=sso&code=${ssoErrorCode((e as Error).message)}`);
     }
-  }
+  },
 );
 
 // ─── Public: exchange the single-use code for a session (S4) ────────────────────
@@ -145,17 +173,27 @@ router.post(
     const binding = bindingCookie(req);
     setBindingCookie(req, res, '', 0); // done with it either way
     const raw = code ? await redis.getdel(codeKey(code)) : null;
-    const rec = raw ? JSON.parse(raw) as { userId: number; bindHash: string } : null;
+    const rec = raw ? (JSON.parse(raw) as { userId: number; bindHash: string }) : null;
     // A code from a login this browser didn't start is refused: that is the
     // login-CSRF the fragment token allowed.
     if (!rec || !binding || bindingHash(binding) !== rec.bindHash) {
-      return res.status(400).json({ error: 'This sign-in link has expired or belongs to another browser. Sign in again.' });
+      return res.status(400).json({
+        error: 'This sign-in link has expired or belongs to another browser. Sign in again.',
+      });
     }
-    const user = await queryOne<{ id: number; username: string; role: string; must_change_password: boolean; session_version: number }>(
-      `SELECT id, username, role, must_change_password, session_version FROM users WHERE id = $1`, [rec.userId]);
+    const user = await queryOne<{
+      id: number;
+      username: string;
+      role: string;
+      must_change_password: boolean;
+      session_version: number;
+    }>(
+      `SELECT id, username, role, must_change_password, session_version FROM users WHERE id = $1`,
+      [rec.userId],
+    );
     if (!user) return res.status(400).json({ error: 'Account not found' });
     return res.json(await sessionResponse(user));
-  }
+  },
 );
 
 // ─── Admin: read config (secret masked) ─────────────────────────────────────────
@@ -176,7 +214,10 @@ router.put('/config', requireAuth, requireAdmin, async (req: Request, res: Respo
     // Auto-provisioning strangers straight to admin is almost never intended —
     // admin must be granted via an explicit group mapping, not the fallback.
     if (body.default_role === 'admin') {
-      return res.status(400).json({ error: 'default_role cannot be admin — grant admin via an explicit group → role mapping instead' });
+      return res.status(400).json({
+        error:
+          'default_role cannot be admin — grant admin via an explicit group → role mapping instead',
+      });
     }
   }
   if (body.group_role_map !== undefined) {
@@ -184,19 +225,28 @@ router.put('/config', requireAuth, requireAdmin, async (req: Request, res: Respo
       return res.status(400).json({ error: 'group_role_map must be an object' });
     }
     for (const r of Object.values(body.group_role_map)) {
-      if (!validRole(r)) return res.status(400).json({ error: `Invalid role in group_role_map: ${String(r)}` });
+      if (!validRole(r))
+        return res.status(400).json({ error: `Invalid role in group_role_map: ${String(r)}` });
     }
   }
   if (body.enabled && body.issuer_url !== undefined) {
-    try { new URL(body.issuer_url); } catch { return res.status(400).json({ error: 'issuer_url must be a valid URL' }); }
+    try {
+      new URL(body.issuer_url);
+    } catch {
+      return res.status(400).json({ error: 'issuer_url must be a valid URL' });
+    }
   }
 
   // An admin signed in through SSO has no local password: turning SSO off, or
   // pointing it at another provider, would lock them out on their next
   // sign-in (#227). That change has to come from a local admin account.
-  const me = await queryOne<{ auth_provider: string; oidc_issuer: string | null; has_password: boolean }>(
+  const me = await queryOne<{
+    auth_provider: string;
+    oidc_issuer: string | null;
+    has_password: boolean;
+  }>(
     `SELECT auth_provider, oidc_issuer, password_hash IS NOT NULL AS has_password FROM users WHERE id = $1`,
-    [req.user!.userId]
+    [req.user!.userId],
   );
   if (me && me.auth_provider === 'oidc' && !me.has_password) {
     const current = await loadOidcConfig();
@@ -210,7 +260,8 @@ router.put('/config', requireAuth, requireAdmin, async (req: Request, res: Respo
       return t.slice(0, end);
     };
     const sameIssuer = (a?: string | null, b?: string | null) => trimSlashes(a) === trimSlashes(b);
-    const movingIssuer = body.issuer_url !== undefined && !sameIssuer(body.issuer_url, current.issuer_url);
+    const movingIssuer =
+      body.issuer_url !== undefined && !sameIssuer(body.issuer_url, current.issuer_url);
     if (disabling || movingIssuer) {
       return res.status(409).json({
         error: disabling

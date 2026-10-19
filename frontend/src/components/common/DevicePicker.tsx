@@ -37,14 +37,27 @@ interface Props<T extends PickerDevice> {
  * large fleet doesn't mean scrolling through hundreds of names.
  */
 export default function DevicePicker<T extends PickerDevice>({
-  devices, value, onChange, placeholder = 'Choose a device', emptyLabel, describe, unavailable,
-  className, disabled, variant = 'input', id, 'aria-label': ariaLabel, title,
+  devices,
+  value,
+  onChange,
+  placeholder = 'Choose a device',
+  emptyLabel,
+  describe,
+  unavailable,
+  className,
+  disabled,
+  variant = 'input',
+  id,
+  'aria-label': ariaLabel,
+  title,
 }: Props<T>) {
   const compact = variant === 'filter';
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [active, setActive] = useState(0);
-  const [pos, setPos] = useState<{ left: number; top: number; width: number; up: boolean } | null>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; width: number; up: boolean } | null>(
+    null,
+  );
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -54,13 +67,17 @@ export default function DevicePicker<T extends PickerDevice>({
   // app's ['sites'] query, so usually already loaded.
   const needSites = devices.some((d) => d.site_id != null && !d.site_name);
   const { data: sites } = useQuery({
-    queryKey: ['sites'], queryFn: () => sitesApi.list().then((r) => r.data),
-    staleTime: 300_000, enabled: needSites,
+    queryKey: ['sites'],
+    queryFn: () => sitesApi.list().then((r) => r.data),
+    staleTime: 300_000,
+    enabled: needSites,
   });
   const rows = useMemo(() => {
     if (!needSites || !sites) return devices;
     const names = new Map(sites.map((s) => [s.id, s.name]));
-    return devices.map((d) => (d.site_name || d.site_id == null ? d : { ...d, site_name: names.get(d.site_id) ?? null }));
+    return devices.map((d) =>
+      d.site_name || d.site_id == null ? d : { ...d, site_name: names.get(d.site_id) ?? null },
+    );
   }, [devices, sites, needSites]);
   const manySites = useMemo(() => new Set(rows.map((d) => d.site_name ?? '')).size > 1, [rows]);
 
@@ -72,7 +89,7 @@ export default function DevicePicker<T extends PickerDevice>({
     [emptyLabel, text, shown],
   );
 
-  const selected = value == null ? null : rows.find((d) => d.id === value) ?? null;
+  const selected = value == null ? null : (rows.find((d) => d.id === value) ?? null);
 
   const place = () => {
     const r = buttonRef.current?.getBoundingClientRect();
@@ -135,20 +152,38 @@ export default function DevicePicker<T extends PickerDevice>({
   }, [open]);
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(options.length - 1, a + 1)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
-    else if (e.key === 'PageDown') { e.preventDefault(); setActive((a) => Math.min(options.length - 1, a + 10)); }
-    else if (e.key === 'PageUp') { e.preventDefault(); setActive((a) => Math.max(0, a - 10)); }
-    else if (e.key === 'Enter') { e.preventDefault(); if (options.length) choose(options.find((_, i) => i === active) ?? null); }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((a) => Math.min(options.length - 1, a + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((a) => Math.max(0, a - 1));
+    } else if (e.key === 'PageDown') {
+      e.preventDefault();
+      setActive((a) => Math.min(options.length - 1, a + 10));
+    } else if (e.key === 'PageUp') {
+      e.preventDefault();
+      setActive((a) => Math.max(0, a - 10));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (options.length) choose(options.find((_, i) => i === active) ?? null);
+    }
     // Closes the list, not the dialog it sits in.
-    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.nativeEvent.stopPropagation(); close(); }
-    else if (e.key === 'Tab') close(false);
+    else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      e.nativeEvent.stopPropagation();
+      close();
+    } else if (e.key === 'Tab') close(false);
   };
 
   const label = (d: T) => {
     const extra = describe?.(d);
     const off = d.status && d.status !== 'online' ? d.status : null;
-    return { main: d.name.trim(), sub: [d.ip_address, manySites ? d.site_name : null, extra, off].filter(Boolean).join(' · ') };
+    return {
+      main: d.name.trim(),
+      sub: [d.ip_address, manySites ? d.site_name : null, extra, off].filter(Boolean).join(' · '),
+    };
   };
 
   return (
@@ -167,105 +202,166 @@ export default function DevicePicker<T extends PickerDevice>({
           compact
             ? 'mono text-[11.5px] px-[8px] py-[4px] rounded-[5px] bg-transparent outline-none flex items-center gap-1.5 text-left max-w-[14rem] focus-visible:ring-2'
             : 'input flex items-center gap-2 text-left',
-          'disabled:opacity-60', className)}
+          'disabled:opacity-60',
+          className,
+        )}
         style={compact ? { border: '1px solid var(--line)' } : undefined}
         onClick={() => (open ? close() : openList())}
         onKeyDown={(e) => {
           if (open) return;
-          if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openList(); }
+          if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openList();
+          }
           // Typing on the closed picker starts a search with that letter.
-          else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); openList(e.key); }
+          else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            openList(e.key);
+          }
         }}
       >
-        <span className="flex-1 truncate" style={{
-          color: compact ? (selected ? 'var(--ink)' : 'var(--ink-3)')
-            : selected || (value == null && emptyLabel) ? 'var(--ink)' : 'var(--ink-4)',
-        }}>
+        <span
+          className="flex-1 truncate"
+          style={{
+            color: compact
+              ? selected
+                ? 'var(--ink)'
+                : 'var(--ink-3)'
+              : selected || (value == null && emptyLabel)
+                ? 'var(--ink)'
+                : 'var(--ink-4)',
+          }}
+        >
           {selected ? (
             <>
               {selected.name.trim()}
-              {!compact && selected.ip_address && <span style={{ color: 'var(--ink-4)' }}> ({selected.ip_address})</span>}
+              {!compact && selected.ip_address && (
+                <span style={{ color: 'var(--ink-4)' }}> ({selected.ip_address})</span>
+              )}
             </>
-          ) : value == null && emptyLabel ? emptyLabel : placeholder}
+          ) : value == null && emptyLabel ? (
+            emptyLabel
+          ) : (
+            placeholder
+          )}
         </span>
-        <ChevronDown className={clsx(compact ? 'w-3 h-3' : 'w-4 h-4', 'flex-shrink-0 transition-transform', open && 'rotate-180')} style={{ color: 'var(--ink-4)' }} />
+        <ChevronDown
+          className={clsx(
+            compact ? 'w-3 h-3' : 'w-4 h-4',
+            'flex-shrink-0 transition-transform',
+            open && 'rotate-180',
+          )}
+          style={{ color: 'var(--ink-4)' }}
+        />
       </button>
-      {open && pos && createPortal(
-        <div
-          ref={panelRef}
-          // Rendered outside the page, but React still bubbles its events to
-          // the picker's parents: a dialog that closes on a backdrop click
-          // must not see a click on an option.
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="fixed z-[1000] rounded-lg shadow-lg flex flex-col"
-          style={{
-            left: pos.left, width: pos.width,
-            ...(pos.up ? { bottom: window.innerHeight - pos.top } : { top: pos.top }),
-            background: 'var(--surface)', border: '1px solid var(--line)', maxHeight: 340,
-          }}
-        >
-          <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: '1px solid var(--line)' }}>
-            <Search className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--ink-4)' }} />
-            <input
-              autoFocus
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={onKey}
-              placeholder="Name, address, site or model"
-              className="flex-1 bg-transparent text-sm outline-none"
-              style={{ color: 'var(--ink)' }}
-              role="combobox"
-              aria-expanded
-              aria-controls={listId}
-              aria-activedescendant={options.length ? `${listId}-${active}` : undefined}
-              aria-label="Search devices"
-            />
-          </div>
-          <ul ref={listRef} id={listId} role="listbox" className="overflow-y-auto py-1 text-sm">
-            {options.map((d, i) => {
-              const why = d ? unavailable?.(d) : null;
-              const l = d ? label(d) : null;
-              const isSel = (d ? d.id : null) === value;
-              return (
-                <li
-                  key={d ? d.id : 'none'}
-                  id={`${listId}-${i}`}
-                  data-index={i}
-                  role="option"
-                  aria-selected={isSel}
-                  aria-disabled={!!why}
-                  onMouseEnter={() => setActive(i)}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => choose(d)}
-                  className={clsx('px-3 py-1.5', why ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')}
-                  style={{ background: i === active ? 'var(--surface-3)' : undefined }}
-                >
-                  {d && l ? (
-                    <div className="flex items-baseline gap-2 min-w-0">
-                      <span className={clsx('truncate flex-shrink-0 max-w-[75%]', isSel && 'font-semibold')} style={{ color: 'var(--ink)' }} title={l.main}>{l.main}</span>
-                      {(l.sub || why) && (
-                        <span className="truncate min-w-0 text-xs" style={{ color: 'var(--ink-4)' }}>{why ?? l.sub}</span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className={clsx(isSel && 'font-semibold')} style={{ color: 'var(--ink-2)' }}>{emptyLabel}</span>
-                  )}
+      {open &&
+        pos &&
+        createPortal(
+          <div
+            ref={panelRef}
+            // Rendered outside the page, but React still bubbles its events to
+            // the picker's parents: a dialog that closes on a backdrop click
+            // must not see a click on an option.
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="fixed z-[1000] rounded-lg shadow-lg flex flex-col"
+            style={{
+              left: pos.left,
+              width: pos.width,
+              ...(pos.up ? { bottom: window.innerHeight - pos.top } : { top: pos.top }),
+              background: 'var(--surface)',
+              border: '1px solid var(--line)',
+              maxHeight: 340,
+            }}
+          >
+            <div
+              className="flex items-center gap-2 px-3 py-2"
+              style={{ borderBottom: '1px solid var(--line)' }}
+            >
+              <Search className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--ink-4)' }} />
+              <input
+                autoFocus
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={onKey}
+                placeholder="Name, address, site or model"
+                className="flex-1 bg-transparent text-sm outline-none"
+                style={{ color: 'var(--ink)' }}
+                role="combobox"
+                aria-expanded
+                aria-controls={listId}
+                aria-activedescendant={options.length ? `${listId}-${active}` : undefined}
+                aria-label="Search devices"
+              />
+            </div>
+            <ul ref={listRef} id={listId} role="listbox" className="overflow-y-auto py-1 text-sm">
+              {options.map((d, i) => {
+                const why = d ? unavailable?.(d) : null;
+                const l = d ? label(d) : null;
+                const isSel = (d ? d.id : null) === value;
+                return (
+                  <li
+                    key={d ? d.id : 'none'}
+                    id={`${listId}-${i}`}
+                    data-index={i}
+                    role="option"
+                    aria-selected={isSel}
+                    aria-disabled={!!why}
+                    onMouseEnter={() => setActive(i)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => choose(d)}
+                    className={clsx(
+                      'px-3 py-1.5',
+                      why ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+                    )}
+                    style={{ background: i === active ? 'var(--surface-3)' : undefined }}
+                  >
+                    {d && l ? (
+                      <div className="flex items-baseline gap-2 min-w-0">
+                        <span
+                          className={clsx(
+                            'truncate flex-shrink-0 max-w-[75%]',
+                            isSel && 'font-semibold',
+                          )}
+                          style={{ color: 'var(--ink)' }}
+                          title={l.main}
+                        >
+                          {l.main}
+                        </span>
+                        {(l.sub || why) && (
+                          <span
+                            className="truncate min-w-0 text-xs"
+                            style={{ color: 'var(--ink-4)' }}
+                          >
+                            {why ?? l.sub}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span
+                        className={clsx(isSel && 'font-semibold')}
+                        style={{ color: 'var(--ink-2)' }}
+                      >
+                        {emptyLabel}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+              {matches.length === 0 && (
+                <li className="px-3 py-2 text-xs" style={{ color: 'var(--ink-4)' }}>
+                  No device matches “{text.trim()}”.
                 </li>
-              );
-            })}
-            {matches.length === 0 && (
-              <li className="px-3 py-2 text-xs" style={{ color: 'var(--ink-4)' }}>No device matches “{text.trim()}”.</li>
-            )}
-            {matches.length > shown.length && (
-              <li className="px-3 py-2 text-xs" style={{ color: 'var(--ink-4)' }}>
-                {matches.length - shown.length} more. Type to narrow the list.
-              </li>
-            )}
-          </ul>
-        </div>,
-        document.body,
-      )}
+              )}
+              {matches.length > shown.length && (
+                <li className="px-3 py-2 text-xs" style={{ color: 'var(--ink-4)' }}>
+                  {matches.length - shown.length} more. Type to narrow the list.
+                </li>
+              )}
+            </ul>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

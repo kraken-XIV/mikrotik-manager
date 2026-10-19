@@ -9,11 +9,18 @@
  */
 
 export interface APBandEntry {
-  bssid: string; vendor: string; signal: number;
-  freq: number; band: string; channel_width: string;
+  bssid: string;
+  vendor: string;
+  signal: number;
+  freq: number;
+  band: string;
+  channel_width: string;
 }
 export interface APNetworkEntry {
-  ssid: string; security: string; hidden: boolean; entries: APBandEntry[];
+  ssid: string;
+  security: string;
+  hidden: boolean;
+  entries: APBandEntry[];
 }
 
 const NO_SIGNAL = -100;
@@ -70,16 +77,30 @@ export function aggregateAPScanRows(
       if (!byKey.has(key)) byKey.set(key, { ssid, security, hidden: !ssid, entries: [] });
       const net = byKey.get(key)!;
       // A streaming scan repeats rows; an early one may lack fields a later one has.
-      if ((net.security === 'open' || net.security === 'unknown') && security !== 'open' && security !== 'unknown') net.security = security;
+      if (
+        (net.security === 'open' || net.security === 'unknown') &&
+        security !== 'open' &&
+        security !== 'unknown'
+      )
+        net.security = security;
       const existing = net.entries.find((e) => e.bssid === bssid && e.freq === freq);
       if (existing) {
         if (signal > existing.signal) existing.signal = signal;
       } else {
-        net.entries.push({ bssid, vendor: lookupVendor(bssid), signal, freq, band, channel_width: channelWidth });
+        net.entries.push({
+          bssid,
+          vendor: lookupVendor(bssid),
+          signal,
+          freq,
+          band,
+          channel_width: channelWidth,
+        });
       }
     }
   }
 
-  return Array.from(byKey.values()).sort((a, b) =>
-    Math.max(...b.entries.map((e) => e.signal)) - Math.max(...a.entries.map((e) => e.signal)));
+  return Array.from(byKey.values()).sort(
+    (a, b) =>
+      Math.max(...b.entries.map((e) => e.signal)) - Math.max(...a.entries.map((e) => e.signal)),
+  );
 }

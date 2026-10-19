@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, Loader2, AlertTriangle, CheckCircle2, XCircle, MinusCircle, RefreshCw } from 'lucide-react';
+import {
+  KeyRound,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  MinusCircle,
+  RefreshCw,
+} from 'lucide-react';
 import clsx from 'clsx';
 import { sshFleetApi, tagsApi, type FleetKeyJob } from '../../services/api';
 import { useSiteStore } from '../../store/siteStore';
@@ -25,7 +33,11 @@ export default function FleetSshKeysCard() {
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [acknowledged, setAcknowledged] = useState(false);
   const [jobId, setJobId] = useState<string | null>(() => {
-    try { return localStorage.getItem(JOB_KEY); } catch { return null; }
+    try {
+      return localStorage.getItem(JOB_KEY);
+    } catch {
+      return null;
+    }
   });
   const [startError, setStartError] = useState('');
 
@@ -55,12 +67,18 @@ export default function FleetSshKeysCard() {
   }, [job.isError]);
 
   // Changing scope invalidates the acknowledgement: it was given for a list.
-  useEffect(() => { setAcknowledged(false); }, [siteId, tagIds]);
+  useEffect(() => {
+    setAcknowledged(false);
+  }, [siteId, tagIds]);
 
   const start = useMutation({
     mutationFn: (ids: number[]) => sshFleetApi.start(ids).then((r) => r.data),
     onSuccess: (r) => {
-      try { localStorage.setItem(JOB_KEY, r.job_id); } catch { /* private mode */ }
+      try {
+        localStorage.setItem(JOB_KEY, r.job_id);
+      } catch {
+        /* private mode */
+      }
       setJobId(r.job_id);
       setStartError('');
     },
@@ -76,7 +94,11 @@ export default function FleetSshKeysCard() {
   });
 
   function forgetJob() {
-    try { localStorage.removeItem(JOB_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(JOB_KEY);
+    } catch {
+      /* ignore */
+    }
     setJobId(null);
     setAcknowledged(false);
     qc.invalidateQueries({ queryKey: ['ssh-fleet-preview'] });
@@ -98,7 +120,8 @@ export default function FleetSshKeysCard() {
           <h2 className="font-semibold text-gray-900 dark:text-white">SSH keys for the fleet</h2>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             Installs a separate key on each device, so backups, config export and bulk commands stop
-            using passwords over SSH. One device at a time, in the background. You can leave this page.
+            using passwords over SSH. One device at a time, in the background. You can leave this
+            page.
           </p>
         </div>
       </div>
@@ -112,8 +135,15 @@ export default function FleetSshKeysCard() {
         </div>
       </div>
 
-      {jobId ? <JobView job={job.data} loading={job.isLoading} onCancel={() => cancel.mutate()}
-                        cancelling={cancel.isPending} onDone={forgetJob} /> : (
+      {jobId ? (
+        <JobView
+          job={job.data}
+          loading={job.isLoading}
+          onCancel={() => cancel.mutate()}
+          cancelling={cancel.isPending}
+          onDone={forgetJob}
+        />
+      ) : (
         <>
           {tags.length > 0 && (
             <div>
@@ -130,10 +160,13 @@ export default function FleetSshKeysCard() {
                       'px-2 py-0.5 rounded-full text-xs border',
                       tagIds.includes(t.id)
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300'
+                        : 'border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300',
                     )}
                   >
-                    <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: t.color }} />
+                    <span
+                      className="inline-block w-2 h-2 rounded-full mr-1 align-middle"
+                      style={{ background: t.color }}
+                    />
                     {t.name}
                   </button>
                 ))}
@@ -142,89 +175,124 @@ export default function FleetSshKeysCard() {
           )}
 
           {preview.isLoading ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400"><Loader2 className="w-4 h-4 animate-spin" /> Checking devices…</div>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Loader2 className="w-4 h-4 animate-spin" /> Checking devices…
+            </div>
           ) : preview.isError ? (
             <div className="text-sm text-red-600">Could not load the preview.</div>
-          ) : p && (
-            <>
-              <div className="text-sm text-gray-700 dark:text-slate-300">
-                <strong>{p.eligible.length}</strong> will get a key ·{' '}
-                {p.keyed.length} already have one · {p.skipped.length} skipped
-                <button onClick={() => preview.refetch()} className="ml-2 text-gray-400 hover:text-gray-600" title="Refresh">
-                  <RefreshCw className={clsx('w-3.5 h-3.5 inline', preview.isFetching && 'animate-spin')} />
-                </button>
-              </div>
-
-              {p.accounts.length > 0 && (
-                <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 text-sm space-y-1">
-                  <div className="text-xs font-medium text-gray-500 dark:text-slate-400">Accounts that will need the key for SSH</div>
-                  {p.accounts.map((a) => (
-                    <div key={a.username} className="text-gray-800 dark:text-slate-200">
-                      <span className="mono">{a.username}</span> on {a.devices} device{a.devices === 1 ? '' : 's'}
-                      {a.via_api_login > 0 && (
-                        <span className="text-gray-500 dark:text-slate-400">
-                          {' '}({a.via_api_login === a.devices ? 'all' : a.via_api_login} using the API login, as no SSH login is stored)
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {p.eligible.length > 0 && (
-                <details className="text-sm">
-                  <summary className="cursor-pointer text-gray-600 dark:text-slate-300">Devices that will get a key ({p.eligible.length})</summary>
-                  <table className="w-full mt-2 text-xs">
-                    <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-                      {p.eligible.map((d) => (
-                        <tr key={d.id}>
-                          <td className="py-1 pr-2 text-gray-900 dark:text-white">{d.name}</td>
-                          <td className="py-1 pr-2 mono text-gray-500">{d.ip_address}</td>
-                          <td className="py-1 pr-2 mono">{d.username}</td>
-                          <td className="py-1 text-gray-500">{d.source === 'api' ? 'API login' : 'SSH login'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </details>
-              )}
-
-              {p.skipped.length > 0 && (
-                <details className="text-sm">
-                  <summary className="cursor-pointer text-gray-600 dark:text-slate-300">Skipped ({p.skipped.length})</summary>
-                  <ul className="mt-2 space-y-1 text-xs">
-                    {p.skipped.map((d) => (
-                      <li key={d.id}><span className="text-gray-900 dark:text-white">{d.name}</span>: <span className="text-gray-500">{d.reason}</span></li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-
-              {p.eligible.length > 0 && (
-                <div className="space-y-3 pt-1">
-                  <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
-                    <input type="checkbox" className="mt-0.5" checked={acknowledged} onChange={(e) => setAcknowledged(e.target.checked)} />
-                    <span>
-                      I understand that password SSH will stop working for{' '}
-                      <strong className="mono">{usernames.join(', ')}</strong> on these {p.eligible.length} device
-                      {p.eligible.length === 1 ? '' : 's'}.
-                    </span>
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-slate-400">
-                    The job stops by itself after {p.halt_after} failures in a row. A device that fails is left as it was.
-                  </p>
-                  {startError && <div className="text-sm text-red-600">{startError}</div>}
+          ) : (
+            p && (
+              <>
+                <div className="text-sm text-gray-700 dark:text-slate-300">
+                  <strong>{p.eligible.length}</strong> will get a key · {p.keyed.length} already
+                  have one · {p.skipped.length} skipped
                   <button
-                    className="btn-primary flex items-center gap-2 text-sm"
-                    disabled={!acknowledged || start.isPending}
-                    onClick={() => start.mutate(p.eligible.map((d) => d.id))}
+                    onClick={() => preview.refetch()}
+                    className="ml-2 text-gray-400 hover:text-gray-600"
+                    title="Refresh"
                   >
-                    {start.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-                    Install keys on {p.eligible.length} device{p.eligible.length === 1 ? '' : 's'}
+                    <RefreshCw
+                      className={clsx('w-3.5 h-3.5 inline', preview.isFetching && 'animate-spin')}
+                    />
                   </button>
                 </div>
-              )}
-            </>
+
+                {p.accounts.length > 0 && (
+                  <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 text-sm space-y-1">
+                    <div className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                      Accounts that will need the key for SSH
+                    </div>
+                    {p.accounts.map((a) => (
+                      <div key={a.username} className="text-gray-800 dark:text-slate-200">
+                        <span className="mono">{a.username}</span> on {a.devices} device
+                        {a.devices === 1 ? '' : 's'}
+                        {a.via_api_login > 0 && (
+                          <span className="text-gray-500 dark:text-slate-400">
+                            {' '}
+                            ({a.via_api_login === a.devices ? 'all' : a.via_api_login} using the API
+                            login, as no SSH login is stored)
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {p.eligible.length > 0 && (
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-gray-600 dark:text-slate-300">
+                      Devices that will get a key ({p.eligible.length})
+                    </summary>
+                    <table className="w-full mt-2 text-xs">
+                      <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                        {p.eligible.map((d) => (
+                          <tr key={d.id}>
+                            <td className="py-1 pr-2 text-gray-900 dark:text-white">{d.name}</td>
+                            <td className="py-1 pr-2 mono text-gray-500">{d.ip_address}</td>
+                            <td className="py-1 pr-2 mono">{d.username}</td>
+                            <td className="py-1 text-gray-500">
+                              {d.source === 'api' ? 'API login' : 'SSH login'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </details>
+                )}
+
+                {p.skipped.length > 0 && (
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-gray-600 dark:text-slate-300">
+                      Skipped ({p.skipped.length})
+                    </summary>
+                    <ul className="mt-2 space-y-1 text-xs">
+                      {p.skipped.map((d) => (
+                        <li key={d.id}>
+                          <span className="text-gray-900 dark:text-white">{d.name}</span>:{' '}
+                          <span className="text-gray-500">{d.reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+
+                {p.eligible.length > 0 && (
+                  <div className="space-y-3 pt-1">
+                    <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5"
+                        checked={acknowledged}
+                        onChange={(e) => setAcknowledged(e.target.checked)}
+                      />
+                      <span>
+                        I understand that password SSH will stop working for{' '}
+                        <strong className="mono">{usernames.join(', ')}</strong> on these{' '}
+                        {p.eligible.length} device
+                        {p.eligible.length === 1 ? '' : 's'}.
+                      </span>
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                      The job stops by itself after {p.halt_after} failures in a row. A device that
+                      fails is left as it was.
+                    </p>
+                    {startError && <div className="text-sm text-red-600">{startError}</div>}
+                    <button
+                      className="btn-primary flex items-center gap-2 text-sm"
+                      disabled={!acknowledged || start.isPending}
+                      onClick={() => start.mutate(p.eligible.map((d) => d.id))}
+                    >
+                      {start.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <KeyRound className="w-4 h-4" />
+                      )}
+                      Install keys on {p.eligible.length} device{p.eligible.length === 1 ? '' : 's'}
+                    </button>
+                  </div>
+                )}
+              </>
+            )
           )}
         </>
       )}
@@ -232,17 +300,35 @@ export default function FleetSshKeysCard() {
   );
 }
 
-function JobView({ job, loading, onCancel, cancelling, onDone }: {
-  job: FleetKeyJob | undefined; loading: boolean; onCancel: () => void; cancelling: boolean; onDone: () => void;
+function JobView({
+  job,
+  loading,
+  onCancel,
+  cancelling,
+  onDone,
+}: {
+  job: FleetKeyJob | undefined;
+  loading: boolean;
+  onCancel: () => void;
+  cancelling: boolean;
+  onDone: () => void;
 }) {
   if (loading || !job) {
-    return <div className="flex items-center gap-2 text-sm text-gray-400"><Loader2 className="w-4 h-4 animate-spin" /> Loading job…</div>;
+    return (
+      <div className="flex items-center gap-2 text-sm text-gray-400">
+        <Loader2 className="w-4 h-4 animate-spin" /> Loading job…
+      </div>
+    );
   }
   const running = RUNNING.includes(job.status);
   const pct = job.total ? Math.round((job.processed / job.total) * 100) : 0;
   const label: Record<FleetKeyJob['status'], string> = {
-    queued: 'Waiting to start', active: 'Running', completed: 'Finished', cancelled: 'Cancelled',
-    halted: 'Stopped', failed: 'Stopped unexpectedly',
+    queued: 'Waiting to start',
+    active: 'Running',
+    completed: 'Finished',
+    cancelled: 'Cancelled',
+    halted: 'Stopped',
+    failed: 'Stopped unexpectedly',
   };
 
   return (
@@ -250,17 +336,28 @@ function JobView({ job, loading, onCancel, cancelling, onDone }: {
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium text-gray-900 dark:text-white">
           {label[job.status]} · {job.processed} of {job.total}
-          {job.current_name && running && <span className="text-gray-500 font-normal"> · {job.current_name}</span>}
+          {job.current_name && running && (
+            <span className="text-gray-500 font-normal"> · {job.current_name}</span>
+          )}
         </span>
         {running ? (
-          <button className="btn-secondary text-xs py-1" onClick={onCancel} disabled={cancelling}>Cancel</button>
+          <button className="btn-secondary text-xs py-1" onClick={onCancel} disabled={cancelling}>
+            Cancel
+          </button>
         ) : (
-          <button className="btn-secondary text-xs py-1" onClick={onDone}>Done</button>
+          <button className="btn-secondary text-xs py-1" onClick={onDone}>
+            Done
+          </button>
         )}
       </div>
       <div className="h-2 rounded bg-gray-100 dark:bg-slate-700 overflow-hidden">
-        <div className={clsx('h-full', job.status === 'halted' || job.status === 'failed' ? 'bg-red-500' : 'bg-blue-600')}
-             style={{ width: `${pct}%` }} />
+        <div
+          className={clsx(
+            'h-full',
+            job.status === 'halted' || job.status === 'failed' ? 'bg-red-500' : 'bg-blue-600',
+          )}
+          style={{ width: `${pct}%` }}
+        />
       </div>
       <div className="text-xs text-gray-600 dark:text-slate-300">
         {job.keyed ?? 0} keyed · {job.failed ?? 0} failed · {job.skipped ?? 0} skipped
@@ -272,11 +369,17 @@ function JobView({ job, loading, onCancel, cancelling, onDone }: {
             {[...job.results].reverse().map((r) => (
               <tr key={r.device_id}>
                 <td className="py-1 pr-2 w-5">
-                  {r.outcome === 'keyed' ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                    : r.outcome === 'failed' ? <XCircle className="w-3.5 h-3.5 text-red-500" />
-                    : <MinusCircle className="w-3.5 h-3.5 text-gray-400" />}
+                  {r.outcome === 'keyed' ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                  ) : r.outcome === 'failed' ? (
+                    <XCircle className="w-3.5 h-3.5 text-red-500" />
+                  ) : (
+                    <MinusCircle className="w-3.5 h-3.5 text-gray-400" />
+                  )}
                 </td>
-                <td className="py-1 pr-2 text-gray-900 dark:text-white whitespace-nowrap">{r.name}</td>
+                <td className="py-1 pr-2 text-gray-900 dark:text-white whitespace-nowrap">
+                  {r.name}
+                </td>
                 <td className="py-1 text-gray-500">{r.message}</td>
               </tr>
             ))}

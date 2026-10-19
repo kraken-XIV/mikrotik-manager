@@ -6,7 +6,12 @@
  * no `discard` (its `reject` drops the route).
  */
 
-const ACTIONS: Record<string, string> = { accept: 'accept', reject: 'reject', discard: 'reject', return: 'return' };
+const ACTIONS: Record<string, string> = {
+  accept: 'accept',
+  reject: 'reject',
+  discard: 'reject',
+  return: 'return',
+};
 const PREFIX = /^[0-9a-fA-F:.]+\/\d{1,3}$/;
 
 export function toV7FilterRule(params: Record<string, string>): Record<string, string> {

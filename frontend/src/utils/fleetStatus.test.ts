@@ -31,16 +31,17 @@ describe('fleetStatus', () => {
   });
 
   it('counts and pluralises unreachable devices', () => {
-    expect(fleetStatus({ total: 4, online: 3, offline: 1 }).headline)
-      .toBe('1 device unreachable');
-    expect(fleetStatus({ total: 4, online: 2, offline: 2 }).sentence)
-      .toBe('2 devices unreachable.');
+    expect(fleetStatus({ total: 4, online: 3, offline: 1 }).headline).toBe('1 device unreachable');
+    expect(fleetStatus({ total: 4, online: 2, offline: 2 }).sentence).toBe(
+      '2 devices unreachable.',
+    );
     expect(fleetStatus({ total: 4, online: 2, offline: 2 }).tone).toBe('warn');
   });
 
   it('never emits undefined or NaN for any input', () => {
     const cases = [
-      undefined, null,
+      undefined,
+      null,
       { total: 0, online: 0, offline: 0 },
       { total: 1, online: 0, offline: 1 },
       { total: 9, online: 9, offline: 0 },
@@ -52,12 +53,18 @@ describe('fleetStatus', () => {
   });
 
   it('reports hardware-degraded devices, alone or alongside unreachable ones (#168)', () => {
-    expect(fleetStatus({ total: 4, online: 4, offline: 0, degraded: 1 }).headline).toBe('1 device degraded');
-    expect(fleetStatus({ total: 4, online: 3, offline: 1, degraded: 2 }).headline).toBe('1 device unreachable · 2 degraded');
+    expect(fleetStatus({ total: 4, online: 4, offline: 0, degraded: 1 }).headline).toBe(
+      '1 device degraded',
+    );
+    expect(fleetStatus({ total: 4, online: 3, offline: 1, degraded: 2 }).headline).toBe(
+      '1 device unreachable · 2 degraded',
+    );
     expect(fleetStatus({ total: 4, online: 4, offline: 0, degraded: 1 }).tone).toBe('warn');
   });
 
   it('does not count expected dropouts as unreachable', () => {
-    expect(fleetStatus({ total: 4, online: 3, offline: 0, intermittent_offline: 1 }).kind).toBe('healthy');
+    expect(fleetStatus({ total: 4, online: 3, offline: 0, intermittent_offline: 1 }).kind).toBe(
+      'healthy',
+    );
   });
 });

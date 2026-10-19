@@ -6,7 +6,7 @@ aggregated carriers.
 Sensitive identifiers were redacted by the contributor. RouterOS 7.24 stable, arm64.
 
 Kept verbatim because every LTE parsing decision in `utils/lte.ts` is calibrated
-against it. Field *names* here differ from MikroTik's documentation in several
+against it. Field _names_ here differ from MikroTik's documentation in several
 places (`data-class` not `access-technology`, `iccid` not `uicc`, `status: running`
 not `connected`), and several documented fields are absent entirely — what a modem
 reports depends on the chipset, not on RouterOS.

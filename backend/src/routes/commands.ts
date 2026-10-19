@@ -31,7 +31,12 @@ import { refuseSecrets } from '../utils/secretAccess';
  * Site-scoped accounts (P1-7): every device named must be one the account can
  * act on at `min`. Answers as "not found" so other sites' ids stay hidden.
  */
-async function refuseForeignDevices(req: Request, res: Response, ids: number[], min: Role): Promise<boolean> {
+async function refuseForeignDevices(
+  req: Request,
+  res: Response,
+  ids: number[],
+  min: Role,
+): Promise<boolean> {
   if (!isSiteScoped(req.user)) return false;
   const denied = await devicesDenied(req.user!, ids, min);
   if (denied.length === 0) return false;
@@ -40,17 +45,38 @@ async function refuseForeignDevices(req: Request, res: Response, ids: number[], 
 }
 
 /** A run is a site-scoped account's only if every device in it is. */
-async function refuseForeignRun(req: Request, res: Response, runId: string | number, min: Role): Promise<boolean> {
+async function refuseForeignRun(
+  req: Request,
+  res: Response,
+  runId: string | number,
+  min: Role,
+): Promise<boolean> {
   if (!isSiteScoped(req.user)) return false;
-  const rows = await query<{ device_id: number }>(`SELECT device_id FROM command_run_devices WHERE run_id = $1`, [runId]);
-  if (rows.length > 0 && (await devicesDenied(req.user!, rows.map((r) => r.device_id), min)).length === 0) return false;
+  const rows = await query<{ device_id: number }>(
+    `SELECT device_id FROM command_run_devices WHERE run_id = $1`,
+    [runId],
+  );
+  if (
+    rows.length > 0 &&
+    (
+      await devicesDenied(
+        req.user!,
+        rows.map((r) => r.device_id),
+        min,
+      )
+    ).length === 0
+  )
+    return false;
   res.status(404).json({ error: 'Run not found' });
   return true;
 }
 
 router.post('/preview', async (req: Request, res: Response) => {
-  const { command, device_ids, wave_size } = req.body as
-    { command?: string; device_ids?: number[]; wave_size?: number };
+  const { command, device_ids, wave_size } = req.body as {
+    command?: string;
+    device_ids?: number[];
+    wave_size?: number;
+  };
 
   if (!command?.trim()) return res.status(400).json({ error: 'command is required' });
   if (!Array.isArray(device_ids) || device_ids.length === 0) {
@@ -61,7 +87,7 @@ router.post('/preview', async (req: Request, res: Response) => {
   const size = Math.max(1, Math.min(50, Number(wave_size) || 1));
   const devices = await query<{ id: number; name: string; ip_address: string; status: string }>(
     `SELECT id, name, ip_address, status FROM devices WHERE id = ANY($1::int[]) ORDER BY name`,
-    [device_ids]
+    [device_ids],
   );
 
   // Devices without any SSH credential cannot be reached at all; saying so now
@@ -70,7 +96,7 @@ router.post('/preview', async (req: Request, res: Response) => {
     `SELECT d.id, d.name FROM devices d
       WHERE d.id = ANY($1::int[])
         AND d.ssh_username IS NULL AND d.api_username IS NULL`,
-    [device_ids]
+    [device_ids],
   );
 
   res.json({
@@ -86,10 +112,23 @@ router.post('/preview', async (req: Request, res: Response) => {
 // POST /api/commands/runs — create a run, optionally starting it immediately
 router.post('/runs', requireWrite, async (req: Request, res: Response) => {
   const {
-    name, command, device_ids, wave_size, halt_on_failure, use_change_guard, start, acknowledge_risk,
+    name,
+    command,
+    device_ids,
+    wave_size,
+    halt_on_failure,
+    use_change_guard,
+    start,
+    acknowledge_risk,
   } = req.body as {
-    name?: string; command?: string; device_ids?: number[]; wave_size?: number;
-    halt_on_failure?: boolean; use_change_guard?: boolean; start?: boolean; acknowledge_risk?: boolean;
+    name?: string;
+    command?: string;
+    device_ids?: number[];
+    wave_size?: number;
+    halt_on_failure?: boolean;
+    use_change_guard?: boolean;
+    start?: boolean;
+    acknowledge_risk?: boolean;
   };
 
   if (!command?.trim()) return res.status(400).json({ error: 'command is required' });
@@ -127,17 +166,19 @@ router.post('/runs', requireWrite, async (req: Request, res: Response) => {
       // gets the protected behaviour.
       use_change_guard !== false,
       (req as unknown as { user?: { username?: string } }).user?.username ?? null,
-    ]
+    ],
   );
 
   const ordered = await query<{ id: number }>(
-    `SELECT id FROM devices WHERE id = ANY($1::int[]) ORDER BY name`, [device_ids]
+    `SELECT id FROM devices WHERE id = ANY($1::int[]) ORDER BY name`,
+    [device_ids],
   );
   for (const [i, d] of ordered.entries()) {
-    await query(
-      `INSERT INTO command_run_devices (run_id, device_id, wave) VALUES ($1,$2,$3)`,
-      [run!.id, d.id, Math.floor(i / size) + 1]
-    );
+    await query(`INSERT INTO command_run_devices (run_id, device_id, wave) VALUES ($1,$2,$3)`, [
+      run!.id,
+      d.id,
+      Math.floor(i / size) + 1,
+    ]);
   }
 
   if (start) {
@@ -156,10 +197,16 @@ router.get('/runs', async (req: Request, res: Response) => {
   const memberFilter = siteScopeByDevice(activeSite(req), 'crd.device_id');
   // A site-scoped account sees only runs entirely within its own sites (P1-7):
   // a run that also touched another site's devices would show them.
-  const ownSites = isSiteScoped(req.user) ? siteScopeByDevice(Object.keys(req.user!.siteRoles!).map(Number), 'x.device_id') : null;
+  const ownSites = isSiteScoped(req.user)
+    ? siteScopeByDevice(Object.keys(req.user!.siteRoles!).map(Number), 'x.device_id')
+    : null;
   const conditions = [
-    memberFilter ? `EXISTS (SELECT 1 FROM command_run_devices crd WHERE crd.run_id = r.id AND ${memberFilter})` : null,
-    ownSites ? `NOT EXISTS (SELECT 1 FROM command_run_devices x WHERE x.run_id = r.id AND NOT (${ownSites}))` : null,
+    memberFilter
+      ? `EXISTS (SELECT 1 FROM command_run_devices crd WHERE crd.run_id = r.id AND ${memberFilter})`
+      : null,
+    ownSites
+      ? `NOT EXISTS (SELECT 1 FROM command_run_devices x WHERE x.run_id = r.id AND NOT (${ownSites}))`
+      : null,
   ].filter(Boolean);
   const runs = await query(
     `SELECT r.*,
@@ -169,7 +216,7 @@ router.get('/runs', async (req: Request, res: Response) => {
        FROM command_runs r
        LEFT JOIN command_run_devices d ON d.run_id = r.id
       ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''}
-      GROUP BY r.id ORDER BY r.id DESC LIMIT 25`
+      GROUP BY r.id ORDER BY r.id DESC LIMIT 25`,
   );
   res.json(runs);
 });
@@ -184,7 +231,7 @@ router.get('/runs/:id', async (req: Request, res: Response) => {
        FROM command_run_devices rd
        JOIN devices d ON d.id = rd.device_id
       WHERE rd.run_id = $1 ORDER BY rd.wave, d.name`,
-    [req.params.id]
+    [req.params.id],
   );
   res.json({ ...run, devices });
 });
@@ -198,21 +245,33 @@ router.get('/runs/:id', async (req: Request, res: Response) => {
  */
 router.get('/runs/:id/export', async (req: Request, res: Response) => {
   if (await refuseForeignRun(req, res, req.params.id, 'viewer')) return;
-  const run = await queryOne<{ id: number; name: string; command: string; status: string; created_at: string }>(
-    `SELECT id, name, command, status, created_at FROM command_runs WHERE id = $1`, [req.params.id]
-  );
+  const run = await queryOne<{
+    id: number;
+    name: string;
+    command: string;
+    status: string;
+    created_at: string;
+  }>(`SELECT id, name, command, status, created_at FROM command_runs WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!run) return res.status(404).json({ error: 'Run not found' });
 
   const rows = await query<{
-    device_name: string; ip_address: string; wave: number; status: string;
-    output: string | null; error: string | null; guarded: boolean;
-    started_at: string | null; finished_at: string | null;
+    device_name: string;
+    ip_address: string;
+    wave: number;
+    status: string;
+    output: string | null;
+    error: string | null;
+    guarded: boolean;
+    started_at: string | null;
+    finished_at: string | null;
   }>(
     `SELECT d.name AS device_name, d.ip_address, rd.wave, rd.status, rd.output, rd.error,
             rd.guarded, rd.started_at, rd.finished_at
        FROM command_run_devices rd JOIN devices d ON d.id = rd.device_id
       WHERE rd.run_id = $1 ORDER BY rd.wave, d.name`,
-    [req.params.id]
+    [req.params.id],
   );
 
   // Timestamps arrive from the driver as Date objects, whose default string form
@@ -220,20 +279,54 @@ router.get('/runs/:id/export', async (req: Request, res: Response) => {
   // spreadsheet will parse. ISO is both sortable and machine-readable.
   const esc = (v: unknown) => {
     // Text is made formula-safe; numbers and dates are left as they are (U9).
-    const t = v == null ? '' : v instanceof Date ? v.toISOString()
-      : typeof v === 'string' ? spreadsheetSafe(v) : String(v);
+    const t =
+      v == null
+        ? ''
+        : v instanceof Date
+          ? v.toISOString()
+          : typeof v === 'string'
+            ? spreadsheetSafe(v)
+            : String(v);
     // Always quote: output routinely contains commas, quotes and newlines, and
     // a record that cannot be reopened is not an archive.
     return `"${t.replace(/"/g, '""')}"`;
   };
 
   const lines = [
-    ['run_id', 'run_name', 'command', 'run_status', 'device', 'ip_address', 'wave',
-     'status', 'guarded', 'started_at', 'finished_at', 'output', 'error'].join(','),
-    ...rows.map((r) => [
-      run.id, run.name, run.command, run.status, r.device_name.trim(), r.ip_address, r.wave,
-      r.status, r.guarded, r.started_at ?? '', r.finished_at ?? '', r.output ?? '', r.error ?? '',
-    ].map(esc).join(',')),
+    [
+      'run_id',
+      'run_name',
+      'command',
+      'run_status',
+      'device',
+      'ip_address',
+      'wave',
+      'status',
+      'guarded',
+      'started_at',
+      'finished_at',
+      'output',
+      'error',
+    ].join(','),
+    ...rows.map((r) =>
+      [
+        run.id,
+        run.name,
+        run.command,
+        run.status,
+        r.device_name.trim(),
+        r.ip_address,
+        r.wave,
+        r.status,
+        r.guarded,
+        r.started_at ?? '',
+        r.finished_at ?? '',
+        r.output ?? '',
+        r.error ?? '',
+      ]
+        .map(esc)
+        .join(','),
+    ),
   ];
 
   const stamp = new Date(run.created_at).toISOString().slice(0, 19).replace(/[:T]/g, '-');

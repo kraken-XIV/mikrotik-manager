@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { parseColumnPrefs, visibleColumns, clampWidth, DEVICE_COLUMNS, MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH } from './deviceColumns';
+import {
+  parseColumnPrefs,
+  visibleColumns,
+  clampWidth,
+  DEVICE_COLUMNS,
+  MIN_COLUMN_WIDTH,
+  MAX_COLUMN_WIDTH,
+} from './deviceColumns';
 
 describe('device column preferences', () => {
   it('starts with every column shown and no widths', () => {
@@ -9,7 +16,9 @@ describe('device column preferences', () => {
   });
 
   it('hides chosen columns but never the fixed ones', () => {
-    const p = parseColumnPrefs(JSON.stringify({ hidden: ['serial', 'rack', 'device', 'actions', 'status'] }));
+    const p = parseColumnPrefs(
+      JSON.stringify({ hidden: ['serial', 'rack', 'device', 'actions', 'status'] }),
+    );
     expect(p.hidden).toEqual(['serial', 'rack']);
     const ids = visibleColumns(p).map((c) => c.id);
     expect(ids).not.toContain('serial');
@@ -18,10 +27,12 @@ describe('device column preferences', () => {
   });
 
   it('drops unknown columns and bad widths, and clamps the rest', () => {
-    const p = parseColumnPrefs(JSON.stringify({
-      hidden: ['nope', 7, 'ip', 'ip'],
-      widths: { model: 5, ip: 5000, cpu: 'wide', bogus: 100, rack: 140.6 },
-    }));
+    const p = parseColumnPrefs(
+      JSON.stringify({
+        hidden: ['nope', 7, 'ip', 'ip'],
+        widths: { model: 5, ip: 5000, cpu: 'wide', bogus: 100, rack: 140.6 },
+      }),
+    );
     expect(p.hidden).toEqual(['ip']);
     expect(p.widths).toEqual({ model: MIN_COLUMN_WIDTH, ip: MAX_COLUMN_WIDTH, rack: 141 });
   });

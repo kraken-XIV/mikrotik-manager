@@ -2,7 +2,9 @@ import { sealItems, openItem } from '../bulkAddSecrets';
 
 describe('bulk add passwords', () => {
   it('keeps plain-text passwords out of the queued payload', () => {
-    const [sealed] = sealItems([{ ip_address: '10.0.0.1', api_password: 'hunter22', ssh_password: 'ssh-pw', name: 'sw1' }]);
+    const [sealed] = sealItems([
+      { ip_address: '10.0.0.1', api_password: 'hunter22', ssh_password: 'ssh-pw', name: 'sw1' },
+    ]);
     const json = JSON.stringify(sealed);
     expect(json).not.toContain('hunter22');
     expect(json).not.toContain('ssh-pw');

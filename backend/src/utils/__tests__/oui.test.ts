@@ -31,7 +31,7 @@ describe('lookupVendor - after initialization from cache', () => {
     // The fresh-cache read opens the file once and checks age and content on
     // that handle (alert #98), so the handle-based calls are what is mocked.
     jest.doMock('fs', () => ({
-      accessSync: () => undefined,           // data directory is writable
+      accessSync: () => undefined, // data directory is writable
       constants: { W_OK: 2 },
       openSync: () => 3,
       fstatSync: () => ({ mtimeMs: Date.now() - 1000 }),
@@ -44,7 +44,10 @@ describe('lookupVendor - after initialization from cache', () => {
     }));
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require('../oui') as { initOuiDatabase: () => Promise<void>; lookupVendor: (mac: string) => string };
+    const mod = require('../oui') as {
+      initOuiDatabase: () => Promise<void>;
+      lookupVendor: (mac: string) => string;
+    };
     await mod.initOuiDatabase();
     lookup = mod.lookupVendor;
   });
@@ -95,14 +98,26 @@ describe('cache location (#101)', () => {
     const opened: string[] = [];
     const written: string[] = [];
     jest.doMock('fs', () => ({
-      accessSync: () => { throw new Error('EACCES'); },
+      accessSync: () => {
+        throw new Error('EACCES');
+      },
       constants: { W_OK: 2 },
-      openSync: (p: string) => { opened.push(p); throw new Error('ENOENT'); },
-      readFileSync: (p: string) => { opened.push(String(p)); throw new Error('ENOENT'); },
-      writeFileSync: (p: string) => { written.push(p); },
+      openSync: (p: string) => {
+        opened.push(p);
+        throw new Error('ENOENT');
+      },
+      readFileSync: (p: string) => {
+        opened.push(String(p));
+        throw new Error('ENOENT');
+      },
+      writeFileSync: (p: string) => {
+        written.push(p);
+      },
     }));
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require('../oui') as { initOuiDatabase: (allowDownload?: boolean) => Promise<void> };
+    const mod = require('../oui') as {
+      initOuiDatabase: (allowDownload?: boolean) => Promise<void>;
+    };
     await mod.initOuiDatabase(false);
     expect(opened.filter((p) => p.startsWith('/tmp'))).toEqual([]);
     expect(written).toEqual([]);

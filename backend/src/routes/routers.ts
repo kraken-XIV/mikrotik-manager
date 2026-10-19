@@ -6,7 +6,12 @@ import { siteScopeDevices } from '../utils/siteScope';
 import { activeSite, writableScope } from '../middleware/site';
 import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
 import { getLldpStatuses, setLldpForTypes } from '../services/lldpApply';
-import { applySnmpConfig, getSnmpStatuses, SnmpInputError, type SnmpConfigInput } from '../services/snmpApply';
+import {
+  applySnmpConfig,
+  getSnmpStatuses,
+  SnmpInputError,
+  type SnmpConfigInput,
+} from '../services/snmpApply';
 
 const router = Router();
 router.use(requireAuth);
@@ -42,7 +47,13 @@ router.put('/snmp', requireWrite, async (req: Request, res: Response) => {
   // See services/snmpApply.ts: per-device variables, blanks left alone, and
   // only the active site's devices.
   try {
-    return res.json(await applySnmpConfig({ all: true, deviceTypes: ['router'] }, req.body as SnmpConfigInput, writableScope(req)));
+    return res.json(
+      await applySnmpConfig(
+        { all: true, deviceTypes: ['router'] },
+        req.body as SnmpConfigInput,
+        writableScope(req),
+      ),
+    );
   } catch (e) {
     if (e instanceof SnmpInputError) return res.status(400).json({ error: e.message });
     throw e;

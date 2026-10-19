@@ -71,7 +71,11 @@ export function chunkRows<T>(items: T[], maxCols: number): T[][] {
  * At or below `maxCols` a single row is used, matching the previous behaviour
  * for small devices where a stagger would only add height for nothing.
  */
-export function staggerBlocks<T>(items: T[], maxCols: number, evenOnTop = false): StaggerBlock<T>[] {
+export function staggerBlocks<T>(
+  items: T[],
+  maxCols: number,
+  evenOnTop = false,
+): StaggerBlock<T>[] {
   const cols = Math.max(1, Math.floor(maxCols));
   if (items.length === 0) return [];
   if (items.length <= cols) return [{ top: items, bottom: [] }];

@@ -19,11 +19,7 @@
  */
 
 export type RoamEventKind =
-  | 'connected'
-  | 'roamed'
-  | 'disconnected'
-  | 'dhcp-assigned'
-  | 'dhcp-released';
+  'connected' | 'roamed' | 'disconnected' | 'dhcp-assigned' | 'dhcp-released';
 
 export interface RoamEvent {
   kind: RoamEventKind;
@@ -58,17 +54,15 @@ const MAC = '[0-9A-Fa-f:]{17}';
 const IFACE = '[^\\s(]+';
 const MAX_LINE = 512;
 const RE_ROAMED = new RegExp(
-  `^(${MAC})@(${IFACE})\\((.*?)\\) roamed to (${MAC})@(${IFACE})\\((.*?)\\), signal strength (-?\\d+)`
+  `^(${MAC})@(${IFACE})\\((.*?)\\) roamed to (${MAC})@(${IFACE})\\((.*?)\\), signal strength (-?\\d+)`,
 );
 const RE_CONNECTED = new RegExp(
-  `^(${MAC})@(${IFACE})\\((.*?)\\) connected, signal strength (-?\\d+)`
+  `^(${MAC})@(${IFACE})\\((.*?)\\) connected, signal strength (-?\\d+)`,
 );
 const RE_DISCONNECTED = new RegExp(
-  `^(${MAC})@(${IFACE})\\((.*?)\\) disconnected, (.+?), signal strength (-?\\d+)`
+  `^(${MAC})@(${IFACE})\\((.*?)\\) disconnected, (.+?), signal strength (-?\\d+)`,
 );
-const RE_DHCP = new RegExp(
-  `^(\\S+) (assigned|deassigned) (\\S+) for (${MAC})(?:\\s+(.*))?$`
-);
+const RE_DHCP = new RegExp(`^(\\S+) (assigned|deassigned) (\\S+) for (${MAC})(?:\\s+(.*))?$`);
 
 /**
  * Signal strengths are dBm and therefore negative. RouterOS occasionally emits a
@@ -82,25 +76,35 @@ function parseSignal(raw: string): number | null {
 }
 
 const base = (at: string, deviceName: string | null): Omit<RoamEvent, 'kind' | 'mac'> => ({
-  at, deviceName,
-  interfaceName: null, ssid: null, signal: null,
-  toInterface: null, toSsid: null, reason: null, ip: null, hostname: null,
+  at,
+  deviceName,
+  interfaceName: null,
+  ssid: null,
+  signal: null,
+  toInterface: null,
+  toSsid: null,
+  reason: null,
+  ip: null,
+  hostname: null,
 });
 
 /** Parse one log line, or null when it is not part of a wireless session. */
 export function parseRoamLine(
   message: string,
   at: string,
-  deviceName: string | null = null
+  deviceName: string | null = null,
 ): RoamEvent | null {
   if (message.length > MAX_LINE) return null;
   const roamed = RE_ROAMED.exec(message);
   if (roamed) {
     return {
-      ...base(at, deviceName), kind: 'roamed',
+      ...base(at, deviceName),
+      kind: 'roamed',
       mac: roamed[1].toUpperCase(),
-      interfaceName: roamed[2], ssid: roamed[3] || null,
-      toInterface: roamed[5], toSsid: roamed[6] || null,
+      interfaceName: roamed[2],
+      ssid: roamed[3] || null,
+      toInterface: roamed[5],
+      toSsid: roamed[6] || null,
       signal: parseSignal(roamed[7]),
     };
   }
@@ -108,9 +112,11 @@ export function parseRoamLine(
   const connected = RE_CONNECTED.exec(message);
   if (connected) {
     return {
-      ...base(at, deviceName), kind: 'connected',
+      ...base(at, deviceName),
+      kind: 'connected',
       mac: connected[1].toUpperCase(),
-      interfaceName: connected[2], ssid: connected[3] || null,
+      interfaceName: connected[2],
+      ssid: connected[3] || null,
       signal: parseSignal(connected[4]),
     };
   }
@@ -118,9 +124,11 @@ export function parseRoamLine(
   const disconnected = RE_DISCONNECTED.exec(message);
   if (disconnected) {
     return {
-      ...base(at, deviceName), kind: 'disconnected',
+      ...base(at, deviceName),
+      kind: 'disconnected',
       mac: disconnected[1].toUpperCase(),
-      interfaceName: disconnected[2], ssid: disconnected[3] || null,
+      interfaceName: disconnected[2],
+      ssid: disconnected[3] || null,
       reason: disconnected[4],
       signal: parseSignal(disconnected[5]),
     };
@@ -195,7 +203,11 @@ export function buildSessions(events: RoamEvent[]): RoamSession[] {
   // just opened, and every reassociation reconstructs as a 0-second session while
   // the real one disappears.
   const RANK: Record<RoamEventKind, number> = {
-    'dhcp-released': 0, disconnected: 1, connected: 2, roamed: 3, 'dhcp-assigned': 4,
+    'dhcp-released': 0,
+    disconnected: 1,
+    connected: 2,
+    roamed: 3,
+    'dhcp-assigned': 4,
   };
   const second = (iso: string) => Math.floor(new Date(iso).getTime() / 1000);
   const ordered = [...events].sort((a, b) => {
@@ -210,14 +222,22 @@ export function buildSessions(events: RoamEvent[]): RoamSession[] {
   // J7). Moving from AP1 to AP2, AP2 logs "connected" and AP1's "disconnected"
   // can arrive after it; that late disconnect used to close the new session.
   let where: string | null = null;
-  const at = (device: string | null, iface: string | null | undefined) => `${device ?? ''}|${iface ?? ''}`;
+  const at = (device: string | null, iface: string | null | undefined) =>
+    `${device ?? ''}|${iface ?? ''}`;
 
   const open = (e: RoamEvent, iface: string | null): RoamSession => ({
-    startedAt: e.at, endedAt: null, durationSec: null,
-    ssid: e.ssid, ip: null, hostname: null,
+    startedAt: e.at,
+    endedAt: null,
+    durationSec: null,
+    ssid: e.ssid,
+    ip: null,
+    hostname: null,
     path: iface ? [iface] : [],
-    hops: [], disconnectReason: null,
-    signalMin: null, signalMax: null, roamsPerHour: null,
+    hops: [],
+    disconnectReason: null,
+    signalMin: null,
+    signalMax: null,
+    roamsPerHour: null,
     events: [],
   });
 
@@ -232,7 +252,10 @@ export function buildSessions(events: RoamEvent[]): RoamSession[] {
   for (const e of ordered) {
     switch (e.kind) {
       case 'connected':
-        if (current) { current.endedAt = e.at; sessions.push(current); }
+        if (current) {
+          current.endedAt = e.at;
+          sessions.push(current);
+        }
         current = open(e, e.interfaceName);
         where = at(e.deviceName, e.interfaceName);
         note(current, e);
@@ -246,8 +269,11 @@ export function buildSessions(events: RoamEvent[]): RoamSession[] {
           where = at(e.deviceName, e.toInterface);
           current.path.push(e.toInterface);
           current.hops.push({
-            at: e.at, from: prev, to: e.toInterface,
-            signalBefore: e.signal, signalAfter: null,
+            at: e.at,
+            from: prev,
+            to: e.toInterface,
+            signalBefore: e.signal,
+            signalAfter: null,
           });
         }
         if (e.ssid && !current.ssid) current.ssid = e.ssid;
@@ -271,7 +297,11 @@ export function buildSessions(events: RoamEvent[]): RoamSession[] {
         break;
 
       case 'dhcp-assigned':
-        if (current) { note(current, e); current.ip = e.ip; current.hostname = e.hostname; }
+        if (current) {
+          note(current, e);
+          current.ip = e.ip;
+          current.hostname = e.hostname;
+        }
         break;
 
       case 'dhcp-released':
@@ -290,7 +320,8 @@ export function buildSessions(events: RoamEvent[]): RoamSession[] {
     // Fill in the signal recorded when the client landed on the new radio.
     for (const hop of s.hops) {
       const after = s.events.find(
-        (e) => e.at > hop.at && e.signal != null && (e.interfaceName === hop.to || e.kind === 'roamed')
+        (e) =>
+          e.at > hop.at && e.signal != null && (e.interfaceName === hop.to || e.kind === 'roamed'),
       );
       hop.signalAfter = after?.signal ?? null;
     }

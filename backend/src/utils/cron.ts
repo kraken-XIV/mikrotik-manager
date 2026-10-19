@@ -29,9 +29,16 @@ export function zonedParts(date: Date, timeZone: string): ZonedParts {
   try {
     const parts = Object.fromEntries(
       new Intl.DateTimeFormat('en-US', {
-        timeZone, hour12: false,
-        minute: '2-digit', hour: '2-digit', day: '2-digit', month: '2-digit', weekday: 'short',
-      }).formatToParts(date).map((p) => [p.type, p.value])
+        timeZone,
+        hour12: false,
+        minute: '2-digit',
+        hour: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        weekday: 'short',
+      })
+        .formatToParts(date)
+        .map((p) => [p.type, p.value]),
     );
     return {
       minute: Number(parts.minute),
@@ -43,8 +50,11 @@ export function zonedParts(date: Date, timeZone: string): ZonedParts {
     };
   } catch {
     return {
-      minute: date.getUTCMinutes(), hour: date.getUTCHours(), dom: date.getUTCDate(),
-      month: date.getUTCMonth() + 1, dow: date.getUTCDay(),
+      minute: date.getUTCMinutes(),
+      hour: date.getUTCHours(),
+      dom: date.getUTCDate(),
+      month: date.getUTCMonth() + 1,
+      dow: date.getUTCDay(),
     };
   }
 }

@@ -11,7 +11,10 @@ dotenv.config();
  * or ':' broke it and with it the whole stack. (pg's own `password` option
  * can't be used: a password-less URL overrides it with undefined.)
  */
-export function databaseUrl(url: string | undefined, password: string | undefined): string | undefined {
+export function databaseUrl(
+  url: string | undefined,
+  password: string | undefined,
+): string | undefined {
   if (!url || !password) return url;
   const u = new URL(url);
   // Encoded in full: the URL setter leaves '@', '%' and '#' as they are.
@@ -32,7 +35,7 @@ pool.on('error', (err) => {
 
 export async function query<T = Record<string, unknown>>(
   text: string,
-  params?: unknown[]
+  params?: unknown[],
 ): Promise<T[]> {
   // During "Review changes" (#255) nothing is applied, so nothing is recorded
   // either: writes are skipped and reads see the database as it is.
@@ -52,14 +55,14 @@ export async function query<T = Record<string, unknown>>(
 
 export async function queryOne<T = Record<string, unknown>>(
   text: string,
-  params?: unknown[]
+  params?: unknown[],
 ): Promise<T | null> {
   const rows = await query<T>(text, params);
   return rows[0] ?? null;
 }
 
 export async function transaction<T>(
-  fn: (client: import('pg').PoolClient) => Promise<T>
+  fn: (client: import('pg').PoolClient) => Promise<T>,
 ): Promise<T> {
   const client = await pool.connect();
   try {

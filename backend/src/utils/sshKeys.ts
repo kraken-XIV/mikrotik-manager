@@ -86,7 +86,9 @@ export function keyTypeForVersion(rosVersion: string | null | undefined): SshKey
 export function importRejection(output: string): string | null {
   const text = output.trim();
   if (!text) return null;
-  return /failure|error|no such|expected|bad command|invalid|does not match|not allowed|denied/i.test(text)
+  return /failure|error|no such|expected|bad command|invalid|does not match|not allowed|denied/i.test(
+    text,
+  )
     ? text.slice(0, 200)
     : null;
 }
@@ -105,14 +107,20 @@ function generate(keyType: SshKeyType, comment: string): { public: string; priva
 }
 
 export function generateDeviceKeyPair(
-  deviceId: number, suffix = newKeySuffix(), keyType: SshKeyType = 'ed25519'
+  deviceId: number,
+  suffix = newKeySuffix(),
+  keyType: SshKeyType = 'ed25519',
 ): GeneratedKeyPair {
   const comment = keyComment(deviceId, suffix);
   // ssh2 now and then writes an Ed25519 private key it can't read back
   // ("Malformed OpenSSH private key": 11 in 3,000 on ssh2 1.17). Deploying one
   // is refused, but that failed the deploy; generate again instead.
   let kp = generate(keyType, comment);
-  for (let attempt = 1; attempt < KEYGEN_ATTEMPTS && sshUtils.parseKey(kp.private) instanceof Error; attempt++) {
+  for (
+    let attempt = 1;
+    attempt < KEYGEN_ATTEMPTS && sshUtils.parseKey(kp.private) instanceof Error;
+    attempt++
+  ) {
     kp = generate(keyType, comment);
   }
   // generateKeyPairSync already appends the comment; appending it again produced

@@ -111,14 +111,14 @@ function provisionSecrets(): void {
   if (info.envJwtIgnored) {
     console.warn(
       '[secrets] JWT_SECRET in the environment is a placeholder or shorter than 32 characters, ' +
-      'so it is ignored and a generated secret is used instead. Remove it from .env or set a long random value.'
+        'so it is ignored and a generated secret is used instead. Remove it from .env or set a long random value.',
     );
   }
   if (info.ephemeral) {
     console.error(
       '[secrets] WARNING: generated secrets could not be persisted (SECRETS_DIR not writable). ' +
-      'They will change on restart — users will be logged out and credentials written now may not ' +
-      'decrypt later. Mount a writable volume at SECRETS_DIR (default /app/data) or set JWT_SECRET/ENCRYPTION_KEY.'
+        'They will change on restart — users will be logged out and credentials written now may not ' +
+        'decrypt later. Mount a writable volume at SECRETS_DIR (default /app/data) or set JWT_SECRET/ENCRYPTION_KEY.',
     );
   }
 }
@@ -130,7 +130,9 @@ function provisionSecrets(): void {
 RouterOSClient.tlsVerifier = async (host, port, fingerprint, raw) => {
   // First, take up a certificate the CA issued that isn't on record (after
   // restoring an older platform backup), so it isn't reported as a change.
-  await adoptCaCertificate(host, port, raw).catch((e) => console.error('[device-ca] adopt check failed:', (e as Error).message));
+  await adoptCaCertificate(host, port, raw).catch((e) =>
+    console.error('[device-ca] adopt check failed:', (e as Error).message),
+  );
   await verifyDeviceIdentity('api-tls', host, port, fingerprint);
   await verifyManagedCertificate(host, port, raw);
 };
@@ -169,7 +171,11 @@ async function socketSession(token: string | undefined): Promise<AuthPayload | n
 
 /** The live-update rooms an account belongs in: 'fleet', or one per site (P1-7). */
 function socketRooms(user: AuthPayload): string[] {
-  return user.siteRoles ? Object.keys(user.siteRoles).sort().map((id) => `site:${id}`) : ['fleet'];
+  return user.siteRoles
+    ? Object.keys(user.siteRoles)
+        .sort()
+        .map((id) => `site:${id}`)
+    : ['fleet'];
 }
 
 io.use((socket, next) => {
@@ -211,7 +217,7 @@ const terminalStartHistory = new Map<number, number[]>();
 function terminalStartAllowed(userId: number): boolean {
   const now = Date.now();
   const recent = (terminalStartHistory.get(userId) ?? []).filter(
-    (t) => now - t < TERMINAL_START_WINDOW_MS
+    (t) => now - t < TERMINAL_START_WINDOW_MS,
   );
   if (recent.length >= TERMINAL_START_LIMIT) {
     terminalStartHistory.set(userId, recent);
@@ -226,7 +232,7 @@ function auditTerminal(user: AuthPayload, ip: string, summary: string, deviceId?
   query(
     `INSERT INTO audit_log (user_id, username, method, path, entity_type, entity_id, summary, ip_address, status_code)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-    [user.userId, user.username, 'SSH', '/terminal', 'device', deviceId ?? null, summary, ip, 200]
+    [user.userId, user.username, 'SSH', '/terminal', 'device', deviceId ?? null, summary, ip, 200],
   ).catch(() => {});
 }
 
@@ -269,7 +275,10 @@ terminalNs.on('connection', (socket) => {
   let shellStream: ClientChannel | null = null;
   const user = socket.data.user as AuthPayload;
   // The user's address, not nginx's (P2-33).
-  const clientIp = clientIpBehindProxy(socket.handshake.headers['x-forwarded-for'], socket.handshake.address);
+  const clientIp = clientIpBehindProxy(
+    socket.handshake.headers['x-forwarded-for'],
+    socket.handshake.address,
+  );
 
   socket.on('start', async (payload: { deviceId: number; cols?: number; rows?: number }) => {
     const { deviceId, cols = 80, rows = 24 } = payload;
@@ -278,27 +287,49 @@ terminalNs.on('connection', (socket) => {
       // shell, not as they were when the socket connected (P2-1).
       const current = await socketSession(socket.data.token as string | undefined);
       if (!current || !TERMINAL_ROLES.has(current.role)) {
-        socket.emit('error', current ? 'Console access denied for this role' : 'Your session has ended. Please sign in again.');
+        socket.emit(
+          'error',
+          current
+            ? 'Console access denied for this role'
+            : 'Your session has ended. Please sign in again.',
+        );
         return;
       }
       if (!terminalStartAllowed(user.userId)) {
-        auditTerminal(user, clientIp, `terminal start rate-limited for device ${deviceId}`, deviceId);
-        socket.emit('error', 'Too many terminal sessions started. Please wait a moment and try again.');
+        auditTerminal(
+          user,
+          clientIp,
+          `terminal start rate-limited for device ${deviceId}`,
+          deviceId,
+        );
+        socket.emit(
+          'error',
+          'Too many terminal sessions started. Please wait a moment and try again.',
+        );
         return;
       }
       const device = await queryOne<SshExecDevice>(
         `SELECT id, name, ip_address, ssh_port, ssh_username, ssh_password_encrypted,
                 api_username, api_password_encrypted
            FROM devices WHERE id = $1`,
-        [deviceId]
+        [deviceId],
       );
 
-      if (!device) { socket.emit('error', 'Device not found'); return; }
+      if (!device) {
+        socket.emit('error', 'Device not found');
+        return;
+      }
       // Its role in this device's site, not just anywhere (P1-7); a device in
       // another site is "not found".
       const roleHere = await roleOnDevice(current, deviceId);
-      if (!roleHere) { socket.emit('error', 'Device not found'); return; }
-      if (!TERMINAL_ROLES.has(roleHere)) { socket.emit('error', 'Console access denied for this role'); return; }
+      if (!roleHere) {
+        socket.emit('error', 'Device not found');
+        return;
+      }
+      if (!TERMINAL_ROLES.has(roleHere)) {
+        socket.emit('error', 'Console access denied for this role');
+        return;
+      }
 
       // Resolve credentials the same way every other SSH consumer does, so a
       // deployed key works here too. Doing this locally, and looking only at
@@ -308,38 +339,48 @@ terminalNs.on('connection', (socket) => {
       try {
         auth = await resolveAuth(device);
       } catch (e) {
-        socket.emit('error',
+        socket.emit(
+          'error',
           `${(e as Error).message}. Add an SSH username and password in device settings, ` +
-          `or deploy an SSH key for this device.`);
+            `or deploy an SSH key for this device.`,
+        );
         return;
       }
       sshClient = new SshClient();
 
       sshClient.on('ready', () => {
-        sshClient!.shell(
-          { term: 'xterm-256color', cols, rows },
-          (err, stream) => {
-            if (err) { socket.emit('error', err.message); return; }
-            shellStream = stream;
-            auditTerminal(user, clientIp, `opened SSH shell on device ${deviceId} (${device.ip_address}) using ${auth.kind} auth`, deviceId);
-            socket.emit('ready');
-
-            stream.on('data', (data: Buffer) => {
-              socket.emit('data', data.toString('binary'));
-            });
-            stream.stderr.on('data', (data: Buffer) => {
-              socket.emit('data', data.toString('binary'));
-            });
-            stream.on('close', () => {
-              socket.emit('close');
-              sshClient?.end();
-            });
+        sshClient!.shell({ term: 'xterm-256color', cols, rows }, (err, stream) => {
+          if (err) {
+            socket.emit('error', err.message);
+            return;
           }
-        );
+          shellStream = stream;
+          auditTerminal(
+            user,
+            clientIp,
+            `opened SSH shell on device ${deviceId} (${device.ip_address}) using ${auth.kind} auth`,
+            deviceId,
+          );
+          socket.emit('ready');
+
+          stream.on('data', (data: Buffer) => {
+            socket.emit('data', data.toString('binary'));
+          });
+          stream.stderr.on('data', (data: Buffer) => {
+            socket.emit('data', data.toString('binary'));
+          });
+          stream.on('close', () => {
+            socket.emit('close');
+            sshClient?.end();
+          });
+        });
       });
 
       sshClient.on('error', (err) => {
-        socket.emit('error', `SSH error: ${explainSshError(err, device.ip_address, device.ssh_port ?? 22).message}`);
+        socket.emit(
+          'error',
+          `SSH error: ${explainSshError(err, device.ip_address, device.ssh_port ?? 22).message}`,
+        );
       });
 
       sshClient.connect({
@@ -359,12 +400,7 @@ terminalNs.on('connection', (socket) => {
             'diffie-hellman-group14-sha1',
             'diffie-hellman-group1-sha1',
           ],
-          serverHostKey: [
-            'ssh-rsa',
-            'ecdsa-sha2-nistp256',
-            'ecdsa-sha2-nistp384',
-            'ssh-ed25519',
-          ],
+          serverHostKey: ['ssh-rsa', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ssh-ed25519'],
         },
       });
     } catch (err) {
@@ -395,8 +431,12 @@ app.use(compression());
 // While a platform backup is being restored the data is being replaced:
 // nothing else may read or write it until MikroTik Manager restarts.
 app.use('/api', (req, res, next) => {
-  if (!isRestoring() || req.path === '/health' || req.path === '/platform-backup/restore/progress') return next();
-  res.status(503).json({ error: 'MikroTik Manager is restoring a platform backup and will restart in a moment.', restoring: true });
+  if (!isRestoring() || req.path === '/health' || req.path === '/platform-backup/restore/progress')
+    return next();
+  res.status(503).json({
+    error: 'MikroTik Manager is restoring a platform backup and will restart in a moment.',
+    restoring: true,
+  });
 });
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -523,8 +563,12 @@ async function start(): Promise<void> {
 
   // Run migrations
   await runMigrations();
-  await ensureDefaultRules().catch((e) => console.warn('[startup] default alert rules:', (e as Error).message));
-  await convertConfigTemplates().catch((e) => console.warn('[startup] config template conversion:', (e as Error).message));
+  await ensureDefaultRules().catch((e) =>
+    console.warn('[startup] default alert rules:', (e as Error).message),
+  );
+  await convertConfigTemplates().catch((e) =>
+    console.warn('[startup] config template conversion:', (e as Error).message),
+  );
 
   // Before anything new is encrypted: is there stored data no known key opens?
   // Then the key was lost, and a freshly generated one must not be saved over
@@ -536,8 +580,9 @@ async function start(): Promise<void> {
     if (lost) {
       console.error(
         `[secrets] ${unreadable} stored credential(s) can't be decrypted with any known key. The encryption key ` +
-        'is missing: restore secrets.json to the app_data volume, or set ENCRYPTION_KEY (or ENCRYPTION_KEY_PREVIOUS) ' +
-        'to the original key, then restart. Saving new credentials is refused until then.');
+          'is missing: restore secrets.json to the app_data volume, or set ENCRYPTION_KEY (or ENCRYPTION_KEY_PREVIOUS) ' +
+          'to the original key, then restart. Saving new credentials is refused until then.',
+      );
     } else {
       // Seal any alert channel / webhook secret still in plaintext (S7), then
       // move everything to the current key.
@@ -560,8 +605,10 @@ async function start(): Promise<void> {
   // Start loading the OUI database in the background (doesn't block startup)
   // Dark Site Mode: read before the first download attempt, which happens here.
   const ouiAllowed = await query<{ value: unknown }>(
-    `SELECT value FROM app_settings WHERE key = 'oui_download_enabled'`
-  ).then((r) => r[0]?.value !== false).catch(() => true);
+    `SELECT value FROM app_settings WHERE key = 'oui_download_enabled'`,
+  )
+    .then((r) => r[0]?.value !== false)
+    .catch(() => true);
   initOuiDatabase(ouiAllowed).catch(() => {});
 
   // Connect Redis
@@ -582,14 +629,16 @@ async function start(): Promise<void> {
   // Trim job history left over from before retention limits existed. Runs in the
   // background: an installation with millions of retained jobs would otherwise
   // hold up startup, and nothing depends on it having finished.
-  void pollerService.cleanupJobHistory().catch((e) =>
-    console.error('[Poller] Job history cleanup failed:', e));
+  void pollerService
+    .cleanupJobHistory()
+    .catch((e) => console.error('[Poller] Job history cleanup failed:', e));
 
   // Pending work accumulated before dedup existed is dropped too, not just
   // finished-job history. An upgrade that leaves hundreds of thousands of stale
   // polls queued has not actually fixed anything the operator can see (#114).
-  void pollerService.dropStalePending().catch((e) =>
-    console.error('[Poller] Stale-pending sweep failed:', e));
+  void pollerService
+    .dropStalePending()
+    .catch((e) => console.error('[Poller] Stale-pending sweep failed:', e));
   await startBulkAddWorker();
   await startSshKeyFleetWorker();
 
@@ -600,10 +649,14 @@ async function start(): Promise<void> {
   // Close out any rollout or command run left mid-flight by a previous process
   // (#140). Must happen before the scheduler starts, so a stale 'running' row
   // cannot block a due rollout from starting.
-  await firmwareOrchestrator.reconcileInterrupted().catch((e: unknown) =>
-    console.error('[Firmware] could not reconcile interrupted rollouts:', e));
-  await commandRunner.reconcileInterrupted().catch((e: unknown) =>
-    console.error('[Command] could not reconcile interrupted runs:', e));
+  await firmwareOrchestrator
+    .reconcileInterrupted()
+    .catch((e: unknown) =>
+      console.error('[Firmware] could not reconcile interrupted rollouts:', e),
+    );
+  await commandRunner
+    .reconcileInterrupted()
+    .catch((e: unknown) => console.error('[Command] could not reconcile interrupted runs:', e));
 
   firmwareOrchestrator.startScheduler();
   startMirrorScheduler();

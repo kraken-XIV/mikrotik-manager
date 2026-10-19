@@ -12,7 +12,7 @@
  */
 
 export const UPDATE_CHANNELS = ['stable', 'long-term', 'testing', 'development'] as const;
-export type UpdateChannel = typeof UPDATE_CHANNELS[number];
+export type UpdateChannel = (typeof UPDATE_CHANNELS)[number];
 
 export function isUpdateChannel(v: unknown): v is UpdateChannel {
   return typeof v === 'string' && (UPDATE_CHANNELS as readonly string[]).includes(v);
@@ -22,7 +22,10 @@ export function isUpdateChannel(v: unknown): v is UpdateChannel {
  * The channel to put the device on, or null to leave it alone.
  * A device override wins over the fleet setting; anything unrecognised is ignored.
  */
-export function resolveChannel(deviceOverride: unknown, fleetSetting: unknown): UpdateChannel | null {
+export function resolveChannel(
+  deviceOverride: unknown,
+  fleetSetting: unknown,
+): UpdateChannel | null {
   if (isUpdateChannel(deviceOverride)) return deviceOverride;
   if (isUpdateChannel(fleetSetting)) return fleetSetting;
   return null;

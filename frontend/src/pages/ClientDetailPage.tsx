@@ -2,13 +2,36 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowLeft, Wifi, Network, Router, Layers, Activity,
-  Power, Save, Clock, ChevronRight, AlertCircle, Pencil, X, Gauge, Check,
+  ArrowLeft,
+  Wifi,
+  Network,
+  Router,
+  Layers,
+  Activity,
+  Power,
+  Save,
+  Clock,
+  ChevronRight,
+  AlertCircle,
+  Pencil,
+  X,
+  Gauge,
+  Check,
 } from 'lucide-react';
 import { useCanWrite } from '../hooks/useCanWrite';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  BarChart, Bar, Cell, ReferenceLine,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  BarChart,
+  Bar,
+  Cell,
+  ReferenceLine,
 } from 'recharts';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import RoamingTimeline from '../components/clients/RoamingTimeline';
@@ -59,7 +82,7 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
 
   const { data: points = [], isLoading } = useQuery({
     queryKey: ['client-presence', mac, range],
-    queryFn: () => clientsApi.getPresence(mac, range).then(r => r.data),
+    queryFn: () => clientsApi.getPresence(mac, range).then((r) => r.data),
     refetchInterval: 60_000,
   });
 
@@ -69,7 +92,7 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
     { value: '7d', label: '7d' },
   ] as const;
 
-  const onlineCount = points.filter(p => p.online > 0).length;
+  const onlineCount = points.filter((p) => p.online > 0).length;
   const uptimePct = points.length > 0 ? Math.round((onlineCount / points.length) * 100) : null;
 
   return (
@@ -79,20 +102,22 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
           <Clock className="w-4 h-4 text-gray-400" />
           <h2 className="text-sm font-semibold text-gray-800 dark:text-white">Connectivity</h2>
           {uptimePct !== null && (
-            <span className={clsx(
-              'text-xs font-medium px-1.5 py-0.5 rounded',
-              uptimePct >= 90
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                : uptimePct >= 70
-                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-            )}>
+            <span
+              className={clsx(
+                'text-xs font-medium px-1.5 py-0.5 rounded',
+                uptimePct >= 90
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  : uptimePct >= 70
+                    ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+              )}
+            >
               {uptimePct}% uptime
             </span>
           )}
         </div>
         <div className="flex gap-1">
-          {ranges.map(r => (
+          {ranges.map((r) => (
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
@@ -100,7 +125,7 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
                 range === r.value
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
               )}
             >
               {r.label}
@@ -124,13 +149,17 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
                 title={`${format(parseISO(p.time), 'MMM d HH:mm')} — ${p.online ? 'Online' : 'Offline'}`}
                 className={clsx(
                   'flex-1 transition-colors',
-                  p.online ? 'bg-green-500 dark:bg-green-600' : 'bg-gray-200 dark:bg-slate-700'
+                  p.online ? 'bg-green-500 dark:bg-green-600' : 'bg-gray-200 dark:bg-slate-700',
                 )}
               />
             ))}
           </div>
           <div className="flex justify-between text-[10px] text-gray-400 dark:text-slate-500">
-            <span>{points.length > 0 ? format(parseISO(points[0].time), range === '7d' ? 'MMM d' : 'HH:mm') : ''}</span>
+            <span>
+              {points.length > 0
+                ? format(parseISO(points[0].time), range === '7d' ? 'MMM d' : 'HH:mm')
+                : ''}
+            </span>
             <span>now</span>
           </div>
           <div className="flex items-center gap-3 text-[10px] text-gray-500 dark:text-slate-400">
@@ -154,7 +183,9 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
 function ConnectionDiagram({ client }: { client: ClientDetail }) {
   const ClientIcon = client.client_type === 'wireless' ? Wifi : Network;
   const DeviceIcon = deviceIcon(client.device_type);
-  const UpstreamIcon = client.upstream_device_type ? deviceIcon(client.upstream_device_type) : Router;
+  const UpstreamIcon = client.upstream_device_type
+    ? deviceIcon(client.upstream_device_type)
+    : Router;
 
   const clientName = client.custom_name || client.hostname || client.mac_address;
 
@@ -168,16 +199,18 @@ function ConnectionDiagram({ client }: { client: ClientDetail }) {
       <div className="flex items-center gap-2 flex-wrap">
         {/* Client node */}
         <div className="flex flex-col items-center gap-1 min-w-[80px]">
-          <div className={clsx(
-            'w-10 h-10 rounded-xl flex items-center justify-center',
-            client.active
-              ? 'bg-green-100 dark:bg-green-900/30'
-              : 'bg-gray-100 dark:bg-slate-700'
-          )}>
-            <ClientIcon className={clsx(
-              'w-5 h-5',
-              client.active ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
-            )} />
+          <div
+            className={clsx(
+              'w-10 h-10 rounded-xl flex items-center justify-center',
+              client.active ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-slate-700',
+            )}
+          >
+            <ClientIcon
+              className={clsx(
+                'w-5 h-5',
+                client.active ? 'text-green-600 dark:text-green-400' : 'text-gray-400',
+              )}
+            />
           </div>
           <span className="text-[11px] text-center text-gray-700 dark:text-slate-300 font-medium max-w-[90px] truncate">
             {clientName}
@@ -259,7 +292,8 @@ function LimitBandwidth({ deviceId, ip, name }: { deviceId: number; ip: string; 
   const [error, setError] = useState('');
 
   const apply = async () => {
-    setStatus('saving'); setError('');
+    setStatus('saving');
+    setError('');
     try {
       await devicesApi.addQueue(deviceId, {
         name: `mm-${name}-${ip}`.slice(0, 60).replace(/[^a-zA-Z0-9._-]/g, '_'),
@@ -267,41 +301,89 @@ function LimitBandwidth({ deviceId, ip, name }: { deviceId: number; ip: string; 
         max_limit: `${up || '0'}/${down || '0'}`,
         comment: `Limit for ${name} (MikroTik Manager)`,
       });
-      setStatus('done'); setTimeout(() => { setStatus('idle'); setOpen(false); }, 2500);
+      setStatus('done');
+      setTimeout(() => {
+        setStatus('idle');
+        setOpen(false);
+      }, 2500);
     } catch (e) {
       setStatus('error');
-      setError((e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to create queue');
+      setError(
+        (e as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+          'Failed to create queue',
+      );
     }
   };
 
   return (
     <div className="pt-1">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-gray-700 dark:text-slate-300">Bandwidth limit</span>
+        <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
+          Bandwidth limit
+        </span>
       </div>
       {!open ? (
-        <button onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors">
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+        >
           <Gauge className="w-3.5 h-3.5" /> Limit this client
         </button>
       ) : (
         <div className="space-y-2 border border-emerald-200 dark:border-emerald-800 rounded-lg p-2.5">
           <div className="grid grid-cols-2 gap-2">
-            <label className="text-[10px] text-gray-500 dark:text-slate-400">Upload
-              <input className="input font-mono mt-0.5 py-1 text-xs" value={up} onChange={e => setUp(e.target.value)} placeholder="10M" /></label>
-            <label className="text-[10px] text-gray-500 dark:text-slate-400">Download
-              <input className="input font-mono mt-0.5 py-1 text-xs" value={down} onChange={e => setDown(e.target.value)} placeholder="50M" /></label>
+            <label className="text-[10px] text-gray-500 dark:text-slate-400">
+              Upload
+              <input
+                className="input font-mono mt-0.5 py-1 text-xs"
+                value={up}
+                onChange={(e) => setUp(e.target.value)}
+                placeholder="10M"
+              />
+            </label>
+            <label className="text-[10px] text-gray-500 dark:text-slate-400">
+              Download
+              <input
+                className="input font-mono mt-0.5 py-1 text-xs"
+                value={down}
+                onChange={(e) => setDown(e.target.value)}
+                placeholder="50M"
+              />
+            </label>
           </div>
           <FastTrackNote deviceId={deviceId} compact />
           {error && <p className="text-[10px] text-red-500">{error}</p>}
           <div className="flex items-center gap-2">
-            <button onClick={apply} disabled={status === 'saving'}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
-              {status === 'done' ? <><Check className="w-3 h-3" /> Applied</> : status === 'saving' ? 'Applying…' : 'Apply limit'}
+            <button
+              onClick={apply}
+              disabled={status === 'saving'}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {status === 'done' ? (
+                <>
+                  <Check className="w-3 h-3" /> Applied
+                </>
+              ) : status === 'saving' ? (
+                'Applying…'
+              ) : (
+                'Apply limit'
+              )}
             </button>
-            <button onClick={() => { setOpen(false); setStatus('idle'); setError(''); }} className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-slate-300">Cancel</button>
+            <button
+              onClick={() => {
+                setOpen(false);
+                setStatus('idle');
+                setError('');
+              }}
+              className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-slate-300"
+            >
+              Cancel
+            </button>
           </div>
-          <p className="text-[10px] text-gray-400 dark:text-slate-500">Creates a simple queue on the device for <span className="font-mono">{ip}</span>. Manage it later under the device&apos;s Bandwidth tab.</p>
+          <p className="text-[10px] text-gray-400 dark:text-slate-500">
+            Creates a simple queue on the device for <span className="font-mono">{ip}</span>. Manage
+            it later under the device&apos;s Bandwidth tab.
+          </p>
         </div>
       )}
     </div>
@@ -339,7 +421,8 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
   });
 
   const categoryMutation = useMutation({
-    mutationFn: (category: string | null) => clientsApi.updateCategory(client.mac_address, category),
+    mutationFn: (category: string | null) =>
+      clientsApi.updateCategory(client.mac_address, category),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['client-detail', client.mac_address] });
       qc.invalidateQueries({ queryKey: ['clients'] });
@@ -376,8 +459,11 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
                   className="flex-1 min-w-0 rounded border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-gray-800 dark:text-slate-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder={client.hostname || 'e.g. Office Printer'}
                   value={nameValue}
-                  onChange={e => setNameValue(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') nameMutation.mutate(); if (e.key === 'Escape') setEditingName(false); }}
+                  onChange={(e) => setNameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') nameMutation.mutate();
+                    if (e.key === 'Escape') setEditingName(false);
+                  }}
                 />
                 <button
                   onClick={() => nameMutation.mutate()}
@@ -388,7 +474,10 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
                   <Save className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => { setEditingName(false); setNameValue(client.custom_name || ''); }}
+                  onClick={() => {
+                    setEditingName(false);
+                    setNameValue(client.custom_name || '');
+                  }}
                   className="p-1 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700"
                   title="Cancel"
                 >
@@ -423,16 +512,20 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
         )}
 
         <DetailRow label="Status">
-          <span className={clsx(
-            'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium',
-            client.active
-              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-              : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
-          )}>
-            <span className={clsx(
-              'w-1.5 h-1.5 rounded-full',
-              client.active ? 'bg-green-500' : 'bg-gray-400'
-            )} />
+          <span
+            className={clsx(
+              'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium',
+              client.active
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
+            )}
+          >
+            <span
+              className={clsx(
+                'w-1.5 h-1.5 rounded-full',
+                client.active ? 'bg-green-500' : 'bg-gray-400',
+              )}
+            />
             {client.active ? 'Online' : 'Offline'}
           </span>
         </DetailRow>
@@ -441,12 +534,21 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
           <span className="font-mono">{client.ip_address || '—'}</span>
           {/* Firewall address lists for this address (#145). */}
           {canWrite && client.ip_address && (
-            <button type="button" onClick={() => setListsOpen(true)}
-              className="ml-2 text-xs text-blue-600 dark:text-blue-400 hover:underline">Address lists</button>
+            <button
+              type="button"
+              onClick={() => setListsOpen(true)}
+              className="ml-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Address lists
+            </button>
           )}
           {listsOpen && client.ip_address && (
-            <ClientAddressLists address={client.ip_address} defaultDeviceId={client.device_id}
-              clientName={client.custom_name || client.hostname || client.mac_address} onClose={() => setListsOpen(false)} />
+            <ClientAddressLists
+              address={client.ip_address}
+              defaultDeviceId={client.device_id}
+              clientName={client.custom_name || client.hostname || client.mac_address}
+              onClose={() => setListsOpen(false)}
+            />
           )}
         </DetailRow>
 
@@ -454,9 +556,7 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
           <span className="font-mono">{client.mac_address}</span>
         </DetailRow>
 
-        {client.vendor && (
-          <DetailRow label="Vendor">{client.vendor}</DetailRow>
-        )}
+        {client.vendor && <DetailRow label="Vendor">{client.vendor}</DetailRow>}
 
         {/* Device category — auto-fingerprinted, user-overridable */}
         <DetailRow label="Device type">
@@ -465,22 +565,28 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
               <select
                 className="input py-1 text-sm w-auto max-w-[220px]"
                 value={client.custom_category ?? ''}
-                onChange={(e) => categoryMutation.mutate(e.target.value === '' ? null : e.target.value)}
+                onChange={(e) =>
+                  categoryMutation.mutate(e.target.value === '' ? null : e.target.value)
+                }
                 disabled={categoryMutation.isPending}
               >
                 <option value="">
                   Automatic — {CATEGORY_META[client.auto_category ?? 'unknown']?.label ?? 'Unknown'}
                 </option>
-                {SELECTABLE_CATEGORIES.filter(c => c !== 'unknown').map(c => (
-                  <option key={c} value={c}>{CATEGORY_META[c].label}</option>
+                {SELECTABLE_CATEGORIES.filter((c) => c !== 'unknown').map((c) => (
+                  <option key={c} value={c}>
+                    {CATEGORY_META[c].label}
+                  </option>
                 ))}
               </select>
             ) : (
               <span>{CATEGORY_META[client.device_category ?? 'unknown']?.label ?? 'Unknown'}</span>
             )}
             {client.custom_category && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex-shrink-0"
-                title={`Auto-detected as: ${CATEGORY_META[client.auto_category ?? 'unknown']?.label ?? 'Unknown'}`}>
+              <span
+                className="text-xs px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex-shrink-0"
+                title={`Auto-detected as: ${CATEGORY_META[client.auto_category ?? 'unknown']?.label ?? 'Unknown'}`}
+              >
                 manual
               </span>
             )}
@@ -489,10 +595,14 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
         </DetailRow>
 
         <DetailRow label="Type">
-          <span className={clsx(
-            'capitalize',
-            client.client_type === 'wireless' ? 'text-purple-600 dark:text-purple-400' : 'text-blue-600 dark:text-blue-400'
-          )}>
+          <span
+            className={clsx(
+              'capitalize',
+              client.client_type === 'wireless'
+                ? 'text-purple-600 dark:text-purple-400'
+                : 'text-blue-600 dark:text-blue-400',
+            )}
+          >
             {client.client_type || '—'}
           </span>
         </DetailRow>
@@ -501,7 +611,9 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
           <DetailRow label="Signal">
             <span className={clsx('font-medium', signalColor(client.signal_strength))}>
               {client.signal_strength} dBm
-              <span className="ml-1 font-normal opacity-75">({signalLabel(client.signal_strength)})</span>
+              <span className="ml-1 font-normal opacity-75">
+                ({signalLabel(client.signal_strength)})
+              </span>
             </span>
           </DetailRow>
         )}
@@ -519,7 +631,9 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
             <span className="font-mono">
               {client.vlan_id}
               {client.vlan_name && (
-                <span className="ml-1.5 font-sans text-gray-500 dark:text-slate-400">({client.vlan_name})</span>
+                <span className="ml-1.5 font-sans text-gray-500 dark:text-slate-400">
+                  ({client.vlan_name})
+                </span>
               )}
             </span>
           </DetailRow>
@@ -529,9 +643,7 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
           <span className="font-mono">{client.interface_name || '—'}</span>
         </DetailRow>
 
-        {client.ssid && (
-          <DetailRow label="SSID">{client.ssid}</DetailRow>
-        )}
+        {client.ssid && <DetailRow label="SSID">{client.ssid}</DetailRow>}
 
         <DetailRow label="Last Seen">
           {client.last_seen
@@ -544,7 +656,9 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
       {canWrite && (
         <div className="pt-1">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-700 dark:text-slate-300">Wake on LAN</span>
+            <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
+              Wake on LAN
+            </span>
           </div>
           <button
             onClick={handleWol}
@@ -554,12 +668,18 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
               wolStatus === 'sent'
                 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                 : wolStatus === 'error'
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                  ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50',
             )}
           >
             <Power className="w-3.5 h-3.5" />
-            {wolStatus === 'sending' ? 'Sending…' : wolStatus === 'sent' ? 'Packet sent!' : wolStatus === 'error' ? 'Failed to send' : 'Send magic packet'}
+            {wolStatus === 'sending'
+              ? 'Sending…'
+              : wolStatus === 'sent'
+                ? 'Packet sent!'
+                : wolStatus === 'error'
+                  ? 'Failed to send'
+                  : 'Send magic packet'}
           </button>
           <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-1">
             Sends a UDP broadcast magic packet to wake this client.
@@ -569,22 +689,33 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
 
       {/* Limit bandwidth — creates a simple queue on the client's device targeting its IP */}
       {canWrite && client.ip_address && client.device_id && (
-        <LimitBandwidth deviceId={client.device_id} ip={client.ip_address} name={client.custom_name || client.hostname || client.mac_address} />
+        <LimitBandwidth
+          deviceId={client.device_id}
+          ip={client.ip_address}
+          name={client.custom_name || client.hostname || client.mac_address}
+        />
       )}
 
       {/* Notes */}
       <div className="pt-1">
-        <label className="text-xs font-medium text-gray-700 dark:text-slate-300 block mb-1.5">Notes</label>
+        <label className="text-xs font-medium text-gray-700 dark:text-slate-300 block mb-1.5">
+          Notes
+        </label>
         <textarea
           rows={3}
           readOnly={!canWrite}
           className={clsx(
             'w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-gray-800 dark:text-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-slate-600',
-            !canWrite && 'opacity-60 cursor-not-allowed'
+            !canWrite && 'opacity-60 cursor-not-allowed',
           )}
           placeholder={canWrite ? 'Add notes about this client…' : 'No notes'}
           value={notes}
-          onChange={e => { if (canWrite) { setNotes(e.target.value); setNotesChanged(true); } }}
+          onChange={(e) => {
+            if (canWrite) {
+              setNotes(e.target.value);
+              setNotesChanged(true);
+            }
+          }}
         />
         {canWrite && notesChanged && (
           <button
@@ -611,7 +742,7 @@ function TrafficCard({ mac }: { mac: string }) {
 
   const { data: points = [], isLoading } = useQuery({
     queryKey: ['client-traffic', mac, range],
-    queryFn: () => clientsApi.getTraffic(mac, range).then(r => r.data),
+    queryFn: () => clientsApi.getTraffic(mac, range).then((r) => r.data),
     refetchInterval: 60_000,
   });
 
@@ -621,7 +752,7 @@ function TrafficCard({ mac }: { mac: string }) {
     { value: '7d', label: '7d' },
   ] as const;
 
-  const chartData = points.map(p => ({
+  const chartData = points.map((p) => ({
     time: p.time,
     Upload: p.tx_bytes,
     Download: p.rx_bytes,
@@ -636,7 +767,7 @@ function TrafficCard({ mac }: { mac: string }) {
           Wireless Usage
         </h2>
         <div className="flex gap-1">
-          {ranges.map(r => (
+          {ranges.map((r) => (
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
@@ -644,7 +775,7 @@ function TrafficCard({ mac }: { mac: string }) {
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
                 range === r.value
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
               )}
             >
               {r.label}
@@ -712,8 +843,18 @@ function TrafficCard({ mac }: { mac: string }) {
 // ─── App Traffic (NetFlow) ────────────────────────────────────────────────────
 
 const APP_COLORS = [
-  '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4',
-  '#ec4899', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#a855f7',
+  '#3b82f6',
+  '#8b5cf6',
+  '#10b981',
+  '#f59e0b',
+  '#ef4444',
+  '#06b6d4',
+  '#ec4899',
+  '#84cc16',
+  '#f97316',
+  '#6366f1',
+  '#14b8a6',
+  '#a855f7',
 ];
 
 function AppTrafficCard({ mac }: { mac: string }) {
@@ -721,7 +862,7 @@ function AppTrafficCard({ mac }: { mac: string }) {
 
   const { data, isLoading } = useQuery({
     queryKey: ['client-app-traffic', mac, range],
-    queryFn: () => trafficApi.client(mac, range).then(r => r.data),
+    queryFn: () => trafficApi.client(mac, range).then((r) => r.data),
     refetchInterval: 60_000,
   });
 
@@ -744,7 +885,7 @@ function AppTrafficCard({ mac }: { mac: string }) {
     { value: '7d', label: '7d' },
   ] as const;
 
-  const chartData = series.map(p => ({
+  const chartData = series.map((p) => ({
     time: p.time,
     Upload: p.upload,
     Download: p.download,
@@ -762,7 +903,7 @@ function AppTrafficCard({ mac }: { mac: string }) {
           <span className="text-xs font-normal text-gray-400 dark:text-slate-500">(NetFlow)</span>
         </h2>
         <div className="flex gap-1">
-          {ranges.map(r => (
+          {ranges.map((r) => (
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
@@ -770,7 +911,7 @@ function AppTrafficCard({ mac }: { mac: string }) {
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
                 range === r.value
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
               )}
             >
               {r.label}
@@ -814,8 +955,22 @@ function AppTrafficCard({ mac }: { mac: string }) {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
-                <Area type="monotone" dataKey="Download" stroke="#3b82f6" fill="#3b82f620" strokeWidth={1.5} dot={false} />
-                <Area type="monotone" dataKey="Upload" stroke="#8b5cf6" fill="#8b5cf620" strokeWidth={1.5} dot={false} />
+                <Area
+                  type="monotone"
+                  dataKey="Download"
+                  stroke="#3b82f6"
+                  fill="#3b82f620"
+                  strokeWidth={1.5}
+                  dot={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="Upload"
+                  stroke="#8b5cf6"
+                  fill="#8b5cf620"
+                  strokeWidth={1.5}
+                  dot={false}
+                />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -824,12 +979,17 @@ function AppTrafficCard({ mac }: { mac: string }) {
             <div className="space-y-1.5">
               {apps.slice(0, 8).map((a, i) => (
                 <div key={a.app} className="flex items-center gap-2 text-xs">
-                  <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: APP_COLORS[i % APP_COLORS.length] }} />
+                  <span
+                    className="w-2 h-2 rounded-sm flex-shrink-0"
+                    style={{ backgroundColor: APP_COLORS[i % APP_COLORS.length] }}
+                  />
                   <span className="text-gray-700 dark:text-slate-300 flex-1 truncate">{a.app}</span>
                   <span className="text-gray-400 dark:text-slate-500">
                     {totalAppBytes > 0 ? `${((a.bytes / totalAppBytes) * 100).toFixed(1)}%` : ''}
                   </span>
-                  <span className="font-medium text-gray-900 dark:text-white w-16 text-right">{formatBytes(a.bytes)}</span>
+                  <span className="font-medium text-gray-900 dark:text-white w-16 text-right">
+                    {formatBytes(a.bytes)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -843,10 +1003,10 @@ function AppTrafficCard({ mac }: { mac: string }) {
 // ─── Signal Strength Graph ────────────────────────────────────────────────────
 
 function qualityColor(dbm: number): string {
-  if (dbm >= -55) return '#22c55e';  // green-500
-  if (dbm >= -65) return '#84cc16';  // lime-500
-  if (dbm >= -75) return '#eab308';  // yellow-500
-  return '#ef4444';                  // red-500
+  if (dbm >= -55) return '#22c55e'; // green-500
+  if (dbm >= -65) return '#84cc16'; // lime-500
+  if (dbm >= -75) return '#eab308'; // yellow-500
+  return '#ef4444'; // red-500
 }
 
 function SignalCard({ mac }: { mac: string }) {
@@ -854,7 +1014,7 @@ function SignalCard({ mac }: { mac: string }) {
 
   const { data: raw = [], isLoading } = useQuery({
     queryKey: ['client-signal', mac, range],
-    queryFn: () => clientsApi.getSignal(mac, range).then(r => r.data),
+    queryFn: () => clientsApi.getSignal(mac, range).then((r) => r.data),
     refetchInterval: 60_000,
   });
 
@@ -871,16 +1031,16 @@ function SignalCard({ mac }: { mac: string }) {
   const chartData = raw.map((p: SignalPoint) => ({
     ...p,
     label: format(parseISO(p.time), range === '7d' ? 'MMM d HH:mm' : 'HH:mm'),
-    bar_value: p.signal_strength - BASELINE,   // always positive
+    bar_value: p.signal_strength - BASELINE, // always positive
   }));
 
   // Reference line Y values are also offset
   const refExcellent = -55 - BASELINE; // 45
-  const refGood      = -65 - BASELINE; // 35
-  const refFair      = -75 - BASELINE; // 25
+  const refGood = -65 - BASELINE; // 35
+  const refFair = -75 - BASELINE; // 25
 
   // Domain: 0 to just above the highest reading
-  const values = chartData.map(p => p.bar_value);
+  const values = chartData.map((p) => p.bar_value);
   const yDomainMax = values.length ? Math.min(BASELINE * -1, Math.max(...values) + 3) : 80;
 
   return (
@@ -891,7 +1051,7 @@ function SignalCard({ mac }: { mac: string }) {
           Signal Strength
         </h2>
         <div className="flex gap-1">
-          {ranges.map(r => (
+          {ranges.map((r) => (
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
@@ -899,7 +1059,7 @@ function SignalCard({ mac }: { mac: string }) {
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
                 range === r.value
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
               )}
             >
               {r.label}
@@ -935,9 +1095,11 @@ function SignalCard({ mac }: { mac: string }) {
                 unit=" dBm"
               />
               <Tooltip
-                formatter={(_v: number, _n: string, props: { payload?: { signal_strength: number } }) =>
-                  [`${props.payload?.signal_strength ?? ''} dBm`, 'Signal']
-                }
+                formatter={(
+                  _v: number,
+                  _n: string,
+                  props: { payload?: { signal_strength: number } },
+                ) => [`${props.payload?.signal_strength ?? ''} dBm`, 'Signal']}
                 contentStyle={{
                   fontSize: '11px',
                   backgroundColor: 'var(--tooltip-bg, #1e293b)',
@@ -946,12 +1108,32 @@ function SignalCard({ mac }: { mac: string }) {
                 }}
               />
               {/* Quality threshold reference lines (offset to bar scale) */}
-              <ReferenceLine y={refExcellent} stroke="#22c55e" strokeDasharray="3 3" strokeOpacity={0.6}
-                label={{ value: 'Excellent', position: 'insideTopRight', fontSize: 9, fill: '#22c55e' }} />
-              <ReferenceLine y={refGood} stroke="#84cc16" strokeDasharray="3 3" strokeOpacity={0.6}
-                label={{ value: 'Good', position: 'insideTopRight', fontSize: 9, fill: '#84cc16' }} />
-              <ReferenceLine y={refFair} stroke="#eab308" strokeDasharray="3 3" strokeOpacity={0.6}
-                label={{ value: 'Fair', position: 'insideTopRight', fontSize: 9, fill: '#eab308' }} />
+              <ReferenceLine
+                y={refExcellent}
+                stroke="#22c55e"
+                strokeDasharray="3 3"
+                strokeOpacity={0.6}
+                label={{
+                  value: 'Excellent',
+                  position: 'insideTopRight',
+                  fontSize: 9,
+                  fill: '#22c55e',
+                }}
+              />
+              <ReferenceLine
+                y={refGood}
+                stroke="#84cc16"
+                strokeDasharray="3 3"
+                strokeOpacity={0.6}
+                label={{ value: 'Good', position: 'insideTopRight', fontSize: 9, fill: '#84cc16' }}
+              />
+              <ReferenceLine
+                y={refFair}
+                stroke="#eab308"
+                strokeDasharray="3 3"
+                strokeOpacity={0.6}
+                label={{ value: 'Fair', position: 'insideTopRight', fontSize: 9, fill: '#eab308' }}
+              />
               <Bar dataKey="bar_value" name="Signal" radius={[2, 2, 0, 0]}>
                 {chartData.map((entry, i) => (
                   <Cell key={i} fill={qualityColor(entry.signal_strength)} />
@@ -960,10 +1142,19 @@ function SignalCard({ mac }: { mac: string }) {
             </BarChart>
           </ResponsiveContainer>
           <div className="flex items-center gap-4 text-[10px] text-gray-500 dark:text-slate-400">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500 inline-block" />≥ −55 dBm Excellent</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-lime-500 inline-block" />≥ −65 Good</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-yellow-500 inline-block" />≥ −75 Fair</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-red-500 inline-block" />Poor</span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-sm bg-green-500 inline-block" />≥ −55 dBm Excellent
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-sm bg-lime-500 inline-block" />≥ −65 Good
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-sm bg-yellow-500 inline-block" />≥ −75 Fair
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-sm bg-red-500 inline-block" />
+              Poor
+            </span>
           </div>
         </>
       )}
@@ -978,21 +1169,24 @@ export default function ClientDetailPage() {
   // Only a MAC address is used from the URL (outside review U13): anything
   // else, such as an encoded path, never reaches an API call.
   const macParts = (rawMac ?? '').split(/[:-]/);
-  const mac = macParts.length === 6 && macParts.every((p) => /^[0-9A-Fa-f]{2}$/.test(p)) ? rawMac : undefined;
+  const mac =
+    macParts.length === 6 && macParts.every((p) => /^[0-9A-Fa-f]{2}$/.test(p)) ? rawMac : undefined;
   const navigate = useNavigate();
   const canWrite = useCanWrite();
 
-  const { data: client, isLoading, isError } = useQuery({
+  const {
+    data: client,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['client-detail', mac],
-    queryFn: () => clientsApi.get(mac!).then(r => r.data),
+    queryFn: () => clientsApi.get(mac!).then((r) => r.data),
     enabled: !!mac,
   });
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-400">
-        Loading client…
-      </div>
+      <div className="flex items-center justify-center h-64 text-gray-400">Loading client…</div>
     );
   }
 
@@ -1001,7 +1195,9 @@ export default function ClientDetailPage() {
       <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
         <AlertCircle className="w-8 h-8" />
         <p>Client not found.</p>
-        <button onClick={() => navigate(-1)} className="btn-secondary text-sm">Go back</button>
+        <button onClick={() => navigate(-1)} className="btn-secondary text-sm">
+          Go back
+        </button>
       </div>
     );
   }
@@ -1020,36 +1216,56 @@ export default function ClientDetailPage() {
           Back
         </button>
         <span>/</span>
-        <Link to="/clients" className="hover:text-gray-700 dark:hover:text-slate-200 transition-colors">
+        <Link
+          to="/clients"
+          className="hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+        >
           Clients
         </Link>
         <span>/</span>
-        <span className="text-gray-700 dark:text-slate-200 font-medium truncate">{displayName}</span>
+        <span className="text-gray-700 dark:text-slate-200 font-medium truncate">
+          {displayName}
+        </span>
       </div>
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className={clsx(
-          'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
-          client.active
-            ? 'bg-green-100 dark:bg-green-900/30'
-            : 'bg-gray-100 dark:bg-slate-700'
-        )}>
-          {client.client_type === 'wireless'
-            ? <Wifi className={clsx('w-5 h-5', client.active ? 'text-green-600 dark:text-green-400' : 'text-gray-400')} />
-            : <Network className={clsx('w-5 h-5', client.active ? 'text-green-600 dark:text-green-400' : 'text-gray-400')} />
-          }
+        <div
+          className={clsx(
+            'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
+            client.active ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-slate-700',
+          )}
+        >
+          {client.client_type === 'wireless' ? (
+            <Wifi
+              className={clsx(
+                'w-5 h-5',
+                client.active ? 'text-green-600 dark:text-green-400' : 'text-gray-400',
+              )}
+            />
+          ) : (
+            <Network
+              className={clsx(
+                'w-5 h-5',
+                client.active ? 'text-green-600 dark:text-green-400' : 'text-gray-400',
+              )}
+            />
+          )}
         </div>
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">{displayName}</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 font-mono">{client.mac_address}</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 font-mono">
+            {client.mac_address}
+          </p>
         </div>
-        <span className={clsx(
-          'ml-auto px-2.5 py-1 rounded-full text-xs font-semibold',
-          client.active
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-            : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
-        )}>
+        <span
+          className={clsx(
+            'ml-auto px-2.5 py-1 rounded-full text-xs font-semibold',
+            client.active
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+              : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
+          )}
+        >
           {client.active ? 'Online' : 'Offline'}
         </span>
       </div>

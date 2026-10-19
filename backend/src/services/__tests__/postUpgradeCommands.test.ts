@@ -8,32 +8,55 @@ jest.mock('../sshExec', () => ({
   looksLikeFailure: (o: string) => /failure:|syntax error|bad command/i.test(o),
 }));
 const safeApply = jest.fn();
-jest.mock('../changeGuard/ChangeGuard', () => ({ withSafeApply: (...a: unknown[]) => safeApply(...a) }));
+jest.mock('../changeGuard/ChangeGuard', () => ({
+  withSafeApply: (...a: unknown[]) => safeApply(...a),
+}));
 
 import { FirmwareOrchestrator } from '../FirmwareOrchestrator';
 
 const device = { id: 8, name: 'TEST', ip_address: '192.168.0.51' };
-const rollout = { post_command: '/system script run mtm-v7-setup', post_template_name: 'v7 scripts' };
+const rollout = {
+  post_command: '/system script run mtm-v7-setup',
+  post_template_name: 'v7 scripts',
+};
 const run = (o: FirmwareOrchestrator) =>
-  (o as unknown as { runPostCommands: (d: unknown, r: unknown) => Promise<{ ok: boolean; output: string | null; error: string | null }> })
-    .runPostCommands(device, rollout);
+  (
+    o as unknown as {
+      runPostCommands: (
+        d: unknown,
+        r: unknown,
+      ) => Promise<{ ok: boolean; output: string | null; error: string | null }>;
+    }
+  ).runPostCommands(device, rollout);
 
-beforeEach(() => { runSsh.mockReset(); safeApply.mockReset(); });
+beforeEach(() => {
+  runSsh.mockReset();
+  safeApply.mockReset();
+});
 
 it('runs the commands under Change Guard and keeps what they printed', async () => {
   runSsh.mockResolvedValue({ output: 'done' });
-  safeApply.mockImplementation(async (_d: unknown, meta: { summary: string; requireProtection: boolean }, fn: () => Promise<string>) => {
-    expect(meta.summary).toBe('Post-upgrade commands (v7 scripts)');
-    expect(meta.requireProtection).toBe(false);
-    return { result: await fn(), autoReverting: false };
-  });
+  safeApply.mockImplementation(
+    async (
+      _d: unknown,
+      meta: { summary: string; requireProtection: boolean },
+      fn: () => Promise<string>,
+    ) => {
+      expect(meta.summary).toBe('Post-upgrade commands (v7 scripts)');
+      expect(meta.requireProtection).toBe(false);
+      return { result: await fn(), autoReverting: false };
+    },
+  );
   expect(await run(new FirmwareOrchestrator())).toEqual({ ok: true, output: 'done', error: null });
   expect(runSsh).toHaveBeenCalledWith(device, '/system script run mtm-v7-setup');
 });
 
 it('fails on an error RouterOS reports in the text', async () => {
   runSsh.mockResolvedValue({ output: 'failure: no such item' });
-  safeApply.mockImplementation(async (_d: unknown, _m: unknown, fn: () => Promise<string>) => ({ result: await fn(), autoReverting: false }));
+  safeApply.mockImplementation(async (_d: unknown, _m: unknown, fn: () => Promise<string>) => ({
+    result: await fn(),
+    autoReverting: false,
+  }));
   const r = await run(new FirmwareOrchestrator());
   expect(r.ok).toBe(false);
   expect(r.error).toMatch(/no such item/);

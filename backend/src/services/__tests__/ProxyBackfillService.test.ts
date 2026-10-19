@@ -14,24 +14,40 @@ const usage = backfillProxyUsage as unknown as jest.Mock;
 function fakeClient(lockGranted: boolean) {
   const release = jest.fn();
   const query = jest.fn(async (text: string) =>
-    text.includes('pg_try_advisory_lock') ? { rows: [{ ok: lockGranted }] } : { rows: [] });
+    text.includes('pg_try_advisory_lock') ? { rows: [{ ok: lockGranted }] } : { rows: [] },
+  );
   connect.mockResolvedValue({ query, release });
   return { query, release };
 }
 
 describe('runProxyBackfills', () => {
-  beforeEach(() => { connect.mockReset(); sources.mockReset(); usage.mockReset(); sources.mockResolvedValue(0); usage.mockResolvedValue(0); });
+  beforeEach(() => {
+    connect.mockReset();
+    sources.mockReset();
+    usage.mockReset();
+    sources.mockResolvedValue(0);
+    usage.mockResolvedValue(0);
+  });
 
   it('runs the instance list then the rollup on its own client and releases the lock', async () => {
     const c = fakeClient(true);
     const order: string[] = [];
-    sources.mockImplementation(async () => { order.push('sources'); return 2; });
-    usage.mockImplementation(async () => { order.push('usage'); return 5; });
+    sources.mockImplementation(async () => {
+      order.push('sources');
+      return 2;
+    });
+    usage.mockImplementation(async () => {
+      order.push('usage');
+      return 5;
+    });
     await expect(runProxyBackfills()).resolves.toBe(true);
     expect(order).toEqual(['sources', 'usage']);
-    expect(c.query.mock.calls.map(([t]) => String(t))).toEqual(expect.arrayContaining([
-      expect.stringContaining('pg_try_advisory_lock'), expect.stringContaining('pg_advisory_unlock'),
-    ]));
+    expect(c.query.mock.calls.map(([t]) => String(t))).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('pg_try_advisory_lock'),
+        expect.stringContaining('pg_advisory_unlock'),
+      ]),
+    );
     expect(c.release).toHaveBeenCalled();
   });
 
@@ -54,7 +70,12 @@ describe('runProxyBackfills', () => {
   it('does not start a second pass while one is running in this process', async () => {
     fakeClient(true);
     let finish!: () => void;
-    sources.mockImplementation(() => new Promise<number>((r) => { finish = () => r(0); }));
+    sources.mockImplementation(
+      () =>
+        new Promise<number>((r) => {
+          finish = () => r(0);
+        }),
+    );
     const first = runProxyBackfills();
     await new Promise((r) => setImmediate(r));
     await expect(runProxyBackfills()).resolves.toBe(false);
@@ -64,7 +85,13 @@ describe('runProxyBackfills', () => {
 });
 
 describe('startProxyBackfillsInBackground', () => {
-  beforeEach(() => { connect.mockReset(); sources.mockReset(); usage.mockReset(); sources.mockResolvedValue(0); usage.mockResolvedValue(0); });
+  beforeEach(() => {
+    connect.mockReset();
+    sources.mockReset();
+    usage.mockReset();
+    sources.mockResolvedValue(0);
+    usage.mockResolvedValue(0);
+  });
 
   it('returns without waiting for a retry once a pass succeeds', async () => {
     fakeClient(true);

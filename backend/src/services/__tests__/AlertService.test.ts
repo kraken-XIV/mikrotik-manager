@@ -7,9 +7,25 @@ import { query } from '../../config/database';
 const mockedQuery = jest.mocked(query);
 
 // Minimal rule and channel fixtures
-const enabledRule = { event_type: 'device_offline', enabled: true, threshold: null, cooldown_min: 15 };
-const disabledRule = { event_type: 'device_online', enabled: false, threshold: null, cooldown_min: 15 };
-const slackChannel = { id: 1, name: 'slack-test', type: 'slack' as const, enabled: true, config: { webhook_url: 'https://hooks.example.com/test' } };
+const enabledRule = {
+  event_type: 'device_offline',
+  enabled: true,
+  threshold: null,
+  cooldown_min: 15,
+};
+const disabledRule = {
+  event_type: 'device_online',
+  enabled: false,
+  threshold: null,
+  cooldown_min: 15,
+};
+const slackChannel = {
+  id: 1,
+  name: 'slack-test',
+  type: 'slack' as const,
+  enabled: true,
+  config: { webhook_url: 'https://hooks.example.com/test' },
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -37,13 +53,16 @@ describe('dispatch', () => {
     const sendSpy = jest.spyOn(service as any, 'sendToChannel').mockResolvedValue(undefined);
     await service.dispatch('device_offline', 'went down', { cooldownKey: 'test-enabled' });
     expect(sendSpy).toHaveBeenCalledTimes(1);
-    expect(sendSpy).toHaveBeenCalledWith(slackChannel, 'device_offline', 'went down', expect.any(Object));
+    expect(sendSpy).toHaveBeenCalledWith(
+      slackChannel,
+      'device_offline',
+      'went down',
+      expect.any(Object),
+    );
   });
 
   it('does nothing when no channels are configured', async () => {
-    mockedQuery
-      .mockResolvedValueOnce([enabledRule])
-      .mockResolvedValueOnce([]);
+    mockedQuery.mockResolvedValueOnce([enabledRule]).mockResolvedValueOnce([]);
     const service = new AlertService();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sendSpy = jest.spyOn(service as any, 'sendToChannel').mockResolvedValue(undefined);
@@ -54,9 +73,9 @@ describe('dispatch', () => {
   it('blocks a second dispatch during the cooldown window', async () => {
     jest.useFakeTimers();
     mockedQuery
-      .mockResolvedValueOnce([enabledRule])   // rule for first dispatch
-      .mockResolvedValueOnce([slackChannel])  // channels for first dispatch
-      .mockResolvedValueOnce([]);             // history insert
+      .mockResolvedValueOnce([enabledRule]) // rule for first dispatch
+      .mockResolvedValueOnce([slackChannel]) // channels for first dispatch
+      .mockResolvedValueOnce([]); // history insert
     const service = new AlertService();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sendSpy = jest.spyOn(service as any, 'sendToChannel').mockResolvedValue(undefined);
@@ -107,7 +126,8 @@ describe('dispatch', () => {
 
 describe('slackColor', () => {
   const service = new AlertService();
-  const slackColor = (et: string) => (service as never as Record<string, (s: string) => string>).slackColor(et);
+  const slackColor = (et: string) =>
+    (service as never as Record<string, (s: string) => string>).slackColor(et);
 
   it('returns "good" for device_online', () => {
     expect(slackColor('device_online')).toBe('good');
@@ -130,7 +150,8 @@ describe('slackColor', () => {
 
 describe('discordColor', () => {
   const service = new AlertService();
-  const discordColor = (et: string) => (service as never as Record<string, (s: string) => number>).discordColor(et);
+  const discordColor = (et: string) =>
+    (service as never as Record<string, (s: string) => number>).discordColor(et);
 
   it('returns green (0x22c55e) for device_online', () => {
     expect(discordColor('device_online')).toBe(0x22c55e);
@@ -158,7 +179,7 @@ type NtfyService = {
     cfg: Record<string, unknown>,
     eventType: string,
     message: string,
-    ctx: { deviceId?: number; deviceName?: string; details?: string }
+    ctx: { deviceId?: number; deviceName?: string; details?: string },
   ): Promise<void>;
   postJson(url: string, body: string, headers?: Record<string, string>): Promise<void>;
 };
@@ -190,13 +211,15 @@ describe('ntfyAuthHeaders', () => {
   const h = (cfg: Record<string, unknown>) => asNtfy(new AlertService()).ntfyAuthHeaders(cfg);
 
   it('prefers an access token over basic auth', () => {
-    expect(h({ token: 'tk_abc', username: 'u', password: 'p' }))
-      .toEqual({ Authorization: 'Bearer tk_abc' });
+    expect(h({ token: 'tk_abc', username: 'u', password: 'p' })).toEqual({
+      Authorization: 'Bearer tk_abc',
+    });
   });
 
   it('falls back to basic auth', () => {
-    expect(h({ username: 'alice', password: 'secret' }))
-      .toEqual({ Authorization: `Basic ${Buffer.from('alice:secret').toString('base64')}` });
+    expect(h({ username: 'alice', password: 'secret' })).toEqual({
+      Authorization: `Basic ${Buffer.from('alice:secret').toString('base64')}`,
+    });
   });
 
   it('sends no auth for an unprotected topic', () => {
@@ -211,7 +234,11 @@ describe('ntfyAuthHeaders', () => {
 describe('sendNtfy', () => {
   function capture() {
     const service = new AlertService();
-    const calls: { url: string; body: Record<string, unknown>; headers?: Record<string, string> }[] = [];
+    const calls: {
+      url: string;
+      body: Record<string, unknown>;
+      headers?: Record<string, string>;
+    }[] = [];
     asNtfy(service).postJson = async (url, body, headers) => {
       calls.push({ url, body: JSON.parse(body), headers });
     };
@@ -234,7 +261,9 @@ describe('sendNtfy', () => {
     const { service, calls } = capture();
     await asNtfy(service).sendNtfy(
       { topic: 'mt', server_url: 'https://ntfy.internal.example.com/' },
-      'device_online', 'back', {}
+      'device_online',
+      'back',
+      {},
     );
     expect(calls[0].url).toBe('https://ntfy.internal.example.com');
   });
@@ -242,7 +271,8 @@ describe('sendNtfy', () => {
   it('includes the device name and details in the body', async () => {
     const { service, calls } = capture();
     await asNtfy(service).sendNtfy({ topic: 'mt' }, 'log_error', 'errors seen', {
-      deviceName: 'sw1', details: 'login failure',
+      deviceName: 'sw1',
+      details: 'login failure',
     });
     const msg = String(calls[0].body.message);
     expect(msg).toContain('errors seen');
@@ -254,7 +284,9 @@ describe('sendNtfy', () => {
     const { service, calls } = capture();
     await asNtfy(service).sendNtfy(
       { topic: 'mt', click_url: 'https://mgr.example.com/' },
-      'device_offline', 'down', { deviceId: 42 }
+      'device_offline',
+      'down',
+      { deviceId: 42 },
     );
     expect(calls[0].body.click).toBe('https://mgr.example.com/devices/42');
   });
@@ -267,22 +299,28 @@ describe('sendNtfy', () => {
 
   it('rejects a missing topic rather than posting somewhere unintended', async () => {
     const { service, calls } = capture();
-    await expect(asNtfy(service).sendNtfy({}, 'device_offline', 'x', {}))
-      .rejects.toThrow(/missing topic/);
+    await expect(asNtfy(service).sendNtfy({}, 'device_offline', 'x', {})).rejects.toThrow(
+      /missing topic/,
+    );
     expect(calls).toHaveLength(0);
   });
 
   it('rejects a non-http server URL', async () => {
     const { service } = capture();
     await expect(
-      asNtfy(service).sendNtfy({ topic: 'mt', server_url: 'file:///etc/passwd' }, 'device_offline', 'x', {})
+      asNtfy(service).sendNtfy(
+        { topic: 'mt', server_url: 'file:///etc/passwd' },
+        'device_offline',
+        'x',
+        {},
+      ),
     ).rejects.toThrow(/must be http/);
   });
 
   it('rejects an unparseable server URL', async () => {
     const { service } = capture();
     await expect(
-      asNtfy(service).sendNtfy({ topic: 'mt', server_url: 'not a url' }, 'device_offline', 'x', {})
+      asNtfy(service).sendNtfy({ topic: 'mt', server_url: 'not a url' }, 'device_offline', 'x', {}),
     ).rejects.toThrow(/invalid server_url/);
   });
 

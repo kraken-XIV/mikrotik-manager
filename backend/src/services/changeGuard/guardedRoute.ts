@@ -29,17 +29,22 @@ export async function withGuardedChange<T>(
   req: Request,
   res: Response,
   meta: {
-    kind: string; summary: string; change?: PlannedChange;
+    kind: string;
+    summary: string;
+    change?: PlannedChange;
     /** Seconds before the device restores itself; for slow multi-step changes. */
     timeoutSec?: number;
     /** Refuse, rather than run unprotected, when auto-revert can't be armed. */
     requireProtection?: boolean;
   },
   fn: (c: DeviceCollector) => Promise<T>,
-  afterConfirmed?: (c: DeviceCollector) => Promise<void>
+  afterConfirmed?: (c: DeviceCollector) => Promise<void>,
 ): Promise<void> {
   const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [id]);
-  if (!deviceRow) { res.status(404).json({ error: 'Device not found' }); return; }
+  if (!deviceRow) {
+    res.status(404).json({ error: 'Device not found' });
+    return;
+  }
 
   // Pre-flight: simulate the change against live state and refuse a predicted
   // lockout unless the user has explicitly accepted it.
@@ -51,8 +56,10 @@ export async function withGuardedChange<T>(
   // block a change on its own; it just means the safety net is not optional.
   // `force` is the firewall form's older name for the same thing; DELETE has no
   // body, so it can come as ?confirm_lockout=true.
-  const confirmedLockout = req.body?.confirm_lockout === true || req.body?.force === true
-    || req.query?.confirm_lockout === 'true';
+  const confirmedLockout =
+    req.body?.confirm_lockout === true ||
+    req.body?.force === true ||
+    req.query?.confirm_lockout === 'true';
 
   // "Review changes" (#255): predict as usual but report it rather than refuse,
   // and record the writes without arming a revert, since nothing is applied.
@@ -62,9 +69,19 @@ export async function withGuardedChange<T>(
       try {
         const snap = await captureSnapshot(deviceRow as unknown as GuardDevice);
         const v = analyzeChange(snap, deviceRow as unknown as GuardDevice, meta.change);
-        preview.verdict = { severity: v.severity, headline: v.headline, violations: v.violations, warnings: v.warnings };
+        preview.verdict = {
+          severity: v.severity,
+          headline: v.headline,
+          violations: v.violations,
+          warnings: v.warnings,
+        };
       } catch (err) {
-        preview.verdict = { severity: 'unknown', headline: `Change Guard couldn't analyse this change: ${(err as Error).message}`, violations: [], warnings: [] };
+        preview.verdict = {
+          severity: 'unknown',
+          headline: `Change Guard couldn't analyse this change: ${(err as Error).message}`,
+          violations: [],
+          warnings: [],
+        };
       }
     }
     const pc = new DeviceCollector(deviceRow);
@@ -75,7 +92,11 @@ export async function withGuardedChange<T>(
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
     } finally {
-      try { pc.disconnect(); } catch { /* ignore */ }
+      try {
+        pc.disconnect();
+      } catch {
+        /* ignore */
+      }
     }
     return;
   }
@@ -112,7 +133,9 @@ export async function withGuardedChange<T>(
       }
     } catch (err) {
       requireProtection = true;
-      console.warn(`[preflight] analysis skipped for device ${logSafe(id)}: ${logSafe((err as Error).message)}`);
+      console.warn(
+        `[preflight] analysis skipped for device ${logSafe(id)}: ${logSafe((err as Error).message)}`,
+      );
     }
   }
 
@@ -124,13 +147,15 @@ export async function withGuardedChange<T>(
       async () => {
         await collector.connect();
         return fn(collector);
-      }
+      },
     );
 
     // Only re-read the device once we know it's still reachable.
     const refreshStart = Date.now();
     if (outcome.confirmed && afterConfirmed) {
-      await afterConfirmed(collector).catch(() => { /* best effort */ });
+      await afterConfirmed(collector).catch(() => {
+        /* best effort */
+      });
     }
     // Where the time went, so a slow device can be diagnosed from the log (#258).
     const sec = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
@@ -139,17 +164,22 @@ export async function withGuardedChange<T>(
       ...Object.entries(outcome.timings ?? {}).map(([k, v]) => `${k} ${sec(v)}`),
       ...(outcome.confirmed && afterConfirmed ? [`refresh ${sec(Date.now() - refreshStart)}`] : []),
     ];
-    console.log(`[guard] ${logSafe(deviceRow.name)} ${logSafe(meta.kind)} (${outcome.mode ?? '-'}${outcome.unprotectedReason ? ', unprotected' : ''}): `
-      + `${parts.join(', ')}; total ${sec(Date.now() - started)}`);
+    console.log(
+      `[guard] ${logSafe(deviceRow.name)} ${logSafe(meta.kind)} (${outcome.mode ?? '-'}${outcome.unprotectedReason ? ', unprotected' : ''}): ` +
+        `${parts.join(', ')}; total ${sec(Date.now() - started)}`,
+    );
 
     res.json({
       ...(typeof outcome.result === 'object' && outcome.result !== null
-        ? outcome.result as Record<string, unknown>
+        ? (outcome.result as Record<string, unknown>)
         : { result: outcome.result }),
       // A change that severed the connection produces no result — the request never
       // got a reply. Say what is happening rather than returning a bare guard block.
       ...(outcome.result === undefined && outcome.autoReverting
-        ? { message: 'Contact with the device was lost while applying this change. It is restoring itself and should come back shortly.' }
+        ? {
+            message:
+              'Contact with the device was lost while applying this change. It is restoring itself and should come back shortly.',
+          }
         : {}),
       guard: {
         protected: !outcome.unprotectedReason,
@@ -166,7 +196,12 @@ export async function withGuardedChange<T>(
     if (err instanceof PartialApplyRevertError) {
       res.status(500).json({
         error: err.message,
-        guard: { protected: true, confirmed: false, auto_reverting: true, revert_may_fire_at: err.revertAt.toISOString() },
+        guard: {
+          protected: true,
+          confirmed: false,
+          auto_reverting: true,
+          revert_may_fire_at: err.revertAt.toISOString(),
+        },
       });
       return;
     }
@@ -176,7 +211,10 @@ export async function withGuardedChange<T>(
     }
     res.status(500).json({ error: (err as Error).message });
   } finally {
-    try { collector.disconnect(); } catch { /* device may be gone */ }
+    try {
+      collector.disconnect();
+    } catch {
+      /* device may be gone */
+    }
   }
 }
-

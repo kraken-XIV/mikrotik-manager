@@ -16,11 +16,18 @@ const REDIS_OP_TIMEOUT_MS = 800;
 function withTimeout<T>(p: Promise<T>): Promise<T> {
   return Promise.race([
     p,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('redis timeout')), REDIS_OP_TIMEOUT_MS)),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('redis timeout')), REDIS_OP_TIMEOUT_MS),
+    ),
   ]);
 }
 
-export function memoryLimitExceeded(key: string, windowSec: number, max: number, now = Date.now()): boolean {
+export function memoryLimitExceeded(
+  key: string,
+  windowSec: number,
+  max: number,
+  now = Date.now(),
+): boolean {
   const windowMs = windowSec * 1000;
   if (now - lastSweep > 60_000) {
     for (const [k, b] of memBuckets) {
@@ -52,16 +59,27 @@ return {n, redis.call('PTTL', KEYS[1])}
 
 async function hit(key: string, windowSec: number): Promise<{ count: number; ttlMs: number }> {
   const [count, ttlMs] = await withTimeout(
-    limiterRedis().eval(HIT_SCRIPT, 1, key, String(windowSec * 1000)) as Promise<[number, number]>);
+    limiterRedis().eval(HIT_SCRIPT, 1, key, String(windowSec * 1000)) as Promise<[number, number]>,
+  );
   return { count: Number(count), ttlMs: Number(ttlMs) };
 }
 
 /** Shared decision for both limiters; true when the request was refused. */
-async function limited(res: Response, key: string, windowSec: number, max: number, message: string, tag: string): Promise<boolean> {
+async function limited(
+  res: Response,
+  key: string,
+  windowSec: number,
+  max: number,
+  message: string,
+  tag: string,
+): Promise<boolean> {
   try {
     const { count, ttlMs } = await hit(key, windowSec);
     if (count > max) {
-      res.setHeader('Retry-After', String(Math.max(1, ttlMs > 0 ? Math.ceil(ttlMs / 1000) : windowSec)));
+      res.setHeader(
+        'Retry-After',
+        String(Math.max(1, ttlMs > 0 ? Math.ceil(ttlMs / 1000) : windowSec)),
+      );
       res.status(429).json({ error: message });
       return true;
     }
@@ -94,7 +112,17 @@ export function rateLimitRedis(options: {
     }
     const uid = req.user?.userId;
     const key = `rl:${keyPrefix}:${uid != null ? `u:${uid}` : `ip:${req.ip || 'unknown'}`}`;
-    if (await limited(res, key, windowSec, max, 'Too many requests. Please try again later.', 'rateLimitRedis')) return;
+    if (
+      await limited(
+        res,
+        key,
+        windowSec,
+        max,
+        'Too many requests. Please try again later.',
+        'rateLimitRedis',
+      )
+    )
+      return;
     next();
   };
 }
@@ -108,7 +136,7 @@ async function getLoginLimits(): Promise<{ windowSec: number; max: number }> {
   }
   try {
     const rows = await query<{ key: string; value: unknown }>(
-      `SELECT key, value FROM app_settings WHERE key IN ('login_rate_limit_window_sec', 'login_rate_limit_max')`
+      `SELECT key, value FROM app_settings WHERE key IN ('login_rate_limit_window_sec', 'login_rate_limit_max')`,
     );
     const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
     const windowSec = Number(map['login_rate_limit_window_sec']) || 60;
@@ -129,7 +157,17 @@ export function loginRateLimit(): (req: Request, res: Response, next: NextFuncti
     const ip = req.ip || 'unknown';
     const key = `rl:login:ip:${ip}`;
     const { windowSec, max } = await getLoginLimits();
-    if (await limited(res, key, windowSec, max, 'Too many login attempts. Please try again later.', 'loginRateLimit')) return;
+    if (
+      await limited(
+        res,
+        key,
+        windowSec,
+        max,
+        'Too many login attempts. Please try again later.',
+        'loginRateLimit',
+      )
+    )
+      return;
     next();
   };
 }

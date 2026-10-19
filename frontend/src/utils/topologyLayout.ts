@@ -33,7 +33,13 @@ export interface LayoutOptions {
   slotToRow: number;
 }
 
-export const DEFAULT_LAYOUT: LayoutOptions = { maxRow: 24, leafRow: 6, shelfGap: 0.45, aspect: 2, slotToRow: 1.6 };
+export const DEFAULT_LAYOUT: LayoutOptions = {
+  maxRow: 24,
+  leafRow: 6,
+  shelfGap: 0.45,
+  aspect: 2,
+  slotToRow: 1.6,
+};
 
 export interface Placement {
   /** Horizontal position in slots; fractional when centred. */
@@ -50,18 +56,33 @@ export interface LayoutResult {
   heightRows: number;
 }
 
-interface Box { w: number; h: number; branch?: boolean }
+interface Box {
+  w: number;
+  h: number;
+  branch?: boolean;
+}
 
 /**
  * Deal boxes onto `shelves` rows so the rows come out as even as possible: each
  * box, widest first, goes on the row that is shortest so far. Within a row the
  * boxes keep their original order, and each row is centred in the block.
  */
-export function packInto(items: Box[], shelves: number, hGap: number, vGap: number): {
-  offsets: Placement[]; w: number; h: number;
+export function packInto(
+  items: Box[],
+  shelves: number,
+  hGap: number,
+  vGap: number,
+): {
+  offsets: Placement[];
+  w: number;
+  h: number;
 } {
   const k = Math.max(1, Math.min(shelves, items.length));
-  const rows: { idx: number[]; w: number; h: number }[] = Array.from({ length: k }, () => ({ idx: [], w: 0, h: 0 }));
+  const rows: { idx: number[]; w: number; h: number }[] = Array.from({ length: k }, () => ({
+    idx: [],
+    w: 0,
+    h: 0,
+  }));
   const byWidth = items.map((b, i) => i).sort((a, b) => items[b].w - items[a].w || a - b);
   for (const i of byWidth) {
     let target = rows[0];
@@ -77,7 +98,10 @@ export function packInto(items: Box[], shelves: number, hGap: number, vGap: numb
   let y = 0;
   used.forEach((r, ri) => {
     let x = (w - r.w) / 2;
-    for (const i of r.idx) { offsets[i] = { x, y }; x += items[i].w + hGap; }
+    for (const i of r.idx) {
+      offsets[i] = { x, y };
+      x += items[i].w + hGap;
+    }
     y += r.h + (ri < used.length - 1 ? vGap : 0);
   });
   return { offsets, w, h: y };
@@ -89,8 +113,16 @@ export function packInto(items: Box[], shelves: number, hGap: number, vGap: numb
  * possible reads best: a tree, not a grid. The limit grows with very large sets
  * (hundreds of clients) so the block stays roughly the screen's shape.
  */
-export function pack(items: Box[], opts: LayoutOptions = DEFAULT_LAYOUT, hGap = 0, vGap = opts.shelfGap): {
-  offsets: Placement[]; w: number; h: number; shelves: number;
+export function pack(
+  items: Box[],
+  opts: LayoutOptions = DEFAULT_LAYOUT,
+  hGap = 0,
+  vGap = opts.shelfGap,
+): {
+  offsets: Placement[];
+  w: number;
+  h: number;
+  shelves: number;
 } {
   const total = items.reduce((s, b) => s + b.w, 0) + hGap * Math.max(0, items.length - 1);
   const area = items.reduce((s, b) => s + (b.w + hGap) * b.h, 0);
@@ -98,8 +130,11 @@ export function pack(items: Box[], opts: LayoutOptions = DEFAULT_LAYOUT, hGap = 
   // Leaves carry no hierarchy, so a set of only leaves (clients, APs) wraps
   // early into a grid; a family with branches stays one row as long as it can.
   const leavesOnly = items.every((b) => b.h <= 1 && !b.branch);
-  const limit = Math.max(leavesOnly ? opts.leafRow : opts.maxRow, widest,
-    Math.ceil(Math.sqrt((area * opts.aspect) / opts.slotToRow)));
+  const limit = Math.max(
+    leavesOnly ? opts.leafRow : opts.maxRow,
+    widest,
+    Math.ceil(Math.sqrt((area * opts.aspect) / opts.slotToRow)),
+  );
   if (items.length <= 1 || total <= limit) return { ...packInto(items, 1, hGap, vGap), shelves: 1 };
   for (let k = 2; k <= items.length; k++) {
     const p = packInto(items, k, hGap, vGap);
@@ -127,11 +162,17 @@ export function layoutTree(
   const measure = (id: string, seen: Set<string>): Box => {
     seen.add(id);
     const kids = (children.get(id) || []).filter((k) => !seen.has(k));
-    if (!kids.length) { const b = { ...sizeOf(id) }; box.set(id, b); return b; }
+    if (!kids.length) {
+      const b = { ...sizeOf(id) };
+      box.set(id, b);
+      return b;
+    }
     kids.forEach((k) => measure(k, seen));
     // Tallest first, then widest: shelves fill better, and single devices end
     // up together at the end rather than scattered between subtrees.
-    const order = [...kids].sort((a, b) => box.get(b)!.h - box.get(a)!.h || box.get(b)!.w - box.get(a)!.w);
+    const order = [...kids].sort(
+      (a, b) => box.get(b)!.h - box.get(a)!.h || box.get(b)!.w - box.get(a)!.w,
+    );
     const items = order.map((k) => box.get(k)!);
     const packed = pack(items, opts);
     plan.set(id, { order, offsets: packed.offsets, blockW: packed.w });
@@ -150,7 +191,9 @@ export function layoutTree(
     const p = plan.get(id);
     if (!p) return;
     const inset = (b.w - p.blockW) / 2;
-    p.order.forEach((k, i) => place(k, left + inset + p.offsets[i].x, top + own.h + p.offsets[i].y));
+    p.order.forEach((k, i) =>
+      place(k, left + inset + p.offsets[i].x, top + own.h + p.offsets[i].y),
+    );
   };
   place(rootId, 0, 0);
 
@@ -178,14 +221,18 @@ export function layoutForest(
     const items = loose.map(() => ({ w: 1, h: 1 }));
     const packed = pack(items, opts);
     const positions = new Map<string, Placement>(loose.map((id, i) => [id, packed.offsets[i]]));
-    parts.push({ result: { positions, widthSlots: packed.w, heightRows: packed.h }, box: { w: packed.w, h: packed.h } });
+    parts.push({
+      result: { positions, widthSlots: packed.w, heightRows: packed.h },
+      box: { w: packed.w, h: packed.h },
+    });
   }
   const boxes = parts.map((p) => p.box);
   const packed = pack(boxes, opts, gap.h, gap.v);
   const positions = new Map<string, Placement>();
   parts.forEach((p, i) => {
     const o = packed.offsets[i];
-    for (const [id, pos] of p.result.positions) positions.set(id, { x: o.x + pos.x, y: o.y + pos.y });
+    for (const [id, pos] of p.result.positions)
+      positions.set(id, { x: o.x + pos.x, y: o.y + pos.y });
   });
   return { positions, widthSlots: packed.w, heightRows: packed.h };
 }

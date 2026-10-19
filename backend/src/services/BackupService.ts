@@ -60,40 +60,50 @@ export class BackupService {
    */
   async exportConfig(
     device: BackupDevice,
-    opts: { includeSecrets?: boolean } = {}
+    opts: { includeSecrets?: boolean } = {},
   ): Promise<{ text: string; containsSecrets: boolean }> {
     const sshUser = device.ssh_username || device.api_username;
     const port = device.ssh_port || 22;
     const [ver] = await query<{ ros_version: string | null }>(
-      `SELECT ros_version FROM devices WHERE id = $1`, [device.id]
+      `SELECT ros_version FROM devices WHERE id = $1`,
+      [device.id],
     ).catch(() => []);
     const plan = exportPlan(ver?.ros_version, !!opts.includeSecrets);
-    const run = async (user: string, auth: { password: string } | { privateKey: string }) =>
-      ({ text: await this.sshExport(device.ip_address, port, user, auth, plan.command), containsSecrets: plan.containsSecrets });
+    const run = async (user: string, auth: { password: string } | { privateKey: string }) => ({
+      text: await this.sshExport(device.ip_address, port, user, auth, plan.command),
+      containsSecrets: plan.containsSecrets,
+    });
 
     const key = await queryOne<{ private_key_encrypted: string; ssh_username: string | null }>(
       `SELECT private_key_encrypted, ssh_username FROM device_ssh_keys
         WHERE device_id = $1 AND status = 'verified'`,
-      [device.id]
+      [device.id],
     ).catch(() => null);
 
     if (key) {
       try {
-        return await run(key.ssh_username || sshUser, { privateKey: decrypt(key.private_key_encrypted) });
+        return await run(key.ssh_username || sshUser, {
+          privateKey: decrypt(key.private_key_encrypted),
+        });
       } catch (e) {
         // Only a key the device refused is a reason to try the password. A
         // timeout or a failure during the export used to fall back too: the
         // password is refused once a key is installed, so the backup failed
         // with "login failure" on the device and the real reason was lost.
         if (!isAuthRejection(e)) throw e;
-        console.warn(`[Backup] ${device.name}: the device refused the SSH key, trying the password: ${(e as Error).message}`);
+        console.warn(
+          `[Backup] ${device.name}: the device refused the SSH key, trying the password: ${(e as Error).message}`,
+        );
         const sshPass = device.ssh_password_encrypted
           ? decrypt(device.ssh_password_encrypted)
           : decrypt(device.api_password_encrypted);
         try {
           return await run(sshUser, { password: sshPass });
         } catch (pwErr) {
-          throw new Error(`the device refused the SSH key (${(e as Error).message}), and the password too (${(pwErr as Error).message})`, { cause: pwErr });
+          throw new Error(
+            `the device refused the SSH key (${(e as Error).message}), and the password too (${(pwErr as Error).message})`,
+            { cause: pwErr },
+          );
         }
       }
     }
@@ -128,7 +138,7 @@ export class BackupService {
     content: string,
     notes?: string,
     type: string = 'manual',
-    containsSecrets = false
+    containsSecrets = false,
   ): Promise<number> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `${device.name.replace(/[^a-z0-9]/gi, '_')}_${timestamp}.rsc`;
@@ -142,20 +152,29 @@ export class BackupService {
 
     // Passwords and keys are never written in plain text (#172). The recorded
     // size is the readable size, which is what the UI shows.
-    fs.writeFileSync(filePath, containsSecrets ? encrypt(content) : content, { encoding: 'utf8', mode: 0o600 });
+    fs.writeFileSync(filePath, containsSecrets ? encrypt(content) : content, {
+      encoding: 'utf8',
+      mode: 0o600,
+    });
     const size = Buffer.byteLength(content, 'utf8');
 
     const rows = await query<{ id: number }>(
       `INSERT INTO backups (device_id, filename, file_path, size_bytes, backup_type, notes, contains_secrets, encrypted)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$7) RETURNING id`,
-      [device.id, filename, filePath, size, type, notes || null, containsSecrets]
+      [device.id, filename, filePath, size, type, notes || null, containsSecrets],
     );
 
     return rows[0].id;
   }
 
-  async createBackup(device: BackupDevice, notes?: string, type: string = 'manual'): Promise<number> {
-    const { text, containsSecrets } = await this.exportConfig(device, { includeSecrets: await this.includeSecretsSetting(device.id) });
+  async createBackup(
+    device: BackupDevice,
+    notes?: string,
+    type: string = 'manual',
+  ): Promise<number> {
+    const { text, containsSecrets } = await this.exportConfig(device, {
+      includeSecrets: await this.includeSecretsSetting(device.id),
+    });
     return this.createBackupFromContent(device, text, notes, type, containsSecrets);
   }
 
@@ -167,11 +186,19 @@ export class BackupService {
    * `/import` exits 0 whether or not it worked. Uses the device's SSH key when
    * one is deployed; the password alone fails once a key is installed.
    */
-  async restoreBackup(backupId: number, opts: { userId?: number | null } = {}): Promise<RestoreOutcome> {
-    const rows = await query<GuardDevice & SshExecDevice & { file_path: string; encrypted: boolean; backup_filename: string }>(
+  async restoreBackup(
+    backupId: number,
+    opts: { userId?: number | null } = {},
+  ): Promise<RestoreOutcome> {
+    const rows = await query<
+      GuardDevice &
+        SshExecDevice & { file_path: string; encrypted: boolean; backup_filename: string }
+    >(
       `SELECT d.*, b.file_path, b.encrypted, b.filename AS backup_filename
          FROM backups b JOIN devices d ON d.id = b.device_id
-        WHERE b.id = $1`, [backupId]);
+        WHERE b.id = $1`,
+      [backupId],
+    );
     const row = rows[0];
     if (!row) throw new Error('Backup not found');
 
@@ -181,7 +208,9 @@ export class BackupService {
       const outcome = await withSafeApply(
         row,
         {
-          kind: 'backup.restore', summary: `Restore ${row.backup_filename}`, userId: opts.userId ?? null,
+          kind: 'backup.restore',
+          summary: `Restore ${row.backup_filename}`,
+          userId: opts.userId ?? null,
           // A full import is the riskiest write there is: with Change Guard on
           // it runs only with an armed revert, and the revert must outlast the
           // import's own 180 s SSH timeout plus the reachability check (a
@@ -193,9 +222,10 @@ export class BackupService {
         },
         async () => {
           const result = await this.sshImport(row, content);
-          if (result.status !== 'applied') throw new ImportFailedError({ ...result, status: result.status });
+          if (result.status !== 'applied')
+            throw new ImportFailedError({ ...result, status: result.status });
           return result;
-        }
+        },
       );
       if (outcome.autoReverting) return { status: 'reverting', guard: guardSummary(outcome) };
       return { status: 'applied', guard: guardSummary(outcome) };
@@ -205,8 +235,11 @@ export class BackupService {
         return {
           status: 'reverting',
           guard: {
-            protected: true, confirmed: false, auto_reverting: true,
-            unprotected_reason: null, revert_may_fire_at: err.revertAt.toISOString(),
+            protected: true,
+            confirmed: false,
+            auto_reverting: true,
+            unprotected_reason: null,
+            revert_may_fire_at: err.revertAt.toISOString(),
           },
         };
       }
@@ -218,7 +251,7 @@ export class BackupService {
   async deleteBackup(backupId: number): Promise<void> {
     const rows = await query<{ file_path: string }>(
       `DELETE FROM backups WHERE id = $1 RETURNING file_path`,
-      [backupId]
+      [backupId],
     );
     if (rows[0]?.file_path && fs.existsSync(rows[0].file_path)) {
       fs.unlinkSync(rows[0].file_path);
@@ -226,9 +259,9 @@ export class BackupService {
   }
 
   getBackupFilePath(backupId: number, deviceId: number): string | null {
-    const rows = fs.readdirSync(path.join(BACKUPS_DIR, String(deviceId))).filter(
-      (f) => f.includes(String(backupId))
-    );
+    const rows = fs
+      .readdirSync(path.join(BACKUPS_DIR, String(deviceId)))
+      .filter((f) => f.includes(String(backupId)));
     if (!rows.length) return null;
     return path.join(BACKUPS_DIR, String(deviceId), rows[0]);
   }
@@ -238,7 +271,7 @@ export class BackupService {
     port: number,
     username: string,
     auth: { password: string } | { privateKey: string },
-    command = '/export compact'
+    command = '/export compact',
   ): Promise<string> {
     // Timed by silence, not by total length. A fixed 30 seconds failed
     // large configurations that were exporting fine: tens of thousands of
@@ -253,16 +286,29 @@ export class BackupService {
         settled = true;
         clearTimeout(idle);
         clearTimeout(overall);
-        try { conn.end(); } catch { /* closing */ }
+        try {
+          conn.end();
+        } catch {
+          /* closing */
+        }
         reject(err);
       };
-      let idle = setTimeout(() => fail(new Error('SSH connection timed out before the export started')), EXPORT_IDLE_MS);
+      let idle = setTimeout(
+        () => fail(new Error('SSH connection timed out before the export started')),
+        EXPORT_IDLE_MS,
+      );
       const overall = setTimeout(
-        () => fail(new Error(`the export was still running after ${EXPORT_MAX_MS / 60_000} minutes`)), EXPORT_MAX_MS);
+        () =>
+          fail(new Error(`the export was still running after ${EXPORT_MAX_MS / 60_000} minutes`)),
+        EXPORT_MAX_MS,
+      );
       const stillAlive = () => {
         clearTimeout(idle);
         idle = setTimeout(
-          () => fail(new Error(`the export stopped sending data for ${EXPORT_IDLE_MS / 1000} seconds`)), EXPORT_IDLE_MS);
+          () =>
+            fail(new Error(`the export stopped sending data for ${EXPORT_IDLE_MS / 1000} seconds`)),
+          EXPORT_IDLE_MS,
+        );
       };
 
       conn.on('ready', () => {
@@ -292,7 +338,14 @@ export class BackupService {
 
       conn.on('error', (err) => fail(explainSshError(err, host, port)));
 
-      conn.connect({ host, port, username, ...sshHostCheck(host, port), ...auth, readyTimeout: 10_000 });
+      conn.connect({
+        host,
+        port,
+        username,
+        ...sshHostCheck(host, port),
+        ...auth,
+        readyTimeout: 10_000,
+      });
     });
   }
 
@@ -321,21 +374,33 @@ export class BackupService {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);
-        try { conn.end(); } catch { /* closing */ }
+        try {
+          conn.end();
+        } catch {
+          /* closing */
+        }
         fn();
       };
-      const timeout = setTimeout(() => finish(() => reject(ambiguous(new Error('SSH timeout during restore')))), 180_000);
+      const timeout = setTimeout(
+        () => finish(() => reject(ambiguous(new Error('SSH timeout during restore')))),
+        180_000,
+      );
 
-      const exec = (cmd: string): Promise<string> => new Promise((res, rej) => {
-        conn.exec(cmd, (err, stream) => {
-          if (err) return rej(err);
-          let out = '';
-          stream.on('data', (d: Buffer) => { out += d.toString(); });
-          stream.stderr.on('data', (d: Buffer) => { out += d.toString(); });
-          stream.on('close', () => res(out));
-          stream.on('error', rej);
+      const exec = (cmd: string): Promise<string> =>
+        new Promise((res, rej) => {
+          conn.exec(cmd, (err, stream) => {
+            if (err) return rej(err);
+            let out = '';
+            stream.on('data', (d: Buffer) => {
+              out += d.toString();
+            });
+            stream.stderr.on('data', (d: Buffer) => {
+              out += d.toString();
+            });
+            stream.on('close', () => res(out));
+            stream.on('error', rej);
+          });
         });
-      });
 
       conn.on('ready', () => {
         conn.sftp((err, sftp) => {
@@ -358,10 +423,20 @@ export class BackupService {
         });
       });
 
-      conn.on('error', (err) => finish(() => reject(ambiguous(explainSshError(err, device.ip_address, device.ssh_port || 22) as Error))));
+      conn.on('error', (err) =>
+        finish(() =>
+          reject(
+            ambiguous(explainSshError(err, device.ip_address, device.ssh_port || 22) as Error),
+          ),
+        ),
+      );
       conn.connect({
-        host: device.ip_address, port: device.ssh_port || 22, username,
-        ...sshHostCheck(device.ip_address, device.ssh_port || 22), ...auth, readyTimeout: 10_000,
+        host: device.ip_address,
+        port: device.ssh_port || 22,
+        username,
+        ...sshHostCheck(device.ip_address, device.ssh_port || 22),
+        ...auth,
+        readyTimeout: 10_000,
       });
     });
   }
@@ -395,7 +470,9 @@ function guardSummary(o: GuardOutcome<unknown>): RestoreGuard {
 /** The import ran but did not complete; carries RouterOS's verdict out of the guard. */
 class ImportFailedError extends Error {
   /** A partial import leaves a mix of old and new: the guard must keep the revert armed. */
-  get partialApply(): boolean { return this.result.status === 'partial'; }
+  get partialApply(): boolean {
+    return this.result.status === 'partial';
+  }
   constructor(readonly result: ImportResult & { status: 'nothing_applied' | 'partial' }) {
     super(result.error || 'The import did not complete');
   }
@@ -412,12 +489,14 @@ export function describeRestore(r: RestoreOutcome): string {
     case 'reverting':
       return 'The restore did not complete cleanly (it stopped responding or only partly applied), so the device is putting its previous configuration back. It should return shortly.';
     case 'partial':
-      return `Partly restored. RouterOS ran ${r.appliedCommands} command${r.appliedCommands === 1 ? '' : 's'}, then stopped at line ${r.failedLine}: ${r.error}. ` +
-        'The device now has a mix of the backup and its previous configuration.';
+      return (
+        `Partly restored. RouterOS ran ${r.appliedCommands} command${r.appliedCommands === 1 ? '' : 's'}, then stopped at line ${r.failedLine}: ${r.error}. ` +
+        'The device now has a mix of the backup and its previous configuration.'
+      );
     default:
       return r.failedLine
         ? `Nothing was changed. RouterOS stopped at line ${r.failedLine}: ${r.error}. ` +
-          'A backup replays its commands onto the running configuration, so it stops at the first object that already exists.'
+            'A backup replays its commands onto the running configuration, so it stops at the first object that already exists.'
         : `Nothing was changed: ${r.error || 'RouterOS did not confirm the import'}.`;
   }
 }

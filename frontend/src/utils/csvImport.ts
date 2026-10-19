@@ -16,37 +16,70 @@ import { isValidDeviceAddress, stripIPv6Brackets } from './deviceAddress';
 export const MAX_ROWS = 500; // the bulk-add endpoint's own limit
 
 const DEVICE_TYPES: Record<string, string> = {
-  router: 'router', rtr: 'router',
-  switch: 'switch', sw: 'switch',
-  wireless_ap: 'wireless_ap', ap: 'wireless_ap', wireless: 'wireless_ap', wap: 'wireless_ap',
+  router: 'router',
+  rtr: 'router',
+  switch: 'switch',
+  sw: 'switch',
+  wireless_ap: 'wireless_ap',
+  ap: 'wireless_ap',
+  wireless: 'wireless_ap',
+  wap: 'wireless_ap',
   other: 'other',
 };
 
 /** Header aliases, so a spreadsheet exported from another tool mostly just works. */
 const COLUMNS: Record<string, keyof RowFields> = {
-  name: 'name', identity: 'name', hostname: 'name',
-  ip: 'ip_address', ip_address: 'ip_address', address: 'ip_address', host: 'ip_address',
-  type: 'device_type', device_type: 'device_type',
-  preset: 'credential_preset', credential_preset: 'credential_preset', credentials: 'credential_preset',
-  username: 'api_username', user: 'api_username', api_username: 'api_username',
-  password: 'api_password', api_password: 'api_password',
-  port: 'api_port', api_port: 'api_port',
+  name: 'name',
+  identity: 'name',
+  hostname: 'name',
+  ip: 'ip_address',
+  ip_address: 'ip_address',
+  address: 'ip_address',
+  host: 'ip_address',
+  type: 'device_type',
+  device_type: 'device_type',
+  preset: 'credential_preset',
+  credential_preset: 'credential_preset',
+  credentials: 'credential_preset',
+  username: 'api_username',
+  user: 'api_username',
+  api_username: 'api_username',
+  password: 'api_password',
+  api_password: 'api_password',
+  port: 'api_port',
+  api_port: 'api_port',
   // The port runs api-ssl (#257). Only needed on a port other than 8729.
-  api_ssl: 'api_ssl', ssl: 'api_ssl', api_tls: 'api_ssl', tls: 'api_ssl',
+  api_ssl: 'api_ssl',
+  ssl: 'api_ssl',
+  api_tls: 'api_ssl',
+  tls: 'api_ssl',
   // SSH is optional. Left blank, SSH (backups, bulk commands, key deployment)
   // uses the API username and password, which is the usual case.
-  ssh_username: 'ssh_username', ssh_user: 'ssh_username',
-  ssh_password: 'ssh_password', ssh_pass: 'ssh_password',
+  ssh_username: 'ssh_username',
+  ssh_user: 'ssh_username',
+  ssh_password: 'ssh_password',
+  ssh_pass: 'ssh_password',
   ssh_port: 'ssh_port',
   // The API isn't enabled yet (#174): yes/true/1 adds the device over SSH.
-  ssh_only: 'ssh_only', sshonly: 'ssh_only', api_off: 'ssh_only', no_api: 'ssh_only',
+  ssh_only: 'ssh_only',
+  sshonly: 'ssh_only',
+  api_off: 'ssh_only',
+  no_api: 'ssh_only',
   // Several tags in one cell, separated by | or ; (or commas, inside quotes).
-  tags: 'tags', tag: 'tags', groups: 'tags', group: 'tags',
-  notes: 'notes', note: 'notes', comment: 'notes',
+  tags: 'tags',
+  tag: 'tags',
+  groups: 'tags',
+  group: 'tags',
+  notes: 'notes',
+  note: 'notes',
+  comment: 'notes',
   // The site each device joins, made if there's none by that name, and the
   // group (customer) a new site goes in (#306). "group" stays tags, as it was.
-  site: 'site', site_name: 'site',
-  site_group: 'site_group', customer: 'site_group', client: 'site_group',
+  site: 'site',
+  site_name: 'site',
+  site_group: 'site_group',
+  customer: 'site_group',
+  client: 'site_group',
 };
 
 interface RowFields {
@@ -115,7 +148,10 @@ export function detectDelimiter(headerLine: string): string {
  * come back exactly as written; the caller decides what to trim. `line` is
  * where each record starts, for error messages.
  */
-export function parseCsvRecords(text: string, delimiter = ','): { line: number; cells: string[] }[] {
+export function parseCsvRecords(
+  text: string,
+  delimiter = ',',
+): { line: number; cells: string[] }[] {
   const records: { line: number; cells: string[] }[] = [];
   let cells: string[] = [];
   let cur = '';
@@ -125,19 +161,33 @@ export function parseCsvRecords(text: string, delimiter = ','): { line: number; 
   for (let i = 0; i < text.length; i++) {
     const ch = text.charAt(i);
     if (inQuotes) {
-      if (ch === '"' && text.charAt(i + 1) === '"') { cur += '"'; i++; }
-      else if (ch === '"') inQuotes = false;
-      else { if (ch === '\n') line++; cur += ch; }
+      if (ch === '"' && text.charAt(i + 1) === '"') {
+        cur += '"';
+        i++;
+      } else if (ch === '"') inQuotes = false;
+      else {
+        if (ch === '\n') line++;
+        cur += ch;
+      }
     } else if (ch === '"') inQuotes = true;
-    else if (ch === delimiter) { cells.push(cur); cur = ''; }
-    else if (ch === '\r' && text.charAt(i + 1) === '\n') { /* the \n ends the record */ }
-    else if (ch === '\n') {
+    else if (ch === delimiter) {
+      cells.push(cur);
+      cur = '';
+    } else if (ch === '\r' && text.charAt(i + 1) === '\n') {
+      /* the \n ends the record */
+    } else if (ch === '\n') {
       cells.push(cur);
       records.push({ line: start, cells });
-      cells = []; cur = ''; line++; start = line;
+      cells = [];
+      cur = '';
+      line++;
+      start = line;
     } else cur += ch;
   }
-  if (cur !== '' || cells.length > 0) { cells.push(cur); records.push({ line: start, cells }); }
+  if (cur !== '' || cells.length > 0) {
+    cells.push(cur);
+    records.push({ line: start, cells });
+  }
   return records;
 }
 
@@ -152,12 +202,16 @@ export function splitCsvLine(line: string, delimiter = ','): string[] {
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (inQuotes) {
-      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-      else if (ch === '"') inQuotes = false;
+      if (ch === '"' && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else if (ch === '"') inQuotes = false;
       else cur += ch;
     } else if (ch === '"') inQuotes = true;
-    else if (ch === delimiter) { out.push(cur); cur = ''; }
-    else cur += ch;
+    else if (ch === delimiter) {
+      out.push(cur);
+      cur = '';
+    } else cur += ch;
   }
   out.push(cur);
   return out.map((f) => f.trim());
@@ -179,7 +233,8 @@ export function parseDeviceCsv(
 
   // The separator, from the first non-blank, non-comment line.
   const firstLine = body.split(/\r?\n/).find((l) => l.trim() && !l.trim().startsWith('#'));
-  if (firstLine === undefined) return { rows: [], fileErrors: ['The file is empty.'], ignoredColumns: [] };
+  if (firstLine === undefined)
+    return { rows: [], fileErrors: ['The file is empty.'], ignoredColumns: [] };
   const delimiter = detectDelimiter(firstLine);
 
   const isBlankOrComment = (cells: string[]) =>
@@ -193,21 +248,31 @@ export function parseDeviceCsv(
   const mapping = header.map((h) => columnMap.get(h));
   const ignoredColumns = header.filter((h, i) => h && !mapping[i]);
   if (!mapping.includes('ip_address')) {
-    fileErrors.push('No address column. Add a header row with at least "ip_address" (or "ip", "address", "host").');
+    fileErrors.push(
+      'No address column. Add a header row with at least "ip_address" (or "ip", "address", "host").',
+    );
     return { rows: [], fileErrors, ignoredColumns };
   }
   // Two columns meaning the same thing (ip and address, say) used to let the
   // later one silently win. Refuse instead (U9).
   const byField = new Map<string, string[]>();
-  header.forEach((h, i) => { const k = mapping[i]; if (k) byField.set(k, [...(byField.get(k) ?? []), h]); });
+  header.forEach((h, i) => {
+    const k = mapping[i];
+    if (k) byField.set(k, [...(byField.get(k) ?? []), h]);
+  });
   for (const cols of byField.values()) {
-    if (cols.length > 1) fileErrors.push(`Columns ${cols.map((c) => `"${c}"`).join(' and ')} mean the same thing. Keep only one.`);
+    if (cols.length > 1)
+      fileErrors.push(
+        `Columns ${cols.map((c) => `"${c}"`).join(' and ')} mean the same thing. Keep only one.`,
+      );
   }
   if (fileErrors.length > 0) return { rows: [], fileErrors, ignoredColumns };
 
   const notes: string[] = [];
   if (header.some((h) => h === 'group' || h === 'groups')) {
-    notes.push(`The "${header.find((h) => h === 'group' || h === 'groups')}" column is read as tags. For the group (customer) a new site goes in, use "site_group".`);
+    notes.push(
+      `The "${header.find((h) => h === 'group' || h === 'groups')}" column is read as tags. For the group (customer) a new site goes in, use "site_group".`,
+    );
   }
   const presetByName = new Map(presets.map((p) => [p.name.trim().toLowerCase(), p.id]));
   const existing = new Set(existingAddresses.map((a) => a.trim().toLowerCase()));
@@ -230,7 +295,8 @@ export function parseDeviceCsv(
     const addr = stripIPv6Brackets((f.ip_address || '').trim());
 
     if (!addr) errors.push('Missing address.');
-    else if (!isValidDeviceAddress(addr)) errors.push(`"${addr}" is not a valid IP address or hostname.`);
+    else if (!isValidDeviceAddress(addr))
+      errors.push(`"${addr}" is not a valid IP address or hostname.`);
 
     const key = addr.toLowerCase();
     if (addr && seen.has(key)) errors.push(`Same address as line ${seen.get(key)}.`);
@@ -247,13 +313,15 @@ export function parseDeviceCsv(
     let deviceType: string | undefined;
     if (f.device_type) {
       deviceType = DEVICE_TYPES[f.device_type.toLowerCase()];
-      if (!deviceType) errors.push(`Unknown type "${f.device_type}". Use router, switch, ap or other.`);
+      if (!deviceType)
+        errors.push(`Unknown type "${f.device_type}". Use router, switch, ap or other.`);
     }
 
     let sshOnly = false;
     if (f.ssh_only) {
       if (/^(yes|y|true|1|x|ssh|ssh[-_ ]?only)$/i.test(f.ssh_only)) sshOnly = true;
-      else if (!/^(no|n|false|0|-)$/i.test(f.ssh_only)) errors.push(`ssh_only "${f.ssh_only}" should be yes or no.`);
+      else if (!/^(no|n|false|0|-)$/i.test(f.ssh_only))
+        errors.push(`ssh_only "${f.ssh_only}" should be yes or no.`);
     }
 
     let apiSsl: boolean | undefined;
@@ -266,13 +334,16 @@ export function parseDeviceCsv(
     let presetId: number | undefined;
     if (f.credential_preset) {
       presetId = presetByName.get(f.credential_preset.trim().toLowerCase());
-      if (presetId === undefined) errors.push(`No credential preset called "${f.credential_preset}".`);
+      if (presetId === undefined)
+        errors.push(`No credential preset called "${f.credential_preset}".`);
     } else if (sshOnly && f.ssh_username && f.ssh_password && !f.api_username && !f.api_password) {
       // SSH only with just an SSH login: it is tried on the API later too.
     } else if (!f.api_username || !f.api_password) {
-      errors.push(sshOnly
-        ? 'Needs a credential preset, a username and password, or an SSH username and password.'
-        : 'Needs a credential preset, or both username and password.');
+      errors.push(
+        sshOnly
+          ? 'Needs a credential preset, a username and password, or an SSH username and password.'
+          : 'Needs a credential preset, or both username and password.',
+      );
     }
 
     const portOf = (v: string | undefined, label: string): number | undefined => {
@@ -292,15 +363,19 @@ export function parseDeviceCsv(
       errors.push('SSH needs both ssh_username and ssh_password, or neither.');
     }
     if (presetId !== undefined && (hasSsh || sshPort)) {
-      warnings.push('Uses the preset\'s SSH settings. The SSH columns on this line are ignored.');
+      warnings.push("Uses the preset's SSH settings. The SSH columns on this line are ignored.");
     }
 
     // Existing tags only: creating tags is an admin action, and a typo should
     // be caught here rather than quietly start a new group.
     const tagIds: number[] = [];
-    for (const name of (f.tags ?? '').split(/[|;,]/).map((t) => t.trim()).filter(Boolean)) {
+    for (const name of (f.tags ?? '')
+      .split(/[|;,]/)
+      .map((t) => t.trim())
+      .filter(Boolean)) {
       const id = tagByName.get(name.toLowerCase());
-      if (id === undefined) errors.push(`No tag called "${name}". Create it under Settings → Tags first.`);
+      if (id === undefined)
+        errors.push(`No tag called "${name}". Create it under Settings → Tags first.`);
       else if (!tagIds.includes(id)) tagIds.push(id);
     }
 
@@ -310,7 +385,9 @@ export function parseDeviceCsv(
       if (!sites.canCreate) errors.push(`No site called "${siteName}".`);
       else if (!newSitesNoted.has(siteName.toLowerCase())) {
         newSitesNoted.add(siteName.toLowerCase());
-        warnings.push(`Makes a new site "${siteName}"${f.site_group ? ` in the group "${f.site_group}"` : ''}.`);
+        warnings.push(
+          `Makes a new site "${siteName}"${f.site_group ? ` in the group "${f.site_group}"` : ''}.`,
+        );
       }
     }
     if (f.site_group && !siteName) warnings.push('A group only applies with a site. Ignored.');
@@ -318,28 +395,39 @@ export function parseDeviceCsv(
       warnings.push(`"${siteName}" already exists, so its group is left as it is.`);
     }
 
-    const item: BulkAddDeviceItem | null = errors.length ? null : {
-      name: f.name?.trim() || addr,
-      ip_address: addr,
-      ...(deviceType ? { device_type: deviceType } : {}),
-      ...(presetId !== undefined ? { credential_preset_id: presetId } : {
-        api_username: f.api_username, api_password: f.api_password,
-      }),
-      ...(port ? { api_port: port } : {}),
-      ...(apiSsl !== undefined ? { api_tls: apiSsl } : {}),
-      ...(presetId === undefined && hasSsh ? { ssh_username: f.ssh_username, ssh_password: f.ssh_password } : {}),
-      ...(presetId === undefined && sshPort ? { ssh_port: sshPort } : {}),
-      ...(tagIds.length ? { tag_ids: tagIds } : {}),
-      ...(f.notes ? { notes: f.notes } : {}),
-      ...(sshOnly ? { ssh_only: true } : {}),
-      ...(siteName ? { site_name: siteName, ...(f.site_group ? { group_name: f.site_group } : {}) } : {}),
-    };
+    const item: BulkAddDeviceItem | null = errors.length
+      ? null
+      : {
+          name: f.name?.trim() || addr,
+          ip_address: addr,
+          ...(deviceType ? { device_type: deviceType } : {}),
+          ...(presetId !== undefined
+            ? { credential_preset_id: presetId }
+            : {
+                api_username: f.api_username,
+                api_password: f.api_password,
+              }),
+          ...(port ? { api_port: port } : {}),
+          ...(apiSsl !== undefined ? { api_tls: apiSsl } : {}),
+          ...(presetId === undefined && hasSsh
+            ? { ssh_username: f.ssh_username, ssh_password: f.ssh_password }
+            : {}),
+          ...(presetId === undefined && sshPort ? { ssh_port: sshPort } : {}),
+          ...(tagIds.length ? { tag_ids: tagIds } : {}),
+          ...(f.notes ? { notes: f.notes } : {}),
+          ...(sshOnly ? { ssh_only: true } : {}),
+          ...(siteName
+            ? { site_name: siteName, ...(f.site_group ? { group_name: f.site_group } : {}) }
+            : {}),
+        };
     rows.push({ line, item, errors, warnings, skip });
   }
 
   if (rows.length === 0) fileErrors.push('The file has a header but no device rows.');
   if (rows.length > MAX_ROWS) {
-    fileErrors.push(`${rows.length} rows; the limit per import is ${MAX_ROWS}. Split the file and import it in parts.`);
+    fileErrors.push(
+      `${rows.length} rows; the limit per import is ${MAX_ROWS}. Split the file and import it in parts.`,
+    );
   }
   return { rows, fileErrors, ignoredColumns, ...(notes.length ? { notes } : {}) };
 }
@@ -357,18 +445,84 @@ export function parseDeviceCsv(
 export function buildCsvTemplate(presetName?: string, tagName?: string): string {
   const q = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
   const rows: string[][] = [
-    ['name', 'ip_address', 'type', 'preset', 'username', 'password', 'ssh_username', 'ssh_password', 'ssh_only', 'tags', 'site', 'site_group', 'notes'],
+    [
+      'name',
+      'ip_address',
+      'type',
+      'preset',
+      'username',
+      'password',
+      'ssh_username',
+      'ssh_password',
+      'ssh_only',
+      'tags',
+      'site',
+      'site_group',
+      'notes',
+    ],
   ];
   const tag = tagName ?? '';
   if (presetName) {
-    rows.push(['example-switch', '192.0.2.10', 'switch', presetName, '', '', '', '', '', tag, '', '',
-      'Example: logs in with a saved credential preset. Replace these rows with your devices.']);
+    rows.push([
+      'example-switch',
+      '192.0.2.10',
+      'switch',
+      presetName,
+      '',
+      '',
+      '',
+      '',
+      '',
+      tag,
+      '',
+      '',
+      'Example: logs in with a saved credential preset. Replace these rows with your devices.',
+    ]);
   }
-  rows.push(['example-router', '192.0.2.1', 'router', '', 'admin', 'your-password', '', '', '', tag, '', '',
-    'Example: username and password instead of a preset. A site column puts it in that site, made if new, and site_group in a customer group.']);
-  rows.push(['example-ap', '192.0.2.20', 'ap', '', 'admin', 'your-password', 'backup', 'ssh-password', '', '', '', '',
-    'Example: separate SSH login. Leave SSH blank to use the same login.']);
-  rows.push(['example-no-api', '192.0.2.30', 'router', '', 'admin', 'your-password', '', '', 'yes', '', '', '',
-    'Example: API not enabled yet. Added over SSH; switches to the API once it answers.']);
+  rows.push([
+    'example-router',
+    '192.0.2.1',
+    'router',
+    '',
+    'admin',
+    'your-password',
+    '',
+    '',
+    '',
+    tag,
+    '',
+    '',
+    'Example: username and password instead of a preset. A site column puts it in that site, made if new, and site_group in a customer group.',
+  ]);
+  rows.push([
+    'example-ap',
+    '192.0.2.20',
+    'ap',
+    '',
+    'admin',
+    'your-password',
+    'backup',
+    'ssh-password',
+    '',
+    '',
+    '',
+    '',
+    'Example: separate SSH login. Leave SSH blank to use the same login.',
+  ]);
+  rows.push([
+    'example-no-api',
+    '192.0.2.30',
+    'router',
+    '',
+    'admin',
+    'your-password',
+    '',
+    '',
+    'yes',
+    '',
+    '',
+    '',
+    'Example: API not enabled yet. Added over SSH; switches to the API once it answers.',
+  ]);
   return rows.map((r) => r.map(q).join(',')).join('\r\n') + '\r\n';
 }

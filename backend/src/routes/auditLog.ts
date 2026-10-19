@@ -25,7 +25,9 @@ router.get('/', async (req: Request, res: Response) => {
   }
   if (req.query.search) {
     params.push(`%${String(req.query.search)}%`);
-    conditions.push(`(summary ILIKE $${params.length} OR username ILIKE $${params.length} OR ip_address ILIKE $${params.length})`);
+    conditions.push(
+      `(summary ILIKE $${params.length} OR username ILIKE $${params.length} OR ip_address ILIKE $${params.length})`,
+    );
   }
   if (req.query.from) {
     params.push(String(req.query.from));
@@ -40,12 +42,20 @@ router.get('/', async (req: Request, res: Response) => {
 
   const [rows, countRows] = await Promise.all([
     query<{
-      id: number; user_id: number | null; username: string | null;
-      method: string; path: string; entity_type: string | null;
-      entity_id: number | null; summary: string; ip_address: string | null;
-      status_code: number | null; created_at: string;
-    }>(`SELECT * FROM audit_log ${where} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
-      [...params, limit, offset]
+      id: number;
+      user_id: number | null;
+      username: string | null;
+      method: string;
+      path: string;
+      entity_type: string | null;
+      entity_id: number | null;
+      summary: string;
+      ip_address: string | null;
+      status_code: number | null;
+      created_at: string;
+    }>(
+      `SELECT * FROM audit_log ${where} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limit, offset],
     ),
     query<{ count: string }>(`SELECT COUNT(*) as count FROM audit_log ${where}`, params),
   ]);

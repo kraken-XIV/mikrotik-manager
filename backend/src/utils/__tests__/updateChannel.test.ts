@@ -22,6 +22,7 @@ describe('resolveChannel', () => {
 
 describe('isUpdateChannel', () => {
   it('accepts the four RouterOS channels', () => {
-    for (const c of ['stable', 'long-term', 'testing', 'development']) expect(isUpdateChannel(c)).toBe(true);
+    for (const c of ['stable', 'long-term', 'testing', 'development'])
+      expect(isUpdateChannel(c)).toBe(true);
   });
 });

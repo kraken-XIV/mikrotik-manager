@@ -39,7 +39,7 @@ export function bytesSince(prev: CounterSample | null, cur: CounterSample): numb
   const safe = (n: number) => (Number.isFinite(n) && n >= 0 ? n : 0);
   const rx = safe(cur.rxBytes);
   const tx = safe(cur.txBytes);
-  if (!prev) return 0;                       // first sight establishes a baseline only
+  if (!prev) return 0; // first sight establishes a baseline only
   const dRx = rx < safe(prev.rxBytes) ? rx : rx - safe(prev.rxBytes);
   const dTx = tx < safe(prev.txBytes) ? tx : tx - safe(prev.txBytes);
   return dRx + dTx;
@@ -53,33 +53,56 @@ export function bytesSince(prev: CounterSample | null, cur: CounterSample): numb
  * get daylight saving wrong. Before the reset hour, the instant still belongs to
  * the previous day's period.
  */
-export function periodKey(now: Date, resetHour: number, resetMinute: number, timeZone: string): string {
+export function periodKey(
+  now: Date,
+  resetHour: number,
+  resetMinute: number,
+  timeZone: string,
+): string {
   let y: number, m: number, d: number, hh: number, mm: number;
   try {
     const parts = Object.fromEntries(
       new Intl.DateTimeFormat('en-CA', {
-        timeZone, hour12: false,
-        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
-      }).formatToParts(now).map((p) => [p.type, p.value])
+        timeZone,
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+        .formatToParts(now)
+        .map((p) => [p.type, p.value]),
     );
-    y = Number(parts.year); m = Number(parts.month); d = Number(parts.day);
-    hh = Number(parts.hour) % 24; mm = Number(parts.minute);
+    y = Number(parts.year);
+    m = Number(parts.month);
+    d = Number(parts.day);
+    hh = Number(parts.hour) % 24;
+    mm = Number(parts.minute);
   } catch {
-    y = now.getUTCFullYear(); m = now.getUTCMonth() + 1; d = now.getUTCDate();
-    hh = now.getUTCHours(); mm = now.getUTCMinutes();
+    y = now.getUTCFullYear();
+    m = now.getUTCMonth() + 1;
+    d = now.getUTCDate();
+    hh = now.getUTCHours();
+    mm = now.getUTCMinutes();
   }
 
   // Before the reset time, we are still in yesterday's period.
   if (hh * 60 + mm < resetHour * 60 + resetMinute) {
     const shifted = new Date(Date.UTC(y, m - 1, d));
     shifted.setUTCDate(shifted.getUTCDate() - 1);
-    y = shifted.getUTCFullYear(); m = shifted.getUTCMonth() + 1; d = shifted.getUTCDate();
+    y = shifted.getUTCFullYear();
+    m = shifted.getUTCMonth() + 1;
+    d = shifted.getUTCDate();
   }
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
 /** Bytes at which we actually fire, given a configured allowance. */
-export function effectiveThreshold(thresholdBytes: number, marginPct = DEFAULT_SAFETY_MARGIN_PCT): number {
+export function effectiveThreshold(
+  thresholdBytes: number,
+  marginPct = DEFAULT_SAFETY_MARGIN_PCT,
+): number {
   const pct = Math.min(50, Math.max(0, marginPct));
   return Math.max(0, Math.floor(thresholdBytes * (1 - pct / 100)));
 }

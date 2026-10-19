@@ -1,8 +1,13 @@
 import { renderSnmpTemplate, unknownVariables, fieldToWrite } from '../snmpTemplate';
 
 const dev = {
-  identity: 'core-sw-01', name: 'Core Switch 1', ip: '10.0.0.2',
-  model: 'CRS326', serial: 'HD0812', site: 'HQ', location: 'Rack A',
+  identity: 'core-sw-01',
+  name: 'Core Switch 1',
+  ip: '10.0.0.2',
+  model: 'CRS326',
+  serial: 'HD0812',
+  site: 'HQ',
+  location: 'Rack A',
 };
 
 describe('renderSnmpTemplate', () => {
@@ -11,7 +16,9 @@ describe('renderSnmpTemplate', () => {
   });
 
   it('supports the short form and several variables at once', () => {
-    expect(renderSnmpTemplate('{site} / {location} / {identity}', dev)).toBe('HQ / Rack A / core-sw-01');
+    expect(renderSnmpTemplate('{site} / {location} / {identity}', dev)).toBe(
+      'HQ / Rack A / core-sw-01',
+    );
   });
 
   it('is case-insensitive and tolerates spaces inside braces', () => {
@@ -33,7 +40,9 @@ describe('unknownVariables', () => {
   });
 
   it('accepts every documented variable', () => {
-    expect(unknownVariables('{identity}{name}{ip}{model}{serial}{site}{location}{$SystemIdentity}')).toEqual([]);
+    expect(
+      unknownVariables('{identity}{name}{ip}{model}{serial}{site}{location}{$SystemIdentity}'),
+    ).toEqual([]);
   });
 });
 

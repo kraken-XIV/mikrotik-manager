@@ -46,8 +46,8 @@ function ReadinessNote({ readiness, blocking }: { readiness: Readiness; blocking
       <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-slate-400">
         <ShieldCheck className="w-4 h-4 flex-shrink-0 text-green-600 dark:text-green-400" />
         <span>
-          Auto-revert is ready: the device saves a restore point first. If it stops responding
-          after this change, it restores itself automatically and comes back.
+          Auto-revert is ready: the device saves a restore point first. If it stops responding after
+          this change, it restores itself automatically and comes back.
         </span>
       </div>
     );
@@ -90,8 +90,15 @@ export interface ChangeGuardDialogProps {
 }
 
 export default function ChangeGuardDialog({
-  title, description, reason, confirmLabel,
-  protectedByGuard = true, deviceId, pending = false, onConfirm, onCancel,
+  title,
+  description,
+  reason,
+  confirmLabel,
+  protectedByGuard = true,
+  deviceId,
+  pending = false,
+  onConfirm,
+  onCancel,
 }: ChangeGuardDialogProps) {
   const readiness = useGuardReadiness(deviceId);
   return (
@@ -117,8 +124,8 @@ export default function ChangeGuardDialog({
           <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-slate-400">
             <ShieldCheck className="w-4 h-4 flex-shrink-0 text-green-600 dark:text-green-400" />
             <span>
-              Protected: the device saves a restore point first. If it stops responding after
-              this change, it restores itself automatically and comes back.
+              Protected: the device saves a restore point first. If it stops responding after this
+              change, it restores itself automatically and comes back.
             </span>
           </div>
         ) : (
@@ -132,7 +139,9 @@ export default function ChangeGuardDialog({
         )}
 
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn-secondary" disabled={pending}>Cancel</button>
+          <button onClick={onCancel} className="btn-secondary" disabled={pending}>
+            Cancel
+          </button>
           <button
             onClick={onConfirm}
             disabled={pending}
@@ -176,7 +185,11 @@ export interface LockoutVerdict {
 
 /** Pull a 409 lockout verdict off a failed mutation, if the backend sent one. */
 export function lockoutVerdictOf(err: unknown): LockoutVerdict | null {
-  const r = (err as { response?: { status?: number; data?: { lockout?: boolean; verdict?: LockoutVerdict } } })?.response;
+  const r = (
+    err as {
+      response?: { status?: number; data?: { lockout?: boolean; verdict?: LockoutVerdict } };
+    }
+  )?.response;
   if (r?.status === 409 && r.data?.lockout && r.data.verdict) return r.data.verdict;
   return null;
 }
@@ -198,7 +211,12 @@ export interface LockoutVerdictDialogProps {
  * can verify is one they'll act on, rather than click past.
  */
 export function LockoutVerdictDialog({
-  verdict, confirmPhrase, deviceId, pending = false, onConfirm, onCancel,
+  verdict,
+  confirmPhrase,
+  deviceId,
+  pending = false,
+  onConfirm,
+  onCancel,
 }: LockoutVerdictDialogProps) {
   const [typed, setTyped] = useState('');
   const readiness = useGuardReadiness(deviceId);
@@ -207,15 +225,18 @@ export function LockoutVerdictDialog({
   // itself; the server refuses it otherwise, so the button says so up front.
   const guardBlocked = !!deviceId && readiness.data?.ready === false;
   const guardChecking = !!deviceId && readiness.isLoading;
-  const canConfirm = (!critical || typed.trim() === confirmPhrase) && !guardBlocked && !guardChecking;
+  const canConfirm =
+    (!critical || typed.trim() === confirmPhrase) && !guardBlocked && !guardChecking;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4 p-6 space-y-4 max-h-[85vh] overflow-y-auto">
         <div className="flex items-start gap-3">
-          {critical
-            ? <ShieldAlert className="w-6 h-6 text-red-500 flex-shrink-0" />
-            : <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />}
+          {critical ? (
+            <ShieldAlert className="w-6 h-6 text-red-500 flex-shrink-0" />
+          ) : (
+            <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
+          )}
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">
               {critical ? 'This will disconnect the device' : 'This leaves management fragile'}
@@ -233,16 +254,24 @@ export function LockoutVerdictDialog({
                 : 'rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-3'
             }
           >
-            <p className={`text-xs font-semibold uppercase tracking-wide ${
-              v.severity === 'critical'
-                ? 'text-red-700 dark:text-red-400'
-                : 'text-amber-700 dark:text-amber-400'
-            }`}>{v.title}</p>
-            <p className={`mt-1 text-sm ${
-              v.severity === 'critical'
-                ? 'text-red-800 dark:text-red-300'
-                : 'text-amber-800 dark:text-amber-300'
-            }`}>{v.detail}</p>
+            <p
+              className={`text-xs font-semibold uppercase tracking-wide ${
+                v.severity === 'critical'
+                  ? 'text-red-700 dark:text-red-400'
+                  : 'text-amber-700 dark:text-amber-400'
+              }`}
+            >
+              {v.title}
+            </p>
+            <p
+              className={`mt-1 text-sm ${
+                v.severity === 'critical'
+                  ? 'text-red-800 dark:text-red-300'
+                  : 'text-amber-800 dark:text-amber-300'
+              }`}
+            >
+              {v.detail}
+            </p>
           </div>
         ))}
 
@@ -255,7 +284,9 @@ export function LockoutVerdictDialog({
             <ul className="space-y-1.5">
               {verdict.path.hops.map((h, i) => (
                 <li key={i} className="text-xs text-gray-600 dark:text-slate-300">
-                  <span className="mono text-[11px] text-gray-400 dark:text-slate-500">{h.kind}</span>{' '}
+                  <span className="mono text-[11px] text-gray-400 dark:text-slate-500">
+                    {h.kind}
+                  </span>{' '}
                   <span className="font-medium">{h.name}</span>
                   <div className="text-gray-500 dark:text-slate-400">{h.reason}</div>
                 </li>
@@ -267,7 +298,9 @@ export function LockoutVerdictDialog({
         {verdict.warnings.length > 0 && (
           <ul className="space-y-1">
             {verdict.warnings.map((w, i) => (
-              <li key={i} className="text-xs text-gray-500 dark:text-slate-400">• {w}</li>
+              <li key={i} className="text-xs text-gray-500 dark:text-slate-400">
+                • {w}
+              </li>
             ))}
           </ul>
         )}
@@ -291,13 +324,15 @@ export function LockoutVerdictDialog({
           <ReadinessNote readiness={readiness} blocking />
         ) : (
           <p className="text-xs text-gray-500 dark:text-slate-400">
-            This change requires auto-revert: if the device can&apos;t arm it, the change is
-            refused rather than applied without a way back.
+            This change requires auto-revert: if the device can&apos;t arm it, the change is refused
+            rather than applied without a way back.
           </p>
         )}
 
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="btn-secondary" disabled={pending}>Cancel</button>
+          <button onClick={onCancel} className="btn-secondary" disabled={pending}>
+            Cancel
+          </button>
           <button
             onClick={onConfirm}
             disabled={pending || !canConfirm}
@@ -327,38 +362,46 @@ export interface GuardResult {
 }
 
 /** Human-readable outcome for a guarded change, or null when nothing to say. */
-export function guardOutcomeMessage(guard?: GuardResult): { tone: 'ok' | 'warn'; text: string } | null {
+export function guardOutcomeMessage(
+  guard?: GuardResult,
+): { tone: 'ok' | 'warn'; text: string } | null {
   if (!guard) return null;
   if (guard.revert_may_have_fired) {
     return {
       tone: 'warn',
-      text: 'The change was applied and the device stayed reachable, but its auto-revert was gone '
-        + 'before it could be cancelled, so the revert may already have run. The device may have '
-        + 'restored its previous configuration (in binary mode, with a restart). Check whether the '
-        + 'change is still there.',
+      text:
+        'The change was applied and the device stayed reachable, but its auto-revert was gone ' +
+        'before it could be cancelled, so the revert may already have run. The device may have ' +
+        'restored its previous configuration (in binary mode, with a restart). Check whether the ' +
+        'change is still there.',
     };
   }
   if (guard.auto_reverting) {
     return {
       tone: 'warn',
-      text: 'The device stopped responding after this change, so it is restoring itself to the '
-        + 'previous configuration. It should come back shortly — the change was not kept.',
+      text:
+        'The device stopped responding after this change, so it is restoring itself to the ' +
+        'previous configuration. It should come back shortly — the change was not kept.',
     };
   }
   if (guard.revert_may_fire_at) {
     return {
       tone: 'warn',
-      text: 'Applied and the device is reachable, but the auto-revert could not be confirmed as '
-        + 'removed. The device may restore its previous configuration (and restart) at about '
-        + `${new Date(guard.revert_may_fire_at).toLocaleTimeString()}. Check its scheduler for an `
-        + 'entry starting "mtm-revert-".',
+      text:
+        'Applied and the device is reachable, but the auto-revert could not be confirmed as ' +
+        'removed. The device may restore its previous configuration (and restart) at about ' +
+        `${new Date(guard.revert_may_fire_at).toLocaleTimeString()}. Check its scheduler for an ` +
+        'entry starting "mtm-revert-".',
     };
   }
   if (guard.confirmed) {
     return { tone: 'ok', text: 'Applied — device confirmed still reachable.' };
   }
   if (guard.unprotected_reason) {
-    return { tone: 'warn', text: `Applied without auto-revert protection: ${guard.unprotected_reason}` };
+    return {
+      tone: 'warn',
+      text: `Applied without auto-revert protection: ${guard.unprotected_reason}`,
+    };
   }
   return null;
 }
@@ -391,7 +434,9 @@ export function useGuardedWrite() {
   /** onSuccess for a mutation: shows the guard outcome when it needs attention. */
   const onSuccess = (res: unknown) => {
     setLockout(null);
-    const msg = guardOutcomeMessage((res as { data?: { guard?: GuardResult } } | undefined)?.data?.guard);
+    const msg = guardOutcomeMessage(
+      (res as { data?: { guard?: GuardResult } } | undefined)?.data?.guard,
+    );
     setNotice(msg?.tone === 'warn' ? msg.text : null);
   };
 
@@ -399,7 +444,10 @@ export function useGuardedWrite() {
 }
 
 export function GuardedWriteUi({
-  state, deviceId, deviceName, pending,
+  state,
+  deviceId,
+  deviceName,
+  pending,
 }: {
   state: ReturnType<typeof useGuardedWrite>;
   deviceId: number;
@@ -412,7 +460,9 @@ export function GuardedWriteUi({
         <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-800 dark:text-amber-300 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span className="flex-1">{state.notice}</span>
-          <button onClick={() => state.setNotice(null)} className="text-xs underline">Dismiss</button>
+          <button onClick={() => state.setNotice(null)} className="text-xs underline">
+            Dismiss
+          </button>
         </div>
       )}
       {state.lockout && (

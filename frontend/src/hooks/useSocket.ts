@@ -17,12 +17,12 @@ export function getSocket(): Socket | null {
   return globalSocket;
 }
 
-export function useSocket(
-  events: Record<string, (data: unknown) => void>
-): void {
+export function useSocket(events: Record<string, (data: unknown) => void>): void {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const eventsRef = useRef(events);
-  useLayoutEffect(() => { eventsRef.current = events; });
+  useLayoutEffect(() => {
+    eventsRef.current = events;
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {

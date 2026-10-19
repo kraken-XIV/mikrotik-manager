@@ -82,7 +82,9 @@ export const REPEATED_KEY = '.repeated';
  */
 export function parseSignalValue(raw: string | undefined | null): number | null {
   if (raw == null) return null;
-  const m = String(raw).trim().match(/^(-?\d+(?:\.\d+)?)\s*(?:dBm|dB)?$/i);
+  const m = String(raw)
+    .trim()
+    .match(/^(-?\d+(?:\.\d+)?)\s*(?:dBm|dB)?$/i);
   if (!m) return null;
   const n = parseFloat(m[1]);
   return Number.isFinite(n) ? n : null;
@@ -91,7 +93,9 @@ export function parseSignalValue(raw: string | undefined | null): number | null 
 /** Read a plain integer field, rejecting the blanks an idle modem reports. */
 export function parseIntField(raw: string | undefined | null): number | null {
   if (raw == null) return null;
-  const m = String(raw).trim().match(/^-?\d+$/);
+  const m = String(raw)
+    .trim()
+    .match(/^-?\d+$/);
   if (!m) return null;
   const n = parseInt(m[0], 10);
   return Number.isFinite(n) ? n : null;
@@ -125,8 +129,8 @@ export function parseBandList(raw: string | undefined | null): number[] {
   if (raw == null) return [];
   return String(raw)
     .split(',')
-    .map(p => parseInt(p.trim().replace(/^[bB]/, ''), 10))
-    .filter(n => Number.isFinite(n) && n > 0);
+    .map((p) => parseInt(p.trim().replace(/^[bB]/, ''), 10))
+    .filter((n) => Number.isFinite(n) && n > 0);
 }
 
 /** Render a band list back into the form RouterOS expects. */
@@ -192,14 +196,13 @@ export function splitCarriers(value: string): string[] {
   if (starts.length === 0) return [value.trim()];
   const parts: string[] = [];
   if (starts[0] > 0) parts.push(value.slice(0, starts[0]).trim());
-  starts.forEach((start, i) => parts.push(value.slice(start, starts.at(i + 1) ?? value.length).trim()));
+  starts.forEach((start, i) =>
+    parts.push(value.slice(start, starts.at(i + 1) ?? value.length).trim()),
+  );
   return parts.filter((p) => p.length > 0);
 }
 
-export function parseBandSpecs(
-  row: Record<string, string>,
-  key: string,
-): LteBandInfo[] {
+export function parseBandSpecs(row: Record<string, string>, key: string): LteBandInfo[] {
   const values: string[] = [];
 
   const repeatedRaw = row[REPEATED_KEY];
@@ -301,7 +304,10 @@ export function classifySinr(sinr: number | null): SignalQuality {
 }
 
 const QUALITY_RANK: Record<Exclude<SignalQuality, 'unknown'>, number> = {
-  poor: 0, fair: 1, good: 2, excellent: 3,
+  poor: 0,
+  fair: 1,
+  good: 2,
+  excellent: 3,
 };
 
 /**
@@ -322,8 +328,11 @@ export function overallQuality(status: LteStatus): SignalQuality {
   // SINR sets the grade; a quiet cell pulls it down but only one step, so a
   // clean link at −97 dBm reads "good" while a clean link at −112 reads "fair".
   const rank = Math.min(QUALITY_RANK[sinr], QUALITY_RANK[rsrp] + 1);
-  return (Object.keys(QUALITY_RANK) as Exclude<SignalQuality, 'unknown'>[])
-    .find(k => QUALITY_RANK[k] === rank) ?? 'unknown';
+  return (
+    (Object.keys(QUALITY_RANK) as Exclude<SignalQuality, 'unknown'>[]).find(
+      (k) => QUALITY_RANK[k] === rank,
+    ) ?? 'unknown'
+  );
 }
 
 /** Plain-language reading of the link, for users who don't speak dBm. */
@@ -331,9 +340,7 @@ export function describeQuality(status: LteStatus): string {
   if (!isConnected(status)) return 'Not connected';
   const q = overallQuality(status);
   const carriers = status.caBands.length;
-  const agg = carriers > 0
-    ? ` Aggregating ${carriers + 1} carriers.`
-    : '';
+  const agg = carriers > 0 ? ` Aggregating ${carriers + 1} carriers.` : '';
   switch (q) {
     case 'excellent':
       return `Excellent — the modem is operating near its ceiling.${agg}`;
@@ -387,7 +394,11 @@ export function detectChanges(prev: LteStatus | null, next: LteStatus): LteChang
   }
 
   const bandsOf = (s: LteStatus) =>
-    [s.primaryBand, ...s.caBands].filter(Boolean).map(b => b!.band).sort((a, b) => a - b).join(',');
+    [s.primaryBand, ...s.caBands]
+      .filter(Boolean)
+      .map((b) => b!.band)
+      .sort((a, b) => a - b)
+      .join(',');
   const bandsBefore = bandsOf(prev);
   const bandsAfter = bandsOf(next);
   if (bandsBefore && bandsAfter && bandsBefore !== bandsAfter) {
@@ -478,5 +489,5 @@ export function uplinkAnchor(status: CarrierSet): UplinkAnchor | null {
  */
 export function unprovenBands(requested: number[], observed: number[]): number[] {
   const known = new Set(observed);
-  return [...new Set(requested)].filter(b => !known.has(b)).sort((a, b) => a - b);
+  return [...new Set(requested)].filter((b) => !known.has(b)).sort((a, b) => a - b);
 }

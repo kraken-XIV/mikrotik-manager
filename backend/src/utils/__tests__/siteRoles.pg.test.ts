@@ -27,7 +27,8 @@ suite('site groups and access against Postgres', () => {
   let deviceSite: typeof import('../../services/deviceSite');
   const ids: Record<string, number> = {};
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mtm-e2e-groups-'));
-  const one = async <T>(sql: string, params: unknown[] = []) => (await db.query<T>(sql, params))[0]!;
+  const one = async <T>(sql: string, params: unknown[] = []) =>
+    (await db.query<T>(sql, params))[0]!;
 
   beforeAll(async () => {
     const base = new URL(PG!);
@@ -50,16 +51,30 @@ suite('site groups and access against Postgres', () => {
     roles = require('../siteRoles');
     deviceSite = require('../../services/deviceSite');
 
-    for (const s of ['Alpha', 'Beta']) ids[s] = (await one<{ id: number }>(`INSERT INTO sites (name) VALUES ($1) RETURNING id`, [s])).id;
-    ids.G = (await one<{ id: number }>(`INSERT INTO site_groups (name) VALUES ('Customer G') RETURNING id`)).id;
+    for (const s of ['Alpha', 'Beta'])
+      ids[s] = (
+        await one<{ id: number }>(`INSERT INTO sites (name) VALUES ($1) RETURNING id`, [s])
+      ).id;
+    ids.G = (
+      await one<{ id: number }>(`INSERT INTO site_groups (name) VALUES ('Customer G') RETURNING id`)
+    ).id;
     await db.query(`UPDATE sites SET group_id = $1 WHERE id = $2`, [ids.G, ids.Alpha]);
     for (const u of ['onlySite', 'onlyGroup', 'both', 'fleet']) {
-      ids[u] = (await one<{ id: number }>(`INSERT INTO users (username, password_hash, role) VALUES ($1, 'x', 'viewer') RETURNING id`, [u])).id;
+      ids[u] = (
+        await one<{ id: number }>(
+          `INSERT INTO users (username, password_hash, role) VALUES ($1, 'x', 'viewer') RETURNING id`,
+          [u],
+        )
+      ).id;
     }
-    await db.query(`INSERT INTO user_site_roles (user_id, site_id, role) VALUES ($1, $2, 'operator'), ($3, $4, 'viewer')`,
-      [ids.onlySite, ids.Alpha, ids.both, ids.Beta]);
-    await db.query(`INSERT INTO user_group_roles (user_id, group_id, role) VALUES ($1, $2, 'viewer'), ($3, $2, 'admin')`,
-      [ids.onlyGroup, ids.G, ids.both]);
+    await db.query(
+      `INSERT INTO user_site_roles (user_id, site_id, role) VALUES ($1, $2, 'operator'), ($3, $4, 'viewer')`,
+      [ids.onlySite, ids.Alpha, ids.both, ids.Beta],
+    );
+    await db.query(
+      `INSERT INTO user_group_roles (user_id, group_id, role) VALUES ($1, $2, 'viewer'), ($3, $2, 'admin')`,
+      [ids.onlyGroup, ids.G, ids.both],
+    );
   });
 
   afterAll(async () => {
@@ -69,7 +84,10 @@ suite('site groups and access against Postgres', () => {
 
   it('reads access through groups, the higher role winning', async () => {
     expect(await roles.loadSiteRoles(ids.onlyGroup)).toEqual({ [ids.Alpha]: 'viewer' });
-    expect(await roles.loadSiteRoles(ids.both)).toEqual({ [ids.Alpha]: 'admin', [ids.Beta]: 'viewer' });
+    expect(await roles.loadSiteRoles(ids.both)).toEqual({
+      [ids.Alpha]: 'admin',
+      [ids.Beta]: 'viewer',
+    });
     expect(await roles.loadSiteRoles(ids.fleet)).toBeNull();
   });
 
@@ -90,12 +108,16 @@ suite('site groups and access against Postgres', () => {
 
   it('adding a device to a new site makes the site and its group once', async () => {
     const fleet = { siteRoles: null };
-    const results = await Promise.all([1, 2, 3].map(() =>
-      deviceSite.resolveSiteChoice(fleet, { site_name: 'Gamma', group_name: 'Customer H' })));
+    const results = await Promise.all(
+      [1, 2, 3].map(() =>
+        deviceSite.resolveSiteChoice(fleet, { site_name: 'Gamma', group_name: 'Customer H' }),
+      ),
+    );
     const made = results.map((r) => (r.ok ? r.siteId : null));
     expect(new Set(made).size).toBe(1);
     const site = await one<{ n: string; group: string }>(
-      `SELECT COUNT(*)::text AS n, MAX(g.name) AS group FROM sites s LEFT JOIN site_groups g ON g.id = s.group_id WHERE LOWER(s.name) = 'gamma'`);
+      `SELECT COUNT(*)::text AS n, MAX(g.name) AS group FROM sites s LEFT JOIN site_groups g ON g.id = s.group_id WHERE LOWER(s.name) = 'gamma'`,
+    );
     expect(site).toEqual({ n: '1', group: 'Customer H' });
     // The same name, any case, is the same site.
     const again = await deviceSite.resolveSiteChoice(fleet, { site_name: 'GAMMA' });
@@ -104,10 +126,27 @@ suite('site groups and access against Postgres', () => {
 
   it('an account limited to sites can use its own, and can make none', async () => {
     const limited = { siteRoles: { [ids.Alpha]: 'operator', [ids.Beta]: 'viewer' } };
-    expect(await deviceSite.resolveSiteChoice(limited, { site_name: 'alpha' })).toEqual({ ok: true, siteId: ids.Alpha, named: true });
-    expect(await deviceSite.resolveSiteChoice(limited, { site_id: ids.Beta })).toMatchObject({ ok: false, status: 403 });
-    expect(await deviceSite.resolveSiteChoice(limited, { site_name: 'Delta' })).toMatchObject({ ok: false, status: 403 });
-    expect(await deviceSite.resolveSiteChoice(limited, { site_name: 'Gamma' })).toMatchObject({ ok: false, status: 403 });
-    expect(Number((await one<{ n: string }>(`SELECT COUNT(*)::text AS n FROM sites WHERE name = 'Delta'`)).n)).toBe(0);
+    expect(await deviceSite.resolveSiteChoice(limited, { site_name: 'alpha' })).toEqual({
+      ok: true,
+      siteId: ids.Alpha,
+      named: true,
+    });
+    expect(await deviceSite.resolveSiteChoice(limited, { site_id: ids.Beta })).toMatchObject({
+      ok: false,
+      status: 403,
+    });
+    expect(await deviceSite.resolveSiteChoice(limited, { site_name: 'Delta' })).toMatchObject({
+      ok: false,
+      status: 403,
+    });
+    expect(await deviceSite.resolveSiteChoice(limited, { site_name: 'Gamma' })).toMatchObject({
+      ok: false,
+      status: 403,
+    });
+    expect(
+      Number(
+        (await one<{ n: string }>(`SELECT COUNT(*)::text AS n FROM sites WHERE name = 'Delta'`)).n,
+      ),
+    ).toBe(0);
   });
 });

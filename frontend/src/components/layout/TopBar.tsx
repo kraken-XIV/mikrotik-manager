@@ -74,7 +74,10 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
           >
             {initial}
           </div>
-          <span className="hidden sm:inline text-[13px] font-medium" style={{ color: 'var(--ink-2)' }}>
+          <span
+            className="hidden sm:inline text-[13px] font-medium"
+            style={{ color: 'var(--ink-2)' }}
+          >
             {user?.username}
           </span>
         </div>
@@ -83,17 +86,17 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
             "latest", so the pages describe the version actually running. Hidden
             in Dark Site Mode, where the site cannot be reached. */}
         {docsEnabled && (
-        <a
-          href={docsUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-[7px] rounded-lg transition-colors hover:text-accent"
-          style={{ color: 'var(--ink-4)' }}
-          title="Documentation"
-          aria-label="Open the documentation in a new tab"
-        >
-          <BookOpen className="w-4 h-4" />
-        </a>
+          <a
+            href={docsUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-[7px] rounded-lg transition-colors hover:text-accent"
+            style={{ color: 'var(--ink-4)' }}
+            title="Documentation"
+            aria-label="Open the documentation in a new tab"
+          >
+            <BookOpen className="w-4 h-4" />
+          </a>
         )}
 
         {/* Logout */}

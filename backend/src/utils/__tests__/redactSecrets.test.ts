@@ -4,7 +4,10 @@ describe('maskSecrets', () => {
   it('masks Wi-Fi, WireGuard, SNMP and hotspot secrets at any depth', () => {
     const out = maskSecrets({
       profiles: [{ name: 'home', passphrase: 'hunter22', 'wpa2-pre-shared-key': 'x1' }],
-      wireguard: { interfaces: [{ name: 'wg0', 'private-key': 'abc=', 'public-key': 'pub=' }], peers: [{ 'preshared-key': 'psk=' }] },
+      wireguard: {
+        interfaces: [{ name: 'wg0', 'private-key': 'abc=', 'public-key': 'pub=' }],
+        peers: [{ 'preshared-key': 'psk=' }],
+      },
       snmp: { community_name: 'n0t-public', version: 'v2c' },
       users: [{ name: 'guest1', password: 'p' }],
       iface: { config_json: { 'security.passphrase': 'inner' } },

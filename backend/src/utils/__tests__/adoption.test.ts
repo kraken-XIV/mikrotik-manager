@@ -1,7 +1,20 @@
-import { hostRole, tempAddressCandidates, jumpInterface, detectDeviceType, hasMac, validatePlan as vp } from '../adoption';
 import {
-  collectCandidates, needsJumpHost, pickTempAddress, validateTargetAddress,
-  buildAdoptionOps, fetchAuthHeader, sameSubnet, FACTORY_ADDRESS,
+  hostRole,
+  tempAddressCandidates,
+  jumpInterface,
+  detectDeviceType,
+  hasMac,
+  validatePlan as vp,
+} from '../adoption';
+import {
+  collectCandidates,
+  needsJumpHost,
+  pickTempAddress,
+  validateTargetAddress,
+  buildAdoptionOps,
+  fetchAuthHeader,
+  sameSubnet,
+  FACTORY_ADDRESS,
   type NeighborRow,
 } from '../adoption';
 
@@ -11,13 +24,55 @@ import {
  * neighbours, all agreeing on 192.168.88.1.
  */
 const FLEET_ROWS: NeighborRow[] = [
-  { neighbor_mac: '38:32:7A:34:E5:1B', neighbor_address: '192.168.88.1', neighbor_identity: 'MikroTik', neighbor_platform: 'MikroTik', from_device_id: 1, from_interface: 'sfp28-1' },
-  { neighbor_mac: '38:32:7A:34:E5:1B', neighbor_address: '192.168.88.1', neighbor_identity: 'MikroTik', neighbor_platform: 'MikroTik', from_device_id: 2, from_interface: 'ether2' },
-  { neighbor_mac: '38:32:7A:34:E5:1B', neighbor_address: '192.168.88.1', neighbor_identity: 'MikroTik', neighbor_platform: 'MikroTik', from_device_id: 7, from_interface: 'sfp28-2' },
-  { neighbor_mac: '38:32:7A:34:E5:1B', neighbor_address: '192.168.88.1', neighbor_identity: 'MikroTik', neighbor_platform: 'MikroTik', from_device_id: 8, from_interface: 'ether1' },
+  {
+    neighbor_mac: '38:32:7A:34:E5:1B',
+    neighbor_address: '192.168.88.1',
+    neighbor_identity: 'MikroTik',
+    neighbor_platform: 'MikroTik',
+    from_device_id: 1,
+    from_interface: 'sfp28-1',
+  },
+  {
+    neighbor_mac: '38:32:7A:34:E5:1B',
+    neighbor_address: '192.168.88.1',
+    neighbor_identity: 'MikroTik',
+    neighbor_platform: 'MikroTik',
+    from_device_id: 2,
+    from_interface: 'ether2',
+  },
+  {
+    neighbor_mac: '38:32:7A:34:E5:1B',
+    neighbor_address: '192.168.88.1',
+    neighbor_identity: 'MikroTik',
+    neighbor_platform: 'MikroTik',
+    from_device_id: 7,
+    from_interface: 'sfp28-2',
+  },
+  {
+    neighbor_mac: '38:32:7A:34:E5:1B',
+    neighbor_address: '192.168.88.1',
+    neighbor_identity: 'MikroTik',
+    neighbor_platform: 'MikroTik',
+    from_device_id: 8,
+    from_interface: 'ether1',
+  },
   // Real non-MikroTik neighbours seen on the same fleet.
-  { neighbor_mac: '70:A7:41:EF:8F:FC', neighbor_address: null, neighbor_identity: '2GT-NW-CORE', neighbor_platform: 'USW-Pro-Aggregation,', from_device_id: 1, from_interface: 'sfp28-1' },
-  { neighbor_mac: '50:6B:4B:25:DA:FA', neighbor_address: '172.16.1.1', neighbor_identity: 'node1', neighbor_platform: 'Debian', from_device_id: 1, from_interface: 'sfp28-4' },
+  {
+    neighbor_mac: '70:A7:41:EF:8F:FC',
+    neighbor_address: null,
+    neighbor_identity: '2GT-NW-CORE',
+    neighbor_platform: 'USW-Pro-Aggregation,',
+    from_device_id: 1,
+    from_interface: 'sfp28-1',
+  },
+  {
+    neighbor_mac: '50:6B:4B:25:DA:FA',
+    neighbor_address: '172.16.1.1',
+    neighbor_identity: 'node1',
+    neighbor_platform: 'Debian',
+    from_device_id: 1,
+    from_interface: 'sfp28-4',
+  },
 ];
 
 describe('collectCandidates', () => {
@@ -46,9 +101,7 @@ describe('collectCandidates', () => {
   });
 
   it('ignores a neighbour with no address, which cannot be reached at all', () => {
-    expect(collectCandidates([
-      { ...FLEET_ROWS[0], neighbor_address: null },
-    ])).toHaveLength(0);
+    expect(collectCandidates([{ ...FLEET_ROWS[0], neighbor_address: null }])).toHaveLength(0);
   });
 
   it('normalises MAC case so one device is not reported twice', () => {
@@ -81,7 +134,9 @@ describe('pickTempAddress', () => {
   });
 
   it('skips addresses the jump host already holds, prefix or not', () => {
-    expect(pickTempAddress('192.168.88.1', ['192.168.88.250/24', '192.168.88.249'])).toBe('192.168.88.248/24');
+    expect(pickTempAddress('192.168.88.1', ['192.168.88.250/24', '192.168.88.249'])).toBe(
+      '192.168.88.248/24',
+    );
   });
 
   it('gives up rather than colliding when the range is exhausted', () => {
@@ -147,7 +202,11 @@ describe('buildAdoptionOps', () => {
 
   it('only sets identity when one was given', () => {
     expect(ops).toHaveLength(2);
-    const named = buildAdoptionOps({ targetAddress: '192.168.0.60/24', gateway: '192.168.0.1', identity: 'sw-01' });
+    const named = buildAdoptionOps({
+      targetAddress: '192.168.0.60/24',
+      gateway: '192.168.0.1',
+      identity: 'sw-01',
+    });
     expect(named).toHaveLength(3);
     expect(named[2].body).toEqual({ name: 'sw-01' });
   });
@@ -158,8 +217,9 @@ describe('fetchAuthHeader', () => {
     // fetch will not complete RouterOS REST's auth challenge on its own — REST
     // answers 401 without a www-authenticate header — so credentials have to be
     // presented up front.
-    expect(fetchAuthHeader('admin', 'secret'))
-      .toBe('Authorization: Basic YWRtaW46c2VjcmV0,Content-Type: application/json');
+    expect(fetchAuthHeader('admin', 'secret')).toBe(
+      'Authorization: Basic YWRtaW46c2VjcmV0,Content-Type: application/json',
+    );
   });
 
   it('handles a password with characters that matter in base64', () => {
@@ -200,7 +260,9 @@ describe('recommendMode', () => {
     // Unreachable is not the same as unconfigured, and adopting it would
     // rewrite the addressing of a working device.
     const r = recommendMode({
-      address: '10.20.30.40', identity: 'core-sw-02', reachableDirectly: false,
+      address: '10.20.30.40',
+      identity: 'core-sw-02',
+      reachableDirectly: false,
     });
     expect(r.mode).toBe('add');
     expect(r.confidence).toBe('high');
@@ -209,9 +271,13 @@ describe('recommendMode', () => {
   });
 
   it('adds an established device that is reachable', () => {
-    expect(recommendMode({
-      address: '192.168.0.39', identity: '2GT-NW-BigSwitch', reachableDirectly: true,
-    }).mode).toBe('add');
+    expect(
+      recommendMode({
+        address: '192.168.0.39',
+        identity: '2GT-NW-BigSwitch',
+        reachableDirectly: true,
+      }).mode,
+    ).toBe('add');
   });
 
   it('is unsure when only one factory marker is present', () => {
@@ -226,11 +292,12 @@ describe('recommendMode', () => {
   });
 
   it('explains itself, so the operator can overrule it', () => {
-    expect(recommendMode({ address: '192.168.88.1', identity: 'MikroTik' }).reasons)
-      .toEqual(expect.arrayContaining([
+    expect(recommendMode({ address: '192.168.88.1', identity: 'MikroTik' }).reasons).toEqual(
+      expect.arrayContaining([
         expect.stringContaining('192.168.88.1'),
         expect.stringContaining('MikroTik'),
-      ]));
+      ]),
+    );
   });
 });
 
@@ -293,42 +360,70 @@ describe('assessFactoryState', () => {
  * got wrong.
  */
 import {
-  validatePlan, buildPlanOps, planInterface, leasedAddress, judgeConflict, arpRowResolved,
+  validatePlan,
+  buildPlanOps,
+  planInterface,
+  leasedAddress,
+  judgeConflict,
+  arpRowResolved,
   type AddressPlan,
 } from '../adoption';
 
 describe('validatePlan', () => {
   it('accepts a well-formed static plan', () => {
-    expect(validatePlan({
-      mode: 'static', address: '192.168.0.60', prefix: 24, gateway: '192.168.0.1',
-    })).toEqual({ ok: true });
+    expect(
+      validatePlan({
+        mode: 'static',
+        address: '192.168.0.60',
+        prefix: 24,
+        gateway: '192.168.0.1',
+      }),
+    ).toEqual({ ok: true });
   });
 
   it('accepts a gateway that is not .1, because plenty are not', () => {
-    expect(validatePlan({
-      mode: 'static', address: '10.20.30.40', prefix: 24, gateway: '10.20.30.254',
-    }).ok).toBe(true);
+    expect(
+      validatePlan({
+        mode: 'static',
+        address: '10.20.30.40',
+        prefix: 24,
+        gateway: '10.20.30.254',
+      }).ok,
+    ).toBe(true);
   });
 
   it('rejects a gateway outside the address prefix', () => {
     // Exactly what assuming ".1" produces on a /26.
     const v = validatePlan({
-      mode: 'static', address: '192.168.0.70', prefix: 26, gateway: '192.168.0.1',
+      mode: 'static',
+      address: '192.168.0.70',
+      prefix: 26,
+      gateway: '192.168.0.1',
     });
     expect(v.ok).toBe(false);
     expect(v.reason).toMatch(/not reachable from/);
   });
 
   it('honours non-/24 prefixes', () => {
-    expect(validatePlan({
-      mode: 'static', address: '10.0.4.10', prefix: 22, gateway: '10.0.4.1',
-    }).ok).toBe(true);
+    expect(
+      validatePlan({
+        mode: 'static',
+        address: '10.0.4.10',
+        prefix: 22,
+        gateway: '10.0.4.1',
+      }).ok,
+    ).toBe(true);
   });
 
   it('requires a gateway rather than inventing one', () => {
-    expect(validatePlan({
-      mode: 'static', address: '192.168.0.60', prefix: 24, gateway: '',
-    }).ok).toBe(false);
+    expect(
+      validatePlan({
+        mode: 'static',
+        address: '192.168.0.60',
+        prefix: 24,
+        gateway: '',
+      }).ok,
+    ).toBe(false);
   });
 
   it('validates the VLAN range', () => {
@@ -420,15 +515,23 @@ describe('judgeConflict', () => {
  */
 describe('arpRowResolved', () => {
   it('counts a live host', () => {
-    expect(arpRowResolved({
-      'mac-address': 'D8:9E:F3:90:41:F1', status: 'stale', complete: 'true',
-    })).toBe(true);
+    expect(
+      arpRowResolved({
+        'mac-address': 'D8:9E:F3:90:41:F1',
+        status: 'stale',
+        complete: 'true',
+      }),
+    ).toBe(true);
   });
 
   it('counts a reachable host', () => {
-    expect(arpRowResolved({
-      'mac-address': 'B4:FB:E4:0B:0B:8A', status: 'reachable', complete: 'true',
-    })).toBe(true);
+    expect(
+      arpRowResolved({
+        'mac-address': 'B4:FB:E4:0B:0B:8A',
+        status: 'reachable',
+        complete: 'true',
+      }),
+    ).toBe(true);
   });
 
   it('does not count a failed lookup, which means the address is free', () => {
@@ -450,8 +553,12 @@ describe('C9 adoption edge cases', () => {
     expect(hostRole('10.0.0.127', 25)).toBe('broadcast');
     expect(hostRole('10.0.0.128', 25)).toBe('network');
     expect(hostRole('10.0.0.255', 23)).toBe('host');
-    expect(vp({ mode: 'static', address: '10.0.0.127', prefix: 25, gateway: '10.0.0.1' }).ok).toBe(false);
-    expect(vp({ mode: 'static', address: '10.0.1.0', prefix: 16, gateway: '10.0.0.1' }).ok).toBe(true);
+    expect(vp({ mode: 'static', address: '10.0.0.127', prefix: 25, gateway: '10.0.0.1' }).ok).toBe(
+      false,
+    );
+    expect(vp({ mode: 'static', address: '10.0.1.0', prefix: 16, gateway: '10.0.0.1' }).ok).toBe(
+      true,
+    );
   });
 
   it('offers several temporary addresses, skipping held ones', () => {
@@ -462,7 +569,10 @@ describe('C9 adoption edge cases', () => {
 
   it('puts the temporary address on the bridge a port belongs to, or refuses', () => {
     const ifaces = [{ name: 'bridge' }, { name: 'ether2' }, { name: 'ether5' }, { name: 'br-lab' }];
-    const ports = [{ interface: 'ether2', bridge: 'bridge' }, { interface: 'ether5', bridge: 'br-lab' }];
+    const ports = [
+      { interface: 'ether2', bridge: 'bridge' },
+      { interface: 'ether5', bridge: 'br-lab' },
+    ];
     expect(jumpInterface(['ether2'], ports, ifaces)).toBe('bridge');
     expect(jumpInterface(['bridge/ether2'], ports, ifaces)).toBe('bridge');
     expect(jumpInterface(['ether5'], ports, ifaces)).toBe('br-lab');
@@ -472,7 +582,9 @@ describe('C9 adoption edge cases', () => {
 
   it('detects the device type instead of filing everything as a switch', () => {
     expect(detectDeviceType('CRS310-8G+2S+', [{ type: 'ether', name: 'ether1' }])).toBe('switch');
-    expect(detectDeviceType('wAPG-5HaxD2HaxD', [{ type: 'wifi', name: 'wifi1' }])).toBe('wireless_ap');
+    expect(detectDeviceType('wAPG-5HaxD2HaxD', [{ type: 'wifi', name: 'wifi1' }])).toBe(
+      'wireless_ap',
+    );
     expect(detectDeviceType('RB5009UG+S+', [{ type: 'ether', name: 'ether1' }])).toBe('router');
   });
 

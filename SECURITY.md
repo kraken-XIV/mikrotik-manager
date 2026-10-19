@@ -2,10 +2,10 @@
 
 ## Supported Versions
 
-| Version | Supported |
-| ------- | --------- |
-| The latest release | Yes |
-| Anything older | No |
+| Version            | Supported |
+| ------------------ | --------- |
+| The latest release | Yes       |
+| Anything older     | No        |
 
 MikroTik Manager is in beta, and security fixes go into the latest release only. Every commit to
 `main` is a release: its version is in `backend/package.json`, shown in the app's sidebar and
@@ -18,7 +18,7 @@ tagged on the published images. Updating (`git pull` and `docker compose up -d -
 
 If you discover a security vulnerability, please use one of the following channels:
 
-- **GitHub Private Security Advisory** *(preferred)*: Use the [Report a Vulnerability](../../security/advisories/new) button in the Security tab of this repository. This lets us discuss the issue privately before public disclosure.
+- **GitHub Private Security Advisory** _(preferred)_: Use the [Report a Vulnerability](../../security/advisories/new) button in the Security tab of this repository. This lets us discuss the issue privately before public disclosure.
 - **Email**: Send details to [contact@2guystek.tv](mailto:contact@2guystek.tv).
 
 ### What to include in your report

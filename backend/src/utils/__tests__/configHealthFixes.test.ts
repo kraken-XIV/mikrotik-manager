@@ -3,9 +3,12 @@ import { fixFor, noFixReason, NO_FIX_REASON } from '../configHealthFixes';
 describe('Config Health fixes (#239)', () => {
   it('turns spanning tree on, or classic STP into RSTP', () => {
     expect(fixFor('stp-disabled', ['bridge1', 'ether1', 'ether2'])).toEqual({
-      summary: 'Turn on RSTP on bridge bridge1', command: '/interface/bridge set bridge1 protocol-mode=rstp',
+      summary: 'Turn on RSTP on bridge bridge1',
+      command: '/interface/bridge set bridge1 protocol-mode=rstp',
     });
-    expect(fixFor('stp-legacy-mode', ['bridge'])?.command).toBe('/interface/bridge set bridge protocol-mode=rstp');
+    expect(fixFor('stp-legacy-mode', ['bridge'])?.command).toBe(
+      '/interface/bridge set bridge protocol-mode=rstp',
+    );
   });
   it('tags the bridge in the VLAN its VLAN interface needs', () => {
     const plan = fixFor('vlan-iface-not-tagged-on-bridge', ['vlan99', 'bridge1', '99']);

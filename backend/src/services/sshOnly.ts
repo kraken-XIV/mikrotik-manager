@@ -16,8 +16,12 @@ import { usesApiTls } from '../utils/apiTls';
 import { connectPreferringSsl, API_PORT, API_SSL_PORT } from './mikrotik/apiConnect';
 import { pinIdentity } from './identityPins';
 import {
-  SSH_INFO_COMMAND, parseSshInfo, looksLikeRouterOs, classifyApiFailure,
-  type SshInfo, type ApiFailureKind,
+  SSH_INFO_COMMAND,
+  parseSshInfo,
+  looksLikeRouterOs,
+  classifyApiFailure,
+  type SshInfo,
+  type ApiFailureKind,
 } from '../utils/sshOnly';
 
 export interface SshOnlyDevice extends SshExecDevice {
@@ -33,7 +37,9 @@ export async function readSshInfo(
   device: SshExecDevice,
   opts: { timeoutMs?: number; onHostKey?: (fingerprint: string) => void } = {},
 ): Promise<SshInfo> {
-  const { output } = await runSshCommand(device, SSH_INFO_COMMAND, opts.timeoutMs ?? 20_000, { onHostKey: opts.onHostKey });
+  const { output } = await runSshCommand(device, SSH_INFO_COMMAND, opts.timeoutMs ?? 20_000, {
+    onHostKey: opts.onHostKey,
+  });
   const info = parseSshInfo(output);
   if (!looksLikeRouterOs(info)) {
     throw new Error('Logged in over SSH, but the device did not answer like RouterOS.');
@@ -56,12 +62,27 @@ export async function checkApi(device: SshOnlyDevice): Promise<ApiCheck> {
   try {
     let port: number;
     // A port of its own, or an explicit API-SSL choice (#257), is used as given.
-    if (device.api_port && (typeof device.api_tls === 'boolean' || (device.api_port !== API_PORT && device.api_port !== API_SSL_PORT))) {
-      client = new RouterOSClient(device.ip_address, device.api_port, device.api_username, password, 6_000, 30_000, usesApiTls(device));
+    if (
+      device.api_port &&
+      (typeof device.api_tls === 'boolean' ||
+        (device.api_port !== API_PORT && device.api_port !== API_SSL_PORT))
+    ) {
+      client = new RouterOSClient(
+        device.ip_address,
+        device.api_port,
+        device.api_username,
+        password,
+        6_000,
+        30_000,
+        usesApiTls(device),
+      );
       await client.connect();
       port = device.api_port;
     } else {
-      const chosen = await connectPreferringSsl(device.ip_address, device.api_username, password, { sslTimeoutMs: 5_000, plainTimeoutMs: 6_000 });
+      const chosen = await connectPreferringSsl(device.ip_address, device.api_username, password, {
+        sslTimeoutMs: 5_000,
+        plainTimeoutMs: 6_000,
+      });
       client = chosen.client;
       port = chosen.port;
     }
@@ -75,10 +96,10 @@ export async function checkApi(device: SshOnlyDevice): Promise<ApiCheck> {
 
 /** Store the outcome of an API check that failed, for the device page. */
 export async function recordApiCheck(deviceId: number, message: string | null): Promise<void> {
-  await query(
-    `UPDATE devices SET api_checked_at = NOW(), api_check_error = $2 WHERE id = $1`,
-    [deviceId, message],
-  );
+  await query(`UPDATE devices SET api_checked_at = NOW(), api_check_error = $2 WHERE id = $1`, [
+    deviceId,
+    message,
+  ]);
 }
 
 /**
@@ -86,18 +107,27 @@ export async function recordApiCheck(deviceId: number, message: string | null): 
  * now is pinned (as when a device is added over the API), and the caller
  * schedules the full sync.
  */
-export async function promoteToApi(device: SshOnlyDevice, check: Extract<ApiCheck, { ok: true }>): Promise<void> {
+export async function promoteToApi(
+  device: SshOnlyDevice,
+  check: Extract<ApiCheck, { ok: true }>,
+): Promise<void> {
   await query(
     `UPDATE devices SET ssh_only = FALSE, api_port = $2, api_checked_at = NOW(), api_check_error = NULL, updated_at = NOW()
       WHERE id = $1`,
     [device.id, check.port],
   );
-  if (check.tlsFingerprint) await pinIdentity(device.id, 'api-tls', check.tlsFingerprint).catch(() => {});
+  if (check.tlsFingerprint)
+    await pinIdentity(device.id, 'api-tls', check.tlsFingerprint).catch(() => {});
   await query(
     `INSERT INTO events (device_id, event_time, severity, topic, message) VALUES ($1, NOW(), 'info', 'manager', $2)`,
-    [device.id, `The RouterOS API now answers (port ${check.port}), so ${device.name.trim()} is managed over the API from now on.`],
+    [
+      device.id,
+      `The RouterOS API now answers (port ${check.port}), so ${device.name.trim()} is managed over the API from now on.`,
+    ],
   ).catch(() => {});
-  console.log(`[sshOnly] ${logSafe(device.name)}: API answers on ${check.port}; no longer SSH only`);
+  console.log(
+    `[sshOnly] ${logSafe(device.name)}: API answers on ${check.port}; no longer SSH only`,
+  );
 }
 
 /**
@@ -122,8 +152,16 @@ export async function refreshOverSsh(device: SshOnlyDevice): Promise<SshInfo> {
        ros_identity = COALESCE($8, ros_identity),
        updated_at = NOW()
      WHERE id = $1`,
-    [device.id, fit(name, 100), fit(info.model, 100), fit(info.serial, 50), fit(info.firmware, 50),
-     fit(info.rosVersion, 20), fit(info.architecture, 32), fit(info.identity, 255)],
+    [
+      device.id,
+      fit(name, 100),
+      fit(info.model, 100),
+      fit(info.serial, 50),
+      fit(info.firmware, 50),
+      fit(info.rosVersion, 20),
+      fit(info.architecture, 32),
+      fit(info.identity, 255),
+    ],
   );
   return info;
 }

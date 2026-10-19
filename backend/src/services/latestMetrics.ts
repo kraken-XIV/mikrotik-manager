@@ -34,7 +34,9 @@ function run(flux: string, onRow: (o: Record<string, unknown>) => void): Promise
   const api = getQueryApi();
   return new Promise<void>((resolve, reject) => {
     api.queryRows(flux, {
-      next(row, tableMeta) { onRow(tableMeta.toObject(row) as Record<string, unknown>); },
+      next(row, tableMeta) {
+        onRow(tableMeta.toObject(row) as Record<string, unknown>);
+      },
       error: reject,
       complete: resolve,
     });
@@ -46,7 +48,9 @@ function run(flux: string, onRow: (o: Record<string, unknown>) => void): Promise
  * unreadable Influx gives an empty map (the insights feed relies on that); with
  * `{ strict: true }` it throws so the caller can report it.
  */
-export async function latestResources(opts: { strict?: boolean } = {}): Promise<Map<string, LatestResources>> {
+export async function latestResources(
+  opts: { strict?: boolean } = {},
+): Promise<Map<string, LatestResources>> {
   const out = new Map<string, LatestResources>();
   const flux = `
     from(bucket: ${fluxString(bucket)})
@@ -79,7 +83,9 @@ export async function latestResources(opts: { strict?: boolean } = {}): Promise<
  * Latest cumulative rx/tx byte counters per device and interface, one query for
  * the whole fleet. Throws if Influx cannot be read (callers decide how to report it).
  */
-export async function latestInterfaceCounters(): Promise<Map<string, Map<string, LatestInterfaceCounters>>> {
+export async function latestInterfaceCounters(): Promise<
+  Map<string, Map<string, LatestInterfaceCounters>>
+> {
   const out = new Map<string, Map<string, LatestInterfaceCounters>>();
   const flux = `
     from(bucket: ${fluxString(bucket)})

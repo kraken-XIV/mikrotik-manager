@@ -14,7 +14,13 @@ type Draft = Record<string, { own: boolean; value: number | boolean }>;
  * then Save or Cancel at the bottom. A setting this device doesn't override
  * follows its site or the global one.
  */
-export default function PollingNote({ deviceId, siteId }: { deviceId: number; siteId: number | null }) {
+export default function PollingNote({
+  deviceId,
+  siteId,
+}: {
+  deviceId: number;
+  siteId: number | null;
+}) {
   const qc = useQueryClient();
   const canEdit = useCanEditPollSettings(siteId);
   const key = ['poll-settings', 'device', deviceId];
@@ -27,20 +33,31 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
   const [error, setError] = useState('');
 
   const save = useMutation({
-    mutationFn: (body: Record<string, number | boolean | null>) => devicesApi.setPollSettings(deviceId, body).then((r) => r.data),
+    mutationFn: (body: Record<string, number | boolean | null>) =>
+      devicesApi.setPollSettings(deviceId, body).then((r) => r.data),
     onSuccess: (d: PollSettings) => {
       qc.setQueryData(key, d);
       void qc.invalidateQueries({ queryKey: ['poll-settings'] });
       setDraft(null);
       setError('');
     },
-    onError: (e: unknown) => setError((e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Couldn’t save'),
+    onError: (e: unknown) =>
+      setError(
+        (e as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+          'Couldn’t save',
+      ),
   });
 
   if (!data) return null;
 
-  const fromWhere = (src: string) => (src === 'device' ? 'this device' : src === 'site' ? `site ${data.site?.name ?? ''}`.trim() : 'global');
-  const show = (v: number | boolean, unit?: string) => (typeof v === 'boolean' ? (v ? 'On' : 'Off') : `${v}${unit ? ` ${unit}` : ''}`);
+  const fromWhere = (src: string) =>
+    src === 'device'
+      ? 'this device'
+      : src === 'site'
+        ? `site ${data.site?.name ?? ''}`.trim()
+        : 'global';
+  const show = (v: number | boolean, unit?: string) =>
+    typeof v === 'boolean' ? (v ? 'On' : 'Off') : `${v}${unit ? ` ${unit}` : ''}`;
 
   const openEdit = () => {
     const d: Draft = {};
@@ -66,14 +83,18 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
     return body;
   };
   const pending = draft ? Object.keys(changes()).length : 0;
-  const set = (k: string, patch: Partial<Draft[string]>) => setDraft((d) => (d ? { ...d, [k]: { ...d[k], ...patch } } : d));
+  const set = (k: string, patch: Partial<Draft[string]>) =>
+    setDraft((d) => (d ? { ...d, [k]: { ...d[k], ...patch } } : d));
 
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Polling and backups</h3>
         {canEdit && !draft && (
-          <button onClick={openEdit} className="btn-secondary flex items-center gap-1.5 text-xs py-1.5">
+          <button
+            onClick={openEdit}
+            className="btn-secondary flex items-center gap-1.5 text-xs py-1.5"
+          >
             <Pencil className="w-3.5 h-3.5" /> Edit
           </button>
         )}
@@ -85,14 +106,25 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
             const eff = data.effective[r.key];
             if (!eff) return null;
             const d = draft?.[r.key];
-            const dependsOff = r.dependsOn && (draft?.[r.dependsOn]?.value ?? data.effective[r.dependsOn]?.value) === false;
+            const dependsOff =
+              r.dependsOn &&
+              (draft?.[r.dependsOn]?.value ?? data.effective[r.dependsOn]?.value) === false;
             return (
               <tr key={r.key} className={clsx(dependsOff && 'opacity-50')}>
                 <td className="py-2 pr-3 text-gray-600 dark:text-slate-300">{r.label}</td>
                 {!d ? (
                   <>
-                    <td className="py-2 pr-3 font-mono text-gray-900 dark:text-white whitespace-nowrap">{show(eff.value, r.unit)}</td>
-                    <td className={clsx('py-2 text-xs whitespace-nowrap text-right', eff.source === 'device' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-400')}>
+                    <td className="py-2 pr-3 font-mono text-gray-900 dark:text-white whitespace-nowrap">
+                      {show(eff.value, r.unit)}
+                    </td>
+                    <td
+                      className={clsx(
+                        'py-2 text-xs whitespace-nowrap text-right',
+                        eff.source === 'device'
+                          ? 'text-blue-600 dark:text-blue-400 font-medium'
+                          : 'text-gray-400',
+                      )}
+                    >
                       {fromWhere(eff.source)}
                     </td>
                   </>
@@ -101,29 +133,60 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
                     <td className="py-1.5 pr-3">
                       {d.own ? (
                         r.bool ? (
-                          <select className="input py-1 text-sm w-24" value={d.value ? 'on' : 'off'} aria-label={r.label}
-                            onChange={(e) => set(r.key, { value: e.target.value === 'on' })}>
+                          <select
+                            className="input py-1 text-sm w-24"
+                            value={d.value ? 'on' : 'off'}
+                            aria-label={r.label}
+                            onChange={(e) => set(r.key, { value: e.target.value === 'on' })}
+                          >
                             <option value="on">On</option>
                             <option value="off">Off</option>
                           </select>
                         ) : (
                           <span className="flex items-center gap-1.5">
-                            <input type="number" className="input py-1 w-28 text-center" value={String(d.value)} min={r.min} max={r.max} aria-label={r.label}
-                              onChange={(e) => set(r.key, { value: e.target.value === '' ? '' as unknown as number : Number(e.target.value) })} />
+                            <input
+                              type="number"
+                              className="input py-1 w-28 text-center"
+                              value={String(d.value)}
+                              min={r.min}
+                              max={r.max}
+                              aria-label={r.label}
+                              onChange={(e) =>
+                                set(r.key, {
+                                  value:
+                                    e.target.value === ''
+                                      ? ('' as unknown as number)
+                                      : Number(e.target.value),
+                                })
+                              }
+                            />
                             <span className="text-xs text-gray-400">{r.unit}</span>
                           </span>
                         )
                       ) : (
                         <span className="font-mono text-gray-500 dark:text-slate-400">
                           {show((data.inherited?.[r.key] ?? eff).value, r.unit)}
-                          <span className="font-sans text-xs text-gray-400"> · {fromWhere((data.inherited?.[r.key] ?? eff).source)}</span>
+                          <span className="font-sans text-xs text-gray-400">
+                            {' '}
+                            · {fromWhere((data.inherited?.[r.key] ?? eff).source)}
+                          </span>
                         </span>
                       )}
                     </td>
                     <td className="py-1.5 text-right whitespace-nowrap">
                       <label className="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300 cursor-pointer">
-                        <input type="checkbox" checked={d.own}
-                          onChange={(e) => set(r.key, { own: e.target.checked, ...(e.target.checked ? {} : { value: (data.inherited?.[r.key] ?? eff).value }) })} />
+                        <input
+                          type="checkbox"
+                          checked={d.own}
+                          onChange={(e) =>
+                            set(r.key, {
+                              own: e.target.checked,
+                              ...(e.target.checked
+                                ? {}
+                                : { value: (data.inherited?.[r.key] ?? eff).value }),
+                            })
+                          }
+                        />
                         set for this device
                       </label>
                     </td>
@@ -138,7 +201,8 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
       {draft && (
         <div className="mt-4 space-y-3">
           <p className="text-xs text-gray-400 dark:text-slate-500">
-            Unticked settings follow {data.site?.name ? `site ${data.site.name}` : 'the site'} or the global setting.
+            Unticked settings follow {data.site?.name ? `site ${data.site.name}` : 'the site'} or
+            the global setting.
           </p>
           {error && (
             <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -147,11 +211,33 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
             </div>
           )}
           <div className="flex items-center gap-2">
-            <button onClick={() => save.mutate(changes())} disabled={save.isPending || pending === 0} className="btn-primary flex items-center gap-2 text-sm">
-              {save.isPending ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" />Saving…</> : <><Check className="w-3.5 h-3.5" />Save</>}
+            <button
+              onClick={() => save.mutate(changes())}
+              disabled={save.isPending || pending === 0}
+              className="btn-primary flex items-center gap-2 text-sm"
+            >
+              {save.isPending ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  Save
+                </>
+              )}
             </button>
-            <button onClick={() => { setDraft(null); setError(''); }} disabled={save.isPending} className="btn-secondary text-sm">
-              <X className="w-3.5 h-3.5 inline mr-1" />Cancel
+            <button
+              onClick={() => {
+                setDraft(null);
+                setError('');
+              }}
+              disabled={save.isPending}
+              className="btn-secondary text-sm"
+            >
+              <X className="w-3.5 h-3.5 inline mr-1" />
+              Cancel
             </button>
           </div>
         </div>

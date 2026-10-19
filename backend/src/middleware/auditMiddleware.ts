@@ -36,7 +36,9 @@ function extractUser(req: Request): { userId: number | null; username: string | 
     try {
       const payload = verifyToken(authHeader.slice(7));
       return { userId: payload.userId, username: payload.username };
-    } catch { /* expired/invalid — record as anonymous */ }
+    } catch {
+      /* expired/invalid — record as anonymous */
+    }
   }
   return { userId: null, username: null };
 }
@@ -59,15 +61,29 @@ export function auditMiddleware(req: Request, res: Response, next: NextFunction)
     const summary = `${req.get('x-preview-changes') === '1' ? 'PREVIEW ' : ''}${req.method} ${fullPath}`;
     const ip = (req.ip ?? '').replace(/^::ffff:/, '');
 
-    outsidePreview(() => query(
-      `INSERT INTO audit_log (user_id, username, method, path, entity_type, entity_id, summary, ip_address, status_code)
+    outsidePreview(() =>
+      query(
+        `INSERT INTO audit_log (user_id, username, method, path, entity_type, entity_id, summary, ip_address, status_code)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [userId, username?.slice(0, 150) ?? null, req.method, fullPath, entityType, entityId, summary, ip, res.statusCode]
-    )).catch((err) => {
+        [
+          userId,
+          username?.slice(0, 150) ?? null,
+          req.method,
+          fullPath,
+          entityType,
+          entityId,
+          summary,
+          ip,
+          res.statusCode,
+        ],
+      ),
+    ).catch((err) => {
       // A failed insert is a write with no audit trail, so it must at least be
       // visible. It used to be swallowed: long API token names overflowed the
       // username column and those writes went unrecorded without a trace.
-      console.error(`[audit] could not record ${logSafe(summary)}: ${logSafe((err as Error).message)}`);
+      console.error(
+        `[audit] could not record ${logSafe(summary)}: ${logSafe((err as Error).message)}`,
+      );
     });
   });
 

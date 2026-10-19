@@ -409,7 +409,13 @@ export interface ExternalTopologyNode {
 }
 
 export interface MetricsSummary {
-  devices: { total: number; online: number; offline: number; degraded?: number; intermittent_offline?: number };
+  devices: {
+    total: number;
+    online: number;
+    offline: number;
+    degraded?: number;
+    intermittent_offline?: number;
+  };
   clients: { total: number; active: number };
   alerts: { critical: number; warning: number };
   availability?: { fleetUptimePct30d: number };
@@ -521,10 +527,17 @@ export interface WirelessMetricPoint {
 // ─── Rogue AP detection ─────────────────────────────────────────────────────
 
 export interface RogueAp {
-  ssid: string; bssid: string; vendor: string; signal: number; band: string;
-  seenBy: string; scannedAt: string;
+  ssid: string;
+  bssid: string;
+  vendor: string;
+  signal: number;
+  band: string;
+  seenBy: string;
+  scannedAt: string;
 }
-export interface NeighborAp extends RogueAp { security: string }
+export interface NeighborAp extends RogueAp {
+  security: string;
+}
 export interface RogueApReport {
   rogues: RogueAp[];
   neighbors: NeighborAp[];
@@ -602,7 +615,6 @@ export interface RfTxQualityRow {
   band: string;
   tx_retry_pct: number;
 }
-
 
 export interface ConfigSnapshotMeta {
   id: number;

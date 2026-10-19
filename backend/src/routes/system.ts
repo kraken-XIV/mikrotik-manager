@@ -24,7 +24,9 @@ export function setPollerService(p: PollerService): void {
 function resolveCurrentVersion(): string {
   if (process.env.npm_package_version) return process.env.npm_package_version;
   try {
-    const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8')) as { version?: string };
+    const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8')) as {
+      version?: string;
+    };
     return pkg.version || '0.0.0';
   } catch {
     return '0.0.0';
@@ -32,7 +34,8 @@ function resolveCurrentVersion(): string {
 }
 
 const CURRENT_VERSION = resolveCurrentVersion();
-const RAW_URL = 'https://raw.githubusercontent.com/2GT-Media-Group-LLC/mikrotik-manager/main/frontend/package.json';
+const RAW_URL =
+  'https://raw.githubusercontent.com/2GT-Media-Group-LLC/mikrotik-manager/main/frontend/package.json';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // Normalise "0.11.7-beta" or "v0.11.7 Beta" → [0, 11, 7]
@@ -77,8 +80,14 @@ router.get('/poller', fleetOnly, async (_req: Request, res: Response) => {
       // Stale means three missed fast polls at the device's own interval (at
       // least 3 minutes): a device polled every 10 minutes isn't stale at 4 (#261).
       const global = await globalSettings();
-      const rows = await query<Record<string, unknown> & { seconds_since_success: number | null; dev_ov: unknown; site_ov: unknown }>(
-      `SELECT d.id, d.name, d.status, s.kind,
+      const rows = await query<
+        Record<string, unknown> & {
+          seconds_since_success: number | null;
+          dev_ov: unknown;
+          site_ov: unknown;
+        }
+      >(
+        `SELECT d.id, d.name, d.status, s.kind,
               s.last_attempt_at, s.last_success_at, s.last_duration_ms, s.last_error,
               s.attempts, s.failures,
               EXTRACT(EPOCH FROM (NOW() - s.last_success_at))::int AS seconds_since_success,
@@ -89,11 +98,20 @@ router.get('/poller', fleetOnly, async (_req: Request, res: Response) => {
         WHERE d.status != 'disabled'
           AND (s.last_success_at IS NULL OR s.last_success_at < NOW() - INTERVAL '3 minutes')
         ORDER BY s.last_success_at ASC NULLS FIRST
-        LIMIT 500`
+        LIMIT 500`,
       );
       stale = rows
-        .filter((r) => r.seconds_since_success == null
-          || r.seconds_since_success > Math.max(180, 3 * effectiveValues(global, cleanOverrides(r.site_ov), cleanOverrides(r.dev_ov)).fastSec))
+        .filter(
+          (r) =>
+            r.seconds_since_success == null ||
+            r.seconds_since_success >
+              Math.max(
+                180,
+                3 *
+                  effectiveValues(global, cleanOverrides(r.site_ov), cleanOverrides(r.dev_ov))
+                    .fastSec,
+              ),
+        )
         .slice(0, 50)
         .map(({ dev_ov: _d, site_ov: _s, ...rest }) => rest);
     } catch (e) {
@@ -120,7 +138,11 @@ router.post('/poller/drain', requireWrite, fleetOnly, async (_req: Request, res:
     if (!pollerService) return res.status(503).json({ error: 'Poller not started' });
     const drained = await pollerService.drainQueues();
     const total = Object.values(drained).reduce((a, b) => a + b, 0);
-    res.json({ drained, total, message: `Cleared ${total} queued job(s). Polling resumes on the next cycle.` });
+    res.json({
+      drained,
+      total,
+      message: `Cleared ${total} queued job(s). Polling resumes on the next cycle.`,
+    });
   } catch (error) {
     console.error('Error draining poller queues:', error);
     res.status(500).json({ error: 'Failed to drain queues' });
@@ -135,7 +157,8 @@ router.post('/poller/drain', requireWrite, fleetOnly, async (_req: Request, res:
  */
 router.get('/dark-site', async (_req: Request, res: Response) => {
   const rows = await query<{ key: string; value: unknown }>(
-    `SELECT key, value FROM app_settings WHERE key = ANY($1::text[])`, [DARK_SITE_KEYS]
+    `SELECT key, value FROM app_settings WHERE key = ANY($1::text[])`,
+    [DARK_SITE_KEYS],
   ).catch(() => []);
   const map: Record<string, unknown> = {};
   for (const r of rows) map[r.key] = r.value;
@@ -150,15 +173,20 @@ router.get('/version-check', async (_req: Request, res: Response) => {
     // dashboard can say "check disabled" rather than "you are up to date",
     // which would be a claim it has no basis for.
     const flag = await query<{ value: unknown }>(
-      `SELECT value FROM app_settings WHERE key = 'update_check_enabled'`
+      `SELECT value FROM app_settings WHERE key = 'update_check_enabled'`,
     ).catch(() => []);
     if (flag[0]?.value === false) {
-      return res.json({ current: CURRENT_VERSION, latest: null, update_available: false, disabled: true });
+      return res.json({
+        current: CURRENT_VERSION,
+        latest: null,
+        update_available: false,
+        disabled: true,
+      });
     }
 
     // Check cache
     const cached = await query<{ value: { version: string; checked_at: string } }>(
-      `SELECT value FROM app_settings WHERE key = 'version_check_cache'`
+      `SELECT value FROM app_settings WHERE key = 'version_check_cache'`,
     );
     const row = cached[0]?.value;
     if (row && Date.now() - new Date(row.checked_at).getTime() < CACHE_TTL_MS) {
@@ -178,7 +206,7 @@ router.get('/version-check', async (_req: Request, res: Response) => {
     try {
       const resp = await fetch(RAW_URL, { signal: controller.signal });
       if (resp.ok) {
-        const pkg = await resp.json() as { version?: string };
+        const pkg = (await resp.json()) as { version?: string };
         if (pkg.version) latestVersion = pkg.version;
       }
     } finally {
@@ -189,7 +217,7 @@ router.get('/version-check', async (_req: Request, res: Response) => {
     await query(
       `INSERT INTO app_settings (key, value) VALUES ('version_check_cache', $1)
        ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()`,
-      [JSON.stringify({ version: latestVersion, checked_at: new Date().toISOString() })]
+      [JSON.stringify({ version: latestVersion, checked_at: new Date().toISOString() })],
     );
 
     return res.json({

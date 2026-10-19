@@ -8,7 +8,20 @@ import { rateLimitRedis, memoryLimitExceeded } from '../rateLimitRedis';
 // Outside review S5.
 describe('rateLimitRedis', () => {
   const res = () => {
-    const r = { headers: new Map<string, string>(), statusCode: 200, setHeader(k: string, v: string) { this.headers.set(k, v); }, status(c: number) { this.statusCode = c; return this; }, json() { return this; } };
+    const r = {
+      headers: new Map<string, string>(),
+      statusCode: 200,
+      setHeader(k: string, v: string) {
+        this.headers.set(k, v);
+      },
+      status(c: number) {
+        this.statusCode = c;
+        return this;
+      },
+      json() {
+        return this;
+      },
+    };
     return r as unknown as Response & { statusCode: number; headers: Map<string, string> };
   };
   const req = { method: 'POST', ip: '10.0.0.9' } as Request;

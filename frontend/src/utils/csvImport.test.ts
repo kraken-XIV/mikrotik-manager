@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { parseDeviceCsv, splitCsvLine, MAX_ROWS, buildCsvTemplate, detectDelimiter } from './csvImport';
+import {
+  parseDeviceCsv,
+  splitCsvLine,
+  MAX_ROWS,
+  buildCsvTemplate,
+  detectDelimiter,
+} from './csvImport';
 
-const presets = [{ id: 7, name: 'Default' }, { id: 9, name: 'Core Switches' }];
+const presets = [
+  { id: 7, name: 'Default' },
+  { id: 9, name: 'Core Switches' },
+];
 
 describe('splitCsvLine', () => {
   it('handles quoted commas and doubled quotes', () => {
@@ -20,28 +29,47 @@ describe('parseDeviceCsv', () => {
     const r = parseDeviceCsv('name,ip,type,preset\nsw1,10.0.0.2,switch,Default\n', presets);
     expect(r.fileErrors).toEqual([]);
     expect(r.rows[0].item).toEqual({
-      name: 'sw1', ip_address: '10.0.0.2', device_type: 'switch', credential_preset_id: 7,
+      name: 'sw1',
+      ip_address: '10.0.0.2',
+      device_type: 'switch',
+      credential_preset_id: 7,
     });
   });
 
   it('passes SSH credentials through when given (#160 follow-up)', () => {
-    const r = parseDeviceCsv('ip,username,password,ssh_username,ssh_password,ssh_port\n10.0.0.5,admin,a,backup,b,2222\n', presets);
-    expect(r.rows[0].item).toMatchObject({ ssh_username: 'backup', ssh_password: 'b', ssh_port: 2222 });
+    const r = parseDeviceCsv(
+      'ip,username,password,ssh_username,ssh_password,ssh_port\n10.0.0.5,admin,a,backup,b,2222\n',
+      presets,
+    );
+    expect(r.rows[0].item).toMatchObject({
+      ssh_username: 'backup',
+      ssh_password: 'b',
+      ssh_port: 2222,
+    });
   });
 
   it('leaves SSH out when blank, so SSH falls back to the API login', () => {
-    const r = parseDeviceCsv('ip,username,password,ssh_username,ssh_password\n10.0.0.5,admin,a,,\n', presets);
+    const r = parseDeviceCsv(
+      'ip,username,password,ssh_username,ssh_password\n10.0.0.5,admin,a,,\n',
+      presets,
+    );
     expect(r.rows[0].item).not.toHaveProperty('ssh_username');
     expect(r.rows[0].errors).toEqual([]);
   });
 
   it('rejects half an SSH credential', () => {
-    const r = parseDeviceCsv('ip,username,password,ssh_username\n10.0.0.5,admin,a,backup\n', presets);
+    const r = parseDeviceCsv(
+      'ip,username,password,ssh_username\n10.0.0.5,admin,a,backup\n',
+      presets,
+    );
     expect(r.rows[0].errors.join(' ')).toMatch(/both ssh_username and ssh_password/);
   });
 
   it('warns that SSH columns are ignored alongside a preset', () => {
-    const r = parseDeviceCsv('ip,preset,ssh_username,ssh_password\n10.0.0.5,Default,x,y\n', presets);
+    const r = parseDeviceCsv(
+      'ip,preset,ssh_username,ssh_password\n10.0.0.5,Default,x,y\n',
+      presets,
+    );
     expect(r.rows[0].warnings.join(' ')).toMatch(/preset's SSH settings/);
     expect(r.rows[0].item).not.toHaveProperty('ssh_username');
   });
@@ -58,13 +86,15 @@ describe('parseDeviceCsv', () => {
   });
 
   it('defaults the name to the address', () => {
-    expect(parseDeviceCsv('ip,preset\n10.0.0.2,Default\n', presets).rows[0].item?.name).toBe('10.0.0.2');
+    expect(parseDeviceCsv('ip,preset\n10.0.0.2,Default\n', presets).rows[0].item?.name).toBe(
+      '10.0.0.2',
+    );
   });
 
   it('reports errors per line instead of failing the file', () => {
     const r = parseDeviceCsv(
       'ip,preset,type\n10.0.0.2,Default,switch\n10.0.0.999,Default,switch\n10.0.0.4,Nope,switch\n10.0.0.5,Default,toaster\n',
-      presets
+      presets,
     );
     expect(r.rows.map((x) => x.errors.length > 0)).toEqual([false, true, true, true]);
     expect(r.rows[1].errors[0]).toMatch(/not a valid/);
@@ -74,7 +104,9 @@ describe('parseDeviceCsv', () => {
   });
 
   it('requires credentials of some kind', () => {
-    expect(parseDeviceCsv('ip\n10.0.0.2\n', presets).rows[0].errors[0]).toMatch(/preset, or both username/);
+    expect(parseDeviceCsv('ip\n10.0.0.2\n', presets).rows[0].errors[0]).toMatch(
+      /preset, or both username/,
+    );
   });
 
   it('catches the same address twice in one file', () => {
@@ -84,7 +116,9 @@ describe('parseDeviceCsv', () => {
 
   it('skips a device already managed rather than sending a row that would fail', () => {
     // The bulk job answers an existing device with a duplicate-serial failure.
-    const r = parseDeviceCsv('ip,preset\n10.0.0.2,Default\n10.0.0.3,Default\n', presets, ['10.0.0.2']);
+    const r = parseDeviceCsv('ip,preset\n10.0.0.2,Default\n10.0.0.3,Default\n', presets, [
+      '10.0.0.2',
+    ]);
     expect(r.rows[0].errors).toEqual([]);
     expect(r.rows[0].skip).toBe(true);
     expect(r.rows[0].warnings[0]).toMatch(/Already managed/);
@@ -92,26 +126,40 @@ describe('parseDeviceCsv', () => {
   });
 
   it('accepts hostnames', () => {
-    expect(parseDeviceCsv('host,preset\nsw1.example.net,Default\n', presets).rows[0].errors).toEqual([]);
+    expect(
+      parseDeviceCsv('host,preset\nsw1.example.net,Default\n', presets).rows[0].errors,
+    ).toEqual([]);
   });
 
   it('skips blank lines, comments, CRLF and a BOM', () => {
-    const r = parseDeviceCsv('\uFEFF# fleet\r\nip,preset\r\n\r\n# comment\r\n10.0.0.2,Default\r\n', presets);
+    const r = parseDeviceCsv(
+      '\uFEFF# fleet\r\nip,preset\r\n\r\n# comment\r\n10.0.0.2,Default\r\n',
+      presets,
+    );
     expect(r.rows).toHaveLength(1);
     expect(r.rows[0].errors).toEqual([]);
   });
 
   it('needs an address column', () => {
-    expect(parseDeviceCsv('name,preset\nsw1,Default\n', presets).fileErrors[0]).toMatch(/No address column/);
+    expect(parseDeviceCsv('name,preset\nsw1,Default\n', presets).fileErrors[0]).toMatch(
+      /No address column/,
+    );
   });
 
   it('lists columns it will ignore', () => {
-    expect(parseDeviceCsv('ip,preset,rack\n10.0.0.2,Default,A1\n', presets).ignoredColumns).toEqual(['rack']);
+    expect(parseDeviceCsv('ip,preset,rack\n10.0.0.2,Default,A1\n', presets).ignoredColumns).toEqual(
+      ['rack'],
+    );
   });
 
   it('refuses more rows than the job accepts', () => {
-    const body = Array.from({ length: MAX_ROWS + 1 }, (_, i) => `10.1.${Math.floor(i / 250)}.${(i % 250) + 1},Default`).join('\n');
-    expect(parseDeviceCsv(`ip,preset\n${body}\n`, presets).fileErrors[0]).toMatch(/limit per import/);
+    const body = Array.from(
+      { length: MAX_ROWS + 1 },
+      (_, i) => `10.1.${Math.floor(i / 250)}.${(i % 250) + 1},Default`,
+    ).join('\n');
+    expect(parseDeviceCsv(`ip,preset\n${body}\n`, presets).fileErrors[0]).toMatch(
+      /limit per import/,
+    );
   });
 
   it('parses its own template cleanly, with and without presets', () => {
@@ -124,33 +172,53 @@ describe('parseDeviceCsv', () => {
   });
 
   it('has no comment lines, which show up as data rows in a spreadsheet', () => {
-    expect(buildCsvTemplate('Default').split(/\r?\n/).some((l) => l.startsWith('#'))).toBe(false);
+    expect(
+      buildCsvTemplate('Default')
+        .split(/\r?\n/)
+        .some((l) => l.startsWith('#')),
+    ).toBe(false);
   });
 
   it('skips example rows left in from the template instead of importing them', () => {
-    const r = parseDeviceCsv(buildCsvTemplate('Default') + 'real-sw,10.0.0.9,switch,Default\r\n', presets);
+    const r = parseDeviceCsv(
+      buildCsvTemplate('Default') + 'real-sw,10.0.0.9,switch,Default\r\n',
+      presets,
+    );
     const examples = r.rows.filter((x) => x.item?.ip_address?.startsWith('192.0.2.'));
     expect(examples).toHaveLength(4);
-    expect(examples.every((x) => x.skip && x.warnings.some((w) => /Example row/.test(w)))).toBe(true);
+    expect(examples.every((x) => x.skip && x.warnings.some((w) => /Example row/.test(w)))).toBe(
+      true,
+    );
     const real = r.rows.find((x) => x.item?.ip_address === '10.0.0.9');
     expect(real?.skip).toBe(false);
     expect(real?.item).toMatchObject({ name: 'real-sw', credential_preset_id: 7 });
   });
 
   it('reads semicolon-separated files, as Excel saves them in many locales', () => {
-    const r = parseDeviceCsv('name;ip_address;type;preset;notes\nsw1;10.0.0.2;switch;Default;"a; b"\n', presets);
+    const r = parseDeviceCsv(
+      'name;ip_address;type;preset;notes\nsw1;10.0.0.2;switch;Default;"a; b"\n',
+      presets,
+    );
     expect(r.fileErrors).toEqual([]);
     expect(r.rows[0].item).toMatchObject({ name: 'sw1', ip_address: '10.0.0.2', notes: 'a; b' });
   });
 
   it('applies existing tags by name, several per cell (#161)', () => {
-    const tags = [{ id: 3, name: 'Branch' }, { id: 4, name: 'lab' }];
+    const tags = [
+      { id: 3, name: 'Branch' },
+      { id: 4, name: 'lab' },
+    ];
     const r = parseDeviceCsv('ip,preset,tags\n10.0.0.2,Default,"branch|Lab"\n', presets, [], tags);
     expect(r.rows[0].item).toMatchObject({ tag_ids: [3, 4] });
   });
 
   it('rejects an unknown tag instead of creating one', () => {
-    const r = parseDeviceCsv('ip,preset,tags\n10.0.0.2,Default,brnach\n', presets, [], [{ id: 3, name: 'Branch' }]);
+    const r = parseDeviceCsv(
+      'ip,preset,tags\n10.0.0.2,Default,brnach\n',
+      presets,
+      [],
+      [{ id: 3, name: 'Branch' }],
+    );
     expect(r.rows[0].errors.join(' ')).toMatch(/No tag called "brnach"/);
   });
 
@@ -176,7 +244,10 @@ describe('parseDeviceCsv', () => {
 // Outside review U9.
 describe('CSV import edge cases', () => {
   it('keeps a quoted multi-line note in one row', () => {
-    const r = parseDeviceCsv('ip,username,password,notes\n10.0.0.1,admin,secret1,"rack 3\nshelf 2"\n10.0.0.2,admin,secret2,ok\n', []);
+    const r = parseDeviceCsv(
+      'ip,username,password,notes\n10.0.0.1,admin,secret1,"rack 3\nshelf 2"\n10.0.0.2,admin,secret2,ok\n',
+      [],
+    );
     expect(r.rows).toHaveLength(2);
     expect(r.rows[0].item?.notes).toBe('rack 3\nshelf 2');
     expect(r.rows[1].line).toBe(4); // the second record starts on line 4
@@ -198,16 +269,24 @@ describe('CSV import edge cases', () => {
 describe('ssh_only column (#174)', () => {
   it('marks rows to add over SSH and accepts an SSH-only login', () => {
     const r = parseDeviceCsv(
-      'ip,username,password,ssh_username,ssh_password,ssh_only\n'
-      + '10.0.0.1,admin,pw,,,yes\n'
-      + '10.0.0.2,,,mtm,sshpw,true\n'
-      + '10.0.0.3,admin,pw,,,no\n'
-      + '10.0.0.4,,,,,yes\n'
-      + '10.0.0.5,admin,pw,,,maybe\n',
+      'ip,username,password,ssh_username,ssh_password,ssh_only\n' +
+        '10.0.0.1,admin,pw,,,yes\n' +
+        '10.0.0.2,,,mtm,sshpw,true\n' +
+        '10.0.0.3,admin,pw,,,no\n' +
+        '10.0.0.4,,,,,yes\n' +
+        '10.0.0.5,admin,pw,,,maybe\n',
       [],
     );
-    expect(r.rows[0].item).toMatchObject({ ip_address: '10.0.0.1', ssh_only: true, api_username: 'admin' });
-    expect(r.rows[1].item).toMatchObject({ ip_address: '10.0.0.2', ssh_only: true, ssh_username: 'mtm' });
+    expect(r.rows[0].item).toMatchObject({
+      ip_address: '10.0.0.1',
+      ssh_only: true,
+      api_username: 'admin',
+    });
+    expect(r.rows[1].item).toMatchObject({
+      ip_address: '10.0.0.2',
+      ssh_only: true,
+      ssh_username: 'mtm',
+    });
     expect(r.rows[2].item?.ssh_only).toBeUndefined();
     expect(r.rows[3].errors[0]).toMatch(/SSH username and password/);
     expect(r.rows[4].errors[0]).toMatch(/yes or no/);
@@ -225,10 +304,10 @@ describe('ssh_only column (#174)', () => {
 describe('api_ssl column (#257)', () => {
   it('marks a custom port as api-ssl, and leaves it unset when blank', () => {
     const r = parseDeviceCsv(
-      'ip,username,password,port,api_ssl\n'
-      + '203.0.113.5,admin,a,18729,yes\n'
-      + '203.0.113.6,admin,a,18730,\n'
-      + '203.0.113.7,admin,a,8729,no\n',
+      'ip,username,password,port,api_ssl\n' +
+        '203.0.113.5,admin,a,18729,yes\n' +
+        '203.0.113.6,admin,a,18730,\n' +
+        '203.0.113.7,admin,a,8729,no\n',
       presets,
     );
     expect(r.rows[0].item).toMatchObject({ api_port: 18729, api_tls: true });
@@ -236,7 +315,10 @@ describe('api_ssl column (#257)', () => {
     expect(r.rows[2].item).toMatchObject({ api_port: 8729, api_tls: false });
   });
   it('refuses a value it cannot read, and a port out of range', () => {
-    const r = parseDeviceCsv('ip,username,password,port,api_ssl\n10.0.0.1,admin,a,8729,maybe\n10.0.0.2,admin,a,70000,\n', presets);
+    const r = parseDeviceCsv(
+      'ip,username,password,port,api_ssl\n10.0.0.1,admin,a,8729,maybe\n10.0.0.2,admin,a,70000,\n',
+      presets,
+    );
     expect(r.rows[0].errors.join(' ')).toMatch(/api_ssl/);
     expect(r.rows[1].errors.join(' ')).toMatch(/Port/);
   });
@@ -246,7 +328,13 @@ describe('sites and groups in an import (#306)', () => {
   const sites = { names: ['HQ'], canCreate: true };
 
   it('sends the site by name, and the group for a new site', () => {
-    const r = parseDeviceCsv('ip,preset,site,customer\n10.0.0.2,Default,Branch 7,Acme\n10.0.0.3,Default,hq,\n', presets, [], [], sites);
+    const r = parseDeviceCsv(
+      'ip,preset,site,customer\n10.0.0.2,Default,Branch 7,Acme\n10.0.0.3,Default,hq,\n',
+      presets,
+      [],
+      [],
+      sites,
+    );
     expect(r.rows[0].item).toMatchObject({ site_name: 'Branch 7', group_name: 'Acme' });
     expect(r.rows[0].warnings.some((w) => /new site "Branch 7"/.test(w))).toBe(true);
     expect(r.rows[1].item).toMatchObject({ site_name: 'hq' });
@@ -254,23 +342,44 @@ describe('sites and groups in an import (#306)', () => {
   });
 
   it('notes a new site once, not on every row', () => {
-    const r = parseDeviceCsv('ip,preset,site\n10.0.0.2,Default,New\n10.0.0.3,Default,new\n', presets, [], [], sites);
+    const r = parseDeviceCsv(
+      'ip,preset,site\n10.0.0.2,Default,New\n10.0.0.3,Default,new\n',
+      presets,
+      [],
+      [],
+      sites,
+    );
     expect(r.rows.flatMap((x) => x.warnings).filter((w) => /new site/.test(w))).toHaveLength(1);
   });
 
   it('an account that cannot make sites gets an error for an unknown one', () => {
-    const r = parseDeviceCsv('ip,preset,site\n10.0.0.2,Default,Nowhere\n', presets, [], [], { names: ['HQ'], canCreate: false });
+    const r = parseDeviceCsv('ip,preset,site\n10.0.0.2,Default,Nowhere\n', presets, [], [], {
+      names: ['HQ'],
+      canCreate: false,
+    });
     expect(r.rows[0].errors).toEqual(['No site called "Nowhere".']);
   });
 
   it('keeps "group" as tags, and says so', () => {
-    const r = parseDeviceCsv('ip,preset,group\n10.0.0.2,Default,prod\n', presets, [], [{ id: 1, name: 'prod' }], sites);
+    const r = parseDeviceCsv(
+      'ip,preset,group\n10.0.0.2,Default,prod\n',
+      presets,
+      [],
+      [{ id: 1, name: 'prod' }],
+      sites,
+    );
     expect(r.rows[0].item).toMatchObject({ tag_ids: [1] });
     expect(r.notes?.[0]).toMatch(/read as tags/);
   });
 
   it('a group for an existing site leaves it alone, with a warning', () => {
-    const r = parseDeviceCsv('ip,preset,site,site_group\n10.0.0.2,Default,HQ,Acme\n', presets, [], [], sites);
+    const r = parseDeviceCsv(
+      'ip,preset,site,site_group\n10.0.0.2,Default,HQ,Acme\n',
+      presets,
+      [],
+      [],
+      sites,
+    );
     expect(r.rows[0].warnings.some((w) => /already exists/.test(w))).toBe(true);
   });
 });

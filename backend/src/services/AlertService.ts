@@ -58,55 +58,59 @@ interface AlertChannel {
 const cooldownUntil = new Map<string, number>();
 
 const EVENT_LABELS: Record<string, string> = {
-  device_offline:           'Device Offline',
-  device_online:            'Device Online (Recovery)',
-  log_error:                'Log Error Detected',
-  log_warning:              'Log Warning Detected',
-  high_cpu:                 'High CPU Usage',
-  high_memory:              'High Memory Usage',
-  cert_expiry:              'Certificate Expiring Soon',
-  device_discovered:        'New Device Discovered',
+  device_offline: 'Device Offline',
+  device_online: 'Device Online (Recovery)',
+  log_error: 'Log Error Detected',
+  log_warning: 'Log Warning Detected',
+  high_cpu: 'High CPU Usage',
+  high_memory: 'High Memory Usage',
+  cert_expiry: 'Certificate Expiring Soon',
+  device_discovered: 'New Device Discovered',
   firmware_update_available: 'Firmware Update Available',
-  config_drift:             'Configuration Changed',
-  device_degraded:          'Device Degraded (Hardware)',
-  device_health_restored:   'Device Hardware Healthy Again',
-  device_identity_changed:  'Device Identity Changed (certificate, host key or serial)',
-  wireguard_stale:          'WireGuard Peer Stale',
-  interface_errors:         'Interface Errors',
-  interface_flapping:       'Interface Flapping',
-  optic_degraded:           'Optic Light Level',
-  routing_peer_down:        'Routing Peer Down (BGP/OSPF)',
-  platform_backup_failed:   'Platform Backup Failed',
+  config_drift: 'Configuration Changed',
+  device_degraded: 'Device Degraded (Hardware)',
+  device_health_restored: 'Device Hardware Healthy Again',
+  device_identity_changed: 'Device Identity Changed (certificate, host key or serial)',
+  wireguard_stale: 'WireGuard Peer Stale',
+  interface_errors: 'Interface Errors',
+  interface_flapping: 'Interface Flapping',
+  optic_degraded: 'Optic Light Level',
+  routing_peer_down: 'Routing Peer Down (BGP/OSPF)',
+  platform_backup_failed: 'Platform Backup Failed',
   device_cert_renewal_failed: 'Device Certificate Renewal Failed',
 };
 
 const EVENT_EMOJI: Record<string, string> = {
-  device_offline:           '🔴',
-  device_online:            '🟢',
-  log_error:                '❌',
-  log_warning:              '⚠️',
-  high_cpu:                 '🔥',
-  high_memory:              '🔥',
-  cert_expiry:              '🔐',
-  device_discovered:        '🔍',
+  device_offline: '🔴',
+  device_online: '🟢',
+  log_error: '❌',
+  log_warning: '⚠️',
+  high_cpu: '🔥',
+  high_memory: '🔥',
+  cert_expiry: '🔐',
+  device_discovered: '🔍',
   firmware_update_available: '🔄',
-  config_drift:             '📝',
-  device_degraded:          '🟠',
-  device_health_restored:   '🟢',
-  device_identity_changed:  '🛑',
-  wireguard_stale:          '🔌',
-  interface_errors:         '📉',
-  interface_flapping:       '🔁',
-  optic_degraded:           '🔦',
-  routing_peer_down:        '🛣️',
-  platform_backup_failed:   '💾',
+  config_drift: '📝',
+  device_degraded: '🟠',
+  device_health_restored: '🟢',
+  device_identity_changed: '🛑',
+  wireguard_stale: '🔌',
+  interface_errors: '📉',
+  interface_flapping: '🔁',
+  optic_degraded: '🔦',
+  routing_peer_down: '🛣️',
+  platform_backup_failed: '💾',
   device_cert_renewal_failed: '🔐',
 };
 
 export class AlertService {
   // ── Public API ──────────────────────────────────────────────────────────────
 
-  async dispatch(eventType: AlertEventType, message: string, ctx: AlertContext = {}): Promise<void> {
+  async dispatch(
+    eventType: AlertEventType,
+    message: string,
+    ctx: AlertContext = {},
+  ): Promise<void> {
     try {
       const rule = await this.getRule(eventType);
       if (!rule?.enabled) return;
@@ -115,7 +119,9 @@ export class AlertService {
       if (ctx.deviceId != null) {
         const inMaintenance = await isDeviceInMaintenance(ctx.deviceId).catch(() => false);
         if (inMaintenance) {
-          console.log(`[AlertService] Suppressed ${eventType} for device ${ctx.deviceId} (maintenance window)`);
+          console.log(
+            `[AlertService] Suppressed ${eventType} for device ${ctx.deviceId} (maintenance window)`,
+          );
           return;
         }
       }
@@ -130,18 +136,20 @@ export class AlertService {
 
       // Outbound webhooks fan out on the same (rule-gated, cooldown-respecting)
       // event stream, independent of whether any alert channels are configured.
-      void import('./WebhookService').then(({ webhookService }) =>
-        webhookService.dispatch(eventType, {
-          message,
-          device_id: ctx.deviceId ?? null,
-          device_name: ctx.deviceName ?? null,
-          details: ctx.details ?? null,
-        })
-      ).catch(() => {});
+      void import('./WebhookService')
+        .then(({ webhookService }) =>
+          webhookService.dispatch(eventType, {
+            message,
+            device_id: ctx.deviceId ?? null,
+            device_name: ctx.deviceName ?? null,
+            details: ctx.details ?? null,
+          }),
+        )
+        .catch(() => {});
 
       // Get enabled channels
       const channels = await query<AlertChannel>(
-        `SELECT * FROM alert_channels WHERE enabled = true ORDER BY id`
+        `SELECT * FROM alert_channels WHERE enabled = true ORDER BY id`,
       );
       if (channels.length === 0) return;
 
@@ -155,14 +163,20 @@ export class AlertService {
           } catch (err) {
             console.error(`[AlertService] Channel "${ch.name}" failed:`, (err as Error).message);
           }
-        })
+        }),
       );
 
       // Log to history — use subquery for device_id so a deleted device doesn't cause a FK violation
       await query(
         `INSERT INTO alert_history (event_type, device_id, device_name, message, channels_notified)
          VALUES ($1, (SELECT id FROM devices WHERE id = $2), $3, $4, $5)`,
-        [eventType, ctx.deviceId ?? null, ctx.deviceName ?? null, message, JSON.stringify(notified)]
+        [
+          eventType,
+          ctx.deviceId ?? null,
+          ctx.deviceName ?? null,
+          message,
+          JSON.stringify(notified),
+        ],
       );
 
       if (notified.length > 0) {
@@ -174,10 +188,9 @@ export class AlertService {
   }
 
   async getRule(eventType: string): Promise<AlertRule | null> {
-    const rows = await query<AlertRule>(
-      `SELECT * FROM alert_rules WHERE event_type = $1`,
-      [eventType]
-    );
+    const rows = await query<AlertRule>(`SELECT * FROM alert_rules WHERE event_type = $1`, [
+      eventType,
+    ]);
     return rows[0] ?? null;
   }
 
@@ -195,30 +208,21 @@ export class AlertService {
          cooldown_min = EXCLUDED.cooldown_min,
          updated_at   = NOW()
        RETURNING *`,
-      [
-        eventType,
-        data.enabled ?? false,
-        data.threshold ?? null,
-        data.cooldown_min ?? 15,
-      ]
+      [eventType, data.enabled ?? false, data.threshold ?? null, data.cooldown_min ?? 15],
     );
     return rows[0];
   }
 
   /** Send a test message to a single channel (ignores cooldown/rules). */
   async testChannel(channelId: number): Promise<void> {
-    const rows = await query<AlertChannel>(
-      `SELECT * FROM alert_channels WHERE id = $1`,
-      [channelId]
-    );
+    const rows = await query<AlertChannel>(`SELECT * FROM alert_channels WHERE id = $1`, [
+      channelId,
+    ]);
     const ch = rows[0];
     if (!ch) throw new Error('Channel not found');
-    await this.sendToChannel(
-      ch,
-      'device_online',
-      'This is a test alert from Mikrotik Manager.',
-      { deviceName: 'Test Device' }
-    );
+    await this.sendToChannel(ch, 'device_online', 'This is a test alert from Mikrotik Manager.', {
+      deviceName: 'Test Device',
+    });
   }
 
   // ── Sending ─────────────────────────────────────────────────────────────────
@@ -227,17 +231,29 @@ export class AlertService {
     ch: AlertChannel,
     eventType: string,
     message: string,
-    ctx: AlertContext
+    ctx: AlertContext,
   ): Promise<void> {
     // Secrets are stored encrypted and opened only here, to send (S7).
     const config = openConfig(ch.type, ch.config as Record<string, unknown>) as typeof ch.config;
     switch (ch.type) {
-      case 'email':    await this.sendEmail(config, eventType, message, ctx); break;
-      case 'slack':    await this.sendSlack(config, eventType, message, ctx); break;
-      case 'discord':  await this.sendDiscord(config, eventType, message, ctx); break;
-      case 'telegram': await this.sendTelegram(config, eventType, message, ctx); break;
-      case 'ntfy':     await this.sendNtfy(config, eventType, message, ctx); break;
-      case 'gotify':   await this.sendGotify(config, eventType, message, ctx); break;
+      case 'email':
+        await this.sendEmail(config, eventType, message, ctx);
+        break;
+      case 'slack':
+        await this.sendSlack(config, eventType, message, ctx);
+        break;
+      case 'discord':
+        await this.sendDiscord(config, eventType, message, ctx);
+        break;
+      case 'telegram':
+        await this.sendTelegram(config, eventType, message, ctx);
+        break;
+      case 'ntfy':
+        await this.sendNtfy(config, eventType, message, ctx);
+        break;
+      case 'gotify':
+        await this.sendGotify(config, eventType, message, ctx);
+        break;
     }
   }
 
@@ -245,14 +261,14 @@ export class AlertService {
     cfg: Record<string, unknown>,
     eventType: string,
     message: string,
-    ctx: AlertContext
+    ctx: AlertContext,
   ): Promise<void> {
-    const host      = cfg.smtp_host as string;
-    const port      = (cfg.smtp_port as number) || 587;
-    const secure    = !!(cfg.smtp_secure);
-    const user      = cfg.smtp_user as string | undefined;
-    const pass      = cfg.smtp_pass as string | undefined;
-    const from      = (cfg.from_address as string) || user || 'alerts@mikrotik-manager';
+    const host = cfg.smtp_host as string;
+    const port = (cfg.smtp_port as number) || 587;
+    const secure = !!cfg.smtp_secure;
+    const user = cfg.smtp_user as string | undefined;
+    const pass = cfg.smtp_pass as string | undefined;
+    const from = (cfg.from_address as string) || user || 'alerts@mikrotik-manager';
     const recipients = (cfg.recipients as string[]) || [];
 
     if (!host || recipients.length === 0) {
@@ -267,10 +283,10 @@ export class AlertService {
       tls: { rejectUnauthorized: false },
     });
 
-    const label   = EVENT_LABELS[eventType] ?? eventType;
+    const label = EVENT_LABELS[eventType] ?? eventType;
     const subject = `[Mikrotik Manager] ${label}`;
-    const device  = ctx.deviceName ? `<b>Device:</b> ${ctx.deviceName}<br>` : '';
-    const details = ctx.details    ? `<br><pre>${ctx.details}</pre>` : '';
+    const device = ctx.deviceName ? `<b>Device:</b> ${ctx.deviceName}<br>` : '';
+    const details = ctx.details ? `<br><pre>${ctx.details}</pre>` : '';
 
     const html = `
 <div style="font-family:sans-serif;max-width:600px">
@@ -293,24 +309,26 @@ export class AlertService {
     cfg: Record<string, unknown>,
     eventType: string,
     message: string,
-    ctx: AlertContext
+    ctx: AlertContext,
   ): Promise<void> {
     const webhookUrl = cfg.webhook_url as string;
     if (!webhookUrl) throw new Error('Slack channel missing webhook_url');
 
-    const label  = EVENT_LABELS[eventType] ?? eventType;
-    const emoji  = EVENT_EMOJI[eventType]  ?? ':bell:';
+    const label = EVENT_LABELS[eventType] ?? eventType;
+    const emoji = EVENT_EMOJI[eventType] ?? ':bell:';
     const device = ctx.deviceName ? `\n*Device:* ${ctx.deviceName}` : '';
-    const detail = ctx.details    ? `\n\`\`\`${ctx.details}\`\`\`` : '';
+    const detail = ctx.details ? `\n\`\`\`${ctx.details}\`\`\`` : '';
 
     const body = JSON.stringify({
       text: `${emoji} *${label}*`,
-      attachments: [{
-        color: this.slackColor(eventType),
-        text: `${message}${device}${detail}`,
-        footer: 'Mikrotik Manager',
-        ts: Math.floor(Date.now() / 1000),
-      }],
+      attachments: [
+        {
+          color: this.slackColor(eventType),
+          text: `${message}${device}${detail}`,
+          footer: 'Mikrotik Manager',
+          ts: Math.floor(Date.now() / 1000),
+        },
+      ],
     });
 
     await this.postJson(webhookUrl, body);
@@ -320,23 +338,25 @@ export class AlertService {
     cfg: Record<string, unknown>,
     eventType: string,
     message: string,
-    ctx: AlertContext
+    ctx: AlertContext,
   ): Promise<void> {
     const webhookUrl = cfg.webhook_url as string;
     if (!webhookUrl) throw new Error('Discord channel missing webhook_url');
 
-    const label  = EVENT_LABELS[eventType] ?? eventType;
+    const label = EVENT_LABELS[eventType] ?? eventType;
     const device = ctx.deviceName ? `\n**Device:** ${ctx.deviceName}` : '';
-    const detail = ctx.details    ? `\n\`\`\`${ctx.details}\`\`\`` : '';
+    const detail = ctx.details ? `\n\`\`\`${ctx.details}\`\`\`` : '';
 
     const body = JSON.stringify({
-      embeds: [{
-        title:       `${EVENT_EMOJI[eventType] ?? '🔔'} ${label}`,
-        description: `${message}${device}${detail}`,
-        color:       this.discordColor(eventType),
-        footer:      { text: 'Mikrotik Manager' },
-        timestamp:   new Date().toISOString(),
-      }],
+      embeds: [
+        {
+          title: `${EVENT_EMOJI[eventType] ?? '🔔'} ${label}`,
+          description: `${message}${device}${detail}`,
+          color: this.discordColor(eventType),
+          footer: { text: 'Mikrotik Manager' },
+          timestamp: new Date().toISOString(),
+        },
+      ],
     });
 
     await this.postJson(webhookUrl, body);
@@ -346,22 +366,22 @@ export class AlertService {
     cfg: Record<string, unknown>,
     eventType: string,
     message: string,
-    ctx: AlertContext
+    ctx: AlertContext,
   ): Promise<void> {
     const botToken = cfg.bot_token as string;
-    const chatId   = cfg.chat_id   as string;
+    const chatId = cfg.chat_id as string;
     if (!botToken || !chatId) throw new Error('Telegram channel missing bot_token or chat_id');
 
     // Telegram's HTML mode rejects the whole message on a stray < or &, and
     // device names, log lines and details come from devices (J5).
     const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const label  = EVENT_LABELS[eventType] ?? eventType;
+    const label = EVENT_LABELS[eventType] ?? eventType;
     const device = ctx.deviceName ? `\n📡 <b>Device:</b> ${esc(ctx.deviceName)}` : '';
-    const detail = ctx.details    ? `\n<pre>${esc(String(ctx.details))}</pre>` : '';
+    const detail = ctx.details ? `\n<pre>${esc(String(ctx.details))}</pre>` : '';
 
     const text = `${EVENT_EMOJI[eventType] ?? '🔔'} <b>${esc(label)}</b>\n${esc(message)}${device}${detail}`;
 
-    const url  = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
     const body = JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' });
 
     await this.postJson(url, body);
@@ -383,12 +403,15 @@ export class AlertService {
     cfg: Record<string, unknown>,
     eventType: string,
     message: string,
-    ctx: AlertContext
+    ctx: AlertContext,
   ): Promise<void> {
     const topic = (cfg.topic as string | undefined)?.trim();
     if (!topic) throw new Error('ntfy channel missing topic');
 
-    const serverUrl = ((cfg.server_url as string | undefined)?.trim() || 'https://ntfy.sh').replace(/\/+$/, '');
+    const serverUrl = ((cfg.server_url as string | undefined)?.trim() || 'https://ntfy.sh').replace(
+      /\/+$/,
+      '',
+    );
     let parsed: URL;
     try {
       parsed = new URL(serverUrl);
@@ -399,21 +422,21 @@ export class AlertService {
       throw new Error('ntfy server_url must be http or https');
     }
 
-    const label  = EVENT_LABELS[eventType] ?? eventType;
-    const emoji  = EVENT_EMOJI[eventType] ?? '\u{1F514}';
+    const label = EVENT_LABELS[eventType] ?? eventType;
+    const emoji = EVENT_EMOJI[eventType] ?? '\u{1F514}';
 
     const lines = [message];
     if (ctx.deviceName) lines.push(`Device: ${ctx.deviceName}`);
-    if (ctx.details)    lines.push(ctx.details);
+    if (ctx.details) lines.push(ctx.details);
 
     const body: Record<string, unknown> = {
       topic,
-      title:    `${emoji} ${label}`,
-      message:  lines.join('\n'),
+      title: `${emoji} ${label}`,
+      message: lines.join('\n'),
       priority: this.ntfyPriority(eventType),
       // The event type doubles as a filterable tag, so a phone can be set to only
       // wake for device_offline without the manager needing per-event channels.
-      tags:     [eventType],
+      tags: [eventType],
     };
 
     // Optional deep link back into the manager, when it knows its own address.
@@ -430,14 +453,20 @@ export class AlertService {
     cfg: Record<string, unknown>,
     eventType: string,
     message: string,
-    ctx: AlertContext
+    ctx: AlertContext,
   ): Promise<void> {
     const label = EVENT_LABELS[eventType] ?? eventType;
     const emoji = EVENT_EMOJI[eventType] ?? '\u{1F514}';
     const lines = [message];
     if (ctx.deviceName) lines.push(`Device: ${ctx.deviceName}`);
-    if (ctx.details)    lines.push(ctx.details);
-    const req = buildGotifyRequest(cfg, eventType, `${emoji} ${label}`, lines.join('\n'), ctx.deviceId);
+    if (ctx.details) lines.push(ctx.details);
+    const req = buildGotifyRequest(
+      cfg,
+      eventType,
+      `${emoji} ${label}`,
+      lines.join('\n'),
+      ctx.deviceId,
+    );
     await this.postJson(req.url, req.body, req.headers);
   }
 
@@ -465,34 +494,50 @@ export class AlertService {
    * channel stays worth being woken by.
    */
   private ntfyPriority(eventType: string): number {
-    if (['device_offline', 'device_degraded', 'device_identity_changed', 'log_error', 'high_cpu', 'high_memory'].includes(eventType)) return 4;
-    if (['device_online', 'device_health_restored', 'device_discovered'].includes(eventType)) return 2;
+    if (
+      [
+        'device_offline',
+        'device_degraded',
+        'device_identity_changed',
+        'log_error',
+        'high_cpu',
+        'high_memory',
+      ].includes(eventType)
+    )
+      return 4;
+    if (['device_online', 'device_health_restored', 'device_discovered'].includes(eventType))
+      return 2;
     return 3;
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  private async postJson(url: string, body: string, extraHeaders: Record<string, string> = {}): Promise<void> {
-    const parsed  = new URL(url);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('URL must be http(s)');
+  private async postJson(
+    url: string,
+    body: string,
+    extraHeaders: Record<string, string> = {},
+  ): Promise<void> {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:')
+      throw new Error('URL must be http(s)');
     const isHttps = parsed.protocol === 'https:';
-    const lib     = isHttps ? https : http;
+    const lib = isHttps ? https : http;
     // Checked and pinned before connecting: see utils/alertTarget.ts.
     const address = await resolveAlertTarget(parsed.hostname);
 
     return new Promise((resolve, reject) => {
       const options = {
-        host:       address,
-        port:       parsed.port || (isHttps ? 443 : 80),
-        path:       parsed.pathname + parsed.search,
-        method:     'POST',
+        host: address,
+        port: parsed.port || (isHttps ? 443 : 80),
+        path: parsed.pathname + parsed.search,
+        method: 'POST',
         // Certificate check and virtual hosting use the real name.
         servername: isHttps ? parsed.hostname.replace(/^\[|\]$/g, '') : undefined,
-        timeout:    10_000,
-        headers:  {
-          'Content-Type':   'application/json',
+        timeout: 10_000,
+        headers: {
+          'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(body),
-          Host:             parsed.host,
+          Host: parsed.host,
           ...extraHeaders,
         },
       };
@@ -518,12 +563,13 @@ export class AlertService {
 
   private slackColor(eventType: string): string {
     if (eventType === 'device_online') return 'good';
-    if (['device_offline', 'log_error', 'high_cpu', 'high_memory'].includes(eventType)) return 'danger';
+    if (['device_offline', 'log_error', 'high_cpu', 'high_memory'].includes(eventType))
+      return 'danger';
     return 'warning';
   }
 
   private discordColor(eventType: string): number {
-    if (eventType === 'device_online')   return 0x22c55e; // green
+    if (eventType === 'device_online') return 0x22c55e; // green
     if (eventType === 'log_warning' || eventType === 'cert_expiry') return 0xf59e0b; // amber
     return 0xef4444; // red
   }

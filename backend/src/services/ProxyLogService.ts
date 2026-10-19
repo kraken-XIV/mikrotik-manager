@@ -23,12 +23,28 @@ async function insertParsed(
   for (let i = 0; i < parsed.length; i += BATCH) {
     const chunk = parsed.slice(i, i + BATCH);
     const values = chunk
-      .map((_, r) => `(${Array.from({ length: COLS }, (_, c) => `$${r * COLS + c + 1}`).join(',')})`)
+      .map(
+        (_, r) => `(${Array.from({ length: COLS }, (_, c) => `$${r * COLS + c + 1}`).join(',')})`,
+      )
       .join(',');
     const params = chunk.flatMap(({ logId, c }) => [
-      deviceId, logId, c.eventTime.toISOString(), c.source, c.proxyType, c.proxyPort,
-      c.clientIp, c.clientPort, c.serverIp, c.serverPort, c.authUser, c.hostname,
-      c.method, c.bytesSent, c.bytesReceived, c.errorCode, c.status,
+      deviceId,
+      logId,
+      c.eventTime.toISOString(),
+      c.source,
+      c.proxyType,
+      c.proxyPort,
+      c.clientIp,
+      c.clientPort,
+      c.serverIp,
+      c.serverPort,
+      c.authUser,
+      c.hostname,
+      c.method,
+      c.bytesSent,
+      c.bytesReceived,
+      c.errorCode,
+      c.status,
     ]);
     // One statement: the rows actually inserted (a re-collected line is dropped by the
     // conflict) also feed the hourly rollup, so the two cannot disagree.
@@ -50,7 +66,10 @@ async function insertParsed(
 }
 
 /** Parse and store any proxy access-log lines among freshly collected device log lines. */
-export async function storeProxyConnections(deviceId: number, lines: ProxyLogInput[]): Promise<number> {
+export async function storeProxyConnections(
+  deviceId: number,
+  lines: ProxyLogInput[],
+): Promise<number> {
   const parsed: { logId: string; c: ProxyConnection }[] = [];
   for (const l of lines) {
     const c = parseProxyLog(l.topics, l.message);
@@ -61,7 +80,8 @@ export async function storeProxyConnections(deviceId: number, lines: ProxyLogInp
   // The instance list is a convenience for the selector: a failure here must not lose
   // or fail the log ingest that already succeeded.
   await recordProxySources((t, p) => query(t, p), deviceId, parsed).catch((err) =>
-    console.error('[proxy] could not record proxy instances: %s', logSafe((err as Error).message)));
+    console.error('[proxy] could not record proxy instances: %s', logSafe((err as Error).message)),
+  );
   return parsed.length;
 }
 
@@ -69,12 +89,16 @@ export async function storeProxyConnections(deviceId: number, lines: ProxyLogInp
 export function collectProxySources(
   parsed: { c: ProxyConnection }[],
 ): { source: string; proxyType: string; proxyPort: number; lastSeen: Date }[] {
-  const seen = new Map<string, { source: string; proxyType: string; proxyPort: number; lastSeen: Date }>();
+  const seen = new Map<
+    string,
+    { source: string; proxyType: string; proxyPort: number; lastSeen: Date }
+  >();
   for (const { c } of parsed) {
     const proxyPort = c.proxyPort ?? 0;
     const key = `${c.source}\u0000${c.proxyType}\u0000${proxyPort}`;
     const cur = seen.get(key);
-    if (!cur) seen.set(key, { source: c.source, proxyType: c.proxyType, proxyPort, lastSeen: c.eventTime });
+    if (!cur)
+      seen.set(key, { source: c.source, proxyType: c.proxyType, proxyPort, lastSeen: c.eventTime });
     else if (c.eventTime > cur.lastSeen) cur.lastSeen = c.eventTime;
   }
   return [...seen.values()];
@@ -86,8 +110,13 @@ async function recordProxySources(
   parsed: { logId: string; c: ProxyConnection }[],
 ): Promise<void> {
   const sources = collectProxySources(parsed);
-  const values = sources.map((_, i) => `($1,$${i * 4 + 2},$${i * 4 + 3},$${i * 4 + 4},$${i * 4 + 5})`).join(',');
-  const params: unknown[] = [deviceId, ...sources.flatMap((s) => [s.source, s.proxyType, s.proxyPort, s.lastSeen.toISOString()])];
+  const values = sources
+    .map((_, i) => `($1,$${i * 4 + 2},$${i * 4 + 3},$${i * 4 + 4},$${i * 4 + 5})`)
+    .join(',');
+  const params: unknown[] = [
+    deviceId,
+    ...sources.flatMap((s) => [s.source, s.proxyType, s.proxyPort, s.lastSeen.toISOString()]),
+  ];
   await run(
     `INSERT INTO proxy_sources (device_id, source, proxy_type, proxy_port, last_seen)
      VALUES ${values}
@@ -145,7 +174,12 @@ async function runBackfill(client: PoolClient): Promise<number> {
   const existing = await client.query('SELECT 1 FROM proxy_connections LIMIT 1');
   if (existing.rowCount) return 0;
 
-  const rows = await client.query<{ device_id: number; log_id: string; topic: string; message: string }>(
+  const rows = await client.query<{
+    device_id: number;
+    log_id: string;
+    topic: string;
+    message: string;
+  }>(
     `SELECT device_id, log_id, topic, message FROM events
       WHERE device_id IS NOT NULL AND log_id IS NOT NULL
         AND topic LIKE '%container%' AND message LIKE '%"client"%'`,

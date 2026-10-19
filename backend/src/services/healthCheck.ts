@@ -12,17 +12,21 @@ import { summarizeIssues } from '../utils/deviceHealth';
  * that already was, and when it recovers. Writes a device event either way.
  * Returns true if the stored state changed in a way worth telling the UI.
  */
-export async function runHealthCheck(collector: DeviceCollector, device: DeviceRow): Promise<boolean> {
+export async function runHealthCheck(
+  collector: DeviceCollector,
+  device: DeviceRow,
+): Promise<boolean> {
   try {
     const [setting] = await query<{ value: unknown }>(
-      `SELECT value FROM app_settings WHERE key = 'health_temp_limit_c'`
+      `SELECT value FROM app_settings WHERE key = 'health_temp_limit_c'`,
     ).catch(() => []);
     const limit = Number(setting?.value) || undefined;
     const r = await collector.collectHealth(limit);
     if (!r) return false;
     const { prevStatus, prevItems, verdict } = r;
     const newItems = verdict.issues.filter((i) => !prevItems.includes(i.item));
-    const became = verdict.status === 'degraded' && (prevStatus !== 'degraded' || newItems.length > 0);
+    const became =
+      verdict.status === 'degraded' && (prevStatus !== 'degraded' || newItems.length > 0);
     const restored = prevStatus === 'degraded' && verdict.status === 'ok';
     if (!became && !restored) return prevStatus !== verdict.status;
 
@@ -32,14 +36,21 @@ export async function runHealthCheck(collector: DeviceCollector, device: DeviceR
     await query(
       `INSERT INTO events (device_id, event_time, severity, topic, message)
        VALUES ($1, NOW(), $2, 'manager,health', $3)`,
-      [device.id, became ? 'warning' : 'info', message]
+      [device.id, became ? 'warning' : 'info', message],
     ).catch(() => {});
-    alertService.dispatch(became ? 'device_degraded' : 'device_health_restored', message, {
-      deviceId: device.id,
-      deviceName: device.name,
-      // A second, different failure must not be swallowed by the cooldown of the first.
-      cooldownKey: became ? `device_degraded:${device.id}:${verdict.issues.map((i) => i.item).sort().join(',')}` : undefined,
-    }).catch(() => {});
+    alertService
+      .dispatch(became ? 'device_degraded' : 'device_health_restored', message, {
+        deviceId: device.id,
+        deviceName: device.name,
+        // A second, different failure must not be swallowed by the cooldown of the first.
+        cooldownKey: became
+          ? `device_degraded:${device.id}:${verdict.issues
+              .map((i) => i.item)
+              .sort()
+              .join(',')}`
+          : undefined,
+      })
+      .catch(() => {});
     return true;
   } catch (err) {
     console.warn(`[health] check failed for ${device.name}: ${(err as Error).message}`);

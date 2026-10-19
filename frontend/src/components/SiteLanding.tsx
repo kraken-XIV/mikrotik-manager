@@ -22,6 +22,7 @@ export default function SiteLanding() {
   // Don't bounce through /sites while the list is still in flight.
   if (isLoading) return null;
   // A group chosen (#306) is one customer: its dashboard.
-  if (currentSiteId == null && currentGroupId == null && (sites?.length ?? 0) > 1) return <Navigate to="/sites" replace />;
+  if (currentSiteId == null && currentGroupId == null && (sites?.length ?? 0) > 1)
+    return <Navigate to="/sites" replace />;
   return <Navigate to="/dashboard" replace />;
 }

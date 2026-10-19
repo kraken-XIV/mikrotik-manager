@@ -36,7 +36,9 @@ const num = (v: string | undefined): number | null => {
 };
 
 export function routingPeersFrom(input: {
-  bgpConnections: Row[]; bgpSessions: Row[]; ospfNeighbors: Row[];
+  bgpConnections: Row[];
+  bgpSessions: Row[];
+  ospfNeighbors: Row[];
 }): RoutingPeer[] {
   const out: RoutingPeer[] = [];
 
@@ -49,9 +51,19 @@ export function routingPeersFrom(input: {
     if (c['state'] !== undefined && c['remote-address'] !== undefined) {
       const state = c['state'] || 'idle';
       out.push({
-        protocol: 'bgp', key: name, name, remoteAddress, remoteAs: c['remote-as'] || null, remoteId: c['remote-id'] || null,
-        instance: c['instance'] || null, detail: null, state: disabled ? 'disabled' : state,
-        up: !disabled && state === 'established', disabled, uptime: c['uptime'] || null, prefixCount: num(c['prefix-count']),
+        protocol: 'bgp',
+        key: name,
+        name,
+        remoteAddress,
+        remoteAs: c['remote-as'] || null,
+        remoteId: c['remote-id'] || null,
+        instance: c['instance'] || null,
+        detail: null,
+        state: disabled ? 'disabled' : state,
+        up: !disabled && state === 'established',
+        disabled,
+        uptime: c['uptime'] || null,
+        prefixCount: num(c['prefix-count']),
       });
       continue;
     }
@@ -60,17 +72,27 @@ export function routingPeersFrom(input: {
       const n = s['name'] || '';
       return n.startsWith(`${name}-`) && /^\d+$/.test(n.slice(name.length + 1));
     };
-    const session = input.bgpSessions.find(own)
-      ?? input.bgpSessions.find((s) => remoteAddress && s['remote.address'] === remoteAddress && (!c['instance'] || s['instance'] === c['instance']));
+    const session =
+      input.bgpSessions.find(own) ??
+      input.bgpSessions.find(
+        (s) =>
+          remoteAddress &&
+          s['remote.address'] === remoteAddress &&
+          (!c['instance'] || s['instance'] === c['instance']),
+      );
     const established = !!session && isTrue(session['established']);
     out.push({
-      protocol: 'bgp', key: name, name, remoteAddress,
+      protocol: 'bgp',
+      key: name,
+      name,
+      remoteAddress,
       remoteAs: c['remote.as'] || session?.['remote.as'] || null,
       remoteId: session?.['remote.id'] || null,
       instance: c['instance'] || null,
       detail: c['local.role'] || null,
       state: disabled ? 'disabled' : established ? 'established' : session ? 'connecting' : 'idle',
-      up: !disabled && established, disabled,
+      up: !disabled && established,
+      disabled,
       uptime: established ? session?.['uptime'] || null : null,
       prefixCount: established ? num(session?.['prefix-count']) : null,
     });
@@ -82,12 +104,20 @@ export function routingPeersFrom(input: {
     const instance = n['instance'] || null;
     const state = n['state'] || 'unknown';
     out.push({
-      protocol: 'ospf', key: `${instance ?? ''}|${id}`, name: id, remoteAddress: n['address'] || null, remoteAs: null,
-      remoteId: n['router-id'] || null, instance,
+      protocol: 'ospf',
+      key: `${instance ?? ''}|${id}`,
+      name: id,
+      remoteAddress: n['address'] || null,
+      remoteAs: null,
+      remoteId: n['router-id'] || null,
+      instance,
       detail: [n['area'], n['interface']].filter(Boolean).join(' · ') || null,
       // Full is a complete adjacency; 2-Way is normal between two non-DR routers on a LAN.
-      state, up: /^full$/i.test(state) || /^2-?way$/i.test(state), disabled: false,
-      uptime: n['adjacency'] || null, prefixCount: null,
+      state,
+      up: /^full$/i.test(state) || /^2-?way$/i.test(state),
+      disabled: false,
+      uptime: n['adjacency'] || null,
+      prefixCount: null,
     });
   }
   return out;

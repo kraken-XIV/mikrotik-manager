@@ -18,9 +18,29 @@ import { RouterOSClient } from '../RouterOSClient';
 function makeCert(): { key: string; cert: string } | null {
   const dir = mkdtempSync(path.join(tmpdir(), 'mtm-tls-'));
   try {
-    execFileSync('openssl', ['req', '-x509', '-nodes', '-newkey', 'rsa:2048', '-days', '1', '-subj', '/CN=mtm-test',
-      '-keyout', path.join(dir, 'k.pem'), '-out', path.join(dir, 'c.pem')], { stdio: 'ignore' });
-    return { key: readFileSync(path.join(dir, 'k.pem'), 'utf8'), cert: readFileSync(path.join(dir, 'c.pem'), 'utf8') };
+    execFileSync(
+      'openssl',
+      [
+        'req',
+        '-x509',
+        '-nodes',
+        '-newkey',
+        'rsa:2048',
+        '-days',
+        '1',
+        '-subj',
+        '/CN=mtm-test',
+        '-keyout',
+        path.join(dir, 'k.pem'),
+        '-out',
+        path.join(dir, 'c.pem'),
+      ],
+      { stdio: 'ignore' },
+    );
+    return {
+      key: readFileSync(path.join(dir, 'k.pem'), 'utf8'),
+      cert: readFileSync(path.join(dir, 'c.pem'), 'utf8'),
+    };
   } catch {
     return null;
   } finally {
@@ -38,20 +58,37 @@ maybe('RouterOSClient TLS pinning', () => {
 
   beforeAll(async () => {
     server = tls.createServer({ key: pair!.key, cert: pair!.cert }, (sock) => {
-      sock.on('data', (d: Buffer | string) => received.push(Buffer.isBuffer(d) ? d : Buffer.from(d)));
+      sock.on('data', (d: Buffer | string) =>
+        received.push(Buffer.isBuffer(d) ? d : Buffer.from(d)),
+      );
       sock.on('error', () => {});
     });
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
     port = (server.address() as AddressInfo).port;
   });
   afterAll(() => new Promise<void>((r) => server.close(() => r())));
-  beforeEach(() => { received = []; });
-  afterEach(() => { RouterOSClient.tlsVerifier = null; });
+  beforeEach(() => {
+    received = [];
+  });
+  afterEach(() => {
+    RouterOSClient.tlsVerifier = null;
+  });
 
   it('sends nothing, not even the login, when the verifier refuses the certificate', async () => {
     let seen = '';
-    RouterOSClient.tlsVerifier = async (_h, _p, fp) => { seen = fp; throw new Error('certificate changed'); };
-    const client = new RouterOSClient('127.0.0.1', port, 'admin', 'secret-password', 5_000, 5_000, true);
+    RouterOSClient.tlsVerifier = async (_h, _p, fp) => {
+      seen = fp;
+      throw new Error('certificate changed');
+    };
+    const client = new RouterOSClient(
+      '127.0.0.1',
+      port,
+      'admin',
+      'secret-password',
+      5_000,
+      5_000,
+      true,
+    );
     await expect(client.connect()).rejects.toThrow('certificate changed');
     await new Promise((r) => setTimeout(r, 200));
     expect(seen).toMatch(/^[0-9a-f]{64}$/);
@@ -60,7 +97,15 @@ maybe('RouterOSClient TLS pinning', () => {
 
   it('sends the login once the verifier accepts the certificate', async () => {
     RouterOSClient.tlsVerifier = async () => {};
-    const client = new RouterOSClient('127.0.0.1', port, 'admin', 'secret-password', 5_000, 500, true);
+    const client = new RouterOSClient(
+      '127.0.0.1',
+      port,
+      'admin',
+      'secret-password',
+      5_000,
+      500,
+      true,
+    );
     // The fake device never answers, so the login times out; what matters is that it was sent.
     await client.connect().catch(() => {});
     await new Promise((r) => setTimeout(r, 200));
@@ -70,7 +115,10 @@ maybe('RouterOSClient TLS pinning', () => {
 
   it('records the fingerprint of the certificate it saw', async () => {
     let seen = '';
-    RouterOSClient.tlsVerifier = async (_h, _p, fp) => { seen = fp; throw new Error('stop'); };
+    RouterOSClient.tlsVerifier = async (_h, _p, fp) => {
+      seen = fp;
+      throw new Error('stop');
+    };
     const client = new RouterOSClient('127.0.0.1', port, 'u', 'p', 5_000, 5_000, true);
     await client.connect().catch(() => {});
     const expected = new X509Certificate(pair!.cert).fingerprint256.replace(/:/g, '').toLowerCase();

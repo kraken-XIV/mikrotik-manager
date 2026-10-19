@@ -37,15 +37,25 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
 
   // A site column (#306): existing sites by name, new ones made by fleet-wide accounts.
   const fleetWide = useAuthStore((s) => !s.user?.siteRoles);
-  const { data: allSites = [] } = useQuery({ queryKey: ['sites'], queryFn: () => sitesApi.list().then((r) => r.data), staleTime: 60_000 });
+  const { data: allSites = [] } = useQuery({
+    queryKey: ['sites'],
+    queryFn: () => sitesApi.list().then((r) => r.data),
+    staleTime: 60_000,
+  });
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: () => tagsApi.list().then((r) => r.data),
   });
 
   const parsed = useMemo(
-    () => (text.trim() ? parseDeviceCsv(text, presets, existingAddresses, tags, { names: allSites.map((s) => s.name), canCreate: fleetWide }) : null),
-    [text, presets, existingAddresses, tags, allSites, fleetWide]
+    () =>
+      text.trim()
+        ? parseDeviceCsv(text, presets, existingAddresses, tags, {
+            names: allSites.map((s) => s.name),
+            canCreate: fleetWide,
+          })
+        : null,
+    [text, presets, existingAddresses, tags, allSites, fleetWide],
   );
   const ready = useMemo(() => parsed?.rows.filter((r) => r.item && !r.skip) ?? [], [parsed]);
   // Sites the import will make (#306), named once each.
@@ -62,13 +72,20 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
   const broken = parsed?.rows.filter((r) => r.errors.length > 0) ?? [];
   const canImport = !!parsed && parsed.fileErrors.length === 0 && ready.length > 0 && !running;
 
-  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
+  useEffect(
+    () => () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    },
+    [],
+  );
 
   const readFile = (f: File) => {
     setFileName(f.name);
     setResults(null);
     setError('');
-    f.text().then(setText).catch(() => setError('Could not read that file.'));
+    f.text()
+      .then(setText)
+      .catch(() => setError('Could not read that file.'));
   };
 
   const downloadTemplate = () => {
@@ -86,7 +103,11 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
   const poll = async (id: string) => {
     try {
       const { data } = await devicesApi.bulkAddStatus(id);
-      setProgress({ done: data.processed ?? 0, total: data.total ?? ready.length, current: data.current_name ?? '' });
+      setProgress({
+        done: data.processed ?? 0,
+        total: data.total ?? ready.length,
+        current: data.current_name ?? '',
+      });
       if (Array.isArray(data.results)) setResults(data.results);
       if (['completed', 'failed', 'cancelled'].includes(String(data.status))) {
         if (pollRef.current) clearInterval(pollRef.current);
@@ -111,7 +132,10 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
       await poll(data.job_id);
       pollRef.current = setInterval(() => void poll(data.job_id), 1200);
     } catch (e: unknown) {
-      setError((e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not start the import.');
+      setError(
+        (e as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+          'Could not start the import.',
+      );
       setRunning(false);
     }
   };
@@ -125,56 +149,102 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-500" />
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Import devices from CSV</h2>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+              Import devices from CSV
+            </h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="p-5 space-y-4">
           <div className="text-[13px] text-gray-600 dark:text-slate-300 space-y-2">
             <p>
-              Start from the template: open it in Excel or Google Sheets, replace the example rows with
-              your devices (one per row), and save as CSV. Up to {MAX_ROWS} devices per file.
+              Start from the template: open it in Excel or Google Sheets, replace the example rows
+              with your devices (one per row), and save as CSV. Up to {MAX_ROWS} devices per file.
             </p>
-            <button onClick={downloadTemplate} className="btn-secondary inline-flex items-center gap-1.5 text-xs py-1.5">
+            <button
+              onClick={downloadTemplate}
+              className="btn-secondary inline-flex items-center gap-1.5 text-xs py-1.5"
+            >
               <Download className="w-3.5 h-3.5" /> Download template
             </button>
           </div>
 
           <details className="text-[12.5px] rounded border border-gray-200 dark:border-slate-700">
-            <summary className="cursor-pointer px-3 py-2 text-gray-700 dark:text-slate-300 select-none">What goes in each column</summary>
+            <summary className="cursor-pointer px-3 py-2 text-gray-700 dark:text-slate-300 select-none">
+              What goes in each column
+            </summary>
             <table className="w-full">
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                 {[
-                  ['ip_address', 'Required', 'The device\'s IP address or hostname.'],
+                  ['ip_address', 'Required', "The device's IP address or hostname."],
                   ['name', 'Optional', 'What to call it here. Blank uses the address.'],
                   ['type', 'Optional', 'router, switch, ap or other. Blank means router.'],
-                  ['preset', 'Login', presets.length
-                    ? `A saved credential preset, by name (yours: ${presets.map((x) => x.name).join(', ')}).`
-                    : 'A saved credential preset, by name. You have none yet; use username and password.'],
-                  ['username, password', 'Login', 'The RouterOS login, if you are not using a preset.'],
-                  ['ssh_username, ssh_password', 'Optional', 'Only if SSH uses a different login. Blank uses the one above.'],
-                  ['ssh_only', 'Optional', 'yes when the API isn\'t enabled yet. The device is added over SSH and switches to the API once it answers.'],
-                  ['tags', 'Optional', tags.length
-                    ? `Existing tags, separated by | (yours: ${tags.map((x) => x.name).join(', ')}).`
-                    : 'Existing tags, separated by |. You have none yet; create them under Settings → Tags.'],
-                  ['site', 'Optional', fleetWide
-                    ? 'The site it joins, by name. A site that doesn\'t exist yet is made. Blank joins the site in view.'
-                    : 'One of your sites, by name. Blank joins the site in view.'],
-                  ...(fleetWide ? [['site_group', 'Optional', 'The group (customer) a new site goes in, made if it\'s new. Also read as customer or client.']] : []),
+                  [
+                    'preset',
+                    'Login',
+                    presets.length
+                      ? `A saved credential preset, by name (yours: ${presets.map((x) => x.name).join(', ')}).`
+                      : 'A saved credential preset, by name. You have none yet; use username and password.',
+                  ],
+                  [
+                    'username, password',
+                    'Login',
+                    'The RouterOS login, if you are not using a preset.',
+                  ],
+                  [
+                    'ssh_username, ssh_password',
+                    'Optional',
+                    'Only if SSH uses a different login. Blank uses the one above.',
+                  ],
+                  [
+                    'ssh_only',
+                    'Optional',
+                    "yes when the API isn't enabled yet. The device is added over SSH and switches to the API once it answers.",
+                  ],
+                  [
+                    'tags',
+                    'Optional',
+                    tags.length
+                      ? `Existing tags, separated by | (yours: ${tags.map((x) => x.name).join(', ')}).`
+                      : 'Existing tags, separated by |. You have none yet; create them under Settings → Tags.',
+                  ],
+                  [
+                    'site',
+                    'Optional',
+                    fleetWide
+                      ? "The site it joins, by name. A site that doesn't exist yet is made. Blank joins the site in view."
+                      : 'One of your sites, by name. Blank joins the site in view.',
+                  ],
+                  ...(fleetWide
+                    ? [
+                        [
+                          'site_group',
+                          'Optional',
+                          "The group (customer) a new site goes in, made if it's new. Also read as customer or client.",
+                        ],
+                      ]
+                    : []),
                   ['notes', 'Optional', 'Anything you like.'],
                 ].map(([col, need, what]) => (
                   <tr key={col}>
-                    <td className="px-3 py-1.5 mono text-gray-900 dark:text-white whitespace-nowrap align-top">{col}</td>
-                    <td className="px-2 py-1.5 text-gray-500 whitespace-nowrap align-top">{need}</td>
+                    <td className="px-3 py-1.5 mono text-gray-900 dark:text-white whitespace-nowrap align-top">
+                      {col}
+                    </td>
+                    <td className="px-2 py-1.5 text-gray-500 whitespace-nowrap align-top">
+                      {need}
+                    </td>
                     <td className="px-3 py-1.5 text-gray-600 dark:text-slate-300">{what}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <p className="px-3 py-2 text-[11.5px] text-gray-500 border-t border-gray-100 dark:border-slate-800">
-              Each device needs a login: either a preset, or a username and password. Leave the example
-              rows in by mistake and they&apos;re skipped. Commas, semicolons or tabs between columns all work.
+              Each device needs a login: either a preset, or a username and password. Leave the
+              example rows in by mistake and they&apos;re skipped. Commas, semicolons or tabs
+              between columns all work.
             </p>
           </details>
 
@@ -187,23 +257,32 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
               type="file"
               accept=".csv,text/csv"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) readFile(f); }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) readFile(f);
+              }}
             />
           </label>
 
           {parsed && (
             <div className="space-y-3">
               {parsed.fileErrors.map((m) => (
-                <div key={m} className="flex items-start gap-2 text-[12px] rounded p-2.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">
+                <div
+                  key={m}
+                  className="flex items-start gap-2 text-[12px] rounded p-2.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
+                >
                   <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" /> {m}
                 </div>
               ))}
 
               <div className="flex flex-wrap gap-4 text-[13px]">
-                <span className="text-green-700 dark:text-green-400">{ready.length} ready to import</span>
+                <span className="text-green-700 dark:text-green-400">
+                  {ready.length} ready to import
+                </span>
                 {newSites.length > 0 && (
                   <span className="text-gray-600 dark:text-slate-300">
-                    makes {newSites.length} new site{newSites.length === 1 ? '' : 's'}: {shortList(newSites)}
+                    makes {newSites.length} new site{newSites.length === 1 ? '' : 's'}:{' '}
+                    {shortList(newSites)}
                   </span>
                 )}
                 {skipped.length > 0 && (
@@ -211,13 +290,28 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
                     {skipped.length} skipped
                     {' ('}
                     {[
-                      [skipped.filter((r) => r.warnings.some((w) => w.startsWith('Example'))).length, 'example'],
-                      [skipped.filter((r) => r.warnings.some((w) => w.startsWith('Already'))).length, 'already managed'],
-                    ].filter(([n]) => n).map(([n, l]) => `${n} ${l}`).join(', ')}
+                      [
+                        skipped.filter((r) => r.warnings.some((w) => w.startsWith('Example')))
+                          .length,
+                        'example',
+                      ],
+                      [
+                        skipped.filter((r) => r.warnings.some((w) => w.startsWith('Already')))
+                          .length,
+                        'already managed',
+                      ],
+                    ]
+                      .filter(([n]) => n)
+                      .map(([n, l]) => `${n} ${l}`)
+                      .join(', ')}
                     {')'}
                   </span>
                 )}
-                {broken.length > 0 && <span className="text-red-600 dark:text-red-400">{broken.length} with problems</span>}
+                {broken.length > 0 && (
+                  <span className="text-red-600 dark:text-red-400">
+                    {broken.length} with problems
+                  </span>
+                )}
               </div>
 
               {parsed.ignoredColumns.length > 0 && (
@@ -226,13 +320,18 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
                 </p>
               )}
               {(parsed.notes ?? []).map((n) => (
-                <p key={n} className="text-[11.5px] text-amber-600 dark:text-amber-400">{n}</p>
+                <p key={n} className="text-[11.5px] text-amber-600 dark:text-amber-400">
+                  {n}
+                </p>
               ))}
 
               {broken.length > 0 && (
                 <div className="rounded border border-gray-200 dark:border-slate-700 max-h-48 overflow-y-auto">
                   {broken.map((r) => (
-                    <div key={r.line} className="flex gap-3 px-3 py-1.5 text-[12px] border-b last:border-0 border-gray-100 dark:border-slate-800">
+                    <div
+                      key={r.line}
+                      className="flex gap-3 px-3 py-1.5 text-[12px] border-b last:border-0 border-gray-100 dark:border-slate-800"
+                    >
                       <span className="mono text-gray-400 w-14 shrink-0">line {r.line}</span>
                       <span className="text-red-600 dark:text-red-400">{r.errors.join(' ')}</span>
                     </div>
@@ -240,7 +339,9 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
                 </div>
               )}
               {broken.length > 0 && ready.length > 0 && (
-                <p className="text-[11.5px] text-gray-500">Rows with problems are left out. The rest can be imported now.</p>
+                <p className="text-[11.5px] text-gray-500">
+                  Rows with problems are left out. The rest can be imported now.
+                </p>
               )}
             </div>
           )}
@@ -248,7 +349,11 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
           {(running || results) && (
             <div className="rounded border border-gray-200 dark:border-slate-700 p-3 space-y-2">
               <div className="flex items-center gap-2 text-[13px]">
-                {running ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <Check className="w-4 h-4 text-green-500" />}
+                {running ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                ) : (
+                  <Check className="w-4 h-4 text-green-500" />
+                )}
                 <span>
                   {running
                     ? `Adding ${progress.done} of ${progress.total}${progress.current ? `: ${progress.current}` : ''}`
@@ -262,11 +367,13 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
               )}
               {results && failCount > 0 && (
                 <div className="max-h-40 overflow-y-auto">
-                  {results.filter((r) => !r.ok).map((r) => (
-                    <div key={r.ip} className="text-[12px] text-red-600 dark:text-red-400">
-                      <span className="mono">{r.ip}</span>: {r.message}
-                    </div>
-                  ))}
+                  {results
+                    .filter((r) => !r.ok)
+                    .map((r) => (
+                      <div key={r.ip} className="text-[12px] text-red-600 dark:text-red-400">
+                        <span className="mono">{r.ip}</span>: {r.message}
+                      </div>
+                    ))}
                 </div>
               )}
             </div>
@@ -276,11 +383,16 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
         </div>
 
         <div className="flex justify-end gap-2 p-5 border-t border-gray-200 dark:border-slate-700">
-          <button onClick={onClose} className="btn-secondary text-[12px]">{results && !running ? 'Close' : 'Cancel'}</button>
+          <button onClick={onClose} className="btn-secondary text-[12px]">
+            {results && !running ? 'Close' : 'Cancel'}
+          </button>
           <button
             onClick={runImport}
             disabled={!canImport}
-            className={clsx('btn-primary text-[12px] flex items-center gap-2', !canImport && 'opacity-50')}
+            className={clsx(
+              'btn-primary text-[12px] flex items-center gap-2',
+              !canImport && 'opacity-50',
+            )}
           >
             {running && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Import {ready.length > 0 ? ready.length : ''} device{ready.length === 1 ? '' : 's'}

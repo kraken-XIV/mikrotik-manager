@@ -15,7 +15,9 @@ import { fluxString } from '@influxdata/influxdb-client';
 import { counterDeltas } from '../utils/counterDeltas';
 
 // Effective category: the user's override wins; otherwise the fingerprint.
-function withCategory<T extends Record<string, unknown>>(row: T): T & { device_category: string; auto_category: string } {
+function withCategory<T extends Record<string, unknown>>(
+  row: T,
+): T & { device_category: string; auto_category: string } {
   const auto = fingerprintClient({
     vendor: row['vendor'] as string | null,
     hostname: row['hostname'] as string | null,
@@ -38,13 +40,18 @@ router.use(async (req: Request, res: Response, next) => {
   const m = /^\/([0-9A-Fa-f:.-]{12,17})(?:\/|$)/.exec(path ?? '');
   if (!scoped || !m) return next();
   const seen = siteScopeByDevice(Object.keys(scoped).map(Number), 'device_id');
-  const rows = await query(`SELECT 1 FROM clients WHERE LOWER(mac_address) = LOWER($1) AND ${seen} LIMIT 1`, [m[1]]).catch(() => []);
+  const rows = await query(
+    `SELECT 1 FROM clients WHERE LOWER(mac_address) = LOWER($1) AND ${seen} LIMIT 1`,
+    [m[1]],
+  ).catch(() => []);
   if (rows.length === 0) return res.status(404).json({ error: 'Client not found' });
   return next();
 });
 
 let pollerService: PollerService | null = null;
-export function setPollerService(p: PollerService): void { pollerService = p; }
+export function setPollerService(p: PollerService): void {
+  pollerService = p;
+}
 
 /**
  * GET /api/clients/:mac/roaming — reconstruct this client's wireless sessions.
@@ -72,7 +79,7 @@ router.get('/:mac/roaming', async (req: Request, res: Response) => {
        ${siteScopeByNullableDevice(activeSite(req), 'e.device_id') ? `AND ${siteScopeByNullableDevice(activeSite(req), 'e.device_id')}` : ''}
      ORDER BY e.event_time ASC
      LIMIT 5000`,
-    [mac, String(hours)]
+    [mac, String(hours)],
   );
 
   const events = rows
@@ -85,24 +92,37 @@ router.get('/:mac/roaming', async (req: Request, res: Response) => {
   res.json({
     mac,
     range,
-    sessions: [...sessions].reverse(),          // newest first for display
+    sessions: [...sessions].reverse(), // newest first for display
     totalRoams: sessions.reduce((n, s) => n + s.hops.length, 0),
     flappingSessions: flapping.length,
     /** Radios this client has been seen on, most-used first. */
     radios: Object.entries(
-      sessions.flatMap((s) => s.path).reduce<Record<string, number>>((acc, i) => {
-        acc[i] = (acc[i] ?? 0) + 1;
-        return acc;
-      }, {})
-    ).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
+      sessions
+        .flatMap((s) => s.path)
+        .reduce<Record<string, number>>((acc, i) => {
+          acc[i] = (acc[i] ?? 0) + 1;
+          return acc;
+        }, {}),
+    )
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, count })),
   });
 });
 
 // GET /api/clients
 router.get('/', async (req: Request, res: Response) => {
   const {
-    deviceId, active, search, client_type, limit = '100', offset = '0', sort, dir,
-    vlan_id, signal_min, signal_max,
+    deviceId,
+    active,
+    search,
+    client_type,
+    limit = '100',
+    offset = '0',
+    sort,
+    dir,
+    vlan_id,
+    signal_min,
+    signal_max,
   } = req.query;
 
   // Whitelist sortable columns → safe SQL expressions on the outer (deduped)
@@ -171,7 +191,9 @@ router.get('/', async (req: Request, res: Response) => {
     filters.push(`c.active = TRUE`);
   }
   if (search) {
-    filters.push(`(c.mac_address ILIKE $${idx} OR c.custom_name ILIKE $${idx} OR c.hostname ILIKE $${idx} OR c.ip_address ILIKE $${idx} OR c.vendor ILIKE $${idx})`);
+    filters.push(
+      `(c.mac_address ILIKE $${idx} OR c.custom_name ILIKE $${idx} OR c.hostname ILIKE $${idx} OR c.ip_address ILIKE $${idx} OR c.vendor ILIKE $${idx})`,
+    );
     filterParams.push(`%${search}%`);
     idx++;
   }
@@ -238,7 +260,11 @@ router.get('/', async (req: Request, res: Response) => {
     ${orderBy}
     LIMIT $${idx++} OFFSET $${idx}
   `;
-  const clients = await query(sql, [...filterParams, parseInt(String(limit), 10), parseInt(String(offset), 10)]);
+  const clients = await query(sql, [
+    ...filterParams,
+    parseInt(String(limit), 10),
+    parseInt(String(offset), 10),
+  ]);
 
   const countResult = await query<{ total: string }>(
     `SELECT COUNT(*) as total FROM (
@@ -248,7 +274,7 @@ router.get('/', async (req: Request, res: Response) => {
        ORDER BY c.mac_address, c.active DESC, (c.client_type = 'wireless') DESC, c.last_seen DESC NULLS LAST
      ) deduped
      ${outerWhere}`,
-    filterParams
+    filterParams,
   );
 
   // Every VLAN among the clients in view, not just this page's, so the filter
@@ -263,7 +289,7 @@ router.get('/', async (req: Request, res: Response) => {
      ) deduped
      WHERE deduped.vlan_id IS NOT NULL
      ORDER BY 1`,
-    preParams
+    preParams,
   ).catch(() => []);
 
   res.json({
@@ -313,7 +339,7 @@ router.get('/:mac', async (req: Request, res: Response) => {
        ${siteScopeByDevice(activeSite(req), 'c.device_id') ? `AND ${siteScopeByDevice(activeSite(req), 'c.device_id')}` : ''}
      ORDER BY c.active DESC, (c.client_type = 'wireless') DESC, c.last_seen DESC NULLS LAST
      LIMIT 1`,
-    [mac]
+    [mac],
   );
 
   if (!rows.length) return res.status(404).json({ error: 'Client not found' });
@@ -394,10 +420,10 @@ router.get('/:mac/traffic', async (req: Request, res: Response) => {
   const raw: { time: string; field: string; device: string; value: number }[] = [];
   try {
     await queryApi.collectRows(fluxQuery, (row, tableMeta) => {
-      const time   = tableMeta.get(row, '_time')  as string;
-      const field  = tableMeta.get(row, '_field') as string;
+      const time = tableMeta.get(row, '_time') as string;
+      const field = tableMeta.get(row, '_field') as string;
       const device = String(tableMeta.get(row, 'device_id') ?? '');
-      const value  = tableMeta.get(row, '_value') as number;
+      const value = tableMeta.get(row, '_value') as number;
       if (time && field && value != null) raw.push({ time, field, device, value });
     });
   } catch (err) {
@@ -407,11 +433,11 @@ router.get('/:mac/traffic', async (req: Request, res: Response) => {
     console.error('[clients/traffic] Flux error for %s:', logSafe(mac), err);
   }
 
-  const txDeltas = counterDeltas(raw.filter(p => p.field === 'tx_bytes'));
-  const rxDeltas = counterDeltas(raw.filter(p => p.field === 'rx_bytes'));
+  const txDeltas = counterDeltas(raw.filter((p) => p.field === 'tx_bytes'));
+  const rxDeltas = counterDeltas(raw.filter((p) => p.field === 'rx_bytes'));
 
   const allTimes = new Set([...txDeltas.keys(), ...rxDeltas.keys()]);
-  const points = [...allTimes].sort().map(time => ({
+  const points = [...allTimes].sort().map((time) => ({
     time,
     tx_bytes: txDeltas.get(time) ?? 0,
     rx_bytes: rxDeltas.get(time) ?? 0,
@@ -446,7 +472,7 @@ router.get('/:mac/signal', async (req: Request, res: Response) => {
   const points: { time: string; signal_strength: number }[] = [];
   try {
     await queryApi.collectRows(fluxQuery, (row, tableMeta) => {
-      const time  = tableMeta.get(row, '_time')  as string;
+      const time = tableMeta.get(row, '_time') as string;
       const value = tableMeta.get(row, '_value') as number;
       if (time && value != null) points.push({ time, signal_strength: Math.round(value) });
     });
@@ -471,7 +497,10 @@ router.post('/:mac/wol', requireWrite, async (req: Request, res: Response) => {
   // Only for a client the account can see (P1-7).
   const scope = siteScopeByDevice(activeSite(req), 'device_id');
   if (scope) {
-    const seen = await query(`SELECT 1 FROM clients WHERE REPLACE(REPLACE(LOWER(mac_address), ':', ''), '-', '') = $1 AND ${scope} LIMIT 1`, [hexMac.toLowerCase()]);
+    const seen = await query(
+      `SELECT 1 FROM clients WHERE REPLACE(REPLACE(LOWER(mac_address), ':', ''), '-', '') = $1 AND ${scope} LIMIT 1`,
+      [hexMac.toLowerCase()],
+    );
     if (seen.length === 0) return res.status(404).json({ error: 'Client not found' });
   }
 
@@ -523,7 +552,7 @@ router.put('/:mac/hostname', requireWrite, async (req: Request, res: Response) =
 
   const result = await query(
     `UPDATE clients SET custom_name = $1 WHERE LOWER(mac_address) = $2 ${inScope(req)} RETURNING *`,
-    [hostname || null, mac]
+    [hostname || null, mac],
   );
   if (!result.length) return res.status(404).json({ error: 'Client not found' });
   return res.json(result[0]);
@@ -536,12 +565,14 @@ router.put('/:mac/category', requireWrite, async (req: Request, res: Response) =
 
   const clear = category === null || category === undefined || category === '';
   if (!clear && !DEVICE_CATEGORIES.includes(category as DeviceCategory)) {
-    return res.status(400).json({ error: `category must be one of: ${DEVICE_CATEGORIES.join(', ')} (or null to revert to automatic)` });
+    return res.status(400).json({
+      error: `category must be one of: ${DEVICE_CATEGORIES.join(', ')} (or null to revert to automatic)`,
+    });
   }
 
   const result = await query(
     `UPDATE clients SET custom_category = $1 WHERE LOWER(mac_address) = $2 ${inScope(req)} RETURNING *`,
-    [clear ? null : category, mac]
+    [clear ? null : category, mac],
   );
   if (!result.length) return res.status(404).json({ error: 'Client not found' });
   return res.json(withCategory(result[0] as Record<string, unknown>));
@@ -554,7 +585,7 @@ router.put('/:mac/notes', requireWrite, async (req: Request, res: Response) => {
 
   const result = await query(
     `UPDATE clients SET comment = $1 WHERE LOWER(mac_address) = $2 ${inScope(req)} RETURNING *`,
-    [notes ?? null, mac]
+    [notes ?? null, mac],
   );
   if (!result.length) return res.status(404).json({ error: 'Client not found' });
   return res.json(result[0]);

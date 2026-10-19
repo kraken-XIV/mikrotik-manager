@@ -1,13 +1,28 @@
-import { useEffect, useMemo, useState, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import { usesApiTls } from '../utils/apiTls';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Plus, RefreshCw, Router, Trash2, ChevronRight,
-  Radar, Pencil, ShieldQuestion, Upload, Power} from 'lucide-react';
-import { devicesApi, topologyApi, metricsApi, tagsApi, adoptionApi} from '../services/api';
+  Plus,
+  RefreshCw,
+  Router,
+  Trash2,
+  ChevronRight,
+  Radar,
+  Pencil,
+  ShieldQuestion,
+  Upload,
+  Power,
+} from 'lucide-react';
+import { devicesApi, topologyApi, metricsApi, tagsApi, adoptionApi } from '../services/api';
 import type { Device } from '../types';
-import type { DiscoveredDevice, AdoptionCandidate} from '../services/api';
+import type { DiscoveredDevice, AdoptionCandidate } from '../services/api';
 import { useCanWrite } from '../hooks/useCanWrite';
 import { useSocket } from '../hooks/useSocket';
 import clsx from 'clsx';
@@ -19,45 +34,78 @@ import TryAllDiscoveredModal from '../components/devices/TryAllDiscoveredModal';
 import CsvImportModal from '../components/devices/CsvImportModal';
 import BulkTagBar from '../components/devices/BulkTagBar';
 import ColumnPicker from '../components/devices/ColumnPicker';
-import { loadColumnPrefs, saveColumnPrefs, visibleColumns, clampWidth, type ColumnPrefs, type DeviceColumnId } from '../utils/deviceColumns';
+import {
+  loadColumnPrefs,
+  saveColumnPrefs,
+  visibleColumns,
+  clampWidth,
+  type ColumnPrefs,
+  type DeviceColumnId,
+} from '../utils/deviceColumns';
 import { displayState, STATE_COLOR } from '../utils/deviceState';
 import DeviceTypePill from '../components/devices/DeviceTypePill';
 import SortableHeader, { type SortDir } from '../components/common/SortableHeader';
 import { FilterBar, FilterSearch, FilterSelect } from '../components/common/FilterBar';
 
-type DeviceSortKey = 'name' | 'ip_address' | 'model' | 'serial_number' | 'ros_version' | 'status' | 'last_seen' | 'rack_name' | 'location_address'
-  | 'device_type' | 'api' | 'login';
+type DeviceSortKey =
+  | 'name'
+  | 'ip_address'
+  | 'model'
+  | 'serial_number'
+  | 'ros_version'
+  | 'status'
+  | 'last_seen'
+  | 'rack_name'
+  | 'location_address'
+  | 'device_type'
+  | 'api'
+  | 'login';
 type DiscoveredSortKey = 'identity' | 'address' | 'mac_address' | 'seen_by' | 'discovered_at';
-
 
 function GlowDot({ device }: { device: Device }) {
   const state = displayState(device);
   const color = STATE_COLOR[state];
-  const title = state === 'degraded'
-    ? `Degraded: ${(device.health_issues?.issues ?? []).map((i) => i.message).join(' ')}`
-    : state === 'expected-offline' ? 'Offline, which is expected for this device' : state;
+  const title =
+    state === 'degraded'
+      ? `Degraded: ${(device.health_issues?.issues ?? []).map((i) => i.message).join(' ')}`
+      : state === 'expected-offline'
+        ? 'Offline, which is expected for this device'
+        : state;
   return (
     <span
       title={title}
       style={{
-        width: 8, height: 8, borderRadius: 999, display: 'inline-block',
-        background: color, flexShrink: 0,
-        boxShadow: state === 'online' || state === 'degraded' ? `0 0 0 2px ${color}33, 0 0 8px ${color}88` : 'none',
+        width: 8,
+        height: 8,
+        borderRadius: 999,
+        display: 'inline-block',
+        background: color,
+        flexShrink: 0,
+        boxShadow:
+          state === 'online' || state === 'degraded'
+            ? `0 0 0 2px ${color}33, 0 0 8px ${color}88`
+            : 'none',
       }}
     />
   );
 }
 
-
 function CpuValue({ value }: { value: number | undefined }) {
-  if (value == null) return <span className="mono text-[11px]" style={{ color: 'var(--ink-4)' }}>—</span>;
+  if (value == null)
+    return (
+      <span className="mono text-[11px]" style={{ color: 'var(--ink-4)' }}>
+        —
+      </span>
+    );
   // The series behind this is a 5-minute mean from InfluxDB, so a raw value is
   // routinely something like 1.3333333333333333. Round for display only — the
   // sparkline keeps the unrounded points so its curve stays smooth.
   const shown = Math.round(value);
   const color = value > 70 ? 'var(--bad)' : value > 40 ? 'var(--warn)' : 'var(--accent)';
   return (
-    <span className="mono num-tab text-[12px] font-medium" style={{ color }}>{shown}%</span>
+    <span className="mono num-tab text-[12px] font-medium" style={{ color }}>
+      {shown}%
+    </span>
   );
 }
 
@@ -75,16 +123,19 @@ function loadColor(pct: number): string {
 }
 
 function LoadSparkline({ data }: { data: number[] }) {
-  if (data.length < 2) return <span className="mono text-[11px]" style={{ color: 'var(--ink-4)' }}>—</span>;
+  if (data.length < 2)
+    return (
+      <span className="mono text-[11px]" style={{ color: 'var(--ink-4)' }}>
+        —
+      </span>
+    );
   const peak = Math.max(...data);
   // Fixed scale: a flat line low in the box is an idle device, and looks like one.
   const max = 100;
-  const w = 72, h = 20;
-  const pts = data.map((v, i) => [
-    (i / (data.length - 1)) * w,
-    h - (v / max) * (h - 2) - 1,
-  ]);
-  const d = 'M' + pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L');
+  const w = 72,
+    h = 20;
+  const pts = data.map((v, i) => [(i / (data.length - 1)) * w, h - (v / max) * (h - 2) - 1]);
+  const d = 'M' + pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L');
   return (
     <svg width={w} height={h} style={{ display: 'block' }}>
       <path d={d} fill="none" stroke={loadColor(peak)} strokeWidth="1.3" />
@@ -95,7 +146,8 @@ function LoadSparkline({ data }: { data: number[] }) {
 /** How the manager reaches a device (#199). */
 type LoginKind = 'password' | 'key' | 'both';
 // SSH only (#174): added before its API was enabled.
-const apiKind = (d: Device): 'ssl' | 'plain' | 'ssh' => (d.ssh_only ? 'ssh' : usesApiTls(d) ? 'ssl' : 'plain');
+const apiKind = (d: Device): 'ssl' | 'plain' | 'ssh' =>
+  d.ssh_only ? 'ssh' : usesApiTls(d) ? 'ssl' : 'plain';
 /** Stored password, verified SSH key, or both. */
 const loginKind = (d: Device): LoginKind =>
   d.has_ssh_key ? (d.has_password === false ? 'key' : 'both') : 'password';
@@ -112,7 +164,9 @@ export default function DevicesPage() {
   const canWrite = useCanWrite();
   // Hidden and resized columns, remembered in this browser (#283).
   const [colPrefs, setColPrefs] = useState<ColumnPrefs>(loadColumnPrefs);
-  useEffect(() => { saveColumnPrefs(colPrefs); }, [colPrefs]);
+  useEffect(() => {
+    saveColumnPrefs(colPrefs);
+  }, [colPrefs]);
   const cols = visibleColumns(colPrefs);
   const startResize = (e: ReactMouseEvent<HTMLSpanElement>, id: DeviceColumnId) => {
     e.preventDefault();
@@ -133,10 +187,16 @@ export default function DevicesPage() {
     document.addEventListener('mouseup', up);
   };
   const resetWidth = (id: DeviceColumnId) =>
-    setColPrefs((p) => { const widths = { ...p.widths }; delete widths[id]; return { ...p, widths }; });
+    setColPrefs((p) => {
+      const widths = { ...p.widths };
+      delete widths[id];
+      return { ...p, widths };
+    });
   const [showAddModal, setShowAddModal] = useState(false);
   const [adoptTarget, setAdoptTarget] = useState<AdoptionCandidate | null>(null);
-  const [addPrefill, setAddPrefill] = useState<{ name?: string; ip_address?: string } | undefined>();
+  const [addPrefill, setAddPrefill] = useState<
+    { name?: string; ip_address?: string } | undefined
+  >();
   const [editDevice, setEditDevice] = useState<Device | null>(null);
   const [search, setSearch] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
@@ -147,7 +207,10 @@ export default function DevicesPage() {
   // Row selection for bulk tagging (#161).
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkLoginOpen, setBulkLoginOpen] = useState(false);
-  const [deviceSort, setDeviceSort] = useState<{ key: DeviceSortKey; dir: SortDir }>({ key: 'name', dir: 'asc' });
+  const [deviceSort, setDeviceSort] = useState<{ key: DeviceSortKey; dir: SortDir }>({
+    key: 'name',
+    dir: 'asc',
+  });
   // Physical-placement filters (#107). Both are free-form strings on the device, so
   // the options come from what is actually recorded rather than a fixed list.
   const [rackFilter, setRackFilter] = useState('');
@@ -166,11 +229,15 @@ export default function DevicesPage() {
   const rawType = searchParams.get('type');
   const typeFilter = rawType === 'AP' || rawType === 'SW' || rawType === 'RTR' ? rawType : null;
   const setTypeFilter = (t: string | null) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      if (t) next.set('type', t); else next.delete('type');
-      return next;
-    }, { replace: true });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (t) next.set('type', t);
+        else next.delete('type');
+        return next;
+      },
+      { replace: true },
+    );
   };
   const [tagFilter, setTagFilter] = useState<number | null>(null);
 
@@ -225,8 +292,16 @@ export default function DevicesPage() {
   const [rowNote, setRowNote] = useState<{ ok: boolean; text: string } | null>(null);
   const rebootMutation = useMutation({
     mutationFn: (d: Device) => devicesApi.reboot(d.id).then((r) => ({ d, msg: r.data.message })),
-    onSuccess: ({ d }) => setRowNote({ ok: true, text: `${d.name}: reboot sent. It will be unreachable for a minute or two while it restarts.` }),
-    onError: (e: unknown, d) => setRowNote({ ok: false, text: `${d.name}: ${(e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'reboot failed'}` }),
+    onSuccess: ({ d }) =>
+      setRowNote({
+        ok: true,
+        text: `${d.name}: reboot sent. It will be unreachable for a minute or two while it restarts.`,
+      }),
+    onError: (e: unknown, d) =>
+      setRowNote({
+        ok: false,
+        text: `${d.name}: ${(e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'reboot failed'}`,
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -241,45 +316,66 @@ export default function DevicesPage() {
   // Placement options come from what is actually recorded, so the dropdowns never
   // offer a rack or site that would match nothing (#107).
   const rackOptions = useMemo(
-    () => [...new Set(devices.map(d => d.rack_name).filter(Boolean) as string[])].sort(),
-    [devices]);
+    () => [...new Set(devices.map((d) => d.rack_name).filter(Boolean) as string[])].sort(),
+    [devices],
+  );
   const locationOptions = useMemo(
     // Effective location: a device without its own shows under its site's (#167).
-    () => [...new Set(devices.map(d => d.effective_location?.address).filter(Boolean) as string[])].sort(),
-    [devices]);
+    () =>
+      [
+        ...new Set(devices.map((d) => d.effective_location?.address).filter(Boolean) as string[]),
+      ].sort(),
+    [devices],
+  );
 
   // One request for every device's sparkline (#302), not one per device.
   const { data: cpuHistoryAll } = useQuery({
     queryKey: ['device-cpu-history', '1h'],
-    queryFn: () => metricsApi.cpuHistory('1h').then(r => r.data.devices),
+    queryFn: () => metricsApi.cpuHistory('1h').then((r) => r.data.devices),
     staleTime: 60_000,
     refetchInterval: 60_000,
     enabled: devices.length > 0,
   });
   const cpuHistories = useMemo(
-    () => Object.fromEntries(devices.map(d => [d.id, d.status === 'online' ? (cpuHistoryAll?.[String(d.id)] ?? []) : []])) as Record<number, number[]>,
+    () =>
+      Object.fromEntries(
+        devices.map((d) => [
+          d.id,
+          d.status === 'online' ? (cpuHistoryAll?.[String(d.id)] ?? []) : [],
+        ]),
+      ) as Record<number, number[]>,
     [devices, cpuHistoryAll],
   );
 
   const filtered = useMemo(() => {
-    const base = devices.filter(d => {
+    const base = devices.filter((d) => {
       if (search) {
         const q = search.toLowerCase();
         const haystack = [
-          d.name, d.ip_address, d.model, d.serial_number,
-          d.effective_location?.address, d.rack_name, d.rack_slot,
+          d.name,
+          d.ip_address,
+          d.model,
+          d.serial_number,
+          d.effective_location?.address,
+          d.rack_name,
+          d.rack_slot,
         ];
-        if (!haystack.some(v => v && String(v).toLowerCase().includes(q))) return false;
+        if (!haystack.some((v) => v && String(v).toLowerCase().includes(q))) return false;
       }
       if (rackFilter && d.rack_name !== rackFilter) return false;
       if (locationFilter && d.effective_location?.address !== locationFilter) return false;
       if (statusFilter === 'online' && d.status !== 'online') return false;
       if (statusFilter === 'offline' && d.status !== 'offline') return false;
-      if (statusFilter === 'updates' && !d.firmware_update_available && !d.routerboard_upgrade_available) return false;
+      if (
+        statusFilter === 'updates' &&
+        !d.firmware_update_available &&
+        !d.routerboard_upgrade_available
+      )
+        return false;
       if (typeFilter === 'AP' && d.device_type !== 'wireless_ap') return false;
       if (typeFilter === 'SW' && d.device_type !== 'switch') return false;
       if (typeFilter === 'RTR' && d.device_type !== 'router') return false;
-      if (tagFilter != null && !d.tags?.some(t => t.id === tagFilter)) return false;
+      if (tagFilter != null && !d.tags?.some((t) => t.id === tagFilter)) return false;
       if (apiFilter && apiKind(d) !== apiFilter) return false;
       if (loginFilter && loginKind(d) !== loginFilter) return false;
       return true;
@@ -287,64 +383,103 @@ export default function DevicesPage() {
     const sorted = [...base].sort((a, b) => {
       const val = (x: Device): string | number => {
         switch (deviceSort.key) {
-          case 'name': return x.name || '';
-          case 'ip_address': return x.ip_address || '';
-          case 'model': return x.model || '';
-          case 'serial_number': return x.serial_number || '';
-          case 'rack_name': return x.rack_name || '';
-          case 'location_address': return x.effective_location?.address || '';
-          case 'ros_version': return x.ros_version || '';
-          case 'status': return x.status || '';
-          case 'last_seen': return x.last_seen ? new Date(x.last_seen).getTime() : 0;
+          case 'name':
+            return x.name || '';
+          case 'ip_address':
+            return x.ip_address || '';
+          case 'model':
+            return x.model || '';
+          case 'serial_number':
+            return x.serial_number || '';
+          case 'rack_name':
+            return x.rack_name || '';
+          case 'location_address':
+            return x.effective_location?.address || '';
+          case 'ros_version':
+            return x.ros_version || '';
+          case 'status':
+            return x.status || '';
+          case 'last_seen':
+            return x.last_seen ? new Date(x.last_seen).getTime() : 0;
           // Sortable too (#85): by what the column shows.
-          case 'device_type': return x.device_type || '';
-          case 'api': return apiKind(x);
-          case 'login': return LOGIN_LABEL[loginKind(x)];
-          default: return '';
+          case 'device_type':
+            return x.device_type || '';
+          case 'api':
+            return apiKind(x);
+          case 'login':
+            return LOGIN_LABEL[loginKind(x)];
+          default:
+            return '';
         }
       };
       const av = val(a);
       const bv = val(b);
-      const cmp = typeof av === 'number' && typeof bv === 'number'
-        ? av - bv
-        : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
+      const cmp =
+        typeof av === 'number' && typeof bv === 'number'
+          ? av - bv
+          : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
       return deviceSort.dir === 'asc' ? cmp : -cmp;
     });
     return sorted;
-  }, [devices, search, statusFilter, typeFilter, tagFilter, rackFilter, locationFilter, apiFilter, loginFilter, deviceSort]);
+  }, [
+    devices,
+    search,
+    statusFilter,
+    typeFilter,
+    tagFilter,
+    rackFilter,
+    locationFilter,
+    apiFilter,
+    loginFilter,
+    deviceSort,
+  ]);
 
   // Bulk actions only ever apply to devices the operator can see. A selection
   // made before narrowing the filters must not quietly include hidden rows.
   const selectedVisible = filtered.filter((d) => selected.has(d.id));
   const allVisibleSelected = filtered.length > 0 && selectedVisible.length === filtered.length;
   const toggleSelected = (id: number) =>
-    setSelected((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+    setSelected((cur) => {
+      const n = new Set(cur);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   const toggleAllVisible = () =>
     setSelected(allVisibleSelected ? new Set() : new Set(filtered.map((d) => d.id)));
 
   const discoveredList = discovered as DiscoveredDevice[];
   const duplicateCount = useMemo(
     () => discoveredList.filter((d) => d.duplicate_of_device_id != null).length,
-    [discoveredList]
+    [discoveredList],
   );
   const visibleDiscovered = useMemo(() => {
-    const base = hideDuplicates ? discoveredList.filter((d) => d.duplicate_of_device_id == null) : discoveredList;
+    const base = hideDuplicates
+      ? discoveredList.filter((d) => d.duplicate_of_device_id == null)
+      : discoveredList;
     const sorted = [...base].sort((a, b) => {
       const val = (x: DiscoveredDevice): string | number => {
         switch (discoveredSort.key) {
-          case 'identity': return x.identity || '';
-          case 'address': return x.address || '';
-          case 'mac_address': return x.mac_address || '';
-          case 'seen_by': return x.seen_by || '';
-          case 'discovered_at': return x.discovered_at ? new Date(x.discovered_at).getTime() : 0;
-          default: return '';
+          case 'identity':
+            return x.identity || '';
+          case 'address':
+            return x.address || '';
+          case 'mac_address':
+            return x.mac_address || '';
+          case 'seen_by':
+            return x.seen_by || '';
+          case 'discovered_at':
+            return x.discovered_at ? new Date(x.discovered_at).getTime() : 0;
+          default:
+            return '';
         }
       };
       const av = val(a);
       const bv = val(b);
-      const cmp = typeof av === 'number' && typeof bv === 'number'
-        ? av - bv
-        : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
+      const cmp =
+        typeof av === 'number' && typeof bv === 'number'
+          ? av - bv
+          : String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
       return discoveredSort.dir === 'asc' ? cmp : -cmp;
     });
     return sorted;
@@ -353,7 +488,7 @@ export default function DevicesPage() {
   const flipSort = <K extends string>(
     current: { key: K; dir: SortDir },
     key: K,
-    set: (v: { key: K; dir: SortDir }) => void
+    set: (v: { key: K; dir: SortDir }) => void,
   ) => {
     if (current.key === key) {
       set({ key, dir: current.dir === 'asc' ? 'desc' : 'asc' });
@@ -362,18 +497,24 @@ export default function DevicesPage() {
     }
   };
 
-  const onlineCount = devices.filter(d => d.status === 'online').length;
-  const updatesCount = devices.filter(d => d.firmware_update_available || d.routerboard_upgrade_available).length;
+  const onlineCount = devices.filter((d) => d.status === 'online').length;
+  const updatesCount = devices.filter(
+    (d) => d.firmware_update_available || d.routerboard_upgrade_available,
+  ).length;
 
   return (
     <div className="space-y-4">
       {/* Page header */}
       <div className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[28px] font-semibold leading-none" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>
+        <h1
+          className="text-[28px] font-semibold leading-none"
+          style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
+        >
           Devices
         </h1>
         <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
-          {devices.length} total · {onlineCount} online{updatesCount > 0 ? ` · ${updatesCount} update${updatesCount !== 1 ? 's' : ''}` : ''}
+          {devices.length} total · {onlineCount} online
+          {updatesCount > 0 ? ` · ${updatesCount} update${updatesCount !== 1 ? 's' : ''}` : ''}
         </span>
         {canWrite && (
           <div className="ml-auto flex items-center gap-2">
@@ -405,7 +546,10 @@ export default function DevicesPage() {
               Import CSV
             </button>
             <button
-              onClick={() => { setAddPrefill(undefined); setShowAddModal(true); }}
+              onClick={() => {
+                setAddPrefill(undefined);
+                setShowAddModal(true);
+              }}
               className="btn-primary flex items-center gap-2 text-[12px] py-[6px]"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -416,10 +560,23 @@ export default function DevicesPage() {
       </div>
 
       {rowNote && (
-        <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-[12.5px]"
-          style={{ background: rowNote.ok ? 'var(--good-bg)' : 'var(--bad-bg, #fee2e2)', color: rowNote.ok ? 'var(--good)' : 'var(--bad)' }}>
-          <Power className="w-3.5 h-3.5" /><span className="flex-1">{rowNote.text}</span>
-          <button type="button" onClick={() => setRowNote(null)} className="text-[11px]" style={{ opacity: 0.7 }}>Dismiss</button>
+        <div
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-[12.5px]"
+          style={{
+            background: rowNote.ok ? 'var(--good-bg)' : 'var(--bad-bg, #fee2e2)',
+            color: rowNote.ok ? 'var(--good)' : 'var(--bad)',
+          }}
+        >
+          <Power className="w-3.5 h-3.5" />
+          <span className="flex-1">{rowNote.text}</span>
+          <button
+            type="button"
+            onClick={() => setRowNote(null)}
+            className="text-[11px]"
+            style={{ opacity: 0.7 }}
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -430,54 +587,86 @@ export default function DevicesPage() {
         {rackOptions.length > 0 && (
           <FilterSelect value={rackFilter} onChange={setRackFilter} title="Rack">
             <option value="">All racks</option>
-            {rackOptions.map(r => <option key={r} value={r}>{r}</option>)}
+            {rackOptions.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
           </FilterSelect>
         )}
         {locationOptions.length > 0 && (
-          <FilterSelect value={locationFilter} onChange={setLocationFilter} title="Location" className="max-w-[180px]">
+          <FilterSelect
+            value={locationFilter}
+            onChange={setLocationFilter}
+            title="Location"
+            className="max-w-[180px]"
+          >
             <option value="">All locations</option>
-            {locationOptions.map(l => <option key={l} value={l}>{l}</option>)}
+            {locationOptions.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
           </FilterSelect>
         )}
-        <FilterSelect value={apiFilter} onChange={v => setApiFilter(v as '' | 'ssl' | 'plain' | 'ssh')} title="How the manager connects to the device">
+        <FilterSelect
+          value={apiFilter}
+          onChange={(v) => setApiFilter(v as '' | 'ssl' | 'plain' | 'ssh')}
+          title="How the manager connects to the device"
+        >
           <option value="">Any API</option>
           <option value="ssl">API-SSL</option>
           <option value="plain">Plain API</option>
           <option value="ssh">SSH only (API off)</option>
         </FilterSelect>
-        <FilterSelect value={loginFilter} onChange={v => setLoginFilter(v as '' | LoginKind)} title="Which credentials the manager has for the device">
+        <FilterSelect
+          value={loginFilter}
+          onChange={(v) => setLoginFilter(v as '' | LoginKind)}
+          title="Which credentials the manager has for the device"
+        >
           <option value="">Any login</option>
           <option value="password">Password only</option>
           <option value="key">SSH key only</option>
           <option value="both">Password + SSH key</option>
         </FilterSelect>
-        {(['all', 'online', 'offline', 'updates'] as const).map(f => {
+        {(['all', 'online', 'offline', 'updates'] as const).map((f) => {
           // "All" clears the AP/SW/RTR filter too, and only reads as selected
           // when nothing is filtered by status or type (#85).
           const active = f === 'all' ? statusFilter === 'all' && !typeFilter : statusFilter === f;
           return (
-          <button
-            key={f}
-            onClick={() => { setStatusFilter(f); if (f === 'all') setTypeFilter(null); }}
-            className="mono text-[11.5px] px-[10px] py-[4px] rounded-[5px] transition-colors capitalize"
-            style={{
-              background: active ? 'var(--surface-3)' : 'transparent',
-              color: active ? 'var(--ink)' : 'var(--ink-3)',
-              border: 'none',
-            }}
-          >
-            {f}
-          </button>
+            <button
+              key={f}
+              onClick={() => {
+                setStatusFilter(f);
+                if (f === 'all') setTypeFilter(null);
+              }}
+              className="mono text-[11.5px] px-[10px] py-[4px] rounded-[5px] transition-colors capitalize"
+              style={{
+                background: active ? 'var(--surface-3)' : 'transparent',
+                color: active ? 'var(--ink)' : 'var(--ink-3)',
+                border: 'none',
+              }}
+            >
+              {f}
+            </button>
           );
         })}
         <div className="w-px h-[18px] mx-1" style={{ background: 'var(--line)' }} />
-        {(['AP', 'SW', 'RTR'] as const).map(t => {
-          const colors: Record<string, string> = { AP: 'var(--info)', SW: 'var(--accent)', RTR: 'var(--violet)' };
+        {(['AP', 'SW', 'RTR'] as const).map((t) => {
+          const colors: Record<string, string> = {
+            AP: 'var(--info)',
+            SW: 'var(--accent)',
+            RTR: 'var(--violet)',
+          };
           return (
             <button
               key={t}
               onClick={() => setTypeFilter(typeFilter === t ? null : t)}
-              title={typeFilter === t ? 'Show every type' : `Show only ${t === 'AP' ? 'access points' : t === 'SW' ? 'switches' : 'routers'}`}
+              title={
+                typeFilter === t
+                  ? 'Show every type'
+                  : `Show only ${t === 'AP' ? 'access points' : t === 'SW' ? 'switches' : 'routers'}`
+              }
               aria-pressed={typeFilter === t}
               className="mono text-[11px] px-[8px] py-[4px] rounded-[5px] transition-colors"
               style={{
@@ -493,10 +682,16 @@ export default function DevicesPage() {
         {allTags.length > 0 && (
           <>
             <div className="w-px h-[18px] mx-1" style={{ background: 'var(--line)' }} />
-            <FilterSelect value={tagFilter != null ? String(tagFilter) : ''} onChange={v => setTagFilter(v ? parseInt(v, 10) : null)} title="Tag">
+            <FilterSelect
+              value={tagFilter != null ? String(tagFilter) : ''}
+              onChange={(v) => setTagFilter(v ? parseInt(v, 10) : null)}
+              title="Tag"
+            >
               <option value="">All tags</option>
-              {allTags.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+              {allTags.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
               ))}
             </FilterSelect>
           </>
@@ -508,18 +703,28 @@ export default function DevicesPage() {
 
       {/* Device table */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-48" style={{ color: 'var(--ink-4)' }}>Loading…</div>
+        <div className="flex items-center justify-center h-48" style={{ color: 'var(--ink-4)' }}>
+          Loading…
+        </div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 flex flex-col items-center gap-4 text-center">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--surface-2)' }}>
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--surface-2)' }}
+          >
             <Router className="w-8 h-8" style={{ color: 'var(--ink-4)' }} />
           </div>
           <div>
             <p className="font-medium" style={{ color: 'var(--ink-2)' }}>
-              {search || statusFilter !== 'all' || typeFilter ? 'No devices match your filters' : 'No devices added yet'}
+              {search || statusFilter !== 'all' || typeFilter
+                ? 'No devices match your filters'
+                : 'No devices added yet'}
             </p>
             <p className="text-[13px] mt-1" style={{ color: 'var(--ink-4)' }}>
-              {!search && statusFilter === 'all' && !typeFilter && 'Click "Add device" to connect your first Mikrotik device'}
+              {!search &&
+                statusFilter === 'all' &&
+                !typeFilter &&
+                'Click "Add device" to connect your first Mikrotik device'}
             </p>
           </div>
         </div>
@@ -543,7 +748,10 @@ export default function DevicesPage() {
                         type="checkbox"
                         aria-label="Select all shown devices"
                         checked={allVisibleSelected}
-                        ref={(el) => { if (el) el.indeterminate = selectedVisible.length > 0 && !allVisibleSelected; }}
+                        ref={(el) => {
+                          if (el)
+                            el.indeterminate = selectedVisible.length > 0 && !allVisibleSelected;
+                        }}
                         onChange={toggleAllVisible}
                       />
                     </th>
@@ -560,11 +768,15 @@ export default function DevicesPage() {
                         {c.sortKey ? (
                           <SortableHeader
                             label={c.label}
-                            active={deviceSort.key === c.sortKey as DeviceSortKey}
+                            active={deviceSort.key === (c.sortKey as DeviceSortKey)}
                             dir={deviceSort.dir}
-                            onClick={() => flipSort(deviceSort, c.sortKey as DeviceSortKey, setDeviceSort)}
+                            onClick={() =>
+                              flipSort(deviceSort, c.sortKey as DeviceSortKey, setDeviceSort)
+                            }
                           />
-                        ) : c.label}
+                        ) : (
+                          c.label
+                        )}
                         {/* Drag to resize, double-click to reset this column (#283). */}
                         {resizable && (
                           <span
@@ -576,7 +788,11 @@ export default function DevicesPage() {
                             onDoubleClick={() => resetWidth(c.id)}
                             onClick={(e) => e.stopPropagation()}
                             className="absolute top-0 right-0 h-full w-[6px] cursor-col-resize select-none"
-                            style={{ borderRight: colPrefs.widths[c.id] ? '2px solid var(--line)' : undefined }}
+                            style={{
+                              borderRight: colPrefs.widths[c.id]
+                                ? '2px solid var(--line)'
+                                : undefined,
+                            }}
                           />
                         )}
                       </th>
@@ -592,10 +808,11 @@ export default function DevicesPage() {
                       key={device.id}
                       className="cursor-pointer transition-colors"
                       style={{
-                        borderBottom: i < filtered.length - 1 ? '1px solid var(--line-soft)' : 'none',
+                        borderBottom:
+                          i < filtered.length - 1 ? '1px solid var(--line-soft)' : 'none',
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                       onClick={() => navigate(`/devices/${device.id}`)}
                     >
                       {canWrite && (
@@ -610,209 +827,315 @@ export default function DevicesPage() {
                       )}
                       {(() => {
                         const cell: Record<DeviceColumnId, ReactNode> = {
-                        status: (
-                          <>
-                        <GlowDot device={device} />
-                          </>
-                        ),
-                        device: (
-                          <>
-                        {/* Beside the name rather than beneath it: a second line per
+                          status: (
+                            <>
+                              <GlowDot device={device} />
+                            </>
+                          ),
+                          device: (
+                            <>
+                              {/* Beside the name rather than beneath it: a second line per
                             row doubles the table's height for the few rows that
                             carry tags, and misaligns them with the rest (#149).
                             flex-wrap keeps a long tag list from pushing the name
                             off the row on narrow screens. */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="cell-primary">{device.name}</span>
-                          {device.tags?.map(tag => (
-                            <span
-                              key={tag.id}
-                              className="text-[10px] px-[5px] py-[1px] rounded-full font-medium"
-                              style={{ background: tag.color + '33', color: tag.color, border: `1px solid ${tag.color}55` }}
-                            >
-                              {tag.name}
-                            </span>
-                          ))}
-                        </div>
-                          </>
-                        ),
-                        type: (
-                          <>
-                        <DeviceTypePill type={device.device_type} />
-                          </>
-                        ),
-                        model: (
-                          <>
-                        <span className="mono text-[11.5px]" style={{ color: 'var(--ink-2)' }}>{device.model || '—'}</span>
-                          </>
-                        ),
-                        serial: (
-                          <>
-                        <span
-                          className="mono text-[11.5px] block truncate"
-                          style={{ color: 'var(--ink-3)', maxWidth: colPrefs.widths.serial ?? 130 }}
-                          title={device.serial_number || undefined}
-                        >
-                          {device.serial_number || '—'}
-                        </span>
-                          </>
-                        ),
-                        rack: (
-                          <>
-                        <span
-                          className="text-[11.5px] block truncate"
-                          style={{ color: 'var(--ink-3)', maxWidth: colPrefs.widths.rack ?? 100 }}
-                          title={[device.rack_name, device.rack_slot && `slot ${device.rack_slot}`, device.effective_location?.address]
-                            .filter(Boolean).join(' · ') || undefined}
-                        >
-                          {device.rack_name
-                            ? `${device.rack_name}${device.rack_slot ? `/${device.rack_slot}` : ''}`
-                            : '—'}
-                        </span>
-                          </>
-                        ),
-                        ip: (
-                          <>
-                        <span className="mono num-tab text-[12px]" style={{ color: 'var(--ink-2)' }}>{device.ip_address}</span>
-                          </>
-                        ),
-                        api: (
-                          <>
-                        {device.ssh_only
-                          ? <span className="mono text-[11px]" style={{ color: 'var(--warn)' }}
-                              title={`Added over SSH only: the API isn't enabled yet.${device.api_check_error ? ` ${device.api_check_error}` : ''}`}>SSH ONLY</span>
-                          : apiKind(device) === 'ssl'
-                          ? <span className="mono text-[11px]" style={{ color: 'var(--ok, #16a34a)' }} title={`Managed over API-SSL (port ${device.api_port})`}>SSL</span>
-                          : <span className="mono text-[11px]" style={{ color: 'var(--warn)' }} title="Managed over the plain, unencrypted API">PLAIN</span>}
-                          </>
-                        ),
-                        login: (
-                          <>
-                        <span className="mono text-[11px]" style={{ color: 'var(--ink-2)' }} title={LOGIN_TITLE[loginKind(device)]}>
-                          {LOGIN_LABEL[loginKind(device)]}
-                        </span>
-                          </>
-                        ),
-                        ros: (
-                          <>
-                        <span
-                          className="mono text-[11.5px] flex items-center gap-[4px]"
-                          style={{ color: device.firmware_update_available || device.routerboard_upgrade_available ? 'var(--warn)' : 'var(--ink-3)' }}
-                        >
-                          {(device.firmware_update_available || device.routerboard_upgrade_available) && (
-                            <span
-                              className="text-[9px] font-bold px-[4px] py-[1px] rounded-[3px]"
-                              style={{ background: 'var(--warn)', color: 'var(--accent-fg)' }}
-                            >↑</span>
-                          )}
-                          {device.ros_version || '—'}
-                        </span>
-                          </>
-                        ),
-                        cpu: (
-                          <>
-                        <CpuValue value={(() => { const arr = cpuHistories[device.id]; return arr && arr.length > 0 ? arr[arr.length - 1] : undefined; })()} />
-                          </>
-                        ),
-                        load: (
-                          <>
-                        <LoadSparkline data={cpuSpark} />
-                          </>
-                        ),
-                        seen: (
-                          <>
-                        <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
-                          {device.last_seen
-                            ? new Date(device.last_seen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                            : '—'}
-                        </span>
-                          </>
-                        ),
-                        actions: (
-                          <>
-                        <div
-                          className="flex items-center justify-end gap-1"
-                          onClick={e => e.stopPropagation()}
-                        >
-                          {canWrite && (
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="cell-primary">{device.name}</span>
+                                {device.tags?.map((tag) => (
+                                  <span
+                                    key={tag.id}
+                                    className="text-[10px] px-[5px] py-[1px] rounded-full font-medium"
+                                    style={{
+                                      background: tag.color + '33',
+                                      color: tag.color,
+                                      border: `1px solid ${tag.color}55`,
+                                    }}
+                                  >
+                                    {tag.name}
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          ),
+                          type: (
                             <>
-                              <button
-                                onClick={() => syncMutation.mutate(device.id)}
-                                disabled={syncMutation.isPending}
-                                className="p-1.5 rounded transition-colors"
-                                style={{ color: 'var(--ink-4)' }}
-                                title="Sync now"
-                                onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
-                                onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-4)')}
+                              <DeviceTypePill type={device.device_type} />
+                            </>
+                          ),
+                          model: (
+                            <>
+                              <span
+                                className="mono text-[11.5px]"
+                                style={{ color: 'var(--ink-2)' }}
                               >
-                                <RefreshCw className={clsx('w-3.5 h-3.5', syncMutation.isPending && 'animate-spin')} />
-                              </button>
-                              {!device.ssh_only && (
-                                <button
-                                  onClick={() => {
-                                    if (confirm(`Reboot ${device.name}? It will be unreachable for a minute or two while it restarts.`)) {
-                                      setRowNote(null);
-                                      rebootMutation.mutate(device);
-                                    }
-                                  }}
-                                  disabled={rebootMutation.isPending && rebootMutation.variables?.id === device.id}
-                                  className="p-1.5 rounded transition-colors disabled:opacity-40"
-                                  style={{ color: 'var(--ink-4)' }}
-                                  title="Reboot"
-                                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--warn)')}
-                                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-4)')}
+                                {device.model || '—'}
+                              </span>
+                            </>
+                          ),
+                          serial: (
+                            <>
+                              <span
+                                className="mono text-[11.5px] block truncate"
+                                style={{
+                                  color: 'var(--ink-3)',
+                                  maxWidth: colPrefs.widths.serial ?? 130,
+                                }}
+                                title={device.serial_number || undefined}
+                              >
+                                {device.serial_number || '—'}
+                              </span>
+                            </>
+                          ),
+                          rack: (
+                            <>
+                              <span
+                                className="text-[11.5px] block truncate"
+                                style={{
+                                  color: 'var(--ink-3)',
+                                  maxWidth: colPrefs.widths.rack ?? 100,
+                                }}
+                                title={
+                                  [
+                                    device.rack_name,
+                                    device.rack_slot && `slot ${device.rack_slot}`,
+                                    device.effective_location?.address,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(' · ') || undefined
+                                }
+                              >
+                                {device.rack_name
+                                  ? `${device.rack_name}${device.rack_slot ? `/${device.rack_slot}` : ''}`
+                                  : '—'}
+                              </span>
+                            </>
+                          ),
+                          ip: (
+                            <>
+                              <span
+                                className="mono num-tab text-[12px]"
+                                style={{ color: 'var(--ink-2)' }}
+                              >
+                                {device.ip_address}
+                              </span>
+                            </>
+                          ),
+                          api: (
+                            <>
+                              {device.ssh_only ? (
+                                <span
+                                  className="mono text-[11px]"
+                                  style={{ color: 'var(--warn)' }}
+                                  title={`Added over SSH only: the API isn't enabled yet.${device.api_check_error ? ` ${device.api_check_error}` : ''}`}
                                 >
-                                  <Power className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              <button
-                                onClick={() => setEditDevice(device)}
-                                className="p-1.5 rounded transition-colors"
-                                style={{ color: 'var(--ink-4)' }}
-                                title="Edit device"
-                                onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink-2)')}
-                                onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-4)')}
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              {deleteConfirm === device.id ? (
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={() => deleteMutation.mutate(device.id)}
-                                    className="text-[11px] font-medium px-1"
-                                    style={{ color: 'var(--bad)' }}
-                                  >Confirm</button>
-                                  <button
-                                    onClick={() => setDeleteConfirm(null)}
-                                    className="text-[11px] px-1"
-                                    style={{ color: 'var(--ink-4)' }}
-                                  >Cancel</button>
-                                </div>
+                                  SSH ONLY
+                                </span>
+                              ) : apiKind(device) === 'ssl' ? (
+                                <span
+                                  className="mono text-[11px]"
+                                  style={{ color: 'var(--ok, #16a34a)' }}
+                                  title={`Managed over API-SSL (port ${device.api_port})`}
+                                >
+                                  SSL
+                                </span>
                               ) : (
-                                <button
-                                  onClick={() => setDeleteConfirm(device.id)}
-                                  className="p-1.5 rounded transition-colors"
-                                  style={{ color: 'var(--ink-4)' }}
-                                  title="Delete device"
-                                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--bad)')}
-                                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-4)')}
+                                <span
+                                  className="mono text-[11px]"
+                                  style={{ color: 'var(--warn)' }}
+                                  title="Managed over the plain, unencrypted API"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                  PLAIN
+                                </span>
                               )}
                             </>
-                          )}
-                          <ChevronRight className="w-4 h-4" style={{ color: 'var(--ink-4)' }} />
-                        </div>
-                          </>
-                        ),
+                          ),
+                          login: (
+                            <>
+                              <span
+                                className="mono text-[11px]"
+                                style={{ color: 'var(--ink-2)' }}
+                                title={LOGIN_TITLE[loginKind(device)]}
+                              >
+                                {LOGIN_LABEL[loginKind(device)]}
+                              </span>
+                            </>
+                          ),
+                          ros: (
+                            <>
+                              <span
+                                className="mono text-[11.5px] flex items-center gap-[4px]"
+                                style={{
+                                  color:
+                                    device.firmware_update_available ||
+                                    device.routerboard_upgrade_available
+                                      ? 'var(--warn)'
+                                      : 'var(--ink-3)',
+                                }}
+                              >
+                                {(device.firmware_update_available ||
+                                  device.routerboard_upgrade_available) && (
+                                  <span
+                                    className="text-[9px] font-bold px-[4px] py-[1px] rounded-[3px]"
+                                    style={{ background: 'var(--warn)', color: 'var(--accent-fg)' }}
+                                  >
+                                    ↑
+                                  </span>
+                                )}
+                                {device.ros_version || '—'}
+                              </span>
+                            </>
+                          ),
+                          cpu: (
+                            <>
+                              <CpuValue
+                                value={(() => {
+                                  const arr = cpuHistories[device.id];
+                                  return arr && arr.length > 0 ? arr[arr.length - 1] : undefined;
+                                })()}
+                              />
+                            </>
+                          ),
+                          load: (
+                            <>
+                              <LoadSparkline data={cpuSpark} />
+                            </>
+                          ),
+                          seen: (
+                            <>
+                              <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
+                                {device.last_seen
+                                  ? new Date(device.last_seen).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })
+                                  : '—'}
+                              </span>
+                            </>
+                          ),
+                          actions: (
+                            <>
+                              <div
+                                className="flex items-center justify-end gap-1"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {canWrite && (
+                                  <>
+                                    <button
+                                      onClick={() => syncMutation.mutate(device.id)}
+                                      disabled={syncMutation.isPending}
+                                      className="p-1.5 rounded transition-colors"
+                                      style={{ color: 'var(--ink-4)' }}
+                                      title="Sync now"
+                                      onMouseEnter={(e) =>
+                                        (e.currentTarget.style.color = 'var(--accent)')
+                                      }
+                                      onMouseLeave={(e) =>
+                                        (e.currentTarget.style.color = 'var(--ink-4)')
+                                      }
+                                    >
+                                      <RefreshCw
+                                        className={clsx(
+                                          'w-3.5 h-3.5',
+                                          syncMutation.isPending && 'animate-spin',
+                                        )}
+                                      />
+                                    </button>
+                                    {!device.ssh_only && (
+                                      <button
+                                        onClick={() => {
+                                          if (
+                                            confirm(
+                                              `Reboot ${device.name}? It will be unreachable for a minute or two while it restarts.`,
+                                            )
+                                          ) {
+                                            setRowNote(null);
+                                            rebootMutation.mutate(device);
+                                          }
+                                        }}
+                                        disabled={
+                                          rebootMutation.isPending &&
+                                          rebootMutation.variables?.id === device.id
+                                        }
+                                        className="p-1.5 rounded transition-colors disabled:opacity-40"
+                                        style={{ color: 'var(--ink-4)' }}
+                                        title="Reboot"
+                                        onMouseEnter={(e) =>
+                                          (e.currentTarget.style.color = 'var(--warn)')
+                                        }
+                                        onMouseLeave={(e) =>
+                                          (e.currentTarget.style.color = 'var(--ink-4)')
+                                        }
+                                      >
+                                        <Power className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => setEditDevice(device)}
+                                      className="p-1.5 rounded transition-colors"
+                                      style={{ color: 'var(--ink-4)' }}
+                                      title="Edit device"
+                                      onMouseEnter={(e) =>
+                                        (e.currentTarget.style.color = 'var(--ink-2)')
+                                      }
+                                      onMouseLeave={(e) =>
+                                        (e.currentTarget.style.color = 'var(--ink-4)')
+                                      }
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+                                    {deleteConfirm === device.id ? (
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          onClick={() => deleteMutation.mutate(device.id)}
+                                          className="text-[11px] font-medium px-1"
+                                          style={{ color: 'var(--bad)' }}
+                                        >
+                                          Confirm
+                                        </button>
+                                        <button
+                                          onClick={() => setDeleteConfirm(null)}
+                                          className="text-[11px] px-1"
+                                          style={{ color: 'var(--ink-4)' }}
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={() => setDeleteConfirm(device.id)}
+                                        className="p-1.5 rounded transition-colors"
+                                        style={{ color: 'var(--ink-4)' }}
+                                        title="Delete device"
+                                        onMouseEnter={(e) =>
+                                          (e.currentTarget.style.color = 'var(--bad)')
+                                        }
+                                        onMouseLeave={(e) =>
+                                          (e.currentTarget.style.color = 'var(--ink-4)')
+                                        }
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                                <ChevronRight
+                                  className="w-4 h-4"
+                                  style={{ color: 'var(--ink-4)' }}
+                                />
+                              </div>
+                            </>
+                          ),
                         };
                         return cols.map((c) => {
                           const w = colPrefs.widths[c.id];
                           return (
                             <td key={c.id} className="px-4 py-[12px]">
                               {/* A dragged width also caps the content, so a column can shrink below it. */}
-                              {w ? <div style={{ maxWidth: w, overflow: 'hidden' }}>{cell[c.id]}</div> : cell[c.id]}
+                              {w ? (
+                                <div style={{ maxWidth: w, overflow: 'hidden' }}>{cell[c.id]}</div>
+                              ) : (
+                                cell[c.id]
+                              )}
                             </td>
                           );
                         });
@@ -839,7 +1162,10 @@ export default function DevicesPage() {
             </span>
             <label
               className="ml-auto flex items-center gap-2 select-none mono text-[11px]"
-              style={{ color: duplicateCount === 0 ? 'var(--ink-4)' : 'var(--ink-3)', cursor: duplicateCount === 0 ? 'not-allowed' : 'pointer' }}
+              style={{
+                color: duplicateCount === 0 ? 'var(--ink-4)' : 'var(--ink-3)',
+                cursor: duplicateCount === 0 ? 'not-allowed' : 'pointer',
+              }}
               title={
                 duplicateCount === 0
                   ? 'No duplicates of already-managed devices detected'
@@ -868,123 +1194,201 @@ export default function DevicesPage() {
             )}
           </div>
           {visibleDiscovered.length === 0 ? (
-            <div className="card p-4 text-center mono text-[11px]" style={{ color: 'var(--ink-4)' }}>
+            <div
+              className="card p-4 text-center mono text-[11px]"
+              style={{ color: 'var(--ink-4)' }}
+            >
               All {discoveredList.length} discovered neighbor(s) are already managed devices.
             </div>
           ) : (
-          <div className="card overflow-hidden">
-            <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                  {(['Identity', 'IP Address', 'MAC Address', 'Seen By', 'Last Seen', ''] as const).map((label, i) => (
-                    <th key={i} className="table-header px-4 py-[10px] text-left" style={i === 5 ? { width: 140 } : undefined}>
-                      {label === 'Identity' && (
-                        <SortableHeader label="IDENTITY" active={discoveredSort.key === 'identity'} dir={discoveredSort.dir} onClick={() => flipSort(discoveredSort, 'identity', setDiscoveredSort)} />
-                      )}
-                      {label === 'IP Address' && (
-                        <SortableHeader label="IP ADDRESS" active={discoveredSort.key === 'address'} dir={discoveredSort.dir} onClick={() => flipSort(discoveredSort, 'address', setDiscoveredSort)} />
-                      )}
-                      {label === 'MAC Address' && (
-                        <SortableHeader label="MAC" active={discoveredSort.key === 'mac_address'} dir={discoveredSort.dir} onClick={() => flipSort(discoveredSort, 'mac_address', setDiscoveredSort)} />
-                      )}
-                      {label === 'Seen By' && (
-                        <SortableHeader label="SEEN BY" active={discoveredSort.key === 'seen_by'} dir={discoveredSort.dir} onClick={() => flipSort(discoveredSort, 'seen_by', setDiscoveredSort)} />
-                      )}
-                      {label === 'Last Seen' && (
-                        <SortableHeader label="LAST SEEN" active={discoveredSort.key === 'discovered_at'} dir={discoveredSort.dir} onClick={() => flipSort(discoveredSort, 'discovered_at', setDiscoveredSort)} />
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visibleDiscovered.map((d, i) => (
-                  <tr
-                    key={d.mac_address || d.address || i}
-                    style={{
-                      borderBottom: i < visibleDiscovered.length - 1 ? '1px solid var(--line-soft)' : 'none',
-                      opacity: d.duplicate_of_device_id != null ? 0.6 : 1,
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <td className="px-4 py-[11px]">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium" style={{ color: 'var(--ink)' }}>{d.identity || '—'}</span>
-                        {d.duplicate_of_device_id != null && (
-                          <span
-                            className="mono text-[9.5px] uppercase tracking-wide px-[6px] py-[2px] rounded"
-                            style={{ background: 'var(--good-bg)', color: 'var(--good)' }}
-                            title={`Matches managed device: ${d.duplicate_of_device_name ?? ''}`}
-                          >
-                            managed{d.duplicate_of_device_name ? ` · ${d.duplicate_of_device_name}` : ''}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-[11px]">
-                      {d.address ? (
-                        <span className="mono num-tab text-[12px]" style={{ color: 'var(--ink-2)' }}>{d.address}</span>
-                      ) : (
-                        <span className="mono text-[11px] italic" style={{ color: 'var(--warn)' }}>
-                          Not detected — enter manually
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-[11px]">
-                      <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>{d.mac_address || '—'}</span>
-                    </td>
-                    <td className="px-4 py-[11px]">
-                      <span className="text-[12px]" style={{ color: 'var(--ink-3)' }}>{d.seen_by}</span>
-                    </td>
-                    <td className="px-4 py-[11px]">
-                      <span className="mono text-[11px]" style={{ color: 'var(--ink-4)' }}>
-                        {new Date(d.discovered_at).toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-[11px]">
-                      {canWrite && d.duplicate_of_device_id == null && (() => {
-                        // One action. The system has already seen the address
-                        // and identity, so deciding new-versus-established is
-                        // its job, not something to make the operator diagnose
-                        // before they can click anything. The dialog says what
-                        // it found and lets them overrule it.
-                        const cand = candidateByMac.get((d.mac_address || '').toUpperCase());
-                        return (
-                          <button
-                            onClick={() => setAdoptTarget(
-                              cand ?? {
-                                // Not a MikroTik neighbour we can profile, so
-                                // fall through to registering it as-is.
-                                mac: d.mac_address || '',
-                                address: d.address || '',
-                                identity: d.identity || null,
-                                seenBy: [],
-                                factoryDefault: false,
-                                reachableDirectly: true,
-                                recommendation: {
-                                  mode: 'add',
-                                  confidence: 'high',
-                                  reasons: ['not a MikroTik neighbour we can inspect before connecting'],
-                                },
+            <div className="card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                      {(
+                        [
+                          'Identity',
+                          'IP Address',
+                          'MAC Address',
+                          'Seen By',
+                          'Last Seen',
+                          '',
+                        ] as const
+                      ).map((label, i) => (
+                        <th
+                          key={i}
+                          className="table-header px-4 py-[10px] text-left"
+                          style={i === 5 ? { width: 140 } : undefined}
+                        >
+                          {label === 'Identity' && (
+                            <SortableHeader
+                              label="IDENTITY"
+                              active={discoveredSort.key === 'identity'}
+                              dir={discoveredSort.dir}
+                              onClick={() =>
+                                flipSort(discoveredSort, 'identity', setDiscoveredSort)
                               }
+                            />
+                          )}
+                          {label === 'IP Address' && (
+                            <SortableHeader
+                              label="IP ADDRESS"
+                              active={discoveredSort.key === 'address'}
+                              dir={discoveredSort.dir}
+                              onClick={() => flipSort(discoveredSort, 'address', setDiscoveredSort)}
+                            />
+                          )}
+                          {label === 'MAC Address' && (
+                            <SortableHeader
+                              label="MAC"
+                              active={discoveredSort.key === 'mac_address'}
+                              dir={discoveredSort.dir}
+                              onClick={() =>
+                                flipSort(discoveredSort, 'mac_address', setDiscoveredSort)
+                              }
+                            />
+                          )}
+                          {label === 'Seen By' && (
+                            <SortableHeader
+                              label="SEEN BY"
+                              active={discoveredSort.key === 'seen_by'}
+                              dir={discoveredSort.dir}
+                              onClick={() => flipSort(discoveredSort, 'seen_by', setDiscoveredSort)}
+                            />
+                          )}
+                          {label === 'Last Seen' && (
+                            <SortableHeader
+                              label="LAST SEEN"
+                              active={discoveredSort.key === 'discovered_at'}
+                              dir={discoveredSort.dir}
+                              onClick={() =>
+                                flipSort(discoveredSort, 'discovered_at', setDiscoveredSort)
+                              }
+                            />
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleDiscovered.map((d, i) => (
+                      <tr
+                        key={d.mac_address || d.address || i}
+                        style={{
+                          borderBottom:
+                            i < visibleDiscovered.length - 1
+                              ? '1px solid var(--line-soft)'
+                              : 'none',
+                          opacity: d.duplicate_of_device_id != null ? 0.6 : 1,
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = 'var(--surface-2)')
+                        }
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <td className="px-4 py-[11px]">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="text-[13px] font-medium"
+                              style={{ color: 'var(--ink)' }}
+                            >
+                              {d.identity || '—'}
+                            </span>
+                            {d.duplicate_of_device_id != null && (
+                              <span
+                                className="mono text-[9.5px] uppercase tracking-wide px-[6px] py-[2px] rounded"
+                                style={{ background: 'var(--good-bg)', color: 'var(--good)' }}
+                                title={`Matches managed device: ${d.duplicate_of_device_name ?? ''}`}
+                              >
+                                managed
+                                {d.duplicate_of_device_name
+                                  ? ` · ${d.duplicate_of_device_name}`
+                                  : ''}
+                              </span>
                             )}
-                            className="btn-primary text-[12px] py-[5px] px-3 flex items-center gap-1"
-                            title={cand?.recommendation.reasons.join(' · ')}
-                          >
-                            <ShieldQuestion className="w-3 h-3" />
-                            Adopt Device
-                          </button>
-                        );
-                      })()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          </div>
+                        </td>
+                        <td className="px-4 py-[11px]">
+                          {d.address ? (
+                            <span
+                              className="mono num-tab text-[12px]"
+                              style={{ color: 'var(--ink-2)' }}
+                            >
+                              {d.address}
+                            </span>
+                          ) : (
+                            <span
+                              className="mono text-[11px] italic"
+                              style={{ color: 'var(--warn)' }}
+                            >
+                              Not detected — enter manually
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-[11px]">
+                          <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
+                            {d.mac_address || '—'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-[11px]">
+                          <span className="text-[12px]" style={{ color: 'var(--ink-3)' }}>
+                            {d.seen_by}
+                          </span>
+                        </td>
+                        <td className="px-4 py-[11px]">
+                          <span className="mono text-[11px]" style={{ color: 'var(--ink-4)' }}>
+                            {new Date(d.discovered_at).toLocaleString()}
+                          </span>
+                        </td>
+                        <td className="px-4 py-[11px]">
+                          {canWrite &&
+                            d.duplicate_of_device_id == null &&
+                            (() => {
+                              // One action. The system has already seen the address
+                              // and identity, so deciding new-versus-established is
+                              // its job, not something to make the operator diagnose
+                              // before they can click anything. The dialog says what
+                              // it found and lets them overrule it.
+                              const cand = candidateByMac.get((d.mac_address || '').toUpperCase());
+                              return (
+                                <button
+                                  onClick={() =>
+                                    setAdoptTarget(
+                                      cand ?? {
+                                        // Not a MikroTik neighbour we can profile, so
+                                        // fall through to registering it as-is.
+                                        mac: d.mac_address || '',
+                                        address: d.address || '',
+                                        identity: d.identity || null,
+                                        seenBy: [],
+                                        factoryDefault: false,
+                                        reachableDirectly: true,
+                                        recommendation: {
+                                          mode: 'add',
+                                          confidence: 'high',
+                                          reasons: [
+                                            'not a MikroTik neighbour we can inspect before connecting',
+                                          ],
+                                        },
+                                      },
+                                    )
+                                  }
+                                  className="btn-primary text-[12px] py-[5px] px-3 flex items-center gap-1"
+                                  title={cand?.recommendation.reasons.join(' · ')}
+                                >
+                                  <ShieldQuestion className="w-3 h-3" />
+                                  Adopt Device
+                                </button>
+                              );
+                            })()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
           )}
         </div>
       )}
@@ -993,7 +1397,7 @@ export default function DevicesPage() {
         <AdoptDeviceModal
           candidate={adoptTarget}
           discovered={discovered?.find(
-            (x) => (x.mac_address || '').toUpperCase() === adoptTarget.mac.toUpperCase()
+            (x) => (x.mac_address || '').toUpperCase() === adoptTarget.mac.toUpperCase(),
           )}
           onClose={() => setAdoptTarget(null)}
           onSuccess={() => {
@@ -1043,7 +1447,9 @@ export default function DevicesPage() {
 
       {showTryAllModal && (
         <TryAllDiscoveredModal
-          discoveredDevices={visibleDiscovered.filter((d) => d.duplicate_of_device_id == null && !!d.address)}
+          discoveredDevices={visibleDiscovered.filter(
+            (d) => d.duplicate_of_device_id == null && !!d.address,
+          )}
           onClose={() => setShowTryAllModal(false)}
           onSuccess={() => {
             setShowTryAllModal(false);

@@ -9,7 +9,10 @@ import type { Request } from 'express';
  */
 export function decodedPath(req: Pick<Request, 'path'>): string | null {
   try {
-    return req.path.split('/').map((seg) => decodeURIComponent(seg)).join('/');
+    return req.path
+      .split('/')
+      .map((seg) => decodeURIComponent(seg))
+      .join('/');
   } catch {
     return null;
   }

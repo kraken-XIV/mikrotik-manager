@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
-  lookupModelLayout, resolveEvenOnTop, arrangeSfp, stackCages, cageTiles, MODEL_LAYOUTS,
+  lookupModelLayout,
+  resolveEvenOnTop,
+  arrangeSfp,
+  stackCages,
+  cageTiles,
+  MODEL_LAYOUTS,
 } from './faceplateModels';
 
 const nums = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
@@ -38,7 +43,14 @@ describe('resolveEvenOnTop', () => {
 describe('arrangeSfp', () => {
   it('unknown models keep plain wrapped rows', () => {
     const a = arrangeSfp(nums(10), undefined, 4);
-    expect(a).toEqual({ kind: 'rows', rows: [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10]] });
+    expect(a).toEqual({
+      kind: 'rows',
+      rows: [
+        [1, 2, 3, 4],
+        [5, 6, 7, 8],
+        [9, 10],
+      ],
+    });
   });
   it('staggers 4 ports as 2 4 over 1 3', () => {
     const a = arrangeSfp(nums(4), lookupModelLayout('CRS354-48P-4S+2Q+'), 22);
@@ -46,13 +58,20 @@ describe('arrangeSfp', () => {
   });
   it('staggers 8 ports in two banks of four', () => {
     const a = arrangeSfp(nums(8), lookupModelLayout('CRS510-8XS-2XQ'), 22);
-    expect(a).toEqual({ kind: 'banks', banks: [
-      { top: [2, 4], bottom: [1, 3] }, { top: [6, 8], bottom: [5, 7] },
-    ] });
+    expect(a).toEqual({
+      kind: 'banks',
+      banks: [
+        { top: [2, 4], bottom: [1, 3] },
+        { top: [6, 8], bottom: [5, 7] },
+      ],
+    });
   });
   it('CCR2216 stacks its 12 SFP28 in one block, even over odd', () => {
     const a = arrangeSfp(nums(12), lookupModelLayout('CCR2216-1G-12XS-2XQ'), 22);
-    expect(a).toEqual({ kind: 'banks', banks: [{ top: [2, 4, 6, 8, 10, 12], bottom: [1, 3, 5, 7, 9, 11] }] });
+    expect(a).toEqual({
+      kind: 'banks',
+      banks: [{ top: [2, 4, 6, 8, 10, 12], bottom: [1, 3, 5, 7, 9, 11] }],
+    });
     expect(lookupModelLayout('CRS518-16XS-2XQ')?.qsfpStacked).toBeUndefined();
   });
   it('CRS317 keeps 16 ports in one row even at a narrow column count', () => {
@@ -93,7 +112,10 @@ describe('QSFP cages', () => {
     expect(cageTiles({ lanes })).toHaveLength(4);
   });
   it('an unknown rate keeps the lanes', () => {
-    const lanes = [{ name: 'a', running: true }, { name: 'b', running: false }];
+    const lanes = [
+      { name: 'a', running: true },
+      { name: 'b', running: false },
+    ];
     expect(cageTiles({ lanes })).toHaveLength(2);
   });
 });

@@ -139,7 +139,7 @@ function newClient(device: GuardDevice, connectTimeoutMs = 15_000): RouterOSClie
 async function readSettings(): Promise<{ enabled: boolean; mode: GuardMode; timeoutSec: number }> {
   const rows = await query<{ key: string; value: unknown }>(
     `SELECT key, value FROM app_settings
-     WHERE key IN ('change_guard_enabled', 'change_guard_mode', 'change_guard_timeout_sec')`
+     WHERE key IN ('change_guard_enabled', 'change_guard_mode', 'change_guard_timeout_sec')`,
   ).catch(() => []);
   const map: Record<string, unknown> = {};
   for (const r of rows) map[r.key] = r.value;
@@ -159,11 +159,13 @@ async function readSettings(): Promise<{ enabled: boolean; mode: GuardMode; time
  *   - a scheduler (logs a line, fires in a day).
  */
 export async function probeCapability(
-  device: GuardDevice, modeOverride?: GuardMode
+  device: GuardDevice,
+  modeOverride?: GuardMode,
 ): Promise<{ ok: boolean; reason?: string; mode: GuardMode }> {
   const settings = await readSettings();
   const mode = modeOverride ?? settings.mode;
-  if (!settings.enabled) return { ok: false, mode, reason: 'Change Guard is turned off in Settings' };
+  if (!settings.enabled)
+    return { ok: false, mode, reason: 'Change Guard is turned off in Settings' };
 
   const client = newClient(device);
   const probeName = `mtm-probe-${token()}`;
@@ -177,12 +179,21 @@ export async function probeCapability(
         savedFile = true;
       } else {
         // Script mode keeps its restore steps in /system script.
-        await client.execute('/system/script/add', { name: probeName, source: ':log info "mtm-guard-probe"' });
-        const sc = (await client.execute('/system/script/print')).find((x) => x['name'] === probeName);
+        await client.execute('/system/script/add', {
+          name: probeName,
+          source: ':log info "mtm-guard-probe"',
+        });
+        const sc = (await client.execute('/system/script/print')).find(
+          (x) => x['name'] === probeName,
+        );
         if (sc?.['.id']) await client.execute('/system/script/remove', { '.id': sc['.id'] });
       }
     } catch (err) {
-      return { ok: false, mode, reason: `the device refused to save a restore point (${(err as Error).message})` };
+      return {
+        ok: false,
+        mode,
+        reason: `the device refused to save a restore point (${(err as Error).message})`,
+      };
     }
 
     await client.execute('/system/scheduler/add', {
@@ -190,8 +201,11 @@ export async function probeCapability(
       interval: '1d',
       'on-event': ':log info "mtm-guard-probe"',
     });
-    const found = (await client.execute('/system/scheduler/print')).find((s) => s['name'] === probeName);
-    if (!found?.['.id']) return { ok: false, mode, reason: 'could not create a scheduler on the device' };
+    const found = (await client.execute('/system/scheduler/print')).find(
+      (s) => s['name'] === probeName,
+    );
+    if (!found?.['.id'])
+      return { ok: false, mode, reason: 'could not create a scheduler on the device' };
     await client.execute('/system/scheduler/remove', { '.id': found['.id'] });
     return { ok: true, mode };
   } catch (err) {
@@ -275,8 +289,13 @@ export async function probeUndoCapability(device: GuardDevice): Promise<UndoProb
   const probeName = `mtm-undo-probe-${token()}`;
   const attempts: { command: string; error: string }[] = [];
   const fail = (over: Partial<UndoProbeResult>): UndoProbeResult => ({
-    ok: false, historyReadable: false, actionUndoable: false, historyDepth: 0,
-    rosVersion: null, attempts, ...over,
+    ok: false,
+    historyReadable: false,
+    actionUndoable: false,
+    historyDepth: 0,
+    rosVersion: null,
+    attempts,
+    ...over,
   });
 
   let rosVersion: string | null = null;
@@ -285,13 +304,17 @@ export async function probeUndoCapability(device: GuardDevice): Promise<UndoProb
   try {
     await client.connect();
 
-    rosVersion = (await client.execute('/system/resource/print').catch(() => []))[0]?.['version'] ?? null;
+    rosVersion =
+      (await client.execute('/system/resource/print').catch(() => []))[0]?.['version'] ?? null;
 
     let before: Record<string, string>[];
     try {
       before = await client.execute('/system/history/print');
     } catch (err) {
-      return fail({ rosVersion, reason: `/system/history/print is not available: ${(err as Error).message}` });
+      return fail({
+        rosVersion,
+        reason: `/system/history/print is not available: ${(err as Error).message}`,
+      });
     }
     const beforeIds = new Set(before.map((h) => h['.id']).filter(Boolean));
 
@@ -311,7 +334,10 @@ export async function probeUndoCapability(device: GuardDevice): Promise<UndoProb
     };
 
     if (!entry) {
-      return fail({ ...base, reason: 'the scheduler was created but no matching history entry appeared' });
+      return fail({
+        ...base,
+        reason: 'the scheduler was created but no matching history entry appeared',
+      });
     }
     const actionUndoable = entry['undoable'] !== 'false';
     if (!actionUndoable) {
@@ -325,7 +351,10 @@ export async function probeUndoCapability(device: GuardDevice): Promise<UndoProb
       if (!targeted) {
         const newest = (await client.execute('/system/history/print').catch(() => []))[0];
         if (newest?.['.id'] !== entry['.id']) {
-          attempts.push({ command: label, error: 'skipped — our action is no longer the newest history entry' });
+          attempts.push({
+            command: label,
+            error: 'skipped — our action is no longer the newest history entry',
+          });
           continue;
         }
       }
@@ -338,8 +367,9 @@ export async function probeUndoCapability(device: GuardDevice): Promise<UndoProb
 
       // Only the observable result counts: a command that returns without error but
       // leaves the scheduler in place is not an undo we can build a revert mode on.
-      const stillThere = (await client.execute('/system/scheduler/print'))
-        .some((s) => s['name'] === probeName);
+      const stillThere = (await client.execute('/system/scheduler/print')).some(
+        (s) => s['name'] === probeName,
+      );
       if (stillThere) {
         attempts.push({ command: label, error: 'accepted, but the change was still applied' });
         continue;
@@ -359,10 +389,13 @@ export async function probeUndoCapability(device: GuardDevice): Promise<UndoProb
   } finally {
     // Never leave the probe behind, whatever went wrong above.
     if (created) {
-      const leftover = (await client.execute('/system/scheduler/print').catch(() => []))
-        .find((s) => s['name'] === probeName);
+      const leftover = (await client.execute('/system/scheduler/print').catch(() => [])).find(
+        (s) => s['name'] === probeName,
+      );
       if (leftover?.['.id']) {
-        await client.execute('/system/scheduler/remove', { '.id': leftover['.id'] }).catch(() => {});
+        await client
+          .execute('/system/scheduler/remove', { '.id': leftover['.id'] })
+          .catch(() => {});
       }
     }
     client.disconnect();
@@ -406,7 +439,10 @@ async function releaseLock(deviceId: number): Promise<void> {
   // Hand the lock back to the request that holds it rather than dropping it;
   // the request releases it when it finishes.
   const token = heldLockToken(deviceId);
-  if (token) { await restoreHeldLock(deviceId, token); return; }
+  if (token) {
+    await restoreHeldLock(deviceId, token);
+    return;
+  }
   await redis.del(`changeguard:lock:${deviceId}`).catch(() => {});
 }
 
@@ -417,12 +453,19 @@ async function releaseLock(deviceId: number): Promise<void> {
  * over it.
  */
 async function holdLock(deviceId: number, seconds: number): Promise<void> {
-  await redis.set(`changeguard:lock:${deviceId}`, '1', 'EX', Math.max(1, Math.ceil(seconds))).catch(() => {});
+  await redis
+    .set(`changeguard:lock:${deviceId}`, '1', 'EX', Math.max(1, Math.ceil(seconds)))
+    .catch(() => {});
 }
 
 async function recordGuard(
-  device: GuardDevice, meta: ChangeMeta, mode: GuardMode, restorePoint: string,
-  schedulerName: string, timeoutSec: number, note?: string
+  device: GuardDevice,
+  meta: ChangeMeta,
+  mode: GuardMode,
+  restorePoint: string,
+  schedulerName: string,
+  timeoutSec: number,
+  note?: string,
 ): Promise<number | undefined> {
   const row = await queryOne<{ id: number }>(
     `INSERT INTO device_change_guards
@@ -430,13 +473,27 @@ async function recordGuard(
         change_summary, user_id, expires_at, note)
      VALUES ($1,$2,$3,$4,$5,'pending',$6,$7,$8, NOW() + ($9 || ' seconds')::interval, $10)
      RETURNING id`,
-    [device.id, schedulerName, mode, restorePoint, schedulerName, meta.kind,
-     meta.summary, meta.userId ?? null, String(timeoutSec), note ?? null]
+    [
+      device.id,
+      schedulerName,
+      mode,
+      restorePoint,
+      schedulerName,
+      meta.kind,
+      meta.summary,
+      meta.userId ?? null,
+      String(timeoutSec),
+      note ?? null,
+    ],
   ).catch(() => null);
   return row?.id;
 }
 
-async function setGuardStatus(id: number | undefined, status: string, note?: string): Promise<void> {
+async function setGuardStatus(
+  id: number | undefined,
+  status: string,
+  note?: string,
+): Promise<void> {
   if (!id) return;
   // Casts are required: an untyped NULL in COALESCE makes Postgres fail to infer
   // the parameter type. Failures are logged, never swallowed — a guard row stuck
@@ -450,9 +507,12 @@ async function setGuardStatus(id: number | undefined, status: string, note?: str
          committed_at = CASE WHEN $2::varchar = 'committed' THEN NOW() ELSE committed_at END,
          resolved_at = CASE WHEN $2::varchar <> 'pending' THEN NOW() ELSE resolved_at END
      WHERE id = $1`,
-    [id, status, note ?? null]
+    [id, status, note ?? null],
   ).catch((e) => {
-    console.error(`[ChangeGuard] Failed to record guard ${id} as '${status}':`, (e as Error).message);
+    console.error(
+      `[ChangeGuard] Failed to record guard ${id} as '${status}':`,
+      (e as Error).message,
+    );
   });
 }
 
@@ -466,21 +526,25 @@ async function setGuardStatus(id: number | undefined, status: string, note?: str
 export async function withSafeApply<T>(
   device: GuardDevice,
   meta: ChangeMeta,
-  applyFn: () => Promise<T>
+  applyFn: () => Promise<T>,
 ): Promise<GuardOutcome<T>> {
   const settings = await readSettings();
   let mode: GuardMode = meta.mode ?? settings.mode;
   let modeNote: string | undefined;
   const timings: Record<string, number> = {};
   let mark = Date.now();
-  const phase = (name: string) => { const now = Date.now(); timings[name] = now - mark; mark = now; };
+  const phase = (name: string) => {
+    const now = Date.now();
+    timings[name] = now - mark;
+    mark = now;
+  };
   const timeoutSec = Math.max(meta.minTimeoutSec ?? 0, meta.timeoutSec ?? settings.timeoutSec);
 
   if (!settings.enabled) {
     if (meta.requireProtection && !meta.requireProtectionOnlyWhenEnabled) {
       throw new GuardRequiredError(
         'Change Guard is turned off in Settings, so this change would have no auto-revert. ' +
-        'It could cut off management, so it was not applied. Turn Change Guard on to apply it.'
+          'It could cut off management, so it was not applied. Turn Change Guard on to apply it.',
       );
     }
     const unprotectedReason = 'Change Guard is disabled in settings';
@@ -490,7 +554,9 @@ export async function withSafeApply<T>(
     // A restore that runs without a revert still must not overlap another
     // import or a revert that is still armed: serialisation is not optional.
     if (!(await acquireLock(device.id))) {
-      throw new Error('Another change is already in progress on this device. Please wait for it to finish.');
+      throw new Error(
+        'Another change is already in progress on this device. Please wait for it to finish.',
+      );
     }
     let hold = false;
     try {
@@ -506,7 +572,9 @@ export async function withSafeApply<T>(
     }
   }
   if (!(await acquireLock(device.id))) {
-    throw new Error('Another protected change is already in progress on this device. Please wait for it to finish.');
+    throw new Error(
+      'Another protected change is already in progress on this device. Please wait for it to finish.',
+    );
   }
 
   const id = token();
@@ -530,13 +598,18 @@ export async function withSafeApply<T>(
       let plan: RestorePlan | undefined;
       if (mode === 'script') {
         const scope = restoreScopeFor(meta.kind);
-        const version = scope ? (await client.execute('/system/resource/print'))[0]?.['version'] ?? '' : '';
+        const version = scope
+          ? ((await client.execute('/system/resource/print'))[0]?.['version'] ?? '')
+          : '';
         if (!scope) {
           modeNote = `Script mode has no targeted restore for this kind of change (${meta.kind}), so a binary restore point was used; a revert would reboot the device.`;
         } else if (!/^7\./.test(version)) {
           modeNote = `Script mode needs RouterOS 7 (this device runs ${version || 'an unknown version'}), so a binary restore point was used; a revert would reboot the device.`;
         } else {
-          plan = buildRestorePlan(await captureScope((path) => client.execute(path), scope), schedulerName);
+          plan = buildRestorePlan(
+            await captureScope((path) => client.execute(path), scope),
+            schedulerName,
+          );
         }
         if (!plan) mode = 'binary';
       }
@@ -549,12 +622,13 @@ export async function withSafeApply<T>(
         }
       }
 
-      const onEvent = mode === 'binary'
-        // Restores exactly (recovers deleted interfaces) and reboots. The restored
-        // config predates this scheduler, so it disappears with the restore.
-        ? `/system backup load name=${restorePoint} password=""`
-        // Removes the scheduler first, runs the restore steps, removes them.
-        : plan!.onEvent;
+      const onEvent =
+        mode === 'binary'
+          ? // Restores exactly (recovers deleted interfaces) and reboots. The restored
+            // config predates this scheduler, so it disappears with the restore.
+            `/system backup load name=${restorePoint} password=""`
+          : // Removes the scheduler first, runs the restore steps, removes them.
+            plan!.onEvent;
 
       await client.execute('/system/scheduler/add', {
         name: schedulerName,
@@ -564,7 +638,15 @@ export async function withSafeApply<T>(
       armed = true;
       armedAt = Date.now();
       phase('arm');
-      guardId = await recordGuard(device, meta, mode, restorePoint, schedulerName, timeoutSec, modeNote);
+      guardId = await recordGuard(
+        device,
+        meta,
+        mode,
+        restorePoint,
+        schedulerName,
+        timeoutSec,
+        modeNote,
+      );
     } catch (err) {
       // Couldn't arm. Clean up anything half-created first, either way.
       phase('arm');
@@ -573,15 +655,19 @@ export async function withSafeApply<T>(
       if (meta.requireProtection) {
         throw new GuardRequiredError(
           `The device could not arm its auto-revert (${(err as Error).message}), and this change could ` +
-          'cut off management, so it was not applied. Nothing on the device was changed.'
+            'cut off management, so it was not applied. Nothing on the device was changed.',
         );
       }
       const result = await applyFn();
       phase('apply');
       return {
-        result, confirmed: false, autoReverting: false,
+        result,
+        confirmed: false,
+        autoReverting: false,
         unprotectedReason: `Could not arm auto-revert on this device (${(err as Error).message})`,
-        mode, modeNote, timings,
+        mode,
+        modeNote,
+        timings,
       };
     }
 
@@ -623,7 +709,15 @@ export async function withSafeApply<T>(
       // `result` is undefined when the change took the connection with it. The
       // caller only reports the outcome in that case, so the guard fields carry the
       // meaning rather than the result.
-      return { result: result as T, confirmed: false, autoReverting: true, guardId, mode, modeNote, timings };
+      return {
+        result: result as T,
+        confirmed: false,
+        autoReverting: true,
+        guardId,
+        mode,
+        modeNote,
+        timings,
+      };
     }
 
     // The revert is about to fire (or has): a disarm now races it, and an absent
@@ -637,39 +731,59 @@ export async function withSafeApply<T>(
       const at = fireAt.toLocaleTimeString();
       if (partial) {
         const msg = (applyError as Error).message;
-        await setGuardStatus(guardId, 'reverted', `Change only partly applied (${msg}); left to self-restore`);
+        await setGuardStatus(
+          guardId,
+          'reverted',
+          `Change only partly applied (${msg}); left to self-restore`,
+        );
         throw new PartialApplyRevertError(
           `${msg} The change was only partly applied, so the device will restore its previous configuration ` +
-          `at about ${at}${mode === 'binary' ? ' and reboot' : ''}.`,
-          applyError, fireAt,
+            `at about ${at}${mode === 'binary' ? ' and reboot' : ''}.`,
+          applyError,
+          fireAt,
         );
       }
-      await setGuardStatus(guardId, 'uncertain',
-        'Applied, but the apply and verify took until the revert timer was about to fire, so it was not disarmed');
+      await setGuardStatus(
+        guardId,
+        'uncertain',
+        'Applied, but the apply and verify took until the revert timer was about to fire, so it was not disarmed',
+      );
       if (applyError) {
         throw new Error(
           `${(applyError as Error).message}. The change ran into the revert timer, so the device may restore ` +
-          `its previous configuration at about ${at}.`
+            `its previous configuration at about ${at}.`,
         );
       }
       return {
-        result: result as T, confirmed: false, autoReverting: true, guardId,
-        revertMayFireAt: fireAt.toISOString(), mode, modeNote, timings,
+        result: result as T,
+        confirmed: false,
+        autoReverting: true,
+        guardId,
+        revertMayFireAt: fireAt.toISOString(),
+        mode,
+        modeNote,
+        timings,
       };
     }
 
     if (applyError) {
       // Still reachable, so the change genuinely failed and nothing needs undoing.
       // Disarm, or the device would reboot for no reason.
-      const d = await disarm(device, restorePoint, schedulerName, mode, { requirePresent: true, fireAtMs: fireAt.getTime() });
+      const d = await disarm(device, restorePoint, schedulerName, mode, {
+        requirePresent: true,
+        fireAtMs: fireAt.getTime(),
+      });
       armed = false;
       if (!d.disarmed) {
         holdFor = secondsUntilFire() + LOCK_AFTER_FIRE_SEC;
-        await setGuardStatus(guardId, 'uncertain',
-          `Change failed (${(applyError as Error).message}) and the revert could not be confirmed disarmed: ${d.reason}`);
+        await setGuardStatus(
+          guardId,
+          'uncertain',
+          `Change failed (${(applyError as Error).message}) and the revert could not be confirmed disarmed: ${d.reason}`,
+        );
         throw new Error(
           `${(applyError as Error).message}. The auto-revert could not be confirmed as removed, so the device ` +
-          `may restore its previous configuration at about ${fireAt.toLocaleTimeString()}.`
+            `may restore its previous configuration at about ${fireAt.toLocaleTimeString()}.`,
         );
       }
       await setGuardStatus(guardId, 'failed', (applyError as Error).message);
@@ -680,7 +794,10 @@ export async function withSafeApply<T>(
     // Only a disarm we have proven counts. A failed read used to look like "no
     // scheduler left", so a good change was recorded as committed and then
     // reverted, with a reboot, when the scheduler fired anyway.
-    const d = await disarm(device, restorePoint, schedulerName, mode, { requirePresent: true, fireAtMs: fireAt.getTime() });
+    const d = await disarm(device, restorePoint, schedulerName, mode, {
+      requirePresent: true,
+      fireAtMs: fireAt.getTime(),
+    });
     phase('disarm');
     armed = false;
     if (!d.disarmed && d.alreadyGone) {
@@ -688,24 +805,53 @@ export async function withSafeApply<T>(
       // (or someone removed it by hand). Its restore steps may be mid-way, so
       // they are left where they are and the change is not reported as kept.
       holdFor = LOCK_AFTER_FIRE_SEC;
-      await setGuardStatus(guardId, 'uncertain', `The revert may already have fired (${d.reason}); the device may have restored its previous configuration`);
+      await setGuardStatus(
+        guardId,
+        'uncertain',
+        `The revert may already have fired (${d.reason}); the device may have restored its previous configuration`,
+      );
       return {
-        result: result as T, confirmed: false, autoReverting: true, revertMayHaveFired: true, guardId,
-        revertMayFireAt: fireAt.toISOString(), mode, modeNote, timings,
+        result: result as T,
+        confirmed: false,
+        autoReverting: true,
+        revertMayHaveFired: true,
+        guardId,
+        revertMayFireAt: fireAt.toISOString(),
+        mode,
+        modeNote,
+        timings,
       };
     }
     if (!d.disarmed) {
       holdFor = secondsUntilFire() + LOCK_AFTER_FIRE_SEC;
-      await setGuardStatus(guardId, 'uncertain', `Applied and reachable, but the revert could not be confirmed disarmed: ${d.reason}`);
+      await setGuardStatus(
+        guardId,
+        'uncertain',
+        `Applied and reachable, but the revert could not be confirmed disarmed: ${d.reason}`,
+      );
       return {
-        result: result as T, confirmed: true, autoReverting: false, guardId,
-        revertMayFireAt: fireAt.toISOString(), mode, modeNote, timings,
+        result: result as T,
+        confirmed: true,
+        autoReverting: false,
+        guardId,
+        revertMayFireAt: fireAt.toISOString(),
+        mode,
+        modeNote,
+        timings,
       };
     }
     await setGuardStatus(guardId, 'committed');
     // Reaching here means applyFn returned normally, so `result` is assigned; the
     // optional type only exists for the severed-connection path above.
-    return { result: result as T, confirmed: true, autoReverting: false, guardId, mode, modeNote, timings };
+    return {
+      result: result as T,
+      confirmed: true,
+      autoReverting: false,
+      guardId,
+      mode,
+      modeNote,
+      timings,
+    };
   } finally {
     if (armed) await setGuardStatus(guardId, 'pending');
     client.disconnect();
@@ -729,8 +875,11 @@ const DISARM_CUTOFF_MS = 3_000;
  * does fire still has something to restore.
  */
 async function disarm(
-  device: GuardDevice, restorePoint: string, schedulerName: string, mode: GuardMode,
-  opts: { requirePresent?: boolean; fireAtMs?: number } = {}
+  device: GuardDevice,
+  restorePoint: string,
+  schedulerName: string,
+  mode: GuardMode,
+  opts: { requirePresent?: boolean; fireAtMs?: number } = {},
 ): Promise<{ disarmed: boolean; reason?: string; alreadyGone?: boolean }> {
   let reason = 'unknown';
   /**
@@ -743,13 +892,18 @@ async function disarm(
   const cutoff = opts.fireAtMs !== undefined ? opts.fireAtMs - DISARM_CUTOFF_MS : Infinity;
   for (let attempt = 0; attempt < DISARM_ATTEMPTS; attempt++) {
     if (Date.now() >= cutoff && !disabledConfirmed) {
-      return { disarmed: false, reason: 'the revert timer was about to fire, so the disarm was abandoned' };
+      return {
+        disarmed: false,
+        reason: 'the revert timer was about to fire, so the disarm was abandoned',
+      };
     }
     const client = newClient(device, VERIFY_CONNECT_TIMEOUT_MS);
     try {
       await client.connect();
-      const find = async () => (await client.execute('/system/scheduler/print'))
-        .filter((s) => s['name'] === schedulerName && s['.id']);
+      const find = async () =>
+        (await client.execute('/system/scheduler/print')).filter(
+          (s) => s['name'] === schedulerName && s['.id'],
+        );
       let present = await find();
       if (opts.requirePresent && !disabledConfirmed) {
         // After a commit attempt the scheduler must still be there. The revert's
@@ -758,7 +912,8 @@ async function disarm(
         // or someone removed it by hand. Its restore steps may be mid-way.
         if (present.length === 0) {
           return {
-            disarmed: false, alreadyGone: true,
+            disarmed: false,
+            alreadyGone: true,
             reason: 'the revert scheduler was gone before it could be disabled',
           };
         }
@@ -773,7 +928,8 @@ async function disarm(
           present = await find();
           if (present.length === 0) {
             return {
-              disarmed: false, alreadyGone: true,
+              disarmed: false,
+              alreadyGone: true,
               reason: 'the revert scheduler disappeared while it was being disabled',
             };
           }
@@ -786,7 +942,11 @@ async function disarm(
         // the on-event began (binary mode loads the backup without removing the
         // scheduler first). Keep the restore point.
         if (Date.now() >= cutoff) {
-          return { disarmed: false, reason: 'the scheduler was disabled too close to its fire time to prove it had not started' };
+          return {
+            disarmed: false,
+            reason:
+              'the scheduler was disabled too close to its fire time to prove it had not started',
+          };
         }
         disabledConfirmed = true;
       }
@@ -801,7 +961,9 @@ async function disarm(
 
       if (mode === 'binary') {
         const wanted = `${restorePoint}.backup`;
-        const files = await client.execute('/file/print').catch(() => [] as Record<string, string>[]);
+        const files = await client
+          .execute('/file/print')
+          .catch(() => [] as Record<string, string>[]);
         for (const f of files) {
           if ((f['name'] === wanted || f['name'] === restorePoint) && f['.id']) {
             await client.execute('/file/remove', { '.id': f['.id'] }).catch(() => {});
@@ -809,7 +971,9 @@ async function disarm(
         }
       } else {
         // The restore steps (`<scheduler>-1`, `-2`, …).
-        const scripts = await client.execute('/system/script/print').catch(() => [] as Record<string, string>[]);
+        const scripts = await client
+          .execute('/system/script/print')
+          .catch(() => [] as Record<string, string>[]);
         for (const sc of scripts) {
           if ((sc['name'] ?? '').startsWith(`${schedulerName}-`) && sc['.id']) {
             await client.execute('/system/script/remove', { '.id': sc['.id'] }).catch(() => {});
@@ -837,7 +1001,7 @@ export async function reconcileStaleGuards(): Promise<number> {
      SET status = 'reverted', committed_at = NOW(),
          note = COALESCE(note, 'Manager restarted before commit; device self-restored')
      WHERE status = 'pending' AND expires_at < NOW()
-     RETURNING id`
+     RETURNING id`,
   ).catch(() => []);
   if (rows.length > 0) {
     console.log(`[ChangeGuard] Reconciled ${rows.length} stale guard(s) left pending by a restart`);

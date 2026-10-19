@@ -9,8 +9,8 @@ export type RfBand = '2.4' | '5' | '6';
 // Canonical channel scales shown on the channel map (mirrors what UniFi displays).
 export const CHANNELS_24: number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 export const CHANNELS_5: number[] = [
-  36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
-  132, 136, 140, 144, 149, 153, 157, 161, 165,
+  36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149,
+  153, 157, 161, 165,
 ];
 // 6 GHz: channels 1..233 in steps of 4
 export const CHANNELS_6: number[] = Array.from({ length: 59 }, (_, i) => 1 + i * 4);
@@ -50,13 +50,18 @@ export function widthMhz(width: string | undefined): number {
   const m = width.match(/(\d+)/);
   const n = m ? parseInt(m[1], 10) : 20;
   // RouterOS strings like "20/40/80mhz" report the smallest first; take the max present.
-  const all = (width.match(/\d+/g) || []).map(Number).filter(v => v >= 20 && v <= 160);
-  return all.length ? Math.max(...all) : (n >= 20 ? n : 20);
+  const all = (width.match(/\d+/g) || []).map(Number).filter((v) => v >= 20 && v <= 160);
+  return all.length ? Math.max(...all) : n >= 20 ? n : 20;
 }
 
 // ─── RSSI density helpers ──────────────────────────────────────────────────
 
-export interface RssiBand { label: string; min: number; max: number; color: string }
+export interface RssiBand {
+  label: string;
+  min: number;
+  max: number;
+  color: string;
+}
 
 /**
  * Signal-quality zones across the −90…−30 dBm scale (weak → excellent).
@@ -78,10 +83,10 @@ export interface RssiBand { label: string; min: number; max: number; color: stri
  * very different jobs.
  */
 export const RSSI_ZONES: RssiBand[] = [
-  { label: 'Poor',      min: -100, max: -70, color: '#ef4444' },
-  { label: 'Fair',      min: -70,  max: -55, color: '#f59e0b' },
-  { label: 'Good',      min: -55,  max: -45, color: '#84cc16' },
-  { label: 'Excellent', min: -45,  max: -20, color: '#22c55e' },
+  { label: 'Poor', min: -100, max: -70, color: '#ef4444' },
+  { label: 'Fair', min: -70, max: -55, color: '#f59e0b' },
+  { label: 'Good', min: -55, max: -45, color: '#84cc16' },
+  { label: 'Excellent', min: -45, max: -20, color: '#22c55e' },
 ];
 
 export function rssiColor(dbm: number): string {
@@ -91,15 +96,19 @@ export function rssiColor(dbm: number): string {
 
 // ─── TX-retry histogram buckets (mirrors UniFi's 0%..35%+ scale) ─────────────
 
-export interface RetryBucket { label: string; min: number; max: number }
+export interface RetryBucket {
+  label: string;
+  min: number;
+  max: number;
+}
 export const RETRY_BUCKETS: RetryBucket[] = [
-  { label: '0%',   min: 0,  max: 2.5 },
-  { label: '5%',   min: 2.5, max: 7.5 },
-  { label: '10%',  min: 7.5, max: 12.5 },
-  { label: '15%',  min: 12.5, max: 17.5 },
-  { label: '20%',  min: 17.5, max: 22.5 },
-  { label: '25%',  min: 22.5, max: 30 },
-  { label: '35%+', min: 30,  max: 101 },
+  { label: '0%', min: 0, max: 2.5 },
+  { label: '5%', min: 2.5, max: 7.5 },
+  { label: '10%', min: 7.5, max: 12.5 },
+  { label: '15%', min: 12.5, max: 17.5 },
+  { label: '20%', min: 17.5, max: 22.5 },
+  { label: '25%', min: 22.5, max: 30 },
+  { label: '35%+', min: 30, max: 101 },
 ];
 
 export function retryBucketIndex(pct: number): number {

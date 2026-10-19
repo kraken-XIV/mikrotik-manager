@@ -6,13 +6,24 @@ import { cronMatches } from '../../../utils/cron';
 
 describe('platform backup schedule', () => {
   it('turns the schedule into a cron expression', () => {
-    expect(scheduleCron({ frequency: 'daily', time_of_day: '02:30', weekday: 0, monthday: 1 })).toBe('30 2 * * *');
-    expect(scheduleCron({ frequency: 'weekly', time_of_day: '23:05', weekday: 6, monthday: 1 })).toBe('5 23 * * 6');
-    expect(scheduleCron({ frequency: 'monthly', time_of_day: '00:00', weekday: 0, monthday: 15 })).toBe('0 0 15 * *');
+    expect(
+      scheduleCron({ frequency: 'daily', time_of_day: '02:30', weekday: 0, monthday: 1 }),
+    ).toBe('30 2 * * *');
+    expect(
+      scheduleCron({ frequency: 'weekly', time_of_day: '23:05', weekday: 6, monthday: 1 }),
+    ).toBe('5 23 * * 6');
+    expect(
+      scheduleCron({ frequency: 'monthly', time_of_day: '00:00', weekday: 0, monthday: 15 }),
+    ).toBe('0 0 15 * *');
   });
 
   it('fires at the set time in the app’s time zone', () => {
-    const cron = scheduleCron({ frequency: 'daily', time_of_day: '02:30', weekday: 0, monthday: 1 });
+    const cron = scheduleCron({
+      frequency: 'daily',
+      time_of_day: '02:30',
+      weekday: 0,
+      monthday: 1,
+    });
     // 02:30 in New York (EDT, UTC-4) is 06:30 UTC.
     expect(cronMatches(cron, new Date('2026-10-16T06:30:10Z'), 'America/New_York')).toBe(true);
     expect(cronMatches(cron, new Date('2026-10-16T02:30:10Z'), 'America/New_York')).toBe(false);

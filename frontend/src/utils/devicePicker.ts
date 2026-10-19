@@ -18,7 +18,9 @@ export interface PickerDevice {
 
 export function pickerHaystack(d: PickerDevice): string {
   return [d.name, d.ip_address, d.site_name, d.model, d.ros_identity, d.device_type]
-    .filter(Boolean).join(' ').toLowerCase();
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
 }
 
 /**

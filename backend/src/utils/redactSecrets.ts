@@ -18,14 +18,24 @@ export const SECRET_MASK = '••••••••';
 /** Attribute names that hold a secret, in RouterOS form and in our own. */
 const SECRET_KEYS = new Set([
   // Wi-Fi (wifi package, legacy wireless profiles, synthesised profiles)
-  'passphrase', 'security.passphrase',
-  'wpa-pre-shared-key', 'wpa2-pre-shared-key',
-  'static-key-0', 'static-key-1', 'static-key-2', 'static-key-3',
-  'static-sta-private-key', 'management-protection-key',
+  'passphrase',
+  'security.passphrase',
+  'wpa-pre-shared-key',
+  'wpa2-pre-shared-key',
+  'static-key-0',
+  'static-key-1',
+  'static-key-2',
+  'static-key-3',
+  'static-sta-private-key',
+  'management-protection-key',
   // WireGuard
-  'private-key', 'preshared-key',
+  'private-key',
+  'preshared-key',
   // Hotspot users, RADIUS, SNMPv3
-  'password', 'secret', 'authentication-password', 'encryption-password',
+  'password',
+  'secret',
+  'authentication-password',
+  'encryption-password',
   // SNMP v1/v2c: the community name is the credential
   'community_name',
 ]);
@@ -56,9 +66,10 @@ function mask(value: unknown, depth: number): unknown {
   if (value instanceof Date || Buffer.isBuffer(value)) return value;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-    out[k] = SECRET_KEYS.has(k) && typeof v === 'string' && !NOT_SECRET.has(v)
-      ? SECRET_MASK
-      : mask(v, depth + 1);
+    out[k] =
+      SECRET_KEYS.has(k) && typeof v === 'string' && !NOT_SECRET.has(v)
+        ? SECRET_MASK
+        : mask(v, depth + 1);
   }
   return out;
 }

@@ -31,8 +31,13 @@ router.get('/candidates', async (req: Request, res: Response) => {
   let candidates = await service.listCandidates();
   // A site-scoped account sees only what its own devices can see (P1-7).
   if (req.user?.siteRoles) {
-    const own = new Set((await query<{ id: number }>(
-      `SELECT id FROM devices WHERE site_id = ANY($1::int[])`, [Object.keys(req.user.siteRoles).map(Number)])).map((r) => r.id));
+    const own = new Set(
+      (
+        await query<{ id: number }>(`SELECT id FROM devices WHERE site_id = ANY($1::int[])`, [
+          Object.keys(req.user.siteRoles).map(Number),
+        ])
+      ).map((r) => r.id),
+    );
     candidates = candidates
       .map((c) => ({ ...c, seenBy: c.seenBy.filter((id) => own.has(id)) }))
       .filter((c) => c.seenBy.length > 0);
@@ -41,7 +46,8 @@ router.get('/candidates', async (req: Request, res: Response) => {
   const ids = [...new Set(candidates.flatMap((c) => c.seenBy))];
   const names = ids.length
     ? await query<{ id: number; name: string; ip_address: string }>(
-        `SELECT id, name, ip_address FROM devices WHERE id = ANY($1::int[])`, [ids]
+        `SELECT id, name, ip_address FROM devices WHERE id = ANY($1::int[])`,
+        [ids],
       )
     : [];
   const byId = new Map(names.map((n) => [n.id, n]));
@@ -61,11 +67,13 @@ router.get('/candidates', async (req: Request, res: Response) => {
  * adopted, and briefly the managed neighbour used to reach it.
  */
 router.post('/adopt', requireWrite, async (req: Request, res: Response) => {
-  const { mac, jumpHostId, plan, password, username, identity, name,
-          removeFactoryAddress, force } = req.body as Record<string, unknown>;
+  const { mac, jumpHostId, plan, password, username, identity, name, removeFactoryAddress, force } =
+    req.body as Record<string, unknown>;
 
-  if (typeof mac !== 'string' || !mac.trim()) return res.status(400).json({ error: 'mac is required' });
-  if (typeof jumpHostId !== 'number') return res.status(400).json({ error: 'jumpHostId is required' });
+  if (typeof mac !== 'string' || !mac.trim())
+    return res.status(400).json({ error: 'mac is required' });
+  if (typeof jumpHostId !== 'number')
+    return res.status(400).json({ error: 'jumpHostId is required' });
   // The addressing is a structured choice — DHCP or static, optionally on a
   // management VLAN — because inferring a prefix, a gateway and an untagged
   // bridge is three guesses about somebody else's network.
@@ -92,7 +100,10 @@ router.post('/adopt', requireWrite, async (req: Request, res: Response) => {
   }
 
   const result = await service.adopt({
-    mac, jumpHostId, plan: plan as AddressPlan, password,
+    mac,
+    jumpHostId,
+    plan: plan as AddressPlan,
+    password,
     username: typeof username === 'string' ? username : undefined,
     identity: typeof identity === 'string' ? identity : undefined,
     name: typeof name === 'string' ? name : undefined,

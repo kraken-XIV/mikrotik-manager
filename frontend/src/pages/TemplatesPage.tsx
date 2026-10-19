@@ -21,7 +21,11 @@ const EMPTY: Draft = { id: null, name: '', description: '', command: '' };
 
 export default function TemplatesPage() {
   // Secrets are fleet-admin only (#259), so is the card that manages them.
-  const isFleetAdmin = useAuthStore((st) => st.user?.role === 'admin' && !(st.user as { siteRoles?: Record<string, string> | null })?.siteRoles);
+  const isFleetAdmin = useAuthStore(
+    (st) =>
+      st.user?.role === 'admin' &&
+      !(st.user as { siteRoles?: Record<string, string> | null })?.siteRoles,
+  );
   const qc = useQueryClient();
   const canWrite = useCanWrite();
   const [search, setSearch] = useState('');
@@ -37,18 +41,24 @@ export default function TemplatesPage() {
     const q = search.trim().toLowerCase();
     if (!q) return templates;
     return templates.filter((t) =>
-      [t.name, t.description ?? '', t.command].some((f) => f.toLowerCase().includes(q)));
+      [t.name, t.description ?? '', t.command].some((f) => f.toLowerCase().includes(q)),
+    );
   }, [templates, search]);
 
   const errMsg = (e: unknown) =>
-    (e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not save the template';
+    (e as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+    'Could not save the template';
 
   const save = useMutation({
     mutationFn: (d: Draft) => {
       const body = { name: d.name, description: d.description, command: d.command };
       return d.id ? commandTemplatesApi.update(d.id, body) : commandTemplatesApi.create(body);
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['command-templates'] }); setDraft(null); setError(''); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['command-templates'] });
+      setDraft(null);
+      setError('');
+    },
     onError: (e) => setError(errMsg(e)),
   });
 
@@ -57,8 +67,19 @@ export default function TemplatesPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['command-templates'] }),
   });
 
-  const edit = (t: CommandTemplate) => { setError(''); setDraft({ id: t.id, name: t.name, description: t.description ?? '', command: t.command }); };
-  const duplicate = (t: CommandTemplate) => { setError(''); setDraft({ id: null, name: `${t.name} (copy)`, description: t.description ?? '', command: t.command }); };
+  const edit = (t: CommandTemplate) => {
+    setError('');
+    setDraft({ id: t.id, name: t.name, description: t.description ?? '', command: t.command });
+  };
+  const duplicate = (t: CommandTemplate) => {
+    setError('');
+    setDraft({
+      id: null,
+      name: `${t.name} (copy)`,
+      description: t.description ?? '',
+      command: t.command,
+    });
+  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -73,7 +94,13 @@ export default function TemplatesPage() {
           </p>
         </div>
         {canWrite && !draft && (
-          <button className="btn-primary flex items-center gap-1.5 text-sm" onClick={() => { setError(''); setDraft({ ...EMPTY }); }}>
+          <button
+            className="btn-primary flex items-center gap-1.5 text-sm"
+            onClick={() => {
+              setError('');
+              setDraft({ ...EMPTY });
+            }}
+          >
             <Plus className="w-4 h-4" /> New template
           </button>
         )}
@@ -81,22 +108,47 @@ export default function TemplatesPage() {
 
       {draft && (
         <div className="card p-5 space-y-3">
-          <h2 className="font-semibold text-gray-900 dark:text-white">{draft.id ? 'Edit template' : 'New template'}</h2>
-          <input className="input w-full" placeholder="Name, e.g. LTE failover defaults" value={draft.name}
-                 onChange={(e) => setDraft({ ...draft, name: e.target.value })} autoFocus />
-          <input className="input w-full" placeholder="What it's for (optional)" value={draft.description}
-                 onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
-          <textarea className="input w-full font-mono text-sm" rows={8} spellCheck={false}
-                    placeholder={'/interface lte set [ find default-name=lte1 ] allow-roaming=yes\n/interface list member add interface=lte1 list=WAN'}
-                    value={draft.command} onChange={(e) => setDraft({ ...draft, command: e.target.value })} />
-          <p className="text-xs text-gray-500 dark:text-slate-400">One command per line; they run in order over SSH.</p>
+          <h2 className="font-semibold text-gray-900 dark:text-white">
+            {draft.id ? 'Edit template' : 'New template'}
+          </h2>
+          <input
+            className="input w-full"
+            placeholder="Name, e.g. LTE failover defaults"
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            autoFocus
+          />
+          <input
+            className="input w-full"
+            placeholder="What it's for (optional)"
+            value={draft.description}
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          />
+          <textarea
+            className="input w-full font-mono text-sm"
+            rows={8}
+            spellCheck={false}
+            placeholder={
+              '/interface lte set [ find default-name=lte1 ] allow-roaming=yes\n/interface list member add interface=lte1 list=WAN'
+            }
+            value={draft.command}
+            onChange={(e) => setDraft({ ...draft, command: e.target.value })}
+          />
+          <p className="text-xs text-gray-500 dark:text-slate-400">
+            One command per line; they run in order over SSH.
+          </p>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex items-center gap-2">
-            <button className="btn-primary text-sm" disabled={!draft.name.trim() || !draft.command.trim() || save.isPending}
-                    onClick={() => save.mutate(draft)}>
+            <button
+              className="btn-primary text-sm"
+              disabled={!draft.name.trim() || !draft.command.trim() || save.isPending}
+              onClick={() => save.mutate(draft)}
+            >
               {draft.id ? 'Save changes' : 'Save template'}
             </button>
-            <button className="btn-secondary text-sm" onClick={() => setDraft(null)}>Cancel</button>
+            <button className="btn-secondary text-sm" onClick={() => setDraft(null)}>
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -105,10 +157,18 @@ export default function TemplatesPage() {
 
       <div className="relative max-w-md">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input className="input w-full pl-9" placeholder="Search names, descriptions and commands"
-               value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input
+          className="input w-full pl-9"
+          placeholder="Search names, descriptions and commands"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         {search && (
-          <button className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400" onClick={() => setSearch('')} aria-label="Clear search">
+          <button
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+            onClick={() => setSearch('')}
+            aria-label="Clear search"
+          >
             <X className="w-4 h-4" />
           </button>
         )}
@@ -136,22 +196,42 @@ export default function TemplatesPage() {
                       </span>
                     )}
                   </div>
-                  {t.description && <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{t.description}</p>}
+                  {t.description && (
+                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+                      {t.description}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Link to={`/commands?template=${t.id}`} className="btn-primary text-xs py-1 flex items-center gap-1">
+                  <Link
+                    to={`/commands?template=${t.id}`}
+                    className="btn-primary text-xs py-1 flex items-center gap-1"
+                  >
                     <Play className="w-3.5 h-3.5" /> Run
                   </Link>
                   {canWrite && (
                     <>
-                      <button className="btn-secondary text-xs py-1 flex items-center gap-1" onClick={() => edit(t)}>
+                      <button
+                        className="btn-secondary text-xs py-1 flex items-center gap-1"
+                        onClick={() => edit(t)}
+                      >
                         <Pencil className="w-3.5 h-3.5" /> Edit
                       </button>
-                      <button className="btn-secondary text-xs py-1 flex items-center gap-1" onClick={() => duplicate(t)} title="Duplicate">
+                      <button
+                        className="btn-secondary text-xs py-1 flex items-center gap-1"
+                        onClick={() => duplicate(t)}
+                        title="Duplicate"
+                      >
                         <Copy className="w-3.5 h-3.5" />
                       </button>
-                      <button className="text-red-600 p-1" title="Delete" disabled={remove.isPending}
-                              onClick={() => { if (confirm(`Delete the template "${t.name}"?`)) remove.mutate(t.id); }}>
+                      <button
+                        className="text-red-600 p-1"
+                        title="Delete"
+                        disabled={remove.isPending}
+                        onClick={() => {
+                          if (confirm(`Delete the template "${t.name}"?`)) remove.mutate(t.id);
+                        }}
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </>

@@ -36,14 +36,19 @@ export default function OidcCallbackPage() {
       return;
     }
 
-    authApi.oidcExchange(code)
+    authApi
+      .oidcExchange(code)
       .then((r) => {
         setAuth(r.data.token, r.data.user);
         navigate(returnTo, { replace: true });
       })
       .catch((err) => {
         useAuthStore.getState().logout();
-        fail((err as { response?: { status?: number } })?.response?.status === 400 ? 'expired' : 'failed');
+        fail(
+          (err as { response?: { status?: number } })?.response?.status === 400
+            ? 'expired'
+            : 'failed',
+        );
       });
   }, [navigate, setAuth]);
 

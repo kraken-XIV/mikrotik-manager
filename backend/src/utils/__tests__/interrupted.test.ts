@@ -21,7 +21,7 @@ describe('interruptedOutcome', () => {
       expect(out.status).toBe('failed');
       expect(out.error).toMatch(/unknown/i);
       expect(out.error).toMatch(/check the device/i);
-    }
+    },
   );
 
   // Finished work is real work; recovery must not rewrite its history.

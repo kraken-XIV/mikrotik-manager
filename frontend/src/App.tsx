@@ -55,7 +55,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
  */
 function KeyedByParam({ param, children }: { param: string; children: React.ReactElement }) {
   const params = useParams();
-  return <React.Fragment key={new Map(Object.entries(params)).get(param) ?? ''}>{children}</React.Fragment>;
+  return (
+    <React.Fragment key={new Map(Object.entries(params)).get(param) ?? ''}>
+      {children}
+    </React.Fragment>
+  );
 }
 
 export default function App() {
@@ -76,9 +80,23 @@ export default function App() {
           <Route index element={<SiteLanding />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="devices" element={<DevicesPage />} />
-          <Route path="devices/:id" element={<KeyedByParam param="id"><DeviceDetailPage /></KeyedByParam>} />
+          <Route
+            path="devices/:id"
+            element={
+              <KeyedByParam param="id">
+                <DeviceDetailPage />
+              </KeyedByParam>
+            }
+          />
           <Route path="clients" element={<ClientsPage />} />
-          <Route path="clients/:mac" element={<KeyedByParam param="mac"><ClientDetailPage /></KeyedByParam>} />
+          <Route
+            path="clients/:mac"
+            element={
+              <KeyedByParam param="mac">
+                <ClientDetailPage />
+              </KeyedByParam>
+            }
+          />
           <Route path="events" element={<EventsPage />} />
           <Route path="topology" element={<TopologyPage />} />
           <Route path="backups" element={<BackupsPage />} />
@@ -93,10 +111,19 @@ export default function App() {
           <Route path="settings" element={<SettingsPage />} />
           {/* Legacy routes — consolidated in the v0.16.4 UI reorganization */}
           <Route path="switches" element={<Navigate to="/devices?type=SW" replace />} />
-          <Route path="switches/settings" element={<Navigate to="/network-services/discovery" replace />} />
+          <Route
+            path="switches/settings"
+            element={<Navigate to="/network-services/discovery" replace />}
+          />
           <Route path="routers" element={<Navigate to="/devices?type=RTR" replace />} />
-          <Route path="routers/settings" element={<Navigate to="/network-services/discovery" replace />} />
-          <Route path="wireless/clients" element={<Navigate to="/clients?type=wireless" replace />} />
+          <Route
+            path="routers/settings"
+            element={<Navigate to="/network-services/discovery" replace />}
+          />
+          <Route
+            path="wireless/clients"
+            element={<Navigate to="/clients?type=wireless" replace />}
+          />
           <Route path="wireless" element={<WirelessPage />} />
           <Route path="wireless/settings" element={<WirelessSettingsPage />} />
           <Route path="wireless/guest" element={<GuestWifiPage />} />

@@ -6,12 +6,28 @@ import { usesApiTls } from '../utils/apiTls';
 import { createDeviceFromBody } from './deviceCreation';
 import type { PollerService } from './PollerService';
 import {
-  collectCandidates, tempAddressCandidates, validateTargetAddress,
-  fetchAuthHeader, needsJumpHost, stripPrefix, TEMP_COMMENT,
-  jumpInterface, detectDeviceType, hasMac,
-  recommendMode, assessFactoryState, validatePlan, buildPlanOps, planInterface,
-  leasedAddress, judgeConflict, arpRowResolved,
-  type AdoptionCandidate, type NeighborRow, type RestOp, type ModeRecommendation,
+  collectCandidates,
+  tempAddressCandidates,
+  validateTargetAddress,
+  fetchAuthHeader,
+  needsJumpHost,
+  stripPrefix,
+  TEMP_COMMENT,
+  jumpInterface,
+  detectDeviceType,
+  hasMac,
+  recommendMode,
+  assessFactoryState,
+  validatePlan,
+  buildPlanOps,
+  planInterface,
+  leasedAddress,
+  judgeConflict,
+  arpRowResolved,
+  type AdoptionCandidate,
+  type NeighborRow,
+  type RestOp,
+  type ModeRecommendation,
   type AddressPlan,
 } from '../utils/adoption';
 
@@ -82,7 +98,7 @@ export class DeviceAdoptionService {
               t.neighbor_platform, t.from_device_id, t.from_interface, t.discovered_at
          FROM topology_links t
         WHERE t.to_device_id IS NULL
-          AND t.neighbor_mac IS NOT NULL`
+          AND t.neighbor_mac IS NOT NULL`,
     );
 
     const managed = await query<{ ip_address: string }>(`SELECT ip_address FROM devices`);
@@ -91,9 +107,11 @@ export class DeviceAdoptionService {
     // A neighbour whose MAC already belongs to a managed device is not a
     // candidate — it is a device we run, seen from an angle we have not matched.
     const knownMacs = new Set(
-      (await query<{ mac_address: string }>(
-        `SELECT DISTINCT UPPER(mac_address) AS mac_address FROM interfaces WHERE mac_address IS NOT NULL`
-      )).map((r) => r.mac_address)
+      (
+        await query<{ mac_address: string }>(
+          `SELECT DISTINCT UPPER(mac_address) AS mac_address FROM interfaces WHERE mac_address IS NOT NULL`,
+        )
+      ).map((r) => r.mac_address),
     );
 
     return collectCandidates(rows)
@@ -107,17 +125,23 @@ export class DeviceAdoptionService {
           // reach it. An established switch we have no route to is still an
           // established switch.
           recommendation: recommendMode({
-            address: c.address, identity: c.identity, reachableDirectly,
+            address: c.address,
+            identity: c.identity,
+            reachableDirectly,
           }),
         };
       });
   }
 
   /** Free/in-use verdict for one address, seen from a managed device. */
-  async checkAddress(jumpHostId: number, address: string): Promise<{ free: boolean; reason?: string }> {
+  async checkAddress(
+    jumpHostId: number,
+    address: string,
+  ): Promise<{ free: boolean; reason?: string }> {
     const jump = await queryOne<DeviceRow>(
       `SELECT id, name, ip_address, api_port, api_tls, api_username, api_password_encrypted
-         FROM devices WHERE id = $1`, [jumpHostId]
+         FROM devices WHERE id = $1`,
+      [jumpHostId],
     );
     if (!jump) return { free: false, reason: 'jump host not found' };
     let client: RouterOSClient | null = null;
@@ -134,7 +158,7 @@ export class DeviceAdoptionService {
   /** Remove temporary addresses a previous run failed to clean up. */
   async cleanupOrphans(): Promise<number> {
     const devices = await query<DeviceRow>(
-      `SELECT id, name, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices`
+      `SELECT id, name, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices`,
     );
     let removed = 0;
     for (const d of devices) {
@@ -163,23 +187,28 @@ export class DeviceAdoptionService {
     const note = (step: string, ok: boolean, detail?: string) => {
       steps.push({ step, ok, detail });
       // detail can carry device-reported text (CodeQL alert #97).
-      console.log(`[Adopt] ${ok ? 'ok  ' : 'FAIL'} ${logSafe(step)}${detail ? ` — ${logSafe(detail)}` : ''}`);
+      console.log(
+        `[Adopt] ${ok ? 'ok  ' : 'FAIL'} ${logSafe(step)}${detail ? ` — ${logSafe(detail)}` : ''}`,
+      );
     };
 
     const candidate = (await this.listCandidates()).find(
-      (c) => c.mac.toUpperCase() === req.mac.toUpperCase()
+      (c) => c.mac.toUpperCase() === req.mac.toUpperCase(),
     );
-    if (!candidate) return { ok: false, steps, error: `No unmanaged neighbour with MAC ${req.mac}` };
+    if (!candidate)
+      return { ok: false, steps, error: `No unmanaged neighbour with MAC ${req.mac}` };
     if (!candidate.seenBy.includes(req.jumpHostId)) {
       return {
-        ok: false, steps,
+        ok: false,
+        steps,
         error: `Device ${req.jumpHostId} cannot see ${req.mac}; it must be on the same broadcast domain`,
       };
     }
 
     const jump = await queryOne<DeviceRow>(
       `SELECT id, name, ip_address, api_port, api_tls, api_username, api_password_encrypted
-         FROM devices WHERE id = $1`, [req.jumpHostId]
+         FROM devices WHERE id = $1`,
+      [req.jumpHostId],
     );
     if (!jump) return { ok: false, steps, error: 'Jump host not found' };
 
@@ -188,28 +217,33 @@ export class DeviceAdoptionService {
 
     if (candidate.recommendation.mode !== 'adopt' && !req.force) {
       return {
-        ok: false, steps,
-        error: 'This device looks already configured (' + candidate.recommendation.reasons.join('; ') +
-               '). Add it normally with its credentials, or confirm it is factory-default to continue.',
+        ok: false,
+        steps,
+        error:
+          'This device looks already configured (' +
+          candidate.recommendation.reasons.join('; ') +
+          '). Add it normally with its credentials, or confirm it is factory-default to continue.',
       };
     }
 
     // Where the jump host sees the target, so the temporary address goes on
     // that segment rather than on a guessed "bridge" (outside review C9).
-    const seenOn = (await query<{ from_interface: string }>(
-      `SELECT DISTINCT from_interface FROM topology_links
+    const seenOn = (
+      await query<{ from_interface: string }>(
+        `SELECT DISTINCT from_interface FROM topology_links
         WHERE from_device_id = $1 AND UPPER(neighbor_mac) = $2 AND from_interface IS NOT NULL`,
-      [req.jumpHostId, candidate.mac]
-    )).map((r) => r.from_interface);
+        [req.jumpHostId, candidate.mac],
+      )
+    ).map((r) => r.from_interface);
 
     // A static address on the manager's own subnet is additionally checked for
     // reachability, since that is the case where a typo strands the device.
     // Addresses on a management VLAN are deliberately not second-guessed: the
     // manager has no visibility into that segment.
     if (req.plan.mode === 'static' && !req.plan.vlanId) {
-      const reach = validateTargetAddress(
-        req.plan.address, jump.ip_address, req.plan.prefix, [jump.ip_address]
-      );
+      const reach = validateTargetAddress(req.plan.address, jump.ip_address, req.plan.prefix, [
+        jump.ip_address,
+      ]);
       if (!reach.ok) return { ok: false, steps, error: reach.reason };
     }
 
@@ -232,28 +266,51 @@ export class DeviceAdoptionService {
       const iface = jumpInterface(seenOn, bridgePorts, ifaces);
       if (!iface) {
         return {
-          ok: false, steps,
+          ok: false,
+          steps,
           error: `Couldn't tell which interface on ${jump.name} faces ${candidate.mac}. Nothing was changed.`,
         };
       }
 
       // A temporary address nobody on the segment is using (outside review
       // C9): the jump host's own list says nothing about other hosts.
-      for (const option of tempAddressCandidates(candidate.address, addrRows.map((a) => a.address)).slice(0, 5)) {
+      for (const option of tempAddressCandidates(
+        candidate.address,
+        addrRows.map((a) => a.address),
+      ).slice(0, 5)) {
         const check = await this.checkAddressFree(client, option, iface);
-        if (check.free) { temp = option; break; }
+        if (check.free) {
+          temp = option;
+          break;
+        }
         note(`temporary address ${option} is in use`, false, check.reason);
       }
-      if (!temp) return { ok: false, steps, error: 'No free temporary address in the target subnet. Nothing was changed.' };
+      if (!temp)
+        return {
+          ok: false,
+          steps,
+          error: 'No free temporary address in the target subnet. Nothing was changed.',
+        };
 
       const tempAddress = temp;
-      await client.execute('/ip/address/add', { address: tempAddress, interface: iface, comment: TEMP_COMMENT });
+      await client.execute('/ip/address/add', {
+        address: tempAddress,
+        interface: iface,
+        comment: TEMP_COMMENT,
+      });
       await sleep(2500);
       note(`temporary address ${tempAddress} on ${jump.name} ${iface}`, true);
 
-      const ping = await client.execute('/ping', { address: candidate.address, count: '3' }, [], { timeoutMs: 20000 });
+      const ping = await client.execute('/ping', { address: candidate.address, count: '3' }, [], {
+        timeoutMs: 20000,
+      });
       const recv = Number((ping[ping.length - 1] || {}).received || 0);
-      if (recv === 0) return { ok: false, steps, error: `${candidate.address} did not answer ping from ${jump.name}` };
+      if (recv === 0)
+        return {
+          ok: false,
+          steps,
+          error: `${candidate.address} did not answer ping from ${jump.name}`,
+        };
       note(`reached ${candidate.address}`, true, `${recv}/3 replies`);
 
       const headers = fetchAuthHeader(req.username || 'admin', req.password);
@@ -261,10 +318,15 @@ export class DeviceAdoptionService {
 
       // A read first: it proves the password before anything is written, so a
       // wrong sticker password fails harmlessly instead of part-way through.
-      const probe = await rest({ method: 'get', path: 'system/resource', describe: 'authenticate' });
+      const probe = await rest({
+        method: 'get',
+        path: 'system/resource',
+        describe: 'authenticate',
+      });
       if (!probe.ok) {
         return {
-          ok: false, steps,
+          ok: false,
+          steps,
           error: 'Could not authenticate to the device. Check the password printed on the unit.',
         };
       }
@@ -276,11 +338,13 @@ export class DeviceAdoptionService {
       if (targetIfaces === null || !hasMac(targetIfaces, candidate.mac)) {
         note(`confirmed ${candidate.address} is ${candidate.mac}`, false);
         return {
-          ok: false, steps,
-          error: targetIfaces === null
-            ? `Couldn't read the interfaces of the device at ${candidate.address} to confirm it is ${candidate.mac}. Nothing was changed.`
-            : `The device answering at ${candidate.address} is not ${candidate.mac}. Nothing was changed. ` +
-              'Another unadopted device may be on the same address; adopt one at a time.',
+          ok: false,
+          steps,
+          error:
+            targetIfaces === null
+              ? `Couldn't read the interfaces of the device at ${candidate.address} to confirm it is ${candidate.mac}. Nothing was changed.`
+              : `The device answering at ${candidate.address} is not ${candidate.mac}. Nothing was changed. ` +
+                'Another unadopted device may be on the same address; adopt one at a time.',
         };
       }
       note(`confirmed ${candidate.address} is ${candidate.mac}`, true);
@@ -299,8 +363,10 @@ export class DeviceAdoptionService {
       if (!identity || addresses === null || users === null) {
         note('confirmed factory-default', false, 'could not read identity, addresses and users');
         return {
-          ok: false, steps,
-          error: "Couldn't read the device's identity, addresses and users to confirm it is factory-default. Nothing was changed.",
+          ok: false,
+          steps,
+          error:
+            "Couldn't read the device's identity, addresses and users to confirm it is factory-default. Nothing was changed.",
         };
       }
       const assessment = assessFactoryState({ identity: identity.name, addresses, users });
@@ -328,7 +394,8 @@ export class DeviceAdoptionService {
         if (!conflict.free) {
           note(`checked ${req.plan.address} is free`, false, conflict.reason);
           return {
-            ok: false, steps,
+            ok: false,
+            steps,
             error: `${req.plan.address} is not free: ${conflict.reason}. Nothing was changed.`,
           };
         }
@@ -352,9 +419,11 @@ export class DeviceAdoptionService {
         }
         if (!learnedIp) {
           return {
-            ok: false, steps,
-            error: `DHCP client added on ${planInterface(req.plan)} but no lease arrived. ` +
-                   'Check that a DHCP server serves that segment.',
+            ok: false,
+            steps,
+            error:
+              `DHCP client added on ${planInterface(req.plan)} but no lease arrived. ` +
+              'Check that a DHCP server serves that segment.',
           };
         }
         note('received DHCP lease', true, learnedIp);
@@ -375,7 +444,11 @@ export class DeviceAdoptionService {
     const reachable = await this.verifyDirect(ip, req.username || 'admin', req.password);
     note(`manager reached ${ip} over the API`, reachable);
     if (!reachable) {
-      return { ok: false, steps, error: `Configured, but ${ip} is not answering the API from the manager` };
+      return {
+        ok: false,
+        steps,
+        error: `Configured, but ${ip} is not answering the API from the manager`,
+      };
     }
 
     if (req.removeFactoryAddress) {
@@ -392,11 +465,15 @@ export class DeviceAdoptionService {
         device_type: deviceType ?? 'router',
       },
       this.poller,
-      { siteId: req.siteId ?? null }
+      { siteId: req.siteId ?? null },
     );
     if (!created.ok) {
       note('registered in the manager', false, JSON.stringify(created.body));
-      return { ok: false, steps, error: `Device configured but registration failed: ${JSON.stringify(created.body)}` };
+      return {
+        ok: false,
+        steps,
+        error: `Device configured but registration failed: ${JSON.stringify(created.body)}`,
+      };
     }
     note('registered in the manager', true);
 
@@ -412,24 +489,39 @@ export class DeviceAdoptionService {
    * an inconvenience, a duplicated one is an outage.
    */
   private async checkAddressFree(
-    client: RouterOSClient, address: string, iface?: string
+    client: RouterOSClient,
+    address: string,
+    iface?: string,
   ): Promise<{ free: boolean; reason?: string }> {
     try {
       // Ping first, then read ARP (outside review C9): the ping is what makes
       // a quiet host resolve, so ARP read before it misses that host.
-      const ping = await client.execute('/ping', { address: stripPrefix(address), count: '3' }, [], { timeoutMs: 20000 });
+      const ping = await client.execute(
+        '/ping',
+        { address: stripPrefix(address), count: '3' },
+        [],
+        { timeoutMs: 20000 },
+      );
       const replies = Number((ping[ping.length - 1] || {}).received || 0);
       const arp = await client.execute('/ip/arp/print', { detail: '' });
       let arpResolved = arp.some(
-        (a) => stripPrefix(a.address || '') === stripPrefix(address) && arpRowResolved(a)
+        (a) => stripPrefix(a.address || '') === stripPrefix(address) && arpRowResolved(a),
       );
       if (iface && !arpResolved) {
         // An address outside the jump host's own subnets isn't reachable by
         // ICMP or in its ARP table; an ARP request sent out the interface
         // still gets an answer from a host holding it.
-        const arping = await client.execute('/ping', {
-          address: stripPrefix(address), 'arp-ping': 'yes', interface: iface, count: '2',
-        }, [], { timeoutMs: 15000 });
+        const arping = await client.execute(
+          '/ping',
+          {
+            address: stripPrefix(address),
+            'arp-ping': 'yes',
+            interface: iface,
+            count: '2',
+          },
+          [],
+          { timeoutMs: 15000 },
+        );
         arpResolved = Number((arping[arping.length - 1] || {}).received || 0) > 0;
       }
       return judgeConflict({ arpResolved, pingReplies: replies });
@@ -447,12 +539,18 @@ export class DeviceAdoptionService {
    * lost or the adoption connection died. If this fails too, the comment lets
    * cleanupOrphans() find it.
    */
-  private async removeTempAddress(jump: DeviceRow, temp: string): Promise<{ ok: boolean; detail?: string }> {
+  private async removeTempAddress(
+    jump: DeviceRow,
+    temp: string,
+  ): Promise<{ ok: boolean; detail?: string }> {
     let c: RouterOSClient | null = null;
     try {
       c = await this.connect(jump);
-      const rows = (await c.execute('/ip/address/print', { detail: '' }))
-        .filter((a) => stripPrefix(a.address || '') === stripPrefix(temp) && (a.comment || '').includes(TEMP_COMMENT));
+      const rows = (await c.execute('/ip/address/print', { detail: '' })).filter(
+        (a) =>
+          stripPrefix(a.address || '') === stripPrefix(temp) &&
+          (a.comment || '').includes(TEMP_COMMENT),
+      );
       for (const r of rows) await c.execute('/ip/address/remove', { '.id': r['.id'] });
       return { ok: true, detail: rows.length ? undefined : 'not present' };
     } catch (e) {
@@ -464,35 +562,48 @@ export class DeviceAdoptionService {
 
   private parse(data: string | undefined): Record<string, string> | null {
     if (!data) return null;
-    try { return JSON.parse(data) as Record<string, string>; } catch { return null; }
+    try {
+      return JSON.parse(data) as Record<string, string>;
+    } catch {
+      return null;
+    }
   }
 
   /** Read a single-object REST menu (`system/identity`), or null if unreadable. */
   private async readOne(
     rest: (op: RestOp) => Promise<{ ok: boolean; data?: string }>,
-    path: string
+    path: string,
   ): Promise<Record<string, string> | null> {
     const r = await rest({ method: 'get', path, describe: `read ${path}` });
     if (!r.ok || !r.data) return null;
-    try { return JSON.parse(r.data) as Record<string, string>; } catch { return null; }
+    try {
+      return JSON.parse(r.data) as Record<string, string>;
+    } catch {
+      return null;
+    }
   }
 
   /** Read a list REST menu (`ip/address`). Null when unreadable, never [] (C9). */
   private async readMany(
     rest: (op: RestOp) => Promise<{ ok: boolean; data?: string }>,
-    path: string
+    path: string,
   ): Promise<Record<string, string>[] | null> {
     const r = await rest({ method: 'get', path, describe: `read ${path}` });
     if (!r.ok || !r.data) return null;
     try {
       const parsed = JSON.parse(r.data);
       return Array.isArray(parsed) ? parsed : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   /** One REST call to the target, tunnelled through the jump host's `/tool/fetch`. */
   private async rest(
-    client: RouterOSClient, target: string, headers: string, op: RestOp
+    client: RouterOSClient,
+    target: string,
+    headers: string,
+    op: RestOp,
   ): Promise<{ ok: boolean; data?: string; error?: string }> {
     const params: Record<string, string> = {
       url: `http://${target}/rest/${op.path}`,
@@ -533,7 +644,9 @@ export class DeviceAdoptionService {
   }
 
   private async removeFactoryAddress(
-    ip: string, user: string, pass: string
+    ip: string,
+    user: string,
+    pass: string,
   ): Promise<{ ok: boolean; detail?: string }> {
     const c = new RouterOSClient(ip, 8728, user, pass, 15000);
     try {
@@ -552,8 +665,13 @@ export class DeviceAdoptionService {
 
   private async connect(d: DeviceRow): Promise<RouterOSClient> {
     const c = new RouterOSClient(
-      d.ip_address, d.api_port || 8728, d.api_username,
-      decrypt(d.api_password_encrypted), 15000, 30000, usesApiTls(d),
+      d.ip_address,
+      d.api_port || 8728,
+      d.api_username,
+      decrypt(d.api_password_encrypted),
+      15000,
+      30000,
+      usesApiTls(d),
     );
     await c.connect();
     return c;

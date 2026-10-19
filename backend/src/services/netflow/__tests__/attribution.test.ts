@@ -1,10 +1,30 @@
-import { AMBIGUOUS, buildAttributionMaps, canonicalIp, isLocalAddress, matchClient, type DeviceRow, type ClientRow } from '../attribution';
+import {
+  AMBIGUOUS,
+  buildAttributionMaps,
+  canonicalIp,
+  isLocalAddress,
+  matchClient,
+  type DeviceRow,
+  type ClientRow,
+} from '../attribution';
 
 // Outside review P2-23 / J4: two customers on the RouterOS default subnet.
 const devices: DeviceRow[] = [
-  { id: 1, name: 'hq-gw', site_id: 1, ip_address: '192.168.88.1', ip_addresses_jsonb: [{ address: '10.0.0.1/24' }] },
+  {
+    id: 1,
+    name: 'hq-gw',
+    site_id: 1,
+    ip_address: '192.168.88.1',
+    ip_addresses_jsonb: [{ address: '10.0.0.1/24' }],
+  },
   { id: 2, name: 'hq-sw', site_id: 1, ip_address: '192.168.88.2', ip_addresses_jsonb: null },
-  { id: 8, name: 'cust-gw', site_id: 3, ip_address: '192.168.88.1', ip_addresses_jsonb: [{ address: '172.16.5.1/24' }] },
+  {
+    id: 8,
+    name: 'cust-gw',
+    site_id: 3,
+    ip_address: '192.168.88.1',
+    ip_addresses_jsonb: [{ address: '172.16.5.1/24' }],
+  },
 ];
 const clients: ClientRow[] = [
   // newest first within each (site, address), as the query orders them
@@ -31,8 +51,14 @@ describe('buildAttributionMaps / matchClient', () => {
   });
 
   it("matches a reused client address in the exporter's own site", () => {
-    expect(matchClient(maps, hq as never, '192.168.88.10')).toEqual({ mac: 'aa:aa:aa:00:00:01', siteId: 1 });
-    expect(matchClient(maps, cust as never, '192.168.88.10')).toEqual({ mac: 'bb:bb:bb:00:00:01', siteId: 3 });
+    expect(matchClient(maps, hq as never, '192.168.88.10')).toEqual({
+      mac: 'aa:aa:aa:00:00:01',
+      siteId: 1,
+    });
+    expect(matchClient(maps, cust as never, '192.168.88.10')).toEqual({
+      mac: 'bb:bb:bb:00:00:01',
+      siteId: 3,
+    });
   });
 
   it("never matches another site's client", () => {
@@ -51,17 +77,34 @@ describe('buildAttributionMaps / matchClient', () => {
   });
 
   it('puts unmatched traffic from an unidentified exporter in the only site, when there is one', () => {
-    const single = buildAttributionMaps(devices.filter((d) => d.site_id === 1), clients.filter((c) => c.site_id === 1));
+    const single = buildAttributionMaps(
+      devices.filter((d) => d.site_id === 1),
+      clients.filter((c) => c.site_id === 1),
+    );
     expect(matchClient(single, null, '8.8.8.8')).toEqual({ siteId: 1 });
-    expect(matchClient(single, null, '192.168.88.10')).toEqual({ mac: 'aa:aa:aa:00:00:01', siteId: 1 });
+    expect(matchClient(single, null, '192.168.88.10')).toEqual({
+      mac: 'aa:aa:aa:00:00:01',
+      siteId: 1,
+    });
   });
 });
 
 describe('isLocalAddress', () => {
-  it.each(['10.1.2.3', '172.20.0.1', '192.168.65.1', '127.0.0.1', '100.64.0.1', '169.254.1.1', 'fd00::1', '::1', '::ffff:192.168.1.5'])(
-    '%s is local', (ip) => expect(isLocalAddress(ip)).toBe(true));
+  it.each([
+    '10.1.2.3',
+    '172.20.0.1',
+    '192.168.65.1',
+    '127.0.0.1',
+    '100.64.0.1',
+    '169.254.1.1',
+    'fd00::1',
+    '::1',
+    '::ffff:192.168.1.5',
+  ])('%s is local', (ip) => expect(isLocalAddress(ip)).toBe(true));
   it.each(['8.8.8.8', '172.32.0.1', '203.0.113.9', '2001:db8::1', '::ffff:8.8.8.8'])(
-    '%s is not', (ip) => expect(isLocalAddress(ip)).toBe(false));
+    '%s is not',
+    (ip) => expect(isLocalAddress(ip)).toBe(false),
+  );
 });
 
 describe('canonicalIp (#233)', () => {
@@ -81,11 +124,18 @@ describe('canonicalIp (#233)', () => {
   });
   it('matches a device saved in a different spelling', () => {
     const maps = buildAttributionMaps(
-      [{ id: 1, name: 'r6', site_id: 1, ip_address: '2001:DB8:0::1', ip_addresses_jsonb: [{ address: '2001:DB8:1::1/64' }] }],
+      [
+        {
+          id: 1,
+          name: 'r6',
+          site_id: 1,
+          ip_address: '2001:DB8:0::1',
+          ip_addresses_jsonb: [{ address: '2001:DB8:1::1/64' }],
+        },
+      ],
       [],
     );
     expect(maps.exporterByIp.get(canonicalIp('2001:db8::1'))).toMatchObject({ deviceId: 1 });
     expect(maps.exporterByIp.get(canonicalIp('2001:db8:1::1'))).toMatchObject({ deviceId: 1 });
   });
 });
-

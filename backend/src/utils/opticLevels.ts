@@ -36,7 +36,10 @@ export const WARM_C = 60;
  * Off by default because the right values depend on the optic: a 10G LR link
  * runs happily at -12 dBm, far below a 100G optic's floor.
  */
-export interface RxLimits { rxLow: number | null; rxHigh: number | null }
+export interface RxLimits {
+  rxLow: number | null;
+  rxHigh: number | null;
+}
 export const DEFAULT_DROP_DB = 3;
 /** The usual level needs this many readings (5-minute slow polls) to count. */
 export const MIN_BASELINE_READINGS = 24;
@@ -44,7 +47,10 @@ export const MIN_BASELINE_READINGS = 24;
 /** Every number in a value: "-2.1dBm,-2.3dBm" or "-2.1 -2.3" or "33C". */
 function numbers(v: string | undefined): number[] {
   if (!v) return [];
-  return v.split(/[,;\s]+/).map((s) => parseFloat(s)).filter((n) => Number.isFinite(n));
+  return v
+    .split(/[,;\s]+/)
+    .map((s) => parseFloat(s))
+    .filter((n) => Number.isFinite(n));
 }
 
 const first = (v: string | undefined): number | null => numbers(v)[0] ?? null;
@@ -54,11 +60,16 @@ const first = (v: string | undefined): number | null => numbers(v)[0] ?? null;
  * a CRS520-4XS-16XQ on 7.24.5 reports a QSFP28 optic's as plain `rx-power`
  * (#249). Read whichever is there.
  */
-const ddm = (mon: Record<string, string>, field: string): string | undefined => mon[`sfp-${field}`] ?? mon[field];
+const ddm = (mon: Record<string, string>, field: string): string | undefined =>
+  mon[`sfp-${field}`] ?? mon[field];
 
 /** The reading in a monitor row, or null when the module reports no diagnostics. */
 export function readOptic(mon: Record<string, string>): OpticReading | null {
-  if (mon['sfp-module-present'] !== undefined && !['true', 'yes'].includes(mon['sfp-module-present'])) return null;
+  if (
+    mon['sfp-module-present'] !== undefined &&
+    !['true', 'yes'].includes(mon['sfp-module-present'])
+  )
+    return null;
   const rxLanes = numbers(ddm(mon, 'rx-power'));
   const txLanes = numbers(ddm(mon, 'tx-power'));
   if (rxLanes.length === 0 && txLanes.length === 0) return null;
@@ -94,7 +105,11 @@ export interface OpticStatus {
 
 const round1 = (n: number): number => Math.round(n * 10) / 10;
 
-export interface Usual { rx: number | null; tx: number | null; readings: number }
+export interface Usual {
+  rx: number | null;
+  tx: number | null;
+  readings: number;
+}
 
 /**
  * A port's state from its latest reading and its usual level. No light at all
@@ -102,7 +117,10 @@ export interface Usual { rx: number | null; tx: number | null; readings: number 
  * already reported.
  */
 export function opticStatus(
-  name: string, cur: OpticReading, usual: Usual | null, dropDb = DEFAULT_DROP_DB,
+  name: string,
+  cur: OpticReading,
+  usual: Usual | null,
+  dropDb = DEFAULT_DROP_DB,
   limits: RxLimits = { rxLow: null, rxHigh: null },
 ): OpticStatus {
   const threshold = Math.max(0.5, dropDb);
@@ -112,12 +130,17 @@ export function opticStatus(
   // that rises can mean a failing sensor, reflection off a damaged end face,
   // or the optic's power control misbehaving.
   const rxDrop = enough && lit && usual!.rx !== null ? round1(usual!.rx - cur.rx_dbm!) : null;
-  const txDrop = enough && cur.tx_dbm !== null && usual!.tx !== null && cur.tx_dbm > NO_LIGHT_DBM
-    ? round1(usual!.tx - cur.tx_dbm) : null;
+  const txDrop =
+    enough && cur.tx_dbm !== null && usual!.tx !== null && cur.tx_dbm > NO_LIGHT_DBM
+      ? round1(usual!.tx - cur.tx_dbm)
+      : null;
 
   const reasons: string[] = [];
   let level = 0; // 0 quiet, 1 watch, 2 alert
-  const raise = (to: 1 | 2, why: string) => { level = Math.max(level, to); reasons.push(why); };
+  const raise = (to: 1 | 2, why: string) => {
+    level = Math.max(level, to);
+    reasons.push(why);
+  };
   const consider = (shift: number | null, what: string) => {
     if (shift === null || shift === 0) return;
     const size = Math.abs(shift);
@@ -127,19 +150,26 @@ export function opticStatus(
   };
   consider(rxDrop, 'receive light');
   consider(txDrop, 'transmit light');
-  if (lit && limits.rxLow !== null && cur.rx_dbm! < limits.rxLow) raise(2, `receive light ${round1(cur.rx_dbm!)} dBm, under the ${limits.rxLow} dBm limit`);
-  if (lit && limits.rxHigh !== null && cur.rx_dbm! > limits.rxHigh) raise(2, `receive light ${round1(cur.rx_dbm!)} dBm, over the ${limits.rxHigh} dBm limit`);
+  if (lit && limits.rxLow !== null && cur.rx_dbm! < limits.rxLow)
+    raise(2, `receive light ${round1(cur.rx_dbm!)} dBm, under the ${limits.rxLow} dBm limit`);
+  if (lit && limits.rxHigh !== null && cur.rx_dbm! > limits.rxHigh)
+    raise(2, `receive light ${round1(cur.rx_dbm!)} dBm, over the ${limits.rxHigh} dBm limit`);
   if (cur.temp_c !== null && cur.temp_c >= HOT_C) raise(2, `module at ${cur.temp_c} °C`);
   else if (cur.temp_c !== null && cur.temp_c >= WARM_C) raise(1, `module at ${cur.temp_c} °C`);
   const state: OpticStatus['state'] = level === 2 ? 'alert' : level === 1 ? 'watch' : null;
 
   return {
     interface: name,
-    rx_dbm: cur.rx_dbm, tx_dbm: cur.tx_dbm, temp_c: cur.temp_c, bias_ma: cur.bias_ma, voltage: cur.voltage,
+    rx_dbm: cur.rx_dbm,
+    tx_dbm: cur.tx_dbm,
+    temp_c: cur.temp_c,
+    bias_ma: cur.bias_ma,
+    voltage: cur.voltage,
     rx_lanes: cur.rx_lanes,
     usual_rx_dbm: enough && usual!.rx !== null ? round1(usual!.rx) : null,
     usual_tx_dbm: enough && usual!.tx !== null ? round1(usual!.tx) : null,
-    rx_drop_db: rxDrop, tx_drop_db: txDrop,
+    rx_drop_db: rxDrop,
+    tx_drop_db: txDrop,
     state,
     reason: reasons.length ? reasons.join('; ') : null,
   };

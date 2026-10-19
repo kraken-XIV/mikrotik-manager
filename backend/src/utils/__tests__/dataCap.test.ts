@@ -68,8 +68,11 @@ describe('effectiveThreshold', () => {
 
 describe('shouldSend', () => {
   const base = {
-    thresholdBytes: 10 * GB, marginPct: 5, cooldownMinutes: 60,
-    lastSentAt: null as Date | null, enabled: true,
+    thresholdBytes: 10 * GB,
+    marginPct: 5,
+    cooldownMinutes: 60,
+    lastSentAt: null as Date | null,
+    enabled: true,
   };
   const NOW = new Date('2026-09-02T12:00:00Z');
 
@@ -94,6 +97,8 @@ describe('shouldSend', () => {
   });
 
   it('does nothing when disabled, whatever the usage', () => {
-    expect(shouldSend({ ...base, periodBytes: 99 * GB, enabled: false }, NOW).reason).toBe('disabled');
+    expect(shouldSend({ ...base, periodBytes: 99 * GB, enabled: false }, NOW).reason).toBe(
+      'disabled',
+    );
   });
 });

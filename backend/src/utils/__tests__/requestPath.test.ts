@@ -5,7 +5,8 @@ import { deviceIdFromPath } from '../../services/changeGuard/deviceLock';
 
 // GHSA-6xq3-q9m5-7hxp: access checks must read the same id the route handler
 // receives, which Express decodes.
-const req = (path: string, extra: Partial<Request> = {}) => ({ path, ...extra }) as unknown as Request;
+const req = (path: string, extra: Partial<Request> = {}) =>
+  ({ path, ...extra }) as unknown as Request;
 
 describe('decodedPath', () => {
   it('decodes each segment as Express decodes route parameters', () => {
@@ -33,10 +34,29 @@ describe('device id helpers read the decoded id', () => {
 
 describe('deviceSiteAccess', () => {
   const run = async (path: string) => {
-    const r = req(path, { user: { userId: 9, username: 'op', role: 'operator', siteRoles: { 3: 'operator' } } } as Partial<Request>);
-    const res = { statusCode: 200, body: null as unknown, status(c: number) { this.statusCode = c; return this; }, json(b: unknown) { this.body = b; return this; } };
+    const r = req(path, {
+      user: { userId: 9, username: 'op', role: 'operator', siteRoles: { 3: 'operator' } },
+    } as Partial<Request>);
+    const res = {
+      statusCode: 200,
+      body: null as unknown,
+      status(c: number) {
+        this.statusCode = c;
+        return this;
+      },
+      json(b: unknown) {
+        this.body = b;
+        return this;
+      },
+    };
     let passed = false;
-    await deviceSiteAccess(() => deviceIdParam(r))(r, res as unknown as Response, (() => { passed = true; }) as NextFunction);
+    await deviceSiteAccess(() => deviceIdParam(r))(
+      r,
+      res as unknown as Response,
+      (() => {
+        passed = true;
+      }) as NextFunction,
+    );
     return { passed, status: res.statusCode };
   };
   it('refuses a malformed path for a site-scoped account rather than letting it through', async () => {

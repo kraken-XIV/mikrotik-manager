@@ -36,14 +36,17 @@ export function versionNotNewer(a: string, b: string): boolean {
 export async function publicTables(client: PoolClient): Promise<string[]> {
   const r = await client.query<{ relname: string }>(
     `SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public' AND c.relkind = 'r' ORDER BY c.relname`);
+      WHERE n.nspname = 'public' AND c.relkind = 'r' ORDER BY c.relname`,
+  );
   return r.rows.map((x) => x.relname);
 }
 
 export async function tableColumns(client: PoolClient, table: string): Promise<string[]> {
   const r = await client.query<{ column_name: string }>(
     `SELECT column_name FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = $1 ORDER BY ordinal_position`, [table]);
+      WHERE table_schema = 'public' AND table_name = $1 ORDER BY ordinal_position`,
+    [table],
+  );
   return r.rows.map((x) => x.column_name);
 }
 
@@ -56,7 +59,8 @@ export async function tableColumns(client: PoolClient, table: string): Promise<s
 async function jsonNotNullColumns(client: PoolClient): Promise<Map<string, Map<string, string>>> {
   const r = await client.query<{ table_name: string; column_name: string; data_type: string }>(
     `SELECT table_name, column_name, data_type FROM information_schema.columns
-      WHERE table_schema = 'public' AND is_nullable = 'NO' AND data_type IN ('json', 'jsonb')`);
+      WHERE table_schema = 'public' AND is_nullable = 'NO' AND data_type IN ('json', 'jsonb')`,
+  );
   const out = new Map<string, Map<string, string>>();
   for (const x of r.rows) {
     if (!out.has(x.table_name)) out.set(x.table_name, new Map());
@@ -68,7 +72,9 @@ async function jsonNotNullColumns(client: PoolClient): Promise<Map<string, Map<s
 export async function primaryKey(client: PoolClient, table: string): Promise<string[]> {
   const r = await client.query<{ attname: string }>(
     `SELECT a.attname FROM pg_index i JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
-      WHERE i.indrelid = $1::regclass AND i.indisprimary ORDER BY array_position(i.indkey, a.attnum)`, [qi(table)]);
+      WHERE i.indrelid = $1::regclass AND i.indisprimary ORDER BY array_position(i.indkey, a.attnum)`,
+    [qi(table)],
+  );
   return r.rows.map((x) => x.attname);
 }
 
@@ -77,12 +83,17 @@ async function tablesFor(client: PoolClient, contents: BackupContents): Promise<
   const present = new Set(await publicTables(client));
   const config = CONFIG_TABLES.filter((t) => present.has(t));
   if (contents === 'config') return config;
-  const rest = [...present].filter((t) => !NEVER_RESTORED.has(t) && !(config as readonly string[]).includes(t)).sort();
+  const rest = [...present]
+    .filter((t) => !NEVER_RESTORED.has(t) && !(config as readonly string[]).includes(t))
+    .sort();
   return [...config, ...rest];
 }
 
 /** The payload records of a backup, streamed from one consistent snapshot. */
-export async function* exportRecords(contents: BackupContents, appVersion: string): AsyncGenerator<BackupRecord> {
+export async function* exportRecords(
+  contents: BackupContents,
+  appVersion: string,
+): AsyncGenerator<BackupRecord> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
@@ -91,10 +102,16 @@ export async function* exportRecords(contents: BackupContents, appVersion: strin
     // The keys go inside the encrypted payload: a restore on another server
     // reads the credentials with them and re-encrypts under its own key.
     const keys = allDecryptionKeys();
-    yield { type: 'keys', current: keys.current.toString('base64'), all: keys.all.map((k) => k.toString('base64')) };
+    yield {
+      type: 'keys',
+      current: keys.current.toString('base64'),
+      all: keys.all.map((k) => k.toString('base64')),
+    };
     for (const t of tables) {
       yield { type: 'table', name: t, columns: await tableColumns(client, t) };
-      await client.query(`DECLARE mtm_export NO SCROLL CURSOR FOR SELECT row_to_json(mtm_row.*)::text AS j FROM ${qi(t)} mtm_row`);
+      await client.query(
+        `DECLARE mtm_export NO SCROLL CURSOR FOR SELECT row_to_json(mtm_row.*)::text AS j FROM ${qi(t)} mtm_row`,
+      );
       for (;;) {
         const r = await client.query<{ j: string }>(`FETCH ${FETCH} FROM mtm_export`);
         // Postgres's own JSON text, written as it is: parsing it in Node would
@@ -129,10 +146,15 @@ export interface RestoreResult {
 async function resetSequences(client: PoolClient, table: string): Promise<void> {
   const r = await client.query<{ attname: string; seq: string | null }>(
     `SELECT a.attname, pg_get_serial_sequence($1, a.attname) AS seq FROM pg_attribute a
-      WHERE a.attrelid = $1::regclass AND a.attnum > 0 AND NOT a.attisdropped`, [qi(table)]);
+      WHERE a.attrelid = $1::regclass AND a.attnum > 0 AND NOT a.attisdropped`,
+    [qi(table)],
+  );
   for (const { attname, seq } of r.rows) {
     if (!seq) continue;
-    await client.query(`SELECT setval($1, COALESCE((SELECT MAX(${qi(attname)}) FROM ${qi(table)}), 0) + 1, false)`, [seq]);
+    await client.query(
+      `SELECT setval($1, COALESCE((SELECT MAX(${qi(attname)}) FROM ${qi(table)}), 0) + 1, false)`,
+      [seq],
+    );
   }
 }
 
@@ -143,19 +165,33 @@ async function resetSequences(client: PoolClient, table: string): Promise<void> 
  * damaged file or a backup from a newer version.
  */
 export async function restoreFromFile(
-  path: string, passphrase: string, mode: RestoreMode, appVersion: string,
+  path: string,
+  passphrase: string,
+  mode: RestoreMode,
+  appVersion: string,
   onProgress: (msg: string) => void = () => {},
 ): Promise<RestoreResult> {
   const { header } = await readHeader(path);
   if (!versionNotNewer(header.app_version, appVersion)) {
-    throw new Error(`This backup was made by MikroTik Manager ${header.app_version}, newer than this one (${appVersion}). Update first, then restore.`);
+    throw new Error(
+      `This backup was made by MikroTik Manager ${header.app_version}, newer than this one (${appVersion}). Update first, then restore.`,
+    );
   }
   if (mode === 'full' && header.contents !== 'config+database') {
-    throw new Error('This backup holds the configuration only, so it can only be restored as configuration.');
+    throw new Error(
+      'This backup holds the configuration only, so it can only be restored as configuration.',
+    );
   }
 
   const client = await pool.connect();
-  const result: RestoreResult = { mode, tables: 0, rows: 0, reencrypted: 0, unreadable: 0, skippedTables: [] };
+  const result: RestoreResult = {
+    mode,
+    tables: 0,
+    rows: 0,
+    reencrypted: 0,
+    unreadable: 0,
+    skippedTables: [],
+  };
   let backupKeys: Buffer[] = [];
   try {
     await client.query('BEGIN');
@@ -163,10 +199,13 @@ export async function restoreFromFile(
     const columnsOf = new Map<string, string[]>();
     for (const t of present) columnsOf.set(t, await tableColumns(client, t));
     const jsonNotNull = await jsonNotNullColumns(client);
-    const selectList = (t: string, columns: string[]) => columns.map((c) => {
-      const type = jsonNotNull.get(t)?.get(c);
-      return type ? `COALESCE(${qi(c)}, 'null'::${type})` : qi(c);
-    }).join(', ');
+    const selectList = (t: string, columns: string[]) =>
+      columns
+        .map((c) => {
+          const type = jsonNotNull.get(t)?.get(c);
+          return type ? `COALESCE(${qi(c)}, 'null'::${type})` : qi(c);
+        })
+        .join(', ');
 
     if (mode === 'full') {
       // Foreign keys are checked by the data itself, which came from one
@@ -190,7 +229,8 @@ export async function restoreFromFile(
       const list = cols.map(qi).join(', ');
       await client.query(
         `INSERT INTO ${qi(table)} (${list}) OVERRIDING SYSTEM VALUE SELECT ${selectList(table, cols)} FROM json_populate_recordset(NULL::${qi(table)}, $1::json)`,
-        [asArray(batch)]);
+        [asArray(batch)],
+      );
       result.rows += batch.length;
       batch = [];
     };
@@ -201,9 +241,10 @@ export async function restoreFromFile(
       } else if (rec.type === 'table') {
         await insertBatch();
         const name = String(rec.name);
-        const wanted = mode === 'full'
-          ? present.has(name) && !NEVER_RESTORED.has(name)
-          : (CONFIG_TABLES as readonly string[]).includes(name) && present.has(name);
+        const wanted =
+          mode === 'full'
+            ? present.has(name) && !NEVER_RESTORED.has(name)
+            : (CONFIG_TABLES as readonly string[]).includes(name) && present.has(name);
         if (!wanted) {
           if (!present.has(name)) result.skippedTables.push(name);
           table = null;
@@ -240,26 +281,42 @@ export async function restoreFromFile(
       for (const t of [...order].reverse()) {
         const pk = await primaryKey(client, t);
         // No key to match on (none today): replace the table outright.
-        if (!pk.length) { await client.query(`DELETE FROM ${qi(t)}`); continue; }
-        const match = pk.map((k) => `mtm_bak.${qi(k)} IS NOT DISTINCT FROM mtm_cur.${qi(k)}`).join(' AND ');
+        if (!pk.length) {
+          await client.query(`DELETE FROM ${qi(t)}`);
+          continue;
+        }
+        const match = pk
+          .map((k) => `mtm_bak.${qi(k)} IS NOT DISTINCT FROM mtm_cur.${qi(k)}`)
+          .join(' AND ');
         const stateGuard = t === 'app_settings' ? ` AND mtm_cur.key <> ALL($2::text[])` : '';
         await client.query(
           `DELETE FROM ${qi(t)} mtm_cur WHERE NOT EXISTS (SELECT 1 FROM json_populate_recordset(NULL::${qi(t)}, $1::json) mtm_bak WHERE ${match})${stateGuard}`,
-          t === 'app_settings' ? [asArray(configRows.get(t)!.rows), [...APP_SETTINGS_STATE_KEYS]] : [asArray(configRows.get(t)!.rows)]);
+          t === 'app_settings'
+            ? [asArray(configRows.get(t)!.rows), [...APP_SETTINGS_STATE_KEYS]]
+            : [asArray(configRows.get(t)!.rows)],
+        );
       }
       for (const t of order) {
         const { columns, rows } = configRows.get(t)!;
         const pk = await primaryKey(client, t);
         const list = columns.map(qi).join(', ');
-        const updates = columns.filter((c) => !pk.includes(c)).map((c) => `${qi(c)} = EXCLUDED.${qi(c)}`).join(', ');
+        const updates = columns
+          .filter((c) => !pk.includes(c))
+          .map((c) => `${qi(c)} = EXCLUDED.${qi(c)}`)
+          .join(', ');
         // State kept in app_settings stays as it is here.
         const stateGuard = t === 'app_settings' ? ` WHERE key <> ALL($2::text[])` : '';
-        const onConflict = pk.length ? ` ON CONFLICT (${pk.map(qi).join(', ')}) DO ${updates ? `UPDATE SET ${updates}` : 'NOTHING'}` : '';
+        const onConflict = pk.length
+          ? ` ON CONFLICT (${pk.map(qi).join(', ')}) DO ${updates ? `UPDATE SET ${updates}` : 'NOTHING'}`
+          : '';
         for (let i = 0; i < rows.length; i += INSERT_BATCH) {
           const chunk = rows.slice(i, i + INSERT_BATCH);
           await client.query(
             `INSERT INTO ${qi(t)} (${list}) OVERRIDING SYSTEM VALUE SELECT ${selectList(t, columns)} FROM json_populate_recordset(NULL::${qi(t)}, $1::json)${stateGuard}${onConflict}`,
-            t === 'app_settings' ? [asArray(chunk), [...APP_SETTINGS_STATE_KEYS]] : [asArray(chunk)]);
+            t === 'app_settings'
+              ? [asArray(chunk), [...APP_SETTINGS_STATE_KEYS]]
+              : [asArray(chunk)],
+          );
           result.rows += chunk.length;
         }
         await resetSequences(client, t);

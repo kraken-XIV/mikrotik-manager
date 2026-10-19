@@ -36,19 +36,40 @@ const cache = new Map<number, { at: number; account: SessionAccount | null }>();
 function withTimeout<T>(p: Promise<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('redis timeout')), REDIS_TIMEOUT_MS);
-    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
   });
 }
 
 async function loadAccount(userId: number): Promise<SessionAccount | null> {
   const hit = cache.get(userId);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.account;
-  const row = await queryOne<{ username: string; role: string; session_version: number; must_change_password: boolean }>(
-    `SELECT username, role, session_version, must_change_password FROM users WHERE id = $1`, [userId]);
+  const row = await queryOne<{
+    username: string;
+    role: string;
+    session_version: number;
+    must_change_password: boolean;
+  }>(`SELECT username, role, session_version, must_change_password FROM users WHERE id = $1`, [
+    userId,
+  ]);
   // Site roles, and those reached through groups (#306).
   const siteRoles = row ? await loadSiteRoles(userId) : null;
   const account = row
-    ? { username: row.username, role: row.role, sessionVersion: row.session_version ?? 0, mustChangePassword: !!row.must_change_password, siteRoles }
+    ? {
+        username: row.username,
+        role: row.role,
+        sessionVersion: row.session_version ?? 0,
+        mustChangePassword: !!row.must_change_password,
+        siteRoles,
+      }
     : null;
   cache.set(userId, { at: Date.now(), account });
   return account;
@@ -70,14 +91,19 @@ export function forgetAllSessionAccounts(): void {
 /** End every session the account has; the next request with one is refused. */
 export async function endAllSessions(userId: number): Promise<number> {
   const row = await queryOne<{ session_version: number }>(
-    `UPDATE users SET session_version = session_version + 1 WHERE id = $1 RETURNING session_version`, [userId]);
+    `UPDATE users SET session_version = session_version + 1 WHERE id = $1 RETURNING session_version`,
+    [userId],
+  );
   cache.delete(userId);
   return row?.session_version ?? 0;
 }
 
 /** The account's current session version, to put in a new session token. */
 export async function currentSessionVersion(userId: number): Promise<number> {
-  const rows = await query<{ session_version: number }>(`SELECT session_version FROM users WHERE id = $1`, [userId]);
+  const rows = await query<{ session_version: number }>(
+    `SELECT session_version FROM users WHERE id = $1`,
+    [userId],
+  );
   return rows[0]?.session_version ?? 0;
 }
 

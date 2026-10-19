@@ -29,11 +29,17 @@ export interface PeerRow {
 }
 
 /** The peers past the threshold, with how long ago their last handshake was. */
-export function stalePeers(rows: PeerRow[], thresholdMin: number): (PeerRow & { age_sec: number })[] {
+export function stalePeers(
+  rows: PeerRow[],
+  thresholdMin: number,
+): (PeerRow & { age_sec: number })[] {
   const limit = Math.max(1, thresholdMin) * 60;
   return rows
     .filter((r) => !r.disabled && !r.interface_disabled && r.last_handshake_sec !== null)
-    .map((r) => ({ ...r, age_sec: (r.last_handshake_sec as number) + Math.max(0, r.polled_ago_sec) }))
+    .map((r) => ({
+      ...r,
+      age_sec: (r.last_handshake_sec as number) + Math.max(0, r.polled_ago_sec),
+    }))
     .filter((r) => r.age_sec > limit);
 }
 
@@ -62,14 +68,18 @@ export async function checkWireGuardStale(): Promise<void> {
        FROM wireguard_peers w JOIN devices d ON d.id = w.device_id
       -- A peer not polled for a day belongs to a device that is offline or gone;
       -- the device's own offline alert covers it.
-      WHERE w.updated_at > NOW() - INTERVAL '1 day'`
+      WHERE w.updated_at > NOW() - INTERVAL '1 day'`,
   );
   for (const p of stalePeers(rows, threshold)) {
     await alertService.dispatch(
       'wireguard_stale',
       `WireGuard peer "${peerLabel(p)}" on ${p.interface ?? 'an interface'} hasn't completed a handshake in ` +
         `${humanAge(p.age_sec)} (alert after ${threshold} min).`,
-      { deviceId: p.device_id, deviceName: p.device_name.trim(), cooldownKey: `wireguard_stale:${p.device_id}:${p.peer_id}` }
+      {
+        deviceId: p.device_id,
+        deviceName: p.device_name.trim(),
+        cooldownKey: `wireguard_stale:${p.device_id}:${p.peer_id}`,
+      },
     );
   }
 }

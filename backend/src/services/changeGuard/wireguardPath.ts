@@ -49,7 +49,11 @@ export interface ManagementTunnel {
 
 const isTrue = (v: string | undefined): boolean => v === 'true' || v === 'yes';
 const stripCidr = (a: string | undefined): string => (a || '').split('/')[0].trim();
-const csv = (v: string | undefined): string[] => (v || '').split(',').map((s) => s.trim()).filter(Boolean);
+const csv = (v: string | undefined): string[] =>
+  (v || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
 /** Does an address or prefix (10.6.0.0/24, 10.6.0.2, fd00::/64) contain this IP? */
 export function prefixContains(prefix: string, ip: string): boolean {
@@ -71,7 +75,11 @@ export function allowedCovers(allowed: string | undefined, ip: string): boolean 
 }
 
 /** The interface a route sends traffic out of: "10.6.0.1%wg0" or "wg0". */
-function routeInterface(route: RosRow, interfaceNames: Set<string>, addresses: RosRow[]): string | null {
+function routeInterface(
+  route: RosRow,
+  interfaceNames: Set<string>,
+  addresses: RosRow[],
+): string | null {
   for (const field of ['immediate-gw', 'gateway']) {
     const v = (route[field] || '').trim();
     if (!v) continue;
@@ -80,8 +88,13 @@ function routeInterface(route: RosRow, interfaceNames: Set<string>, addresses: R
     if (interfaceNames.has(v)) return v;
     // A bare gateway IP: the interface whose address subnet holds it.
     if (net.isIP(v)) {
-      const hit = addresses.find((a) => !isTrue(a['disabled']) && a['address'] && prefixContains(a['address'], v)
-        && prefixLength(a['address']) < (net.isIP(v) === 4 ? 32 : 128));
+      const hit = addresses.find(
+        (a) =>
+          !isTrue(a['disabled']) &&
+          a['address'] &&
+          prefixContains(a['address'], v) &&
+          prefixLength(a['address']) < (net.isIP(v) === 4 ? 32 : 128),
+      );
       if (hit) return hit['actual-interface'] || hit['interface'] || null;
     }
   }
@@ -102,14 +115,24 @@ function bestRoute(routes: RosRow[], ip: string): RosRow | null {
     const dst = r['dst-address'];
     if (!dst || !prefixContains(dst, ip)) continue;
     const len = prefixLength(dst);
-    if (len > bestLen) { best = r; bestLen = len; }
+    if (len > bestLen) {
+      best = r;
+      bestLen = len;
+    }
   }
   return best;
 }
 
 export function managementTunnel(s: TunnelState): ManagementTunnel {
   const none = (reason: string): ManagementTunnel => ({
-    interface: null, interfaceId: null, via: null, peerIds: [], peerCertain: false, interfacePeerIds: [], managerIp: s.managerIp, reason,
+    interface: null,
+    interfaceId: null,
+    via: null,
+    peerIds: [],
+    peerCertain: false,
+    interfacePeerIds: [],
+    managerIp: s.managerIp,
+    reason,
   });
   if (s.wgInterfaces.length === 0) return none('No WireGuard interfaces.');
   const wgNames = new Set(s.wgInterfaces.map((i) => i['name']).filter(Boolean));
@@ -119,38 +142,50 @@ export function managementTunnel(s: TunnelState): ManagementTunnel {
   // Compared canonically: RouterOS and the manager can write the same IPv6
   // address differently (case, zero compression).
   const deviceIp = canonicalIp(s.deviceIp);
-  const addr = s.addresses.find((a) => !isTrue(a['disabled']) && canonicalIp(stripCidr(a['address'])) === deviceIp);
-  const addrIface = addr ? (addr['actual-interface'] || addr['interface'] || '') : '';
+  const addr = s.addresses.find(
+    (a) => !isTrue(a['disabled']) && canonicalIp(stripCidr(a['address'])) === deviceIp,
+  );
+  const addrIface = addr ? addr['actual-interface'] || addr['interface'] || '' : '';
   if (addrIface && wgNames.has(addrIface)) {
     name = addrIface;
     via = 'address';
   } else if (s.managerIp) {
     const route = bestRoute(s.routes, s.managerIp);
     const out = route ? routeInterface(route, wgNames, s.addresses) : null;
-    if (out && wgNames.has(out)) { name = out; via = 'route'; }
+    if (out && wgNames.has(out)) {
+      name = out;
+      via = 'route';
+    }
   }
   if (!name) return none('The manager doesn’t reach this device through WireGuard.');
 
   const iface = s.wgInterfaces.find((i) => i['name'] === name);
   const onIface = s.peers.filter((p) => p['interface'] === name && !isTrue(p['disabled']));
   const certain = !!s.managerIp;
-  const peers = certain ? onIface.filter((p) => allowedCovers(p['allowed-address'], s.managerIp!)) : onIface;
-  const how = via === 'address'
-    ? `the address the manager connects to (${deviceIp}) is on ${name}`
-    : `the device's route back to the manager (${s.managerIp}) goes out through ${name}`;
+  const peers = certain
+    ? onIface.filter((p) => allowedCovers(p['allowed-address'], s.managerIp!))
+    : onIface;
+  const how =
+    via === 'address'
+      ? `the address the manager connects to (${deviceIp}) is on ${name}`
+      : `the device's route back to the manager (${s.managerIp}) goes out through ${name}`;
   return {
     interface: name,
     interfaceId: iface?.['.id'] ?? null,
     via,
     peerIds: peers.map((p) => p['.id']).filter(Boolean),
     peerCertain: certain,
-    interfacePeerIds: s.peers.filter((p) => p['interface'] === name).map((p) => p['.id']).filter(Boolean),
+    interfacePeerIds: s.peers
+      .filter((p) => p['interface'] === name)
+      .map((p) => p['.id'])
+      .filter(Boolean),
     managerIp: s.managerIp,
     reason: `The manager reaches this device through WireGuard: ${how}.`,
   };
 }
 
-const ELSEWHERE = 'Change it on the device itself (WinBox or the terminal), or move management off this tunnel first.';
+const ELSEWHERE =
+  'Change it on the device itself (WinBox or the terminal), or move management off this tunnel first.';
 
 export type TunnelVerdict = { refuse: string } | null;
 
@@ -163,11 +198,18 @@ export type TunnelVerdict = { refuse: string } | null;
  * being put.
  */
 export function tunnelWriteRule(
-  t: ManagementTunnel, target: { ifaceIdOrName?: string; peerId?: string | null; targetIface?: string | null },
+  t: ManagementTunnel,
+  target: { ifaceIdOrName?: string; peerId?: string | null; targetIface?: string | null },
 ): TunnelVerdict {
   if (!t.interface) return null;
-  const refuse = { refuse: `${t.interface} is protected: the manager reaches this device through it. ${ELSEWHERE}` };
-  if (target.ifaceIdOrName && (target.ifaceIdOrName === t.interfaceId || target.ifaceIdOrName === t.interface)) return refuse;
+  const refuse = {
+    refuse: `${t.interface} is protected: the manager reaches this device through it. ${ELSEWHERE}`,
+  };
+  if (
+    target.ifaceIdOrName &&
+    (target.ifaceIdOrName === t.interfaceId || target.ifaceIdOrName === t.interface)
+  )
+    return refuse;
   if (target.peerId && t.interfacePeerIds.includes(target.peerId)) return refuse;
   if (target.targetIface && target.targetIface === t.interface) return refuse;
   return null;
@@ -197,20 +239,25 @@ export async function readManagementTunnel(device: DeviceRow): Promise<Managemen
       // Only the manager's own connection, never the whole table (#313).
       readApiConnections(reader, deviceIp, device.api_port).catch(none),
     ]);
-    const snap = { mgmtConnections: conns, managerLocalPort: c.apiLocalPort() ?? null } as unknown as DeviceSnapshot;
+    const snap = {
+      mgmtConnections: conns,
+      managerLocalPort: c.apiLocalPort() ?? null,
+    } as unknown as DeviceSnapshot;
     const managerIp = managerIpFromConntrack(snap, device.api_port);
     // Only the routes covering the manager's address: the device picks the
     // longest of those, and a BGP table of every other route took minutes to
     // stream (#313). Not needed when no WireGuard interface exists, or the
     // manager's address can't be seen.
     const family = managerIp ? (net.isIP(managerIp) === 6 ? 6 : 4) : 4;
-    const routes = managerIp && wgInterfaces.length
-      ? await readCoveringRoutes(reader, managerIp, family, false).catch(none)
-      : [];
+    const routes =
+      managerIp && wgInterfaces.length
+        ? await readCoveringRoutes(reader, managerIp, family, false).catch(none)
+        : [];
     return managementTunnel({
       addresses: [...addresses, ...addresses6],
       routes,
-      wgInterfaces, peers,
+      wgInterfaces,
+      peers,
       deviceIp,
       managerIp,
     });

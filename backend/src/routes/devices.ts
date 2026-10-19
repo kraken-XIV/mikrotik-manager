@@ -1,6 +1,13 @@
 import { PartialApplyError, isPartialApply } from '../services/changeGuard/partialApply';
 import { resolveAuth } from '../services/sshExec';
-import { readSshInfo, refreshOverSsh, checkApi, promoteToApi, recordApiCheck, type SshOnlyDevice } from '../services/sshOnly';
+import {
+  readSshInfo,
+  refreshOverSsh,
+  checkApi,
+  promoteToApi,
+  recordApiCheck,
+  type SshOnlyDevice,
+} from '../services/sshOnly';
 import { describeSshFailure } from '../utils/sshOnly';
 import net from 'net';
 import { Router, Request, Response } from 'express';
@@ -8,14 +15,25 @@ import { deviceSiteAccess, deviceIdParam, devicesDenied } from '../utils/siteAcc
 import { bulkUpdateCredentials } from '../services/bulkCredentials';
 import { deviceSettings } from '../services/pollSettings';
 import { validateOverrides } from '../utils/pollOverrides';
-import { devicePins, pendingIdentityChanges, trustNewIdentity, IDENTITY_KINDS } from '../services/identityPins';
+import {
+  devicePins,
+  pendingIdentityChanges,
+  trustNewIdentity,
+  IDENTITY_KINDS,
+} from '../services/identityPins';
 import { enableApiSsl, type ApiSslDevice } from '../services/apiSsl';
 import { enableWwwSsl } from '../services/wwwSsl';
 import { deviceWriteLock, deviceIdFromPath } from '../services/changeGuard/deviceLock';
 import { randomUUID } from 'crypto';
 import { Client as SshClient } from 'ssh2';
 import { query, queryOne } from '../config/database';
-import { requireAuth, requireWrite, requireAdmin, requireSiteAdmin, isSiteScoped } from '../middleware/auth';
+import {
+  requireAuth,
+  requireWrite,
+  requireAdmin,
+  requireSiteAdmin,
+  isSiteScoped,
+} from '../middleware/auth';
 import { maskSecretsForReadOnly } from '../utils/redactSecrets';
 import { encrypt, decrypt } from '../utils/crypto';
 import { RouterOSClient } from '../services/mikrotik/RouterOSClient';
@@ -23,11 +41,21 @@ import { usesApiTls, managementService, parseApiTls, checkPort } from '../utils/
 import { planBridgePortMove, addressesOnPorts, bridgeDeleteRefusal } from '../utils/bridgePortMove';
 import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
 import { PollerService } from '../services/PollerService';
-import { createDeviceFromBody, loadCredentialPreset, type CreateDeviceInput } from '../services/deviceCreation';
+import {
+  createDeviceFromBody,
+  loadCredentialPreset,
+  type CreateDeviceInput,
+} from '../services/deviceCreation';
 import { parsePort } from '../utils/parsePort';
 import { safeConnectionError } from '../utils/safeClientError';
 import { normalizeDeviceAddress, reconcileAddressPort } from '../utils/deviceAddress';
-import { withSafeApply, probeCapability, probeUndoCapability, GuardRequiredError, type GuardDevice } from '../services/changeGuard/ChangeGuard';
+import {
+  withSafeApply,
+  probeCapability,
+  probeUndoCapability,
+  GuardRequiredError,
+  type GuardDevice,
+} from '../services/changeGuard/ChangeGuard';
 import { captureSnapshot, resolveManagementPath } from '../services/changeGuard/pathModel';
 import { analyzeChange, type PlannedChange } from '../services/changeGuard/analyzeChange';
 import { runConfigHealth } from '../services/changeGuard/configHealth';
@@ -61,7 +89,14 @@ import { fluxString } from '@influxdata/influxdb-client';
 import { upgradeDecision } from '../utils/firmwarePlan';
 import { sshHostCheck, explainSshError } from '../services/sshHostCheck';
 import { presetCaller } from '../utils/presetAccess';
-import { parseAllowedList, configuredServices, allowedFromKey, managerPeer, addressAllowed, plainApiUsers } from '../utils/ipServices';
+import {
+  parseAllowedList,
+  configuredServices,
+  allowedFromKey,
+  managerPeer,
+  addressAllowed,
+  plainApiUsers,
+} from '../utils/ipServices';
 import { portErrorSummaries, thresholds } from '../services/interfaceErrors';
 import { clientAddressListView } from '../utils/addressLists';
 import { l3hwView } from '../utils/l3hw';
@@ -81,7 +116,10 @@ router.use(deviceSiteAccess(deviceIdParam));
 // The :id a handler acts on must be the plain number the site check read
 // (GHSA-6xq3-q9m5-7hxp); anything else is answered as not found.
 router.param('id', (_req, res, next, id) => {
-  if (!/^\d{1,10}$/.test(String(id))) { res.status(404).json({ error: 'Device not found' }); return; }
+  if (!/^\d{1,10}$/.test(String(id))) {
+    res.status(404).json({ error: 'Device not found' });
+    return;
+  }
   next();
 });
 // Viewers and read-only tokens never receive device secrets (Wi-Fi keys,
@@ -107,7 +145,7 @@ router.get('/', async (req: Request, res: Response) => {
             routerboard_upgrade_available, upgrade_firmware_version,
             location_address, location_lat::float8 AS location_lat, location_lng::float8 AS location_lng,
             rack_name, rack_slot, wifi_role, created_at
-     FROM devices ${where} ORDER BY name ASC`
+     FROM devices ${where} ORDER BY name ASC`,
   );
 
   // How the manager logs in (#199): a stored password, and an SSH key it has
@@ -116,14 +154,14 @@ router.get('/', async (req: Request, res: Response) => {
   const loginRows = await query<{ id: number; has_password: boolean; has_ssh_key: boolean }>(
     `SELECT id, (COALESCE(api_password_encrypted, '') <> '') AS has_password,
             EXISTS (SELECT 1 FROM device_ssh_keys k WHERE k.device_id = devices.id AND k.status = 'verified') AS has_ssh_key
-     FROM devices ${where}`
+     FROM devices ${where}`,
   );
   const loginById = new Map(loginRows.map((r) => [r.id, r]));
 
   // Attach tags to each device
   const tagRows = await query<{ device_id: number; id: number; name: string; color: string }>(
     `SELECT dt.device_id, t.id, t.name, t.color
-     FROM device_tags dt JOIN tags t ON t.id = dt.tag_id`
+     FROM device_tags dt JOIN tags t ON t.id = dt.tag_id`,
   );
   const tagsByDevice: Record<number, { id: number; name: string; color: string }[]> = {};
   for (const t of tagRows) {
@@ -182,8 +220,11 @@ router.get('/security/suppressions', async (_req: Request, res: Response) => {
 });
 
 router.post('/security/suppressions', requireWrite, async (req: Request, res: Response) => {
-  const { check_id, device_id, reason } = req.body as
-    { check_id?: string; device_id?: number | null; reason?: string };
+  const { check_id, device_id, reason } = req.body as {
+    check_id?: string;
+    device_id?: number | null;
+    reason?: string;
+  };
   if (!check_id) return res.status(400).json({ error: 'check_id is required' });
 
   const rows = await query(
@@ -191,20 +232,33 @@ router.post('/security/suppressions', requireWrite, async (req: Request, res: Re
      VALUES ($1, $2, $3, $4)
      ON CONFLICT DO NOTHING
      RETURNING *`,
-    [check_id, device_id ?? null, reason ?? null,
-     (req as unknown as { user?: { username?: string } }).user?.username ?? null]
+    [
+      check_id,
+      device_id ?? null,
+      reason ?? null,
+      (req as unknown as { user?: { username?: string } }).user?.username ?? null,
+    ],
   );
   // ON CONFLICT DO NOTHING returns no row when it already existed, which is not an
   // error — the caller asked for a state that now holds either way.
   // The dashboard's cached posture (#302) is recomputed with the mute applied.
-  await query(`DELETE FROM device_live_cache WHERE kind = 'posture'${device_id ? ' AND device_id = $1' : ''}`, device_id ? [device_id] : []);
+  await query(
+    `DELETE FROM device_live_cache WHERE kind = 'posture'${device_id ? ' AND device_id = $1' : ''}`,
+    device_id ? [device_id] : [],
+  );
   res.status(201).json(rows[0] ?? { check_id, device_id: device_id ?? null, already: true });
 });
 
 router.delete('/security/suppressions/:id', requireWrite, async (req: Request, res: Response) => {
-  const gone = await query<{ device_id: number | null }>(`DELETE FROM security_check_suppressions WHERE id = $1 RETURNING device_id`, [req.params.id]);
+  const gone = await query<{ device_id: number | null }>(
+    `DELETE FROM security_check_suppressions WHERE id = $1 RETURNING device_id`,
+    [req.params.id],
+  );
   const deviceId = gone[0]?.device_id;
-  await query(`DELETE FROM device_live_cache WHERE kind = 'posture'${deviceId ? ' AND device_id = $1' : ''}`, deviceId ? [deviceId] : []);
+  await query(
+    `DELETE FROM device_live_cache WHERE kind = 'posture'${deviceId ? ' AND device_id = $1' : ''}`,
+    deviceId ? [deviceId] : [],
+  );
   res.status(204).end();
 });
 
@@ -242,13 +296,13 @@ router.get('/discovered', async (_req: Request, res: Response) => {
       `SELECT i.device_id AS device_id, d.name AS device_name, LOWER(i.mac_address) AS mac
          FROM interfaces i
          JOIN devices d ON d.id = i.device_id
-        WHERE i.mac_address IS NOT NULL AND i.mac_address <> ''`
+        WHERE i.mac_address IS NOT NULL AND i.mac_address <> ''`,
     ),
     query<{ id: number; name: string; ip_address: string }>(
-      `SELECT id, name, ip_address FROM devices WHERE ip_address IS NOT NULL AND ip_address <> ''`
+      `SELECT id, name, ip_address FROM devices WHERE ip_address IS NOT NULL AND ip_address <> ''`,
     ),
     query<{ id: number; name: string }>(
-      `SELECT id, name FROM devices WHERE name IS NOT NULL AND name <> ''`
+      `SELECT id, name FROM devices WHERE name IS NOT NULL AND name <> ''`,
     ),
   ]);
   const macToDevice = new Map<string, { id: number; name: string }>();
@@ -261,21 +315,19 @@ router.get('/discovered', async (_req: Request, res: Response) => {
   // Deduplicate across all three identifiers so that a neighbor seen by multiple managed
   // devices — some via LLDP (has MAC), others via MNDP (no MAC) — merges into one entry.
   // Three indexes cross-reference mac/ip/identity to the canonical dedup key.
-  const seen = new Map<string, typeof rows[0] & { seen_by_list: string[] }>();
-  const macIdx = new Map<string, string>();      // normalised-mac  → canonical key
-  const ipIdx  = new Map<string, string>();      // ip              → canonical key
-  const nameIdx = new Map<string, string>();     // lower-identity  → canonical key
+  const seen = new Map<string, (typeof rows)[0] & { seen_by_list: string[] }>();
+  const macIdx = new Map<string, string>(); // normalised-mac  → canonical key
+  const ipIdx = new Map<string, string>(); // ip              → canonical key
+  const nameIdx = new Map<string, string>(); // lower-identity  → canonical key
 
   for (const row of rows) {
-    const mac      = (row.neighbor_mac  || '').toLowerCase();
-    const ip       = row.neighbor_address || '';
+    const mac = (row.neighbor_mac || '').toLowerCase();
+    const ip = row.neighbor_address || '';
     const identity = (row.neighbor_identity || '').toLowerCase();
 
     // Find whether any identifier matches something already in the map
     const existingKey =
-      (mac      && macIdx.get(mac))   ||
-      (ip       && ipIdx.get(ip))     ||
-      (identity && nameIdx.get(identity));
+      (mac && macIdx.get(mac)) || (ip && ipIdx.get(ip)) || (identity && nameIdx.get(identity));
 
     if (existingKey) {
       const existing = seen.get(existingKey)!;
@@ -283,15 +335,15 @@ router.get('/discovered', async (_req: Request, res: Response) => {
         existing.seen_by_list.push(row.seen_by);
       }
       // Register any newly-learned identifiers against the same key
-      if (mac      && !macIdx.has(mac))       macIdx.set(mac,      existingKey);
-      if (ip       && !ipIdx.has(ip))          ipIdx.set(ip,        existingKey);
+      if (mac && !macIdx.has(mac)) macIdx.set(mac, existingKey);
+      if (ip && !ipIdx.has(ip)) ipIdx.set(ip, existingKey);
       if (identity && !nameIdx.has(identity)) nameIdx.set(identity, existingKey);
     } else {
       const key = mac || ip || identity;
       if (!key) continue;
       seen.set(key, { ...row, seen_by_list: row.seen_by ? [row.seen_by] : [] });
-      if (mac)      macIdx.set(mac,      key);
-      if (ip)       ipIdx.set(ip,        key);
+      if (mac) macIdx.set(mac, key);
+      if (ip) ipIdx.set(ip, key);
       if (identity) nameIdx.set(identity, key);
     }
   }
@@ -328,7 +380,9 @@ router.post('/', requireWrite, async (req: Request, res: Response) => {
   const target = chosen.named ? { ok: true as const, siteId: chosen.siteId } : targetSite(req);
   if (!target.ok) return res.status(target.status).json({ error: target.error });
   const deviceBody = { ...(req.body ?? {}) };
-  delete deviceBody.site_id; delete deviceBody.site_name; delete deviceBody.group_name;
+  delete deviceBody.site_id;
+  delete deviceBody.site_name;
+  delete deviceBody.group_name;
   const result = await createDeviceFromBody(deviceBody, pollerService, {
     // Admin-only credential presets are fleet objects: a site admin uses them as an operator would (P1-7).
     requestingUserRole: isSiteScoped(req.user) ? 'operator' : req.user?.role,
@@ -345,11 +399,14 @@ const BULK_ADD_META_TTL_SEC = 86400;
 // several devices (#259). Each device is logged in to with the new login first
 // and only updated if that works. The devices themselves are not changed.
 router.post('/credentials/bulk', requireWrite, async (req: Request, res: Response) => {
-  const ids = Array.isArray(req.body?.device_ids) ? (req.body.device_ids as unknown[]).map(Number) : [];
+  const ids = Array.isArray(req.body?.device_ids)
+    ? (req.body.device_ids as unknown[]).map(Number)
+    : [];
   if (ids.length === 0 || ids.length > 500 || !ids.every((n) => Number.isSafeInteger(n) && n > 0)) {
     return res.status(400).json({ error: 'device_ids must be a list of up to 500 device ids.' });
   }
-  const presetId = req.body?.credential_preset_id == null ? null : Number(req.body.credential_preset_id);
+  const presetId =
+    req.body?.credential_preset_id == null ? null : Number(req.body.credential_preset_id);
   if (presetId !== null && (!Number.isSafeInteger(presetId) || presetId <= 0)) {
     return res.status(400).json({ error: 'credential_preset_id must be a preset id.' });
   }
@@ -358,19 +415,33 @@ router.post('/credentials/bulk', requireWrite, async (req: Request, res: Respons
     credential_preset_id: presetId,
     api_username: str(req.body?.api_username)?.trim(),
     api_password: str(req.body?.api_password),
-    ssh_username: req.body?.ssh_username === undefined ? undefined : (str(req.body.ssh_username)?.trim() || null),
-    ssh_password: req.body?.ssh_password === undefined ? undefined : (str(req.body.ssh_password) || null),
+    ssh_username:
+      req.body?.ssh_username === undefined ? undefined : str(req.body.ssh_username)?.trim() || null,
+    ssh_password:
+      req.body?.ssh_password === undefined ? undefined : str(req.body.ssh_password) || null,
   };
   if (presetId === null && (!input.api_username || !input.api_password)) {
-    return res.status(400).json({ error: 'Pick a preset, or give both a username and a password.' });
+    return res
+      .status(400)
+      .json({ error: 'Pick a preset, or give both a username and a password.' });
   }
   // Every device must be one the account may change; one outside its sites
   // refuses the lot rather than quietly skipping it.
   const denied = await devicesDenied(req.user!, ids, 'operator');
-  if (denied.length) return res.status(404).json({ error: `Device${denied.length === 1 ? '' : 's'} not found: ${denied.join(', ')}` });
+  if (denied.length)
+    return res
+      .status(404)
+      .json({ error: `Device${denied.length === 1 ? '' : 's'} not found: ${denied.join(', ')}` });
 
-  const results = await bulkUpdateCredentials(ids, input, { role: req.user?.role, presetCaller: presetCaller(req.user) });
-  return res.json({ results, updated: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok).length });
+  const results = await bulkUpdateCredentials(ids, input, {
+    role: req.user?.role,
+    presetCaller: presetCaller(req.user),
+  });
+  return res.json({
+    results,
+    updated: results.filter((r) => r.ok).length,
+    failed: results.filter((r) => !r.ok).length,
+  });
 });
 
 // POST /api/devices/bulk-add/jobs — enqueue Try-All style adds (survives tab close)
@@ -389,15 +460,24 @@ router.post('/bulk-add/jobs', requireWrite, async (req: Request, res: Response) 
   const unnamed: number[] = [];
   for (let i = 0; i < items.length; i++) {
     const it = (items[i] ?? {}) as Record<string, unknown>;
-    const key = it.site_id != null && it.site_id !== '' ? `id:${String(it.site_id)}` : `name:${String(it.site_name ?? '').trim().toLowerCase()}`;
-    if (key === 'name:') { unnamed.push(i); continue; }
+    const key =
+      it.site_id != null && it.site_id !== ''
+        ? `id:${String(it.site_id)}`
+        : `name:${String(it.site_name ?? '')
+            .trim()
+            .toLowerCase()}`;
+    if (key === 'name:') {
+      unnamed.push(i);
+      continue;
+    }
     if (!bySiteName.has(key)) {
       const r = await resolveSiteChoice(req.user ?? {}, it);
       if (!r.ok) return res.status(r.status).json({ error: `Row ${i + 1}: ${r.error}` });
       bySiteName.set(key, r.siteId);
     }
     it.site_id = bySiteName.get(key);
-    delete it.site_name; delete it.group_name;
+    delete it.site_name;
+    delete it.group_name;
   }
   const bulkTarget = unnamed.length ? targetSite(req) : { ok: true as const, siteId: null };
   if (!bulkTarget.ok) return res.status(bulkTarget.status).json({ error: bulkTarget.error });
@@ -413,11 +493,17 @@ router.post('/bulk-add/jobs', requireWrite, async (req: Request, res: Response) 
       created_at: new Date().toISOString(),
     }),
     'EX',
-    BULK_ADD_META_TTL_SEC
+    BULK_ADD_META_TTL_SEC,
   );
   await redis.set(`device-bulk-add:${jobId}:results`, '[]', 'EX', BULK_ADD_META_TTL_SEC);
-  await enqueueBulkAddJob(jobId, items as CreateDeviceInput[], bulkTarget.siteId, isSiteScoped(req.user) ? 'operator' : req.user!.role,
-    req.user?.siteRoles ? Object.keys(req.user.siteRoles).map(Number) : null, presetCaller(req.user));
+  await enqueueBulkAddJob(
+    jobId,
+    items as CreateDeviceInput[],
+    bulkTarget.siteId,
+    isSiteScoped(req.user) ? 'operator' : req.user!.role,
+    req.user?.siteRoles ? Object.keys(req.user.siteRoles).map(Number) : null,
+    presetCaller(req.user),
+  );
   return res.status(202).json({ job_id: jobId, total: items.length });
 });
 
@@ -463,7 +549,7 @@ router.get('/:id', async (req: Request, res: Response) => {
             location_lng::float8 AS location_lng,
             rack_name, rack_slot, wifi_role, has_lte, user_manager, created_at, updated_at
      FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!device) return res.status(404).json({ error: 'Device not found' });
   const [withLoc] = await withEffectiveLocation([device as { site_id: number | null }]);
@@ -476,53 +562,65 @@ router.get('/:id', async (req: Request, res: Response) => {
 //   health_ignored: /system/health readings this device is not judged on
 router.patch('/:id/monitoring', requireWrite, async (req: Request, res: Response) => {
   const body = (req.body ?? {}) as {
-    intermittent?: unknown; intermittent_alert_after_min?: unknown; health_ignored?: unknown;
+    intermittent?: unknown;
+    intermittent_alert_after_min?: unknown;
+    health_ignored?: unknown;
   };
   const sets: string[] = [];
   const params: unknown[] = [req.params.id];
   if (body.intermittent !== undefined) {
-    if (typeof body.intermittent !== 'boolean') return res.status(400).json({ error: 'intermittent must be true or false' });
-    params.push(body.intermittent); sets.push(`intermittent = $${params.length}`);
+    if (typeof body.intermittent !== 'boolean')
+      return res.status(400).json({ error: 'intermittent must be true or false' });
+    params.push(body.intermittent);
+    sets.push(`intermittent = $${params.length}`);
     // Turning it off must not leave a stale "already alerted" mark behind.
     if (!body.intermittent) sets.push('intermittent_alerted_at = NULL');
   }
   if (body.intermittent_alert_after_min !== undefined) {
     const n = Number(body.intermittent_alert_after_min);
     if (!Number.isInteger(n) || n < 0 || n > 60 * 24 * 90) {
-      return res.status(400).json({ error: 'intermittent_alert_after_min must be 0 (never) to 129600 minutes' });
+      return res
+        .status(400)
+        .json({ error: 'intermittent_alert_after_min must be 0 (never) to 129600 minutes' });
     }
-    params.push(n); sets.push(`intermittent_alert_after_min = $${params.length}`);
+    params.push(n);
+    sets.push(`intermittent_alert_after_min = $${params.length}`);
   }
   if (body.health_ignored !== undefined) {
     const list = Array.isArray(body.health_ignored) ? body.health_ignored.map(String) : null;
     if (!list || list.some((x) => !/^[a-z0-9-]{1,64}$/.test(x))) {
-      return res.status(400).json({ error: 'health_ignored must be a list of health reading names' });
+      return res
+        .status(400)
+        .json({ error: 'health_ignored must be a list of health reading names' });
     }
-    params.push([...new Set(list)]); sets.push(`health_ignored = $${params.length}::text[]`);
+    params.push([...new Set(list)]);
+    sets.push(`health_ignored = $${params.length}::text[]`);
   }
   if (!sets.length) return res.status(400).json({ error: 'Nothing to change' });
   const [row] = await query(
     `UPDATE devices SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $1
      RETURNING id, intermittent, intermittent_alert_after_min, health_ignored`,
-    params
+    params,
   );
   if (!row) return res.status(404).json({ error: 'Device not found' });
 
   // Re-sort the stored problems under the new ignore list now, rather than
   // leaving the device amber until the next slow poll.
   if (body.health_ignored !== undefined) {
-    const [cur] = await query<{ health_status: string | null; health_issues: { issues?: HealthIssue[]; ignored?: HealthIssue[] } | null }>(
-      `SELECT health_status, health_issues FROM devices WHERE id = $1`, [req.params.id]
-    );
+    const [cur] = await query<{
+      health_status: string | null;
+      health_issues: { issues?: HealthIssue[]; ignored?: HealthIssue[] } | null;
+    }>(`SELECT health_status, health_issues FROM devices WHERE id = $1`, [req.params.id]);
     if (cur?.health_issues && cur.health_status !== 'unknown') {
       const all = [...(cur.health_issues.issues ?? []), ...(cur.health_issues.ignored ?? [])];
       const ignore = new Set((row as { health_ignored: string[] }).health_ignored);
       const issues = all.filter((i) => !ignore.has(i.item));
       const ignored = all.filter((i) => ignore.has(i.item));
-      await query(
-        `UPDATE devices SET health_status = $2, health_issues = $3 WHERE id = $1`,
-        [req.params.id, issues.length ? 'degraded' : 'ok', JSON.stringify({ issues, ignored })]
-      );
+      await query(`UPDATE devices SET health_status = $2, health_issues = $3 WHERE id = $1`, [
+        req.params.id,
+        issues.length ? 'degraded' : 'ok',
+        JSON.stringify({ issues, ignored }),
+      ]);
     }
   }
   return res.json(row);
@@ -536,7 +634,14 @@ router.patch('/:id/location', requireWrite, async (req: Request, res: Response) 
   // Only the fields sent are changed (outside review C2). Every omitted field
   // used to be set to null, so saving just the rack erased the coordinates
   // and notes. Sending a field as null still clears it.
-  const fields = ['location_address', 'location_lat', 'location_lng', 'rack_name', 'rack_slot', 'notes'] as const;
+  const fields = [
+    'location_address',
+    'location_lat',
+    'location_lng',
+    'rack_name',
+    'rack_slot',
+    'notes',
+  ] as const;
   const body = req.body as Record<string, unknown>;
   const sets: string[] = [];
   const params: unknown[] = [];
@@ -548,7 +653,10 @@ router.patch('/:id/location', requireWrite, async (req: Request, res: Response) 
   if (sets.length > 0) {
     params.push(req.params.id);
     // Column names come from the fixed list above.
-    await query(`UPDATE devices SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${params.length}`, params);
+    await query(
+      `UPDATE devices SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${params.length}`,
+      params,
+    );
   }
 
   const updated = await queryOne(
@@ -558,7 +666,7 @@ router.patch('/:id/location', requireWrite, async (req: Request, res: Response) 
             location_lng::float8 AS location_lng,
             rack_name, rack_slot, wifi_role, has_lte, user_manager, created_at, updated_at
      FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   const [withLoc] = await withEffectiveLocation([updated as { site_id: number | null }]);
   return res.json(withLoc);
@@ -567,7 +675,11 @@ router.patch('/:id/location', requireWrite, async (req: Request, res: Response) 
 // PUT /api/devices/:id
 router.put('/:id', requireWrite, async (req: Request, res: Response) => {
   const {
-    name, ip_address: rawIpAddress, device_type, notes, credential_preset_id,
+    name,
+    ip_address: rawIpAddress,
+    device_type,
+    notes,
+    credential_preset_id,
     unlock_name,
   } = req.body as {
     name?: string;
@@ -606,7 +718,7 @@ router.put('/:id', requireWrite, async (req: Request, res: Response) => {
     `SELECT id, name, ip_address, api_port, api_tls, api_username, api_password_encrypted, ssh_port, site_id,
             ssh_only, ssh_username, ssh_password_encrypted
        FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!existing) return res.status(404).json({ error: 'Device not found' });
 
@@ -618,7 +730,9 @@ router.put('/:id', requireWrite, async (req: Request, res: Response) => {
   const nameLockedUpdate: boolean | null =
     unlock_name === true
       ? false
-      : (typeof name === 'string' && name && name !== existing.name) ? true : null;
+      : typeof name === 'string' && name && name !== existing.name
+        ? true
+        : null;
 
   let preset: Awaited<ReturnType<typeof loadCredentialPreset>>;
   try {
@@ -626,17 +740,24 @@ router.put('/:id', requireWrite, async (req: Request, res: Response) => {
     // devices, and admin-only fleet presets kept from site admins (P1-7). Here
     // the role had been the device's site role, which let a site admin apply
     // an admin-only fleet preset by editing a device.
-    preset = await loadCredentialPreset(credential_preset_id ?? null, {
-      requestingUserRole: req.user?.role,
-      presetCaller: presetCaller(req.user),
-    }, existing.site_id ?? null);
+    preset = await loadCredentialPreset(
+      credential_preset_id ?? null,
+      {
+        requestingUserRole: req.user?.role,
+        presetCaller: presetCaller(req.user),
+      },
+      existing.site_id ?? null,
+    );
   } catch (err) {
     const status = (err as Error & { statusCode?: number }).statusCode ?? 400;
     return res.status(status).json({ error: (err as Error).message });
   }
 
   // Out-of-range ports used to be stored as given (#257).
-  for (const [field, label] of [['api_port', 'API port'], ['ssh_port', 'SSH port']] as const) {
+  for (const [field, label] of [
+    ['api_port', 'API port'],
+    ['ssh_port', 'SSH port'],
+  ] as const) {
     const pc = checkPort(req.body[field], label);
     if (!pc.ok) return res.status(400).json({ error: pc.error });
   }
@@ -645,7 +766,8 @@ router.put('/:id', requireWrite, async (req: Request, res: Response) => {
   // in the body so "apply preset" has a single unambiguous meaning.
   const portCheck = reconcileAddressPort(addressPort, preset?.api_port ?? req.body.api_port);
   if (!portCheck.ok) return res.status(400).json({ error: portCheck.reason });
-  const api_port = portCheck.port ?? preset?.api_port ?? parsePort(req.body.api_port, existing.api_port);
+  const api_port =
+    portCheck.port ?? preset?.api_port ?? parsePort(req.body.api_port, existing.api_port);
   const api_username = preset?.api_username ?? req.body.api_username;
   const api_password = preset?.api_password ?? req.body.api_password;
   const ssh_port = preset?.ssh_port ?? parsePort(req.body.ssh_port, existing.ssh_port ?? 22);
@@ -661,15 +783,19 @@ router.put('/:id', requireWrite, async (req: Request, res: Response) => {
   // If the user is changing the IP (or port / username / password), verify the
   // RouterOS API is still reachable with the new values before persisting —
   // otherwise we could silently brick the device record.
-  const ipChanged = typeof ip_address === 'string' && ip_address && ip_address !== existing.ip_address;
+  const ipChanged =
+    typeof ip_address === 'string' && ip_address && ip_address !== existing.ip_address;
   const portChanged = typeof api_port === 'number' && api_port !== existing.api_port;
   // api-ssl on any port (#257): an explicit choice is kept; a new port without
   // one goes back to the default for that port (TLS on 8729).
   const api_tls: boolean | null = Object.prototype.hasOwnProperty.call(req.body, 'api_tls')
     ? parseApiTls(req.body.api_tls)
-    : portChanged ? null : existing.api_tls;
+    : portChanged
+      ? null
+      : existing.api_tls;
   const tlsChanged = usesApiTls({ api_port, api_tls }) !== usesApiTls(existing);
-  const userChanged = typeof api_username === 'string' && api_username && api_username !== existing.api_username;
+  const userChanged =
+    typeof api_username === 'string' && api_username && api_username !== existing.api_username;
   const presetReplacesApiCreds = !!preset;
 
   // Verifying a new address means logging in there, and the RouterOS API login
@@ -679,36 +805,64 @@ router.put('/:id', requireWrite, async (req: Request, res: Response) => {
   // prevent. So a non-admin moving a device must supply the password; admins
   // already hold full control and may reuse the stored one.
   // Fleet admins only: this sends the saved password to the new address (P1-6, P1-7).
-  if (ipChanged && !api_password && !presetReplacesApiCreds && (req.user?.role !== 'admin' || isSiteScoped(req.user))) {
+  if (
+    ipChanged &&
+    !api_password &&
+    !presetReplacesApiCreds &&
+    (req.user?.role !== 'admin' || isSiteScoped(req.user))
+  ) {
     return res.status(400).json({
-      error: "Enter the device's API password to change its address. The saved password is only sent to the address it was saved for.",
+      error:
+        "Enter the device's API password to change its address. The saved password is only sent to the address it was saved for.",
       code: 'password_required_for_address_change',
     });
   }
 
   // Added over SSH only (#174): there is no API to log in to yet, so a new
   // address or SSH login is checked over SSH instead.
-  const sshLoginChanged = (typeof ssh_username === 'string' && ssh_username !== '' && ssh_username !== existing.ssh_username)
-    || !!ssh_password || ssh_port !== (existing.ssh_port ?? 22);
+  const sshLoginChanged =
+    (typeof ssh_username === 'string' &&
+      ssh_username !== '' &&
+      ssh_username !== existing.ssh_username) ||
+    !!ssh_password ||
+    ssh_port !== (existing.ssh_port ?? 22);
   if (existing.ssh_only && (ipChanged || sshLoginChanged || presetReplacesApiCreds)) {
     try {
       await readSshInfo({
-        id: existing.id, name: existing.name,
+        id: existing.id,
+        name: existing.name,
         ip_address: ip_address ?? existing.ip_address,
         ssh_port,
         ssh_username: ssh_username || existing.ssh_username || existing.api_username,
-        ssh_password_encrypted: ssh_password ? encrypt(ssh_password)
+        ssh_password_encrypted: ssh_password
+          ? encrypt(ssh_password)
           : existing.ssh_password_encrypted || existing.api_password_encrypted,
       });
     } catch (err) {
       return res.status(422).json({ error: describeSshFailure(err, ssh_port) });
     }
-  } else if (!existing.ssh_only && (ipChanged || portChanged || tlsChanged || userChanged || api_password || presetReplacesApiCreds)) {
+  } else if (
+    !existing.ssh_only &&
+    (ipChanged ||
+      portChanged ||
+      tlsChanged ||
+      userChanged ||
+      api_password ||
+      presetReplacesApiCreds)
+  ) {
     const testIp = ip_address ?? existing.ip_address;
     const testPort = api_port;
     const testUser = api_username ?? existing.api_username;
     const testPass = api_password ? api_password : decrypt(existing.api_password_encrypted);
-    const testClient = new RouterOSClient(testIp, testPort, testUser, testPass, 10_000, 30_000, usesApiTls({ api_port, api_tls }));
+    const testClient = new RouterOSClient(
+      testIp,
+      testPort,
+      testUser,
+      testPass,
+      10_000,
+      30_000,
+      usesApiTls({ api_port, api_tls }),
+    );
     try {
       await testClient.connect();
       testClient.disconnect();
@@ -742,7 +896,22 @@ router.put('/:id', requireWrite, async (req: Request, res: Response) => {
        api_tls=$14,
        updated_at=NOW()
      WHERE id = $12`,
-    [name, nameLockedUpdate, ip_address, api_port, api_username, encPass, ssh_port, ssh_username, encSshPass, device_type, notes, req.params.id, replaceSsh, api_tls]
+    [
+      name,
+      nameLockedUpdate,
+      ip_address,
+      api_port,
+      api_username,
+      encPass,
+      ssh_port,
+      ssh_username,
+      encSshPass,
+      device_type,
+      notes,
+      req.params.id,
+      replaceSsh,
+      api_tls,
+    ],
   );
 
   // Unlocking asks to follow the router's identity again — resync promptly
@@ -752,10 +921,9 @@ router.put('/:id', requireWrite, async (req: Request, res: Response) => {
     await pollerService.scheduleDeviceSync(Number(req.params.id), 'full');
   }
 
-  const updated = await queryOne(
-    `SELECT ${DEVICE_BASE_COLUMNS} FROM devices WHERE id = $1`,
-    [req.params.id]
-  );
+  const updated = await queryOne(`SELECT ${DEVICE_BASE_COLUMNS} FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   return res.json(updated);
 });
 
@@ -772,25 +940,30 @@ router.delete('/:id', requireWrite, async (req: Request, res: Response) => {
 // availability history and uptime figures are left alone.
 router.post('/:id/outages/reset', requireWrite, async (req: Request, res: Response) => {
   const row = await queryOne<{ outages_reset_at: string }>(
-    `UPDATE devices SET outages_reset_at = NOW() WHERE id = $1 RETURNING outages_reset_at`, [req.params.id]);
+    `UPDATE devices SET outages_reset_at = NOW() WHERE id = $1 RETURNING outages_reset_at`,
+    [req.params.id],
+  );
   if (!row) return res.status(404).json({ error: 'Device not found' });
   return res.json({ message: 'Outage count reset', outages_reset_at: row.outages_reset_at });
 });
 
 router.post('/:id/sync', requireWrite, async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(
-    `SELECT * FROM devices WHERE id = $1`,
-    [req.params.id]
-  );
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
   // Without its API yet (#174), a sync is the SSH read the poller does.
   if (deviceRow.ssh_only) {
     try {
       await refreshOverSsh(deviceRow as unknown as SshOnlyDevice);
-      return res.json({ message: 'Read over SSH. The API is not enabled yet, so only the basics are available.' });
+      return res.json({
+        message: 'Read over SSH. The API is not enabled yet, so only the basics are available.',
+      });
     } catch (err) {
-      return res.status(500).json({ error: `Sync failed: ${describeSshFailure(err, deviceRow.ssh_port ?? 22)}` });
+      return res
+        .status(500)
+        .json({ error: `Sync failed: ${describeSshFailure(err, deviceRow.ssh_port ?? 22)}` });
     }
   }
 
@@ -811,9 +984,13 @@ router.post('/:id/sync', requireWrite, async (req: Request, res: Response) => {
 // does the API answer now? If it does, the device is managed over the API from
 // now on and a full sync starts. The poller checks too, every minute.
 router.post('/:id/check-api', requireWrite, async (req: Request, res: Response) => {
-  const device = await queryOne<SshOnlyDevice & { ssh_only: boolean }>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const device = await queryOne<SshOnlyDevice & { ssh_only: boolean }>(
+    `SELECT * FROM devices WHERE id = $1`,
+    [req.params.id],
+  );
   if (!device) return res.status(404).json({ error: 'Device not found' });
-  if (!device.ssh_only) return res.json({ api: true, message: 'This device is already managed over the API.' });
+  if (!device.ssh_only)
+    return res.json({ api: true, message: 'This device is already managed over the API.' });
   const check = await checkApi(device);
   if (!check.ok) {
     await recordApiCheck(device.id, check.message);
@@ -822,17 +999,17 @@ router.post('/:id/check-api', requireWrite, async (req: Request, res: Response) 
   await promoteToApi(device, check);
   if (pollerService) await pollerService.scheduleDeviceSync(device.id, 'full');
   return res.json({
-    api: true, port: check.port,
+    api: true,
+    port: check.port,
     message: `The API answers on port ${check.port}${usesApiTls({ api_port: check.port, api_tls: device.api_tls }) ? ' (api-ssl)' : ''}. ${device.name.trim()} is now managed over the API; a full sync has started.`,
   });
 });
 
 // GET /api/devices/:id/interfaces
 router.get('/:id/interfaces', async (req: Request, res: Response) => {
-  const ifaces = await query(
-    `SELECT * FROM interfaces WHERE device_id = $1 ORDER BY name ASC`,
-    [req.params.id]
-  );
+  const ifaces = await query(`SELECT * FROM interfaces WHERE device_id = $1 ORDER BY name ASC`, [
+    req.params.id,
+  ]);
   return res.json(ifaces);
 });
 
@@ -858,8 +1035,17 @@ router.get('/:id/interface-errors', async (req: Request, res: Response) => {
 router.get('/:id/optics', async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid device id' });
-  const [statuses, dropDb, limits] = await Promise.all([opticStatuses([id]), dropThreshold(), rxLimits()]);
-  return res.json({ ports: statuses.get(id) ?? [], drop_db: dropDb, rx_low_dbm: limits.rxLow, rx_high_dbm: limits.rxHigh });
+  const [statuses, dropDb, limits] = await Promise.all([
+    opticStatuses([id]),
+    dropThreshold(),
+    rxLimits(),
+  ]);
+  return res.json({
+    ports: statuses.get(id) ?? [],
+    drop_db: dropDb,
+    rx_low_dbm: limits.rxLow,
+    rx_high_dbm: limits.rxHigh,
+  });
 });
 
 // GET /api/devices/:id/optics/:port/history?days=7
@@ -879,14 +1065,25 @@ router.get('/:id/optics/:port/history', async (req: Request, res: Response) => {
 // analyser already modelled interface.disable (outside review P2-8).
 router.put('/:id/interfaces/:name', requireWrite, async (req: Request, res: Response) => {
   const name = req.params.name;
-  const { disabled, comment, mtu, poe_out, fec_mode, tx_flow_control, rx_flow_control, auto_negotiation, speed } = req.body;
+  const {
+    disabled,
+    comment,
+    mtu,
+    poe_out,
+    fec_mode,
+    tx_flow_control,
+    rx_flow_control,
+    auto_negotiation,
+    speed,
+  } = req.body;
 
   const changes: PlannedChange[] = [];
   if (typeof disabled === 'boolean') changes.push({ kind: 'interface.disable', name, disabled });
   const linkChange = (what: string) => changes.push({ kind: 'path-object.change', name, what });
   if (typeof mtu === 'number') linkChange('Changing the MTU');
   if (fec_mode) linkChange('Changing FEC');
-  if (tx_flow_control !== undefined || rx_flow_control !== undefined) linkChange('Changing flow control');
+  if (tx_flow_control !== undefined || rx_flow_control !== undefined)
+    linkChange('Changing flow control');
   if (typeof auto_negotiation === 'boolean') linkChange('Changing speed or auto-negotiation');
   if (poe_out) linkChange('Changing PoE output');
 
@@ -927,13 +1124,24 @@ router.put('/:id/interfaces/:name', requireWrite, async (req: Request, res: Resp
     });
     return;
   }
-  const summary = typeof disabled === 'boolean' && changes.length === 1
-    ? `${disabled ? 'Disable' : 'Enable'} interface ${name}`
-    : `Change interface ${name}`;
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'interface.set', summary, change: changes.length === 1 ? changes[0] : { kind: 'batch', changes } },
+  const summary =
+    typeof disabled === 'boolean' && changes.length === 1
+      ? `${disabled ? 'Disable' : 'Enable'} interface ${name}`
+      : `Change interface ${name}`;
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'interface.set',
+      summary,
+      change: changes.length === 1 ? changes[0] : { kind: 'batch', changes },
+    },
     apply,
-    async (c) => { await c.collectInterfaces(); });
+    async (c) => {
+      await c.collectInterfaces();
+    },
+  );
 });
 
 // PUT /api/devices/:id/ports/:name/vlan - configure VLAN for a switch port
@@ -978,7 +1186,7 @@ router.put('/:id/ports/:name/vlan', requireWrite, async (req: Request, res: Resp
         tagged_vlans as number[],
         untagged_vlans as number[],
         role,
-        replaceTagged
+        replaceTagged,
       );
       return {
         message: notRemoved.length
@@ -987,21 +1195,31 @@ router.put('/:id/ports/:name/vlan', requireWrite, async (req: Request, res: Resp
         not_removed: notRemoved,
       };
     },
-    async (c) => { await c.collectVlans(); }
+    async (c) => {
+      await c.collectVlans();
+    },
   );
 });
 
 // GET /api/devices/:id/vlans
 router.get('/:id/vlans', async (req: Request, res: Response) => {
-  const vlans = await query(`SELECT * FROM vlans WHERE device_id = $1 ORDER BY vlan_id ASC`, [req.params.id]);
+  const vlans = await query(`SELECT * FROM vlans WHERE device_id = $1 ORDER BY vlan_id ASC`, [
+    req.params.id,
+  ]);
   return res.json(vlans);
 });
 
 // GET /api/devices/:id/ports/:name/monitor — live ethernet monitor + SFP DDM
 router.get('/:id/ports/:name/monitor', async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<{ id: number; ip_address: string; api_port: number; api_username: string; api_password_encrypted: string }>(
+  const deviceRow = await queryOne<{
+    id: number;
+    ip_address: string;
+    api_port: number;
+    api_username: string;
+    api_password_encrypted: string;
+  }>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -1027,29 +1245,41 @@ const UPLINK_MAC_THRESHOLD = 8;
 router.get('/:id/ports/:name/clients', async (req: Request, res: Response) => {
   const all = req.query.all === 'true';
   const rows = await query<{
-    mac_address: string; hostname: string | null; custom_name: string | null;
-    vendor: string | null; ip_address: string | null; client_type: string;
-    vlan_id: number | null; signal_strength: number | null;
-    first_seen: string | null; last_seen: string | null;
-  }>(`
+    mac_address: string;
+    hostname: string | null;
+    custom_name: string | null;
+    vendor: string | null;
+    ip_address: string | null;
+    client_type: string;
+    vlan_id: number | null;
+    signal_strength: number | null;
+    first_seen: string | null;
+    last_seen: string | null;
+  }>(
+    `
     SELECT mac_address, hostname, custom_name, vendor, ip_address, client_type,
            vlan_id, signal_strength, first_seen, last_seen
     FROM clients
     WHERE device_id = $1 AND interface_name = $2 AND active = TRUE
     ORDER BY COALESCE(NULLIF(custom_name, ''), hostname, mac_address) ASC
-  `, [req.params.id, req.params.name]);
+  `,
+    [req.params.id, req.params.name],
+  );
 
   // A discovered LLDP/MNDP neighbour on this interface means it links to
   // another managed device → definitively an uplink.
-  const neighbor = await queryOne<{ neighbor_identity: string | null; neighbor_platform: string | null }>(
+  const neighbor = await queryOne<{
+    neighbor_identity: string | null;
+    neighbor_platform: string | null;
+  }>(
     `SELECT neighbor_identity, neighbor_platform FROM topology_links
      WHERE from_device_id = $1 AND from_interface = $2
      ORDER BY (neighbor_identity IS NOT NULL) DESC LIMIT 1`,
-    [req.params.id, req.params.name]
+    [req.params.id, req.params.name],
   );
 
   const macCount = rows.length;
-  const vlanCount = new Set(rows.filter(r => r.vlan_id != null).map(r => r.vlan_id)).size;
+  const vlanCount = new Set(rows.filter((r) => r.vlan_id != null).map((r) => r.vlan_id)).size;
 
   let classification: 'access' | 'uplink' = 'access';
   let reason = '';
@@ -1087,9 +1317,10 @@ router.get('/:id/ports', async (req: Request, res: Response) => {
   const bridgePortMap = new Map(bridgePorts.map((bp: Record<string, unknown>) => [bp['port'], bp]));
 
   const ports = ifaces
-    .filter((i: Record<string, unknown>) =>
-      String(i['type'] || '').match(/^(ether|sfp|combo|bridge|bond)/i) ||
-      String(i['name'] || '').match(/^(ether|sfp|combo|bridge|bond|lag)/i)
+    .filter(
+      (i: Record<string, unknown>) =>
+        String(i['type'] || '').match(/^(ether|sfp|combo|bridge|bond)/i) ||
+        String(i['name'] || '').match(/^(ether|sfp|combo|bridge|bond|lag)/i),
     )
     .map((i: Record<string, unknown>) => ({
       ...i,
@@ -1101,9 +1332,15 @@ router.get('/:id/ports', async (req: Request, res: Response) => {
 
 // GET /api/devices/:id/routing
 router.get('/:id/routing', async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<{ id: number; ip_address: string; api_port: number; api_username: string; api_password_encrypted: string }>(
+  const deviceRow = await queryOne<{
+    id: number;
+    ip_address: string;
+    api_port: number;
+    api_username: string;
+    api_password_encrypted: string;
+  }>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -1121,7 +1358,7 @@ router.get('/:id/routing', async (req: Request, res: Response) => {
 router.get('/:id/firewall', async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const collector = new DeviceCollector(deviceRow);
@@ -1134,13 +1371,23 @@ router.get('/:id/firewall', async (req: Request, res: Response) => {
 });
 
 const FW_FIELD_MAP: Record<string, string> = {
-  chain: 'chain', action: 'action', protocol: 'protocol', comment: 'comment', disabled: 'disabled',
-  src_address: 'src-address', dst_address: 'dst-address',
-  src_port: 'src-port', dst_port: 'dst-port',
-  in_interface: 'in-interface', out_interface: 'out-interface',
-  connection_state: 'connection-state', jump_target: 'jump-target',
-  log: 'log', log_prefix: 'log-prefix',
-  src_address_list: 'src-address-list', dst_address_list: 'dst-address-list',
+  chain: 'chain',
+  action: 'action',
+  protocol: 'protocol',
+  comment: 'comment',
+  disabled: 'disabled',
+  src_address: 'src-address',
+  dst_address: 'dst-address',
+  src_port: 'src-port',
+  dst_port: 'dst-port',
+  in_interface: 'in-interface',
+  out_interface: 'out-interface',
+  connection_state: 'connection-state',
+  jump_target: 'jump-target',
+  log: 'log',
+  log_prefix: 'log-prefix',
+  src_address_list: 'src-address-list',
+  dst_address_list: 'dst-address-list',
 };
 
 /**
@@ -1169,22 +1416,40 @@ router.post('/:id/firewall', requireWrite, async (req: Request, res: Response) =
   const { chain, action } = req.body;
   if (!chain || !action) return res.status(400).json({ error: 'chain and action are required' });
   const params = bodyToRosParams(req.body);
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'firewall.add', summary: `Add ${chain} ${action} firewall rule`,
-      change: { kind: 'firewall.add', fields: params } },
-    async (c) => { await c.addFirewallRule(params); return { message: 'Rule added' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'firewall.add',
+      summary: `Add ${chain} ${action} firewall rule`,
+      change: { kind: 'firewall.add', fields: params },
+    },
+    async (c) => {
+      await c.addFirewallRule(params);
+      return { message: 'Rule added' };
+    },
+  );
 });
 
 // PUT /api/devices/:id/firewall/:ruleId
 router.put('/:id/firewall/:ruleId', requireWrite, async (req: Request, res: Response) => {
   const params = bodyToRosParams(req.body, true);
   const ruleId = req.params.ruleId;
-  const summary = Object.keys(params).length === 1 && 'disabled' in params
-    ? `${params.disabled === 'yes' || params.disabled === 'true' ? 'Disable' : 'Enable'} firewall rule`
-    : 'Edit firewall rule';
-  await withGuardedChange(req.params.id, req, res,
+  const summary =
+    Object.keys(params).length === 1 && 'disabled' in params
+      ? `${params.disabled === 'yes' || params.disabled === 'true' ? 'Disable' : 'Enable'} firewall rule`
+      : 'Edit firewall rule';
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
     { kind: 'firewall.set', summary, change: { kind: 'firewall.set', ruleId, fields: params } },
-    async (c) => { await c.updateFirewallRule(ruleId, params); return { message: 'Rule updated' }; });
+    async (c) => {
+      await c.updateFirewallRule(ruleId, params);
+      return { message: 'Rule updated' };
+    },
+  );
 });
 
 // POST /api/devices/:id/firewall/move  { id, destination? }
@@ -1193,14 +1458,27 @@ router.post('/:id/firewall/move', requireWrite, async (req: Request, res: Respon
   if (!id) return res.status(400).json({ error: 'id is required' });
   const ruleId = String(id);
   const dest = destination ? String(destination) : undefined;
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'firewall.move', summary: 'Move firewall rule', change: { kind: 'firewall.move', ruleId, destination: dest } },
-    async (c) => { await c.moveFirewallRule(ruleId, dest); return { message: 'Rule moved' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'firewall.move',
+      summary: 'Move firewall rule',
+      change: { kind: 'firewall.move', ruleId, destination: dest },
+    },
+    async (c) => {
+      await c.moveFirewallRule(ruleId, dest);
+      return { message: 'Rule moved' };
+    },
+  );
 });
 
 // POST /api/devices/:id/firewall/reset-counters
 router.post('/:id/firewall/reset-counters', requireWrite, async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const collector = new DeviceCollector(deviceRow);
   try {
@@ -1217,22 +1495,45 @@ router.post('/:id/firewall/reset-counters', requireWrite, async (req: Request, r
 // DELETE /api/devices/:id/firewall/:ruleId  (?confirm_lockout=true to override a warning)
 router.delete('/:id/firewall/:ruleId', requireWrite, async (req: Request, res: Response) => {
   const ruleId = req.params.ruleId;
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'firewall.remove', summary: 'Delete firewall rule', change: { kind: 'firewall.remove', ruleId } },
-    async (c) => { await c.deleteFirewallRule(ruleId); return { message: 'Rule deleted' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'firewall.remove',
+      summary: 'Delete firewall rule',
+      change: { kind: 'firewall.remove', ruleId },
+    },
+    async (c) => {
+      await c.deleteFirewallRule(ruleId);
+      return { message: 'Rule deleted' };
+    },
+  );
 });
 
 // ─── NAT Rules ────────────────────────────────────────────────────────────────
 const NAT_FIELD_MAP: Record<string, string> = {
-  chain: 'chain', action: 'action', protocol: 'protocol', comment: 'comment', disabled: 'disabled',
-  src_address: 'src-address', dst_address: 'dst-address',
-  src_port: 'src-port', dst_port: 'dst-port',
-  in_interface: 'in-interface', out_interface: 'out-interface',
-  to_addresses: 'to-addresses', to_ports: 'to-ports',
-  log: 'log', log_prefix: 'log-prefix',
+  chain: 'chain',
+  action: 'action',
+  protocol: 'protocol',
+  comment: 'comment',
+  disabled: 'disabled',
+  src_address: 'src-address',
+  dst_address: 'dst-address',
+  src_port: 'src-port',
+  dst_port: 'dst-port',
+  in_interface: 'in-interface',
+  out_interface: 'out-interface',
+  to_addresses: 'to-addresses',
+  to_ports: 'to-ports',
+  log: 'log',
+  log_prefix: 'log-prefix',
 };
 
-function natBodyToRosParams(body: Record<string, unknown>, keepEmpty = false): Record<string, string> {
+function natBodyToRosParams(
+  body: Record<string, unknown>,
+  keepEmpty = false,
+): Record<string, string> {
   const params: Record<string, string> = {};
   for (const [jsKey, rosKey] of Object.entries(NAT_FIELD_MAP)) {
     const val = body[jsKey];
@@ -1245,7 +1546,9 @@ function natBodyToRosParams(body: Record<string, unknown>, keepEmpty = false): R
 
 // GET /api/devices/:id/nat
 router.get('/:id/nat', async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const collector = new DeviceCollector(deviceRow);
   try {
@@ -1267,29 +1570,61 @@ router.post('/:id/nat', requireWrite, async (req: Request, res: Response) => {
   const { chain, action } = req.body;
   if (!chain || !action) return res.status(400).json({ error: 'chain and action are required' });
   const params = natBodyToRosParams(req.body);
-  await withGuardedChange(req.params.id, req, res, { kind: 'nat.add', summary: `Add ${chain} ${action} NAT rule` },
-    async (c) => { await c.addNatRule(params); return { message: 'NAT rule added' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    { kind: 'nat.add', summary: `Add ${chain} ${action} NAT rule` },
+    async (c) => {
+      await c.addNatRule(params);
+      return { message: 'NAT rule added' };
+    },
+  );
 });
 
 // PUT /api/devices/:id/nat/:ruleId
 router.put('/:id/nat/:ruleId', requireWrite, async (req: Request, res: Response) => {
   const params = natBodyToRosParams(req.body, true);
-  await withGuardedChange(req.params.id, req, res, { kind: 'nat.set', summary: 'Edit NAT rule' },
-    async (c) => { await c.updateNatRule(req.params.ruleId, params); return { message: 'NAT rule updated' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    { kind: 'nat.set', summary: 'Edit NAT rule' },
+    async (c) => {
+      await c.updateNatRule(req.params.ruleId, params);
+      return { message: 'NAT rule updated' };
+    },
+  );
 });
 
 // DELETE /api/devices/:id/nat/:ruleId
 router.delete('/:id/nat/:ruleId', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'nat.remove', summary: 'Delete NAT rule' },
-    async (c) => { await c.deleteNatRule(req.params.ruleId); return { message: 'NAT rule deleted' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    { kind: 'nat.remove', summary: 'Delete NAT rule' },
+    async (c) => {
+      await c.deleteNatRule(req.params.ruleId);
+      return { message: 'NAT rule deleted' };
+    },
+  );
 });
 
 // POST /api/devices/:id/nat/move  { id, destination? }
 router.post('/:id/nat/move', requireWrite, async (req: Request, res: Response) => {
   const { id, destination } = req.body;
   if (!id) return res.status(400).json({ error: 'id is required' });
-  await withGuardedChange(req.params.id, req, res, { kind: 'nat.move', summary: 'Move NAT rule' },
-    async (c) => { await c.moveNatRule(String(id), destination ? String(destination) : undefined); return { message: 'NAT rule moved' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    { kind: 'nat.move', summary: 'Move NAT rule' },
+    async (c) => {
+      await c.moveNatRule(String(id), destination ? String(destination) : undefined);
+      return { message: 'NAT rule moved' };
+    },
+  );
 });
 
 // ─── Firewall Address Lists ─────────────────────────────────────────────────────
@@ -1298,10 +1633,13 @@ router.post('/:id/nat/move', requireWrite, async (req: Request, res: Response) =
 async function withCollector<T>(
   id: string,
   res: Response,
-  fn: (c: DeviceCollector) => Promise<T>
+  fn: (c: DeviceCollector) => Promise<T>,
 ): Promise<void> {
   const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [id]);
-  if (!deviceRow) { res.status(404).json({ error: 'Device not found' }); return; }
+  if (!deviceRow) {
+    res.status(404).json({ error: 'Device not found' });
+    return;
+  }
   const collector = new DeviceCollector(deviceRow);
   try {
     await collector.connect();
@@ -1318,14 +1656,18 @@ async function withCollector<T>(
 // which objects are therefore load-bearing. Read-only; useful on its own and as the
 // explanation behind a lockout warning.
 router.get('/:id/management-path', async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   try {
     const snap = await captureSnapshot(deviceRow as unknown as GuardDevice);
     const path = resolveManagementPath(snap, deviceRow as unknown as GuardDevice);
     return res.json(path);
   } catch (err) {
-    return res.status(502).json({ error: `Could not read device state: ${(err as Error).message}` });
+    return res
+      .status(502)
+      .json({ error: `Could not read device state: ${(err as Error).message}` });
   }
 });
 
@@ -1336,13 +1678,17 @@ router.post('/:id/preflight', requireWrite, async (req: Request, res: Response) 
   if (!change || typeof change !== 'object' || !('kind' in change)) {
     return res.status(400).json({ error: 'change (with a kind) is required' });
   }
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   try {
     const snap = await captureSnapshot(deviceRow as unknown as GuardDevice);
     return res.json(analyzeChange(snap, deviceRow as unknown as GuardDevice, change));
   } catch (err) {
-    return res.status(502).json({ error: `Could not read device state: ${(err as Error).message}` });
+    return res
+      .status(502)
+      .json({ error: `Could not read device state: ${(err as Error).message}` });
   }
 });
 
@@ -1350,7 +1696,9 @@ router.post('/:id/preflight', requireWrite, async (req: Request, res: Response) 
 // actually supports. Non-destructive: both probes create and remove a harmless
 // scheduler, and neither leaves anything behind.
 router.post('/:id/change-guard/probe', requireWrite, async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const device = deviceRow as unknown as GuardDevice;
   try {
@@ -1369,7 +1717,9 @@ router.post('/:id/change-guard/probe', requireWrite, async (req: Request, res: R
 // protection the device cannot give. Saves and removes a throwaway restore point
 // and scheduler, exactly as a real guard would.
 router.post('/:id/change-guard/check', requireWrite, async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const r = await probeCapability(deviceRow as unknown as GuardDevice);
   return res.json({ ready: r.ok, mode: r.mode, reason: r.reason ?? null });
@@ -1380,7 +1730,7 @@ router.post('/:id/change-guard/check', requireWrite, async (req: Request, res: R
 router.get('/:id/config-health', async (req: Request, res: Response) => {
   const device = await queryOne<{ config_health_checked_at: string | null }>(
     `SELECT config_health_checked_at FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!device) return res.status(404).json({ error: 'Device not found' });
 
@@ -1389,13 +1739,15 @@ router.get('/:id/config-health', async (req: Request, res: Response) => {
      FROM device_config_findings
      WHERE device_id = $1
      ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END, rule`,
-    [req.params.id]
+    [req.params.id],
   );
   return res.json({ findings: findings.map(withFix), checked_at: device.config_health_checked_at });
 });
 
 /** A finding with its one-click fix (#239), or the reason it has none. */
-function withFix<T extends { rule: string; objects: string[] }>(f: T): T & { fix: ReturnType<typeof fixFor>; no_fix_reason: string | null } {
+function withFix<T extends { rule: string; objects: string[] }>(
+  f: T,
+): T & { fix: ReturnType<typeof fixFor>; no_fix_reason: string | null } {
   const fix = fixFor(f.rule, f.objects ?? []);
   return { ...f, fix, no_fix_reason: fix ? null : noFixReason(f.rule) };
 }
@@ -1406,28 +1758,54 @@ function withFix<T extends { rule: string; objects: string[] }>(f: T): T & { fix
 // finding clears.
 router.post('/:id/config-health/fix', requireWrite, async (req: Request, res: Response) => {
   const { rule, objects } = req.body as { rule?: string; objects?: unknown };
-  if (typeof rule !== 'string' || !Array.isArray(objects) || !objects.every((o) => typeof o === 'string')) {
+  if (
+    typeof rule !== 'string' ||
+    !Array.isArray(objects) ||
+    !objects.every((o) => typeof o === 'string')
+  ) {
     return res.status(400).json({ error: 'rule and objects are required' });
   }
   const recorded = await queryOne(
     `SELECT 1 FROM device_config_findings WHERE device_id = $1 AND rule = $2 AND objects = $3::text[]`,
-    [req.params.id, rule, objects]);
-  if (!recorded) return res.status(404).json({ error: 'That finding isn\u2019t current for this device. Run the check again.' });
+    [req.params.id, rule, objects],
+  );
+  if (!recorded)
+    return res
+      .status(404)
+      .json({ error: 'That finding isn\u2019t current for this device. Run the check again.' });
   const plan = fixFor(rule, objects as string[]);
   if (!plan) return res.status(400).json({ error: noFixReason(rule) });
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
-  const rescan = async () => { await runConfigHealth(deviceRow as unknown as GuardDevice).catch(() => {}); };
+  const rescan = async () => {
+    await runConfigHealth(deviceRow as unknown as GuardDevice).catch(() => {});
+  };
 
   if (rule === 'stp-disabled' || rule === 'stp-legacy-mode') {
     const bridge = (objects as string[])[0];
-    return withGuardedChange(req.params.id, req, res,
-      { kind: 'config-health.fix', summary: plan.summary,
+    return withGuardedChange(
+      req.params.id,
+      req,
+      res,
+      {
+        kind: 'config-health.fix',
+        summary: plan.summary,
         // Spanning tree reconverges when it starts; if the management path runs
         // through this bridge, the change must be able to undo itself.
-        change: { kind: 'path-object.change', name: bridge, what: 'Changing the bridge\u2019s spanning tree mode' } },
-      async (c) => { await c.setBridgeProtocolMode(bridge, 'rstp'); return { message: `${plan.summary}: done` }; },
-      rescan);
+        change: {
+          kind: 'path-object.change',
+          name: bridge,
+          what: 'Changing the bridge\u2019s spanning tree mode',
+        },
+      },
+      async (c) => {
+        await c.setBridgeProtocolMode(bridge, 'rstp');
+        return { message: `${plan.summary}: done` };
+      },
+      rescan,
+    );
   }
 
   if (rule === 'vlan-iface-not-tagged-on-bridge') {
@@ -1438,31 +1816,51 @@ router.post('/:id/config-health/fix', requireWrite, async (req: Request, res: Re
     const reader = new DeviceCollector(deviceRow);
     try {
       await reader.connect();
-      const entries = (await reader.getBridgeVlanEntries(bridge)).filter((e) => e['dynamic'] !== 'true');
+      const entries = (await reader.getBridgeVlanEntries(bridge)).filter(
+        (e) => e['dynamic'] !== 'true',
+      );
       const matches = entries.filter((e) => expandVlanIds(e['vlan-ids']).includes(vid));
       if (matches.some((e) => expandVlanIds(e['vlan-ids']).length > 1)) {
-        return res.status(409).json({ error: `VLAN ${vid} on ${bridge} is part of a multi-VLAN entry; add ${bridge} as tagged there on the device.` });
+        return res.status(409).json({
+          error: `VLAN ${vid} on ${bridge} is part of a multi-VLAN entry; add ${bridge} as tagged there on the device.`,
+        });
       }
       entry = matches[0];
     } catch (err) {
-      return res.status(502).json({ error: `Could not read the bridge VLAN table: ${(err as Error).message}` });
+      return res
+        .status(502)
+        .json({ error: `Could not read the bridge VLAN table: ${(err as Error).message}` });
     } finally {
       reader.disconnect();
     }
-    const list = (v: string | undefined) => (v || '').split(',').map((x) => x.trim()).filter(Boolean);
+    const list = (v: string | undefined) =>
+      (v || '')
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean);
     const tagged = [...new Set([...list(entry?.['tagged']), bridge])];
     const untagged = list(entry?.['untagged']).filter((p) => p !== bridge);
-    return withGuardedChange(req.params.id, req, res,
-      { kind: 'config-health.fix', summary: plan.summary,
+    return withGuardedChange(
+      req.params.id,
+      req,
+      res,
+      {
+        kind: 'config-health.fix',
+        summary: plan.summary,
         change: entry
           ? { kind: 'vlan.update', bridge, vlanId: vid, tagged, untagged }
-          : { kind: 'vlan.add', bridge, vlanId: vid, tagged, untagged } },
+          : { kind: 'vlan.add', bridge, vlanId: vid, tagged, untagged },
+      },
       async (c) => {
         if (entry) await c.updateBridgeVlan(bridge, vid, tagged, untagged);
         else await c.addBridgeVlan(bridge, vid, tagged, untagged);
         return { message: `${plan.summary}: done` };
       },
-      async (c) => { await c.collectVlans().catch(() => {}); await rescan(); });
+      async (c) => {
+        await c.collectVlans().catch(() => {});
+        await rescan();
+      },
+    );
   }
 
   return res.status(400).json({ error: noFixReason(rule) });
@@ -1471,21 +1869,33 @@ router.post('/:id/config-health/fix', requireWrite, async (req: Request, res: Re
 // POST /api/devices/:id/config-health/scan — audit now instead of waiting for the
 // scheduled pass. Read-only on the device, but it opens a connection.
 router.post('/:id/config-health/scan', requireWrite, async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   try {
     const { findings, checkedAt } = await runConfigHealth(deviceRow as unknown as GuardDevice);
     // Same shape as the cached GET, so the UI has one contract for both.
     return res.json({
-      findings: findings.map((f) => withFix({
-        rule: f.rule, severity: f.severity, title: f.title, detail: f.detail,
-        remediation: f.remediation, doc_url: f.docUrl, objects: f.objects,
-        first_seen: null, last_seen: checkedAt.toISOString(),
-      })),
+      findings: findings.map((f) =>
+        withFix({
+          rule: f.rule,
+          severity: f.severity,
+          title: f.title,
+          detail: f.detail,
+          remediation: f.remediation,
+          doc_url: f.docUrl,
+          objects: f.objects,
+          first_seen: null,
+          last_seen: checkedAt.toISOString(),
+        }),
+      ),
       checked_at: checkedAt.toISOString(),
     });
   } catch (err) {
-    return res.status(502).json({ error: `Could not read device state: ${(err as Error).message}` });
+    return res
+      .status(502)
+      .json({ error: `Could not read device state: ${(err as Error).message}` });
   }
 });
 
@@ -1512,7 +1922,11 @@ router.get('/:id/l3hw', async (req, res) => {
     ]);
     const chipOn = switches.some((s) => s['l3-hw-offloading'] === 'true');
     const monitor = chipOn
-      ? (await run.execute('/interface/ethernet/switch/l3hw-settings/monitor', { once: '' }).catch(none))[0]
+      ? (
+          await run
+            .execute('/interface/ethernet/switch/l3hw-settings/monitor', { once: '' })
+            .catch(none)
+        )[0]
       : undefined;
     return l3hwView(switches, ports, settings[0], monitor, vlans, addresses, filter, nat, bridges);
   });
@@ -1547,27 +1961,62 @@ router.post('/:id/switch-vlans', requireWrite, async (req: Request, res: Respons
   const parsed = switchVlanEntry(req.body ?? {}, true);
   if ('error' in parsed) return res.status(400).json({ error: parsed.error });
   const f = parsed.fields;
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'switch-vlan.add', summary: `Add switch VLAN ${f['vlan-id']} on ${f.switch}`, requireProtection: true },
-    async (c) => { await c.addSwitchVlan(f); return { message: `Switch VLAN ${f['vlan-id']} added` }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'switch-vlan.add',
+      summary: `Add switch VLAN ${f['vlan-id']} on ${f.switch}`,
+      requireProtection: true,
+    },
+    async (c) => {
+      await c.addSwitchVlan(f);
+      return { message: `Switch VLAN ${f['vlan-id']} added` };
+    },
+  );
 });
 
 // PUT /api/devices/:id/switch-vlans/:entryId { vlan_id?, ports?, independent_learning?, disabled? }
 router.put('/:id/switch-vlans/:entryId', requireWrite, async (req: Request, res: Response) => {
-  if (!ROS_ID.test(req.params.entryId)) return res.status(400).json({ error: 'Not a switch VLAN entry id' });
+  if (!ROS_ID.test(req.params.entryId))
+    return res.status(400).json({ error: 'Not a switch VLAN entry id' });
   const parsed = switchVlanEntry(req.body ?? {}, false);
   if ('error' in parsed) return res.status(400).json({ error: parsed.error });
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'switch-vlan.set', summary: `Edit switch VLAN entry ${req.params.entryId}`, requireProtection: true },
-    async (c) => { await c.updateSwitchVlan(req.params.entryId, parsed.fields); return { message: 'Switch VLAN updated' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'switch-vlan.set',
+      summary: `Edit switch VLAN entry ${req.params.entryId}`,
+      requireProtection: true,
+    },
+    async (c) => {
+      await c.updateSwitchVlan(req.params.entryId, parsed.fields);
+      return { message: 'Switch VLAN updated' };
+    },
+  );
 });
 
 // DELETE /api/devices/:id/switch-vlans/:entryId
 router.delete('/:id/switch-vlans/:entryId', requireWrite, async (req: Request, res: Response) => {
-  if (!ROS_ID.test(req.params.entryId)) return res.status(400).json({ error: 'Not a switch VLAN entry id' });
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'switch-vlan.remove', summary: `Remove switch VLAN entry ${req.params.entryId}`, requireProtection: true },
-    async (c) => { await c.removeSwitchVlan(req.params.entryId); return { message: 'Switch VLAN removed' }; });
+  if (!ROS_ID.test(req.params.entryId))
+    return res.status(400).json({ error: 'Not a switch VLAN entry id' });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'switch-vlan.remove',
+      summary: `Remove switch VLAN entry ${req.params.entryId}`,
+      requireProtection: true,
+    },
+    async (c) => {
+      await c.removeSwitchVlan(req.params.entryId);
+      return { message: 'Switch VLAN removed' };
+    },
+  );
 });
 
 // PUT /api/devices/:id/switch-ports/:name/vlan { vlan_mode?, vlan_header?, default_vlan_id? }
@@ -1576,9 +2025,20 @@ router.put('/:id/switch-ports/:name/vlan', requireWrite, async (req: Request, re
   if (!validPortName(name)) return res.status(400).json({ error: 'Not a valid port name' });
   const parsed = switchPortVlan(req.body ?? {});
   if ('error' in parsed) return res.status(400).json({ error: parsed.error });
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'switch-port.vlan', summary: `Set switch VLAN settings on ${name}`, requireProtection: true },
-    async (c) => { await c.setSwitchPortVlan(name, parsed.fields); return { message: `VLAN settings on ${name} updated` }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'switch-port.vlan',
+      summary: `Set switch VLAN settings on ${name}`,
+      requireProtection: true,
+    },
+    async (c) => {
+      await c.setSwitchPortVlan(name, parsed.fields);
+      return { message: `VLAN settings on ${name} updated` };
+    },
+  );
 });
 
 // PUT /api/devices/:id/l3hw { enabled, acknowledge_firewall? } — turn L3
@@ -1588,8 +2048,11 @@ router.put('/:id/switch-ports/:name/vlan', requireWrite, async (req: Request, re
 // offloaded traffic no longer passes them.
 router.put('/:id/l3hw', requireWrite, async (req: Request, res: Response) => {
   const enabled = req.body?.enabled;
-  if (typeof enabled !== 'boolean') return res.status(400).json({ error: 'enabled (boolean) is required' });
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  if (typeof enabled !== 'boolean')
+    return res.status(400).json({ error: 'enabled (boolean) is required' });
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   let switchId: string;
   const collector = new DeviceCollector(deviceRow);
@@ -1603,12 +2066,26 @@ router.put('/:id/l3hw', requireWrite, async (req: Request, res: Response) => {
       run.execute('/ip/firewall/nat/print').catch(none),
     ]);
     const view = l3hwView(switches, [], undefined, undefined, [], [], filter, nat);
-    if (!view.supported || !view.switch) return res.status(400).json({ error: 'This device has no switch chip that supports L3 hardware offloading' });
-    if (view.enabled === enabled) return res.json({ message: `L3 hardware offloading is already ${enabled ? 'on' : 'off'}`, already: true });
-    if (enabled && (view.forwardRules > 0 || view.natRules > 0) && req.body?.acknowledge_firewall !== true) {
+    if (!view.supported || !view.switch)
+      return res
+        .status(400)
+        .json({ error: 'This device has no switch chip that supports L3 hardware offloading' });
+    if (view.enabled === enabled)
+      return res.json({
+        message: `L3 hardware offloading is already ${enabled ? 'on' : 'off'}`,
+        already: true,
+      });
+    if (
+      enabled &&
+      (view.forwardRules > 0 || view.natRules > 0) &&
+      req.body?.acknowledge_firewall !== true
+    ) {
       return res.status(409).json({
-        needs_acknowledgement: true, forward_rules: view.forwardRules, nat_rules: view.natRules,
-        error: `${view.forwardRules} forward-chain firewall rule${view.forwardRules === 1 ? '' : 's'} and ${view.natRules} NAT rule${view.natRules === 1 ? '' : 's'} ` +
+        needs_acknowledgement: true,
+        forward_rules: view.forwardRules,
+        nat_rules: view.natRules,
+        error:
+          `${view.forwardRules} forward-chain firewall rule${view.forwardRules === 1 ? '' : 's'} and ${view.natRules} NAT rule${view.natRules === 1 ? '' : 's'} ` +
           `would no longer apply to routed traffic once it's offloaded. Confirm you don't rely on them for traffic between these VLANs.`,
       });
     }
@@ -1618,12 +2095,19 @@ router.put('/:id/l3hw', requireWrite, async (req: Request, res: Response) => {
   } finally {
     collector.disconnect();
   }
-  await withGuardedChange(req.params.id, req, res,
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
     { kind: 'l3hw.toggle', summary: `${enabled ? 'Turn on' : 'Turn off'} L3 hardware offloading` },
     async (c) => {
-      await c.commandRunner().execute('/interface/ethernet/switch/set', { '.id': switchId, 'l3-hw-offloading': enabled ? 'yes' : 'no' });
+      await c.commandRunner().execute('/interface/ethernet/switch/set', {
+        '.id': switchId,
+        'l3-hw-offloading': enabled ? 'yes' : 'no',
+      });
       return { message: `L3 hardware offloading is ${enabled ? 'on' : 'off'}` };
-    });
+    },
+  );
 });
 
 // GET /api/devices/:id/address-lists/client?address=IP — one client's view
@@ -1646,7 +2130,12 @@ router.get('/:id/address-lists/client', async (req, res) => {
       run.execute('/ip/firewall/raw/print').catch(none),
       run.execute('/ip/dhcp-server/lease/print').catch(none),
     ]);
-    return clientAddressListView(entries as Record<string, string>[], [...filter, ...nat, ...mangle, ...raw], leases, address);
+    return clientAddressListView(
+      entries as Record<string, string>[],
+      [...filter, ...nat, ...mangle, ...raw],
+      leases,
+      address,
+    );
   });
 });
 
@@ -1658,34 +2147,68 @@ router.post('/:id/address-lists', requireWrite, async (req, res) => {
   const params: Record<string, string> = { list: String(list), address: String(address) };
   if (req.body.comment) params.comment = String(req.body.comment);
   if (req.body.timeout) params.timeout = String(req.body.timeout);
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'address-list.add', summary: `Add ${params.address} to address list ${params.list}`,
-      change: { kind: 'address-list.add', fields: params } },
-    async (c) => { await c.addAddressListEntry(params); return { message: 'Entry added' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'address-list.add',
+      summary: `Add ${params.address} to address list ${params.list}`,
+      change: { kind: 'address-list.add', fields: params },
+    },
+    async (c) => {
+      await c.addAddressListEntry(params);
+      return { message: 'Entry added' };
+    },
+  );
 });
 
 router.put('/:id/address-lists/:entryId', requireWrite, async (req, res) => {
   const params: Record<string, string> = {};
-  for (const k of ['list', 'address', 'comment'] as const) if (req.body[k] !== undefined) params[k] = String(req.body[k]);
+  for (const k of ['list', 'address', 'comment'] as const)
+    if (req.body[k] !== undefined) params[k] = String(req.body[k]);
   if (req.body.disabled !== undefined) params.disabled = req.body.disabled ? 'yes' : 'no';
   const entryId = req.params.entryId;
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'address-list.set', summary: 'Edit address list entry', change: { kind: 'address-list.set', entryId, fields: params } },
-    async (c) => { await c.updateAddressListEntry(entryId, params); return { message: 'Entry updated' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'address-list.set',
+      summary: 'Edit address list entry',
+      change: { kind: 'address-list.set', entryId, fields: params },
+    },
+    async (c) => {
+      await c.updateAddressListEntry(entryId, params);
+      return { message: 'Entry updated' };
+    },
+  );
 });
 
 router.delete('/:id/address-lists/:entryId', requireWrite, async (req, res) => {
   const entryId = req.params.entryId;
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'address-list.remove', summary: 'Remove address list entry', change: { kind: 'address-list.remove', entryId } },
-    async (c) => { await c.removeAddressListEntry(entryId); return { message: 'Entry removed' }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'address-list.remove',
+      summary: 'Remove address list entry',
+      change: { kind: 'address-list.remove', entryId },
+    },
+    async (c) => {
+      await c.removeAddressListEntry(entryId);
+      return { message: 'Entry removed' };
+    },
+  );
 });
 
 // ─── Active Connections (read-only) ─────────────────────────────────────────────
 router.get('/:id/connections', async (req, res) => {
   const limit = Math.max(1, Math.min(parseInt(String(req.query.limit || '200'), 10) || 200, 2000));
   const protocol = String(req.query.protocol ?? '').toLowerCase();
-  if (protocol && !/^[a-z0-9-]{1,16}$/.test(protocol)) return res.status(400).json({ error: 'protocol must be a protocol name' });
+  if (protocol && !/^[a-z0-9-]{1,16}$/.test(protocol))
+    return res.status(400).json({ error: 'protocol must be a protocol name' });
   await withCollector(req.params.id, res, async (c) => {
     // Never the whole table (#300): the total comes from conntrack's own
     // counter, and only the first `limit` rows are read.
@@ -1704,9 +2227,15 @@ router.get('/:id/connections', async (req, res) => {
 
 // ─── Simple Queues (bandwidth control) ──────────────────────────────────────────
 const QUEUE_FIELD_MAP: Record<string, string> = {
-  name: 'name', target: 'target', max_limit: 'max-limit', burst_limit: 'burst-limit',
-  burst_threshold: 'burst-threshold', burst_time: 'burst-time', priority: 'priority',
-  comment: 'comment', parent: 'parent',
+  name: 'name',
+  target: 'target',
+  max_limit: 'max-limit',
+  burst_limit: 'burst-limit',
+  burst_threshold: 'burst-threshold',
+  burst_time: 'burst-time',
+  priority: 'priority',
+  comment: 'comment',
+  parent: 'parent',
 };
 function queueBodyToRos(body: Record<string, unknown>, keepEmpty = false): Record<string, string> {
   const p: Record<string, string> = {};
@@ -1724,16 +2253,26 @@ router.get('/:id/queues', async (req, res) => {
 
 router.post('/:id/queues', requireWrite, async (req, res) => {
   const { name, target, max_limit } = req.body;
-  if (!name || !target || !max_limit) return res.status(400).json({ error: 'name, target and max_limit are required' });
-  await withCollector(req.params.id, res, async (c) => { await c.addSimpleQueue(queueBodyToRos(req.body)); return c.getSimpleQueues(); });
+  if (!name || !target || !max_limit)
+    return res.status(400).json({ error: 'name, target and max_limit are required' });
+  await withCollector(req.params.id, res, async (c) => {
+    await c.addSimpleQueue(queueBodyToRos(req.body));
+    return c.getSimpleQueues();
+  });
 });
 
 router.put('/:id/queues/:queueId', requireWrite, async (req, res) => {
-  await withCollector(req.params.id, res, async (c) => { await c.updateSimpleQueue(req.params.queueId, queueBodyToRos(req.body, true)); return c.getSimpleQueues(); });
+  await withCollector(req.params.id, res, async (c) => {
+    await c.updateSimpleQueue(req.params.queueId, queueBodyToRos(req.body, true));
+    return c.getSimpleQueues();
+  });
 });
 
 router.delete('/:id/queues/:queueId', requireWrite, async (req, res) => {
-  await withCollector(req.params.id, res, async (c) => { await c.removeSimpleQueue(req.params.queueId); return { message: 'Queue removed' }; });
+  await withCollector(req.params.id, res, async (c) => {
+    await c.removeSimpleQueue(req.params.queueId);
+    return { message: 'Queue removed' };
+  });
 });
 
 // ─── IP Services + Security Posture audit ────────────────────────────────────────
@@ -1743,9 +2282,12 @@ router.get('/:id/services', async (req, res) => {
 
 router.put('/:id/services/:serviceId', requireWrite, async (req, res) => {
   if (req.body.allowed_from !== undefined) return setServiceAllowedFrom(req, res);
-  if (typeof req.body.disabled !== 'boolean') return res.status(400).json({ error: 'disabled (boolean) is required' });
+  if (typeof req.body.disabled !== 'boolean')
+    return res.status(400).json({ error: 'disabled (boolean) is required' });
 
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
   // Disabling the very service MikroTik Manager talks to is an immediate, certain
@@ -1757,15 +2299,20 @@ router.put('/:id/services/:serviceId', requireWrite, async (req, res) => {
     try {
       await collector.connect();
       const services = await collector.getServices();
-      const target = (services as Record<string, string>[]).find((s) => s['.id'] === req.params.serviceId);
+      const target = (services as Record<string, string>[]).find(
+        (s) => s['.id'] === req.params.serviceId,
+      );
       if (target && target['name'] === mgmtService) {
         return res.status(409).json({
           lockout: true,
-          reason: `'${mgmtService}' is the service MikroTik Manager uses to reach this device. `
-            + `Disabling it would make the device unmanageable from here.`,
+          reason:
+            `'${mgmtService}' is the service MikroTik Manager uses to reach this device. ` +
+            `Disabling it would make the device unmanageable from here.`,
         });
       }
-    } catch { /* fall through to the guarded path */ } finally {
+    } catch {
+      /* fall through to the guarded path */
+    } finally {
       collector.disconnect();
     }
   }
@@ -1778,7 +2325,7 @@ router.put('/:id/services/:serviceId', requireWrite, async (req, res) => {
     async (c) => {
       await c.setServiceDisabled(req.params.serviceId, req.body.disabled);
       return { services: await c.getServices() };
-    }
+    },
   );
 });
 
@@ -1792,7 +2339,9 @@ async function setServiceAllowedFrom(req: Request, res: Response) {
   const parsed = parseAllowedList(req.body.allowed_from);
   if ('error' in parsed) return res.status(400).json({ error: parsed.error });
 
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const mgmtService = managementService(deviceRow);
 
@@ -1809,14 +2358,16 @@ async function setServiceAllowedFrom(req: Request, res: Response) {
       if (!peer) {
         return res.status(409).json({
           lockout: true,
-          reason: `'${mgmtService}' is the service MikroTik Manager uses to reach this device, and the manager ` +
+          reason:
+            `'${mgmtService}' is the service MikroTik Manager uses to reach this device, and the manager ` +
             `couldn't tell which address the device sees it connecting from, so it can't check this list keeps it in.`,
         });
       }
       if (!addressAllowed(peer, parsed.list)) {
         return res.status(409).json({
           lockout: true,
-          reason: `The device sees MikroTik Manager connecting from ${peer}, which this list leaves out. ` +
+          reason:
+            `The device sees MikroTik Manager connecting from ${peer}, which this list leaves out. ` +
             `'${mgmtService}' is the service the manager uses, so saving it would cut the manager off. Add ${peer} or its subnet.`,
         });
       }
@@ -1831,11 +2382,14 @@ async function setServiceAllowedFrom(req: Request, res: Response) {
     req.params.id,
     req,
     res,
-    { kind: 'service.allowed-from', summary: `Set allowed addresses on IP service to ${parsed.list.join(', ') || 'any'}` },
+    {
+      kind: 'service.allowed-from',
+      summary: `Set allowed addresses on IP service to ${parsed.list.join(', ') || 'any'}`,
+    },
     async (c) => {
       await c.setServiceAllowedFrom(req.params.serviceId, key, parsed.list);
       return { services: await c.getServices() };
-    }
+    },
   );
 }
 
@@ -1858,9 +2412,16 @@ router.post('/:id/identity/:kind/trust', requireSiteAdmin, async (req: Request, 
   const kind = IDENTITY_KINDS.find((k) => k === req.params.kind);
   if (!kind) return res.status(400).json({ error: 'kind must be api-tls, ssh-host or serial' });
   const trusted = await trustNewIdentity(parseInt(req.params.id, 10), kind);
-  if (!trusted) return res.status(404).json({ error: 'No changed certificate, host key or serial number is waiting for this device' });
-  const message = kind === 'serial' ? 'New device accepted. Polling resumes on the next cycle.'
-    : kind === 'api-tls' ? 'New certificate trusted.' : 'New host key trusted.';
+  if (!trusted)
+    return res.status(404).json({
+      error: 'No changed certificate, host key or serial number is waiting for this device',
+    });
+  const message =
+    kind === 'serial'
+      ? 'New device accepted. Polling resumes on the next cycle.'
+      : kind === 'api-tls'
+        ? 'New certificate trusted.'
+        : 'New host key trusted.';
   return res.json({ message });
 });
 
@@ -1870,11 +2431,15 @@ router.post('/:id/identity/:kind/trust', requireSiteAdmin, async (req: Request, 
 // is connected to the plain API (a script or monitoring tool would be cut off).
 // The change itself runs under Change Guard.
 router.post('/:id/plain-api/off', requireWrite, async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const name = deviceRow.name.trim();
   if (!usesApiTls(deviceRow)) {
-    return res.status(409).json({ error: `${name} is managed over the plain API. Switch it to API-SSL first; plain API can be turned off after that.` });
+    return res.status(409).json({
+      error: `${name} is managed over the plain API. Switch it to API-SSL first; plain API can be turned off after that.`,
+    });
   }
   let serviceId: string | null = null;
   const collector = new DeviceCollector(deviceRow);
@@ -1883,24 +2448,30 @@ router.post('/:id/plain-api/off', requireWrite, async (req: Request, res: Respon
     await collector.connect();
     const rows = await collector.getServicesWithConnections();
     const api = configuredServices(rows).find((s) => s['name'] === 'api');
-    if (!api || api['disabled'] === 'true') return res.json({ already: true, message: `Plain API is already off on ${name}` });
+    if (!api || api['disabled'] === 'true')
+      return res.json({ already: true, message: `Plain API is already off on ${name}` });
     const users = plainApiUsers(rows);
     if (users.length > 0) {
       return res.status(409).json({
-        error: `Plain API is in use on ${name} right now, from ${users.join(', ')}. Move ` +
+        error:
+          `Plain API is in use on ${name} right now, from ${users.join(', ')}. Move ` +
           `${users.length === 1 ? 'it' : 'them'} to API-SSL (8729), then turn plain API off.`,
         in_use_by: users,
       });
     }
     serviceId = api['.id'];
   } catch (err) {
-    return res.status(502).json({ error: `Couldn’t log in to ${name} over API-SSL just now, so plain API stays on: ${safeConnectionError('api-ssl', err)}` });
+    return res.status(502).json({
+      error: `Couldn’t log in to ${name} over API-SSL just now, so plain API stays on: ${safeConnectionError('api-ssl', err)}`,
+    });
   } finally {
     collector.disconnect();
   }
 
   await withGuardedChange(
-    req.params.id, req, res,
+    req.params.id,
+    req,
+    res,
     { kind: 'service.toggle', summary: 'Turn off plain API (api); the manager uses API-SSL' },
     async (c) => {
       await c.setServiceDisabled(serviceId!, true);
@@ -1913,7 +2484,9 @@ router.post('/:id/plain-api/off', requireWrite, async (req: Request, res: Respon
 // manager's connection to it once a login over it works (outside review P1-4).
 router.post('/:id/api-ssl', requireWrite, async (req: Request, res: Response) => {
   const device = await queryOne<ApiSslDevice>(
-    `SELECT id, name, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`, [req.params.id]);
+    `SELECT id, name, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
+    [req.params.id],
+  );
   if (!device) return res.status(404).json({ error: 'Device not found' });
   try {
     const result = await enableApiSsl(device);
@@ -1922,8 +2495,9 @@ router.post('/:id/api-ssl', requireWrite, async (req: Request, res: Response) =>
     // Connection failures get the usual safe wording; anything the device
     // itself said, or a step that explains itself, is shown as it is.
     const msg = (err as Error).message ?? String(err);
-    const connectionProblem = !!(err as NodeJS.ErrnoException).code
-      || /timeout|connection|invalid user name or password/i.test(msg);
+    const connectionProblem =
+      !!(err as NodeJS.ErrnoException).code ||
+      /timeout|connection|invalid user name or password/i.test(msg);
     return res.status(502).json({
       error: `Could not enable API-SSL: ${connectionProblem ? safeConnectionError('api-ssl', err) : msg}`,
     });
@@ -1938,8 +2512,9 @@ router.post('/:id/www-ssl', requireWrite, async (req: Request, res: Response) =>
   } catch (err) {
     const msg = (err as Error).message ?? String(err);
     if (msg === 'Device not found') return res.status(404).json({ error: msg });
-    const connectionProblem = !!(err as NodeJS.ErrnoException).code
-      || /timeout|connection|invalid user name or password/i.test(msg);
+    const connectionProblem =
+      !!(err as NodeJS.ErrnoException).code ||
+      /timeout|connection|invalid user name or password/i.test(msg);
     return res.status(502).json({
       error: `Could not switch WebFig to HTTPS: ${connectionProblem ? safeConnectionError('api', err) : msg}`,
     });
@@ -1951,13 +2526,15 @@ router.post('/:id/www-ssl', requireWrite, async (req: Request, res: Response) =>
 // de-duplicated services, and it never proposes disabling the management
 // service MikroTik Manager itself connects through (that would self-lockout).
 router.get('/:id/security-posture', async (req, res) => {
-  const device = await queryOne<DeviceRow & {
-    firmware_update_available?: boolean;
-    latest_ros_version?: string | null;
-    routerboard_upgrade_available?: boolean;
-    firmware_version?: string | null;
-    upgrade_firmware_version?: string | null;
-  }>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const device = await queryOne<
+    DeviceRow & {
+      firmware_update_available?: boolean;
+      latest_ros_version?: string | null;
+      routerboard_upgrade_available?: boolean;
+      firmware_version?: string | null;
+      upgrade_firmware_version?: string | null;
+    }
+  >(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
   if (!device) return res.status(404).json({ error: 'Device not found' });
 
   await withCollector(req.params.id, res, (c) => securityPosture(c, device));
@@ -1965,12 +2542,12 @@ router.get('/:id/security-posture', async (req, res) => {
 
 /** The posture device type: the device row with its update columns. */
 export type PostureDevice = DeviceRow & {
-    firmware_update_available?: boolean;
-    latest_ros_version?: string | null;
-    routerboard_upgrade_available?: boolean;
-    firmware_version?: string | null;
-    upgrade_firmware_version?: string | null;
-  };
+  firmware_update_available?: boolean;
+  latest_ros_version?: string | null;
+  routerboard_upgrade_available?: boolean;
+  firmware_version?: string | null;
+  upgrade_firmware_version?: string | null;
+};
 
 /**
  * A device's hardening checklist and score (live: services, firewall, SNMP).
@@ -1983,134 +2560,181 @@ export async function securityPosture(c: DeviceCollector, device: PostureDevice)
   const mgmtService = managementService(device);
   const isRouter = device.device_type === 'router';
 
-    const [servicesRaw, fwRules, snmp] = await Promise.all([
-      c.getServices().catch(() => [] as Record<string, string>[]),
-      c.getFirewallRules().catch(() => [] as Record<string, string>[]),
-      c.getSnmpConfig().catch(() => ({} as Record<string, string>)),
-    ]);
+  const [servicesRaw, fwRules, snmp] = await Promise.all([
+    c.getServices().catch(() => [] as Record<string, string>[]),
+    c.getFirewallRules().catch(() => [] as Record<string, string>[]),
+    c.getSnmpConfig().catch(() => ({}) as Record<string, string>),
+  ]);
 
-    // De-duplicate /ip/service rows by name (some devices report duplicates,
-    // e.g. api/route_BFD twice) so a service is only ever counted once.
-    const services = Array.from(new Map(servicesRaw.map(s => [s['name'] ?? s['.id'], s])).values());
+  // De-duplicate /ip/service rows by name (some devices report duplicates,
+  // e.g. api/route_BFD twice) so a service is only ever counted once.
+  const services = Array.from(new Map(servicesRaw.map((s) => [s['name'] ?? s['.id'], s])).values());
 
-    type Sev = 'high' | 'medium' | 'low';
-    type Check = { id: string; severity: Sev; title: string; detail: string; serviceId?: string; fix?: 'api-ssl' | 'www-ssl' | 'api-off' };
-    const checks: Check[] = [];
+  type Sev = 'high' | 'medium' | 'low';
+  type Check = {
+    id: string;
+    severity: Sev;
+    title: string;
+    detail: string;
+    serviceId?: string;
+    fix?: 'api-ssl' | 'www-ssl' | 'api-off';
+  };
+  const checks: Check[] = [];
 
-    for (const s of services) {
-      const name = s['name'] ?? '';
-      if (s['disabled'] === 'true') continue;
+  for (const s of services) {
+    const name = s['name'] ?? '';
+    if (s['disabled'] === 'true') continue;
 
-      if (name === 'telnet' || name === 'ftp') {
-        checks.push({ id: `service-${name}`, severity: 'high', serviceId: s['.id'],
-          title: `Cleartext service "${name}" is enabled`,
-          detail: `${name} sends credentials and data unencrypted. Disable it; use SSH/SFTP instead.` });
-      } else if (name === 'www') {
-        checks.push({ id: 'service-www', severity: 'medium', serviceId: s['.id'], fix: 'www-ssl',
-          title: 'Unencrypted WebFig (www) is enabled',
-          detail: 'The HTTP WebFig interface is unencrypted. Switch to HTTPS: the manager enables "www-ssl" ' +
-            '(with a self-signed certificate if it has none) and turns "www" off only once HTTPS answers.' });
-      } else if (name === 'www-ssl' && (!s['certificate'] || s['certificate'] === 'none')) {
-        // Enabled without a certificate it can't complete a TLS handshake, so
-        // WebFig over HTTPS doesn't work at all (#234).
-        checks.push({ id: 'www-ssl-no-cert', severity: 'low', fix: 'www-ssl',
-          title: 'HTTPS WebFig (www-ssl) has no certificate',
-          detail: '"www-ssl" is enabled but has no certificate, so it can\u2019t answer HTTPS. Switching to HTTPS ' +
-            'assigns one (api-ssl\u2019s, or a new self-signed certificate).' });
-      } else if (name === 'api' && mgmtService !== 'api') {
-        // Plaintext API is on but the platform connects via api-ssl — safe to flag/disable.
-        checks.push({ id: 'service-api', severity: 'medium', serviceId: s['.id'], fix: 'api-off',
-          title: 'Unencrypted API (api) is enabled',
-          detail: 'The plaintext RouterOS API is exposed, and the manager already uses API-SSL. Turn plain API off: ' +
-            'the manager first checks it can log in over API-SSL and that nothing else is connected to plain API.' });
-      } else if (name === mgmtService && name === 'api') {
-        // The platform is connected through cleartext API — advise, but do NOT
-        // offer to disable it (that would cut MikroTik Manager off the device).
-        checks.push({ id: 'mgmt-api-cleartext', severity: 'medium', fix: 'api-ssl',
-          title: 'MikroTik Manager connects over the plain API',
-          detail: 'This device is managed over the unencrypted API (8728), which sends its login in the clear on every poll. ' +
-            'Switch to API-SSL: the manager enables it on the device (with a self-signed certificate if it has none) ' +
-            'and moves over only once it has logged in over it.' });
-      }
-    }
-
-    // Input-chain firewall: a real concern on routers; switches/APs commonly
-    // (and legitimately) rely on an upstream router's firewall, so it's only
-    // informational there rather than a high-severity hit.
-    const hasInputDrop = fwRules.some(r => (r['chain'] === 'input') && ['drop', 'reject'].includes(r['action'] ?? '') && r['disabled'] !== 'true');
-    if (!hasInputDrop) {
+    if (name === 'telnet' || name === 'ftp') {
       checks.push({
-        id: 'no-input-firewall', severity: isRouter ? 'high' : 'low',
-        title: 'No input-chain firewall rule',
-        detail: isRouter
-          ? 'This router has no enabled drop/reject rule on the input chain, leaving its own services exposed. Add a baseline input firewall.'
-          : 'No input-chain firewall on this device. Switches/APs often rely on an upstream router firewall — confirm that is the case.',
+        id: `service-${name}`,
+        severity: 'high',
+        serviceId: s['.id'],
+        title: `Cleartext service "${name}" is enabled`,
+        detail: `${name} sends credentials and data unencrypted. Disable it; use SSH/SFTP instead.`,
+      });
+    } else if (name === 'www') {
+      checks.push({
+        id: 'service-www',
+        severity: 'medium',
+        serviceId: s['.id'],
+        fix: 'www-ssl',
+        title: 'Unencrypted WebFig (www) is enabled',
+        detail:
+          'The HTTP WebFig interface is unencrypted. Switch to HTTPS: the manager enables "www-ssl" ' +
+          '(with a self-signed certificate if it has none) and turns "www" off only once HTTPS answers.',
+      });
+    } else if (name === 'www-ssl' && (!s['certificate'] || s['certificate'] === 'none')) {
+      // Enabled without a certificate it can't complete a TLS handshake, so
+      // WebFig over HTTPS doesn't work at all (#234).
+      checks.push({
+        id: 'www-ssl-no-cert',
+        severity: 'low',
+        fix: 'www-ssl',
+        title: 'HTTPS WebFig (www-ssl) has no certificate',
+        detail:
+          '"www-ssl" is enabled but has no certificate, so it can\u2019t answer HTTPS. Switching to HTTPS ' +
+          'assigns one (api-ssl\u2019s, or a new self-signed certificate).',
+      });
+    } else if (name === 'api' && mgmtService !== 'api') {
+      // Plaintext API is on but the platform connects via api-ssl — safe to flag/disable.
+      checks.push({
+        id: 'service-api',
+        severity: 'medium',
+        serviceId: s['.id'],
+        fix: 'api-off',
+        title: 'Unencrypted API (api) is enabled',
+        detail:
+          'The plaintext RouterOS API is exposed, and the manager already uses API-SSL. Turn plain API off: ' +
+          'the manager first checks it can log in over API-SSL and that nothing else is connected to plain API.',
+      });
+    } else if (name === mgmtService && name === 'api') {
+      // The platform is connected through cleartext API — advise, but do NOT
+      // offer to disable it (that would cut MikroTik Manager off the device).
+      checks.push({
+        id: 'mgmt-api-cleartext',
+        severity: 'medium',
+        fix: 'api-ssl',
+        title: 'MikroTik Manager connects over the plain API',
+        detail:
+          'This device is managed over the unencrypted API (8728), which sends its login in the clear on every poll. ' +
+          'Switch to API-SSL: the manager enables it on the device (with a self-signed certificate if it has none) ' +
+          'and moves over only once it has logged in over it.',
       });
     }
+  }
 
-    if (snmp && snmp['enabled'] === 'true') {
-      checks.push({ id: 'snmp-enabled', severity: 'low', title: 'SNMP is enabled',
-        detail: 'Ensure SNMP uses a non-default community string and is restricted to trusted addresses.' });
-    }
-
-    // Outdated firmware is a security exposure: RouterOS releases routinely
-    // ship security fixes, so a pending update counts against the posture.
-    // Titles stay version-free so the Security Center's "Common Findings"
-    // rollup aggregates devices on different versions into one row.
-    if (device.firmware_update_available && device.latest_ros_version) {
-      checks.push({
-        id: 'firmware-outdated', severity: 'medium',
-        title: 'RouterOS update available',
-        detail: `This device runs RouterOS ${device.ros_version || '(unknown)'} but ${device.latest_ros_version} is available. RouterOS releases regularly include security fixes — review the changelog and schedule the upgrade from the Firmware section.`,
-      });
-    }
-    if (device.routerboard_upgrade_available) {
-      checks.push({
-        id: 'routerboot-outdated', severity: 'low',
-        title: 'RouterBOOT upgrade pending',
-        detail: `The bootloader (${device.firmware_version || 'current'}) has an available upgrade${device.upgrade_firmware_version ? ` to ${device.upgrade_firmware_version}` : ''}. Apply it after the next RouterOS upgrade from the device's Config tab.`,
-      });
-    }
-
-    // Suppressions (issue #101). A finding the operator has judged inapplicable is
-    // marked rather than hidden: it stays visible, greyed, and stops counting
-    // against the score. Hiding it outright would make the posture unauditable.
-    const supp = await query<{ check_id: string; device_id: number | null; reason: string | null }>(
-      `SELECT check_id, device_id, reason FROM security_check_suppressions
-       WHERE device_id IS NULL OR device_id = $1`,
-      [device.id]
-    ).catch(() => []);
-    const suppressedBy = new Map<string, { scope: 'device' | 'fleet'; reason: string | null }>();
-    for (const row of supp) {
-      const scope = row.device_id == null ? 'fleet' : 'device';
-      // A device-specific row wins over a fleet-wide one, so the UI can offer the
-      // narrower undo.
-      if (scope === 'device' || !suppressedBy.has(row.check_id)) {
-        suppressedBy.set(row.check_id, { scope, reason: row.reason });
-      }
-    }
-
-    const marked = checks.map((c2) => {
-      const hit = suppressedBy.get(c2.id);
-      return hit ? { ...c2, suppressed: true, suppressed_scope: hit.scope, suppressed_reason: hit.reason } : c2;
+  // Input-chain firewall: a real concern on routers; switches/APs commonly
+  // (and legitimately) rely on an upstream router's firewall, so it's only
+  // informational there rather than a high-severity hit.
+  const hasInputDrop = fwRules.some(
+    (r) =>
+      r['chain'] === 'input' &&
+      ['drop', 'reject'].includes(r['action'] ?? '') &&
+      r['disabled'] !== 'true',
+  );
+  if (!hasInputDrop) {
+    checks.push({
+      id: 'no-input-firewall',
+      severity: isRouter ? 'high' : 'low',
+      title: 'No input-chain firewall rule',
+      detail: isRouter
+        ? 'This router has no enabled drop/reject rule on the input chain, leaving its own services exposed. Add a baseline input firewall.'
+        : 'No input-chain firewall on this device. Switches/APs often rely on an upstream router firewall — confirm that is the case.',
     });
+  }
 
-    // Graduated score: lighter weights + a floor of 5 so it never reads a hard
-    // 0 (which falsely implies "maximally insecure"). It's a relative hardening
-    // indicator, not an absolute grade.
-    const WEIGHT: Record<Sev, number> = { high: 15, medium: 7, low: 3 };
-    const counted = marked.filter((c2) => !('suppressed' in c2));
-    const penalty = counted.reduce((n, c2) => n + WEIGHT[c2.severity], 0);
-    const score = counted.length === 0 ? 100 : Math.max(5, 100 - penalty);
-    return { score, checks: marked };
+  if (snmp && snmp['enabled'] === 'true') {
+    checks.push({
+      id: 'snmp-enabled',
+      severity: 'low',
+      title: 'SNMP is enabled',
+      detail:
+        'Ensure SNMP uses a non-default community string and is restricted to trusted addresses.',
+    });
+  }
+
+  // Outdated firmware is a security exposure: RouterOS releases routinely
+  // ship security fixes, so a pending update counts against the posture.
+  // Titles stay version-free so the Security Center's "Common Findings"
+  // rollup aggregates devices on different versions into one row.
+  if (device.firmware_update_available && device.latest_ros_version) {
+    checks.push({
+      id: 'firmware-outdated',
+      severity: 'medium',
+      title: 'RouterOS update available',
+      detail: `This device runs RouterOS ${device.ros_version || '(unknown)'} but ${device.latest_ros_version} is available. RouterOS releases regularly include security fixes — review the changelog and schedule the upgrade from the Firmware section.`,
+    });
+  }
+  if (device.routerboard_upgrade_available) {
+    checks.push({
+      id: 'routerboot-outdated',
+      severity: 'low',
+      title: 'RouterBOOT upgrade pending',
+      detail: `The bootloader (${device.firmware_version || 'current'}) has an available upgrade${device.upgrade_firmware_version ? ` to ${device.upgrade_firmware_version}` : ''}. Apply it after the next RouterOS upgrade from the device's Config tab.`,
+    });
+  }
+
+  // Suppressions (issue #101). A finding the operator has judged inapplicable is
+  // marked rather than hidden: it stays visible, greyed, and stops counting
+  // against the score. Hiding it outright would make the posture unauditable.
+  const supp = await query<{ check_id: string; device_id: number | null; reason: string | null }>(
+    `SELECT check_id, device_id, reason FROM security_check_suppressions
+       WHERE device_id IS NULL OR device_id = $1`,
+    [device.id],
+  ).catch(() => []);
+  const suppressedBy = new Map<string, { scope: 'device' | 'fleet'; reason: string | null }>();
+  for (const row of supp) {
+    const scope = row.device_id == null ? 'fleet' : 'device';
+    // A device-specific row wins over a fleet-wide one, so the UI can offer the
+    // narrower undo.
+    if (scope === 'device' || !suppressedBy.has(row.check_id)) {
+      suppressedBy.set(row.check_id, { scope, reason: row.reason });
+    }
+  }
+
+  const marked = checks.map((c2) => {
+    const hit = suppressedBy.get(c2.id);
+    return hit
+      ? { ...c2, suppressed: true, suppressed_scope: hit.scope, suppressed_reason: hit.reason }
+      : c2;
+  });
+
+  // Graduated score: lighter weights + a floor of 5 so it never reads a hard
+  // 0 (which falsely implies "maximally insecure"). It's a relative hardening
+  // indicator, not an absolute grade.
+  const WEIGHT: Record<Sev, number> = { high: 15, medium: 7, low: 3 };
+  const counted = marked.filter((c2) => !('suppressed' in c2));
+  const penalty = counted.reduce((n, c2) => n + WEIGHT[c2.severity], 0);
+  const score = counted.length === 0 ? 100 : Math.max(5, 100 - penalty);
+  return { score, checks: marked };
 }
-
 
 // GET /api/devices/:id/resources (live resource usage)
 router.get('/:id/resources', async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -2128,7 +2752,7 @@ router.get('/:id/resources', async (req: Request, res: Response) => {
 router.get('/:id/system-config', async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -2146,11 +2770,12 @@ router.get('/:id/system-config', async (req: Request, res: Response) => {
 router.put('/:id/system-config', requireWrite, async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
-  const { identity, ntp_enabled, ntp_primary, ntp_secondary, dns_servers, dns_allow_remote } = req.body;
+  const { identity, ntp_enabled, ntp_primary, ntp_secondary, dns_servers, dns_allow_remote } =
+    req.body;
 
   const collector = new DeviceCollector(deviceRow);
   try {
@@ -2184,7 +2809,7 @@ router.put('/:id/system-config', requireWrite, async (req: Request, res: Respons
 router.get('/:id/ip-addresses', async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -2221,7 +2846,9 @@ router.post('/:id/ip-addresses', requireWrite, async (req: Request, res: Respons
       await c.addIpAddress(address, iface);
       return { message: `Address ${address} added` };
     },
-    async (c) => { await c.collectIpAddressesCache(); }
+    async (c) => {
+      await c.collectIpAddressesCache();
+    },
   );
 });
 
@@ -2245,7 +2872,9 @@ router.put('/:id/ip-addresses/:addrId', requireWrite, async (req: Request, res: 
       await c.updateIpAddress(req.params.addrId, fields);
       return { message: 'IP address updated' };
     },
-    async (c) => { await c.collectIpAddressesCache(); }
+    async (c) => {
+      await c.collectIpAddressesCache();
+    },
   );
 });
 
@@ -2265,7 +2894,9 @@ router.delete('/:id/ip-addresses/:addrId', requireWrite, async (req: Request, re
       await c.removeIpAddress(req.params.addrId);
       return { message: 'IP address removed' };
     },
-    async (c) => { await c.collectIpAddressesCache(); }
+    async (c) => {
+      await c.collectIpAddressesCache();
+    },
   );
 });
 
@@ -2273,7 +2904,7 @@ router.delete('/:id/ip-addresses/:addrId', requireWrite, async (req: Request, re
 router.post('/:id/check-update', requireWrite, async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -2289,12 +2920,14 @@ router.post('/:id/check-update', requireWrite, async (req: Request, res: Respons
     // Compared as versions, not as strings: "different" is not "newer", and
     // reading it that way offered an older release as an update (#144).
     const hasUpdate = updateAvailable({
-      installed: installedVersion, latest: latestVersion, status: statusText,
+      installed: installedVersion,
+      latest: latestVersion,
+      status: statusText,
     });
 
     await query(
       `UPDATE devices SET firmware_update_available = $1, latest_ros_version = $2, updated_at = NOW() WHERE id = $3`,
-      [hasUpdate, latestVersion || null, deviceRow.id]
+      [hasUpdate, latestVersion || null, deviceRow.id],
     );
 
     return res.json(updateInfo);
@@ -2304,7 +2937,6 @@ router.post('/:id/check-update', requireWrite, async (req: Request, res: Respons
 });
 
 // ─── Per-device SSH keys (#110) ──────────────────────────────────────────────
-
 
 /**
  * GET /api/devices/:id/ssh-key — key status.
@@ -2319,7 +2951,7 @@ router.get('/:id/ssh-key', async (req: Request, res: Response) => {
       `SELECT device_id, key_type, public_key, fingerprint, ssh_username, status,
               last_error, last_verified_at, deployed_at, created_at
          FROM device_ssh_keys WHERE device_id = $1`,
-      [req.params.id]
+      [req.params.id],
     );
     res.json({ key: row ?? null });
   } catch (error) {
@@ -2330,7 +2962,9 @@ router.get('/:id/ssh-key', async (req: Request, res: Response) => {
 
 // POST /api/devices/:id/ssh-key — generate, deploy and verify (rotates if one exists)
 router.post('/:id/ssh-key', requireWrite, async (req: Request, res: Response) => {
-  const target = await queryOne<any>(`SELECT ${SSH_TARGET_COLS} FROM devices WHERE id = $1`, [req.params.id]);
+  const target = await queryOne<any>(`SELECT ${SSH_TARGET_COLS} FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!target) return res.status(404).json({ error: 'Device not found' });
 
   try {
@@ -2343,9 +2977,9 @@ router.post('/:id/ssh-key', requireWrite, async (req: Request, res: Response) =>
       // is bound to them, so this is a real trade the operator must know about.
       message: rotate
         ? 'New key deployed and verified; the previous one has been removed.'
-        : 'Key deployed and verified. Note that RouterOS now requires this key for SSH — '
-          + 'password SSH is disabled for this user until the key is revoked. '
-          + 'The API and WinBox are unaffected.',
+        : 'Key deployed and verified. Note that RouterOS now requires this key for SSH — ' +
+          'password SSH is disabled for this user until the key is revoked. ' +
+          'The API and WinBox are unaffected.',
       key: { fingerprint: key.fingerprint, status: key.status, public_key: key.public_key },
     });
   } catch (error) {
@@ -2358,21 +2992,27 @@ router.post('/:id/ssh-key', requireWrite, async (req: Request, res: Response) =>
 
 // POST /api/devices/:id/ssh-key/verify — re-prove an existing key
 router.post('/:id/ssh-key/verify', requireWrite, async (req: Request, res: Response) => {
-  const target = await queryOne<any>(`SELECT ${SSH_TARGET_COLS} FROM devices WHERE id = $1`, [req.params.id]);
+  const target = await queryOne<any>(`SELECT ${SSH_TARGET_COLS} FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!target) return res.status(404).json({ error: 'Device not found' });
 
   const { sshKeyService } = await import('../services/SshKeyService');
   const result = await sshKeyService.verify(target);
-  res.status(result.ok ? 200 : 502).json(
-    result.ok
-      ? { message: 'Key authenticated successfully.' }
-      : { error: `Key did not authenticate: ${result.error}` }
-  );
+  res
+    .status(result.ok ? 200 : 502)
+    .json(
+      result.ok
+        ? { message: 'Key authenticated successfully.' }
+        : { error: `Key did not authenticate: ${result.error}` },
+    );
 });
 
 // DELETE /api/devices/:id/ssh-key — stop using the key, and remove it if reachable
 router.delete('/:id/ssh-key', requireWrite, async (req: Request, res: Response) => {
-  const target = await queryOne<any>(`SELECT ${SSH_TARGET_COLS} FROM devices WHERE id = $1`, [req.params.id]);
+  const target = await queryOne<any>(`SELECT ${SSH_TARGET_COLS} FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!target) return res.status(404).json({ error: 'Device not found' });
 
   const { sshKeyService } = await import('../services/SshKeyService');
@@ -2399,9 +3039,10 @@ router.post('/ssh-keys/deploy-all', requireAdmin, async (req: Request, res: Resp
   // should not be easier to trigger than the one that does it once.
   if ((req.body as { confirm?: boolean })?.confirm !== true) {
     return res.status(400).json({
-      error: 'Refusing to deploy fleet-wide without confirmation. This disables password ' +
-             'SSH for the configured user on every device it touches; the API and WinBox ' +
-             'are unaffected. Repeat with {"confirm": true} once that is understood.',
+      error:
+        'Refusing to deploy fleet-wide without confirmation. This disables password ' +
+        'SSH for the configured user on every device it touches; the API and WinBox ' +
+        'are unaffected. Repeat with {"confirm": true} once that is understood.',
     });
   }
 
@@ -2414,7 +3055,7 @@ router.post('/ssh-keys/deploy-all', requireAdmin, async (req: Request, res: Resp
               AS has_verified_key
        FROM devices d
       WHERE d.status != 'disabled'
-      ORDER BY d.name`
+      ORDER BY d.name`,
   );
   const targets = candidates.filter((t) => classifyKeyTarget(t).kind === 'eligible');
 
@@ -2464,7 +3105,11 @@ router.post('/:id/install-update', requireWrite, async (req: Request, res: Respo
     // otherwise install it, a downgrade (P2-9).
     const decision = upgradeDecision(installed, latest);
     if (decision.action === 'skip' && decision.reason !== 'Already up to date') {
-      return res.json({ started: false, installed_version: installed || null, message: decision.reason });
+      return res.json({
+        started: false,
+        installed_version: installed || null,
+        message: decision.reason,
+      });
     }
     if (decision.action === 'skip') {
       // Nothing to do is a real answer, not a failure — and it is the one state
@@ -2472,7 +3117,7 @@ router.post('/:id/install-update', requireWrite, async (req: Request, res: Respo
       await query(
         `UPDATE devices SET firmware_update_available = FALSE,
                 latest_ros_version = NULLIF($2,''), updated_at = NOW() WHERE id = $1`,
-        [deviceRow.id, latest]
+        [deviceRow.id, latest],
       );
       return res.json({
         started: false,
@@ -2484,7 +3129,7 @@ router.post('/:id/install-update', requireWrite, async (req: Request, res: Respo
     await collector.installUpdate();
     await query(
       `UPDATE devices SET latest_ros_version = NULLIF($2,''), updated_at = NOW() WHERE id = $1`,
-      [deviceRow.id, latest]
+      [deviceRow.id, latest],
     );
     return res.json({
       started: true,
@@ -2501,7 +3146,7 @@ router.post('/:id/install-update', requireWrite, async (req: Request, res: Respo
 router.post('/:id/check-routerboard', requireWrite, async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -2511,7 +3156,7 @@ router.post('/:id/check-routerboard', requireWrite, async (req: Request, res: Re
     const info = await collector.checkRouterboardUpgrade();
     await query(
       `UPDATE devices SET routerboard_upgrade_available = $1, upgrade_firmware_version = $2, updated_at = NOW() WHERE id = $3`,
-      [info.upgradeAvailable, info.upgradeFirmware || null, deviceRow.id]
+      [info.upgradeAvailable, info.upgradeFirmware || null, deviceRow.id],
     );
     return res.json(info);
   } finally {
@@ -2542,7 +3187,7 @@ router.post('/:id/install-routerboard', requireWrite, async (req: Request, res: 
       await query(
         `UPDATE devices SET routerboard_upgrade_available = FALSE,
                 upgrade_firmware_version = NULLIF($2,''), updated_at = NOW() WHERE id = $1`,
-        [deviceRow.id, info.upgradeFirmware]
+        [deviceRow.id, info.upgradeFirmware],
       );
       return res.json({
         started: false,
@@ -2554,7 +3199,7 @@ router.post('/:id/install-routerboard', requireWrite, async (req: Request, res: 
     await collector.installRouterboardUpgrade();
     await query(
       `UPDATE devices SET upgrade_firmware_version = NULLIF($2,''), updated_at = NOW() WHERE id = $1`,
-      [deviceRow.id, info.upgradeFirmware]
+      [deviceRow.id, info.upgradeFirmware],
     );
     return res.json({
       started: true,
@@ -2571,7 +3216,7 @@ router.post('/:id/install-routerboard', requireWrite, async (req: Request, res: 
 router.post('/:id/reboot', requireWrite, async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -2590,7 +3235,9 @@ router.post('/:id/reboot', requireWrite, async (req: Request, res: Response) => 
 // power right now. Empty on a device without PoE-out.
 router.get('/:id/poe', async (req: Request, res: Response) => {
   await withCollector(req.params.id, res, async (c) => ({
-    ports: (await c.getAllPoEStatus()).map((p) => ({ name: p['name'] ?? '', poeOut: p['poe-out'] ?? null })).filter((p) => p.name),
+    ports: (await c.getAllPoEStatus())
+      .map((p) => ({ name: p['name'] ?? '', poeOut: p['poe-out'] ?? null }))
+      .filter((p) => p.name),
   }));
 });
 
@@ -2598,42 +3245,56 @@ router.get('/:id/poe', async (req: Request, res: Response) => {
 // Cut a port's PoE output briefly and restore it (#291). Nothing to revert, so
 // not under Change Guard; but when management arrives on this port, the device
 // it powers may carry the manager's connection, so that asks first (409).
-router.post('/:id/ports/:name/poe-power-cycle', requireWrite, async (req: Request, res: Response) => {
-  const name = req.params.name;
-  if (!IFACE_NAME.test(name)) return res.status(400).json({ error: 'Invalid port name.' });
-  const seconds = req.body?.seconds === undefined ? 5 : Number(req.body.seconds);
-  if (!Number.isInteger(seconds) || seconds < 1 || seconds > 60) return res.status(400).json({ error: 'seconds must be a whole number from 1 to 60' });
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
-  if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
-  if (req.body?.confirm_management !== true) {
-    try {
-      const path = resolveManagementPath(await captureSnapshot(deviceRow as unknown as GuardDevice), deviceRow as unknown as GuardDevice);
-      if (path.ingressPort === name) {
-        return res.status(409).json({
-          needs_confirmation: true,
-          error: `Management traffic reaches this device through ${name}. If the device it powers carries that traffic, the manager will lose contact for about ${seconds} seconds plus its boot time.`,
-        });
+router.post(
+  '/:id/ports/:name/poe-power-cycle',
+  requireWrite,
+  async (req: Request, res: Response) => {
+    const name = req.params.name;
+    if (!IFACE_NAME.test(name)) return res.status(400).json({ error: 'Invalid port name.' });
+    const seconds = req.body?.seconds === undefined ? 5 : Number(req.body.seconds);
+    if (!Number.isInteger(seconds) || seconds < 1 || seconds > 60)
+      return res.status(400).json({ error: 'seconds must be a whole number from 1 to 60' });
+    const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+      req.params.id,
+    ]);
+    if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
+    if (req.body?.confirm_management !== true) {
+      try {
+        const path = resolveManagementPath(
+          await captureSnapshot(deviceRow as unknown as GuardDevice),
+          deviceRow as unknown as GuardDevice,
+        );
+        if (path.ingressPort === name) {
+          return res.status(409).json({
+            needs_confirmation: true,
+            error: `Management traffic reaches this device through ${name}. If the device it powers carries that traffic, the manager will lose contact for about ${seconds} seconds plus its boot time.`,
+          });
+        }
+      } catch {
+        /* can't tell; the power-cycle itself is harmless to this device */
       }
-    } catch { /* can't tell; the power-cycle itself is harmless to this device */ }
-  }
-  const collector = new DeviceCollector(deviceRow);
-  try {
-    await collector.connect();
-    await collector.poePowerCycle(name, seconds);
-    console.log(`[poe] ${logSafe(deviceRow.name)}: power-cycled ${logSafe(name)} for ${seconds}s`);
-    return res.json({ message: `PoE on ${name} is off for ${seconds} seconds, then back on.` });
-  } catch (err) {
-    return res.status(500).json({ error: (err as Error).message });
-  } finally {
-    collector.disconnect();
-  }
-});
+    }
+    const collector = new DeviceCollector(deviceRow);
+    try {
+      await collector.connect();
+      await collector.poePowerCycle(name, seconds);
+      console.log(
+        `[poe] ${logSafe(deviceRow.name)}: power-cycled ${logSafe(name)} for ${seconds}s`,
+      );
+      return res.json({ message: `PoE on ${name} is off for ${seconds} seconds, then back on.` });
+    } catch (err) {
+      return res.status(500).json({ error: (err as Error).message });
+    } finally {
+      collector.disconnect();
+    }
+  },
+);
 
 // GET /api/devices/:id/clock
 router.get('/:id/clock', async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -2651,7 +3312,7 @@ router.get('/:id/clock', async (req: Request, res: Response) => {
 router.put('/:id/clock', requireWrite, async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -2681,7 +3342,7 @@ router.post('/:id/routing', requireWrite, async (req: Request, res: Response) =>
     async (c) => {
       await c.addRoute(dst_address, gateway, distance, comment);
       return { message: 'Route added' };
-    }
+    },
   );
 });
 
@@ -2700,127 +3361,257 @@ router.delete('/:id/routing/:routeId', requireWrite, async (req: Request, res: R
     async (c) => {
       await c.removeRoute(req.params.routeId);
       return { message: 'Route removed' };
-    }
+    },
   );
 });
 
 // ─── OSPF ─────────────────────────────────────────────────────────────────────
 router.get('/:id/routing/ospf', async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const collector = new DeviceCollector(deviceRow);
   try {
     await collector.connect();
     return res.json(await collector.getOspfData());
-  } finally { collector.disconnect(); }
+  } finally {
+    collector.disconnect();
+  }
 });
 
 // OSPF, BGP, routing tables and filters run under Change Guard. None of it is
 // simulated, but deleting the instance that carries the route back to the
 // manager is undone automatically instead of stranding the device (P2-8).
 router.post('/:id/routing/ospf/instance', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.ospf.instance.post', summary: 'Add routing ospf instance' },
-    async (collector) => { await collector.addOspfInstance(req.body); return { success: true }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    { kind: 'routing.ospf.instance.post', summary: 'Add routing ospf instance' },
+    async (collector) => {
+      await collector.addOspfInstance(req.body);
+      return { success: true };
+    },
+  );
 });
 
-router.delete('/:id/routing/ospf/instance/:itemId', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.ospf.instance.delete', summary: 'Remove routing ospf instance' },
-    async (collector) => { await collector.removeOspfInstance(decodeURIComponent(req.params.itemId)); return { success: true }; });
-});
+router.delete(
+  '/:id/routing/ospf/instance/:itemId',
+  requireWrite,
+  async (req: Request, res: Response) => {
+    await withGuardedChange(
+      req.params.id,
+      req,
+      res,
+      { kind: 'routing.ospf.instance.delete', summary: 'Remove routing ospf instance' },
+      async (collector) => {
+        await collector.removeOspfInstance(decodeURIComponent(req.params.itemId));
+        return { success: true };
+      },
+    );
+  },
+);
 
 router.post('/:id/routing/ospf/area', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.ospf.area.post', summary: 'Add routing ospf area' },
-    async (collector) => { await collector.addOspfArea(req.body); return { success: true }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    { kind: 'routing.ospf.area.post', summary: 'Add routing ospf area' },
+    async (collector) => {
+      await collector.addOspfArea(req.body);
+      return { success: true };
+    },
+  );
 });
 
-router.delete('/:id/routing/ospf/area/:itemId', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.ospf.area.delete', summary: 'Remove routing ospf area' },
-    async (collector) => { await collector.removeOspfArea(decodeURIComponent(req.params.itemId)); return { success: true }; });
-});
+router.delete(
+  '/:id/routing/ospf/area/:itemId',
+  requireWrite,
+  async (req: Request, res: Response) => {
+    await withGuardedChange(
+      req.params.id,
+      req,
+      res,
+      { kind: 'routing.ospf.area.delete', summary: 'Remove routing ospf area' },
+      async (collector) => {
+        await collector.removeOspfArea(decodeURIComponent(req.params.itemId));
+        return { success: true };
+      },
+    );
+  },
+);
 
 // ─── BGP ──────────────────────────────────────────────────────────────────────
 router.get('/:id/routing/bgp', async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const collector = new DeviceCollector(deviceRow);
   try {
     await collector.connect();
     return res.json(await collector.getBgpData());
-  } finally { collector.disconnect(); }
+  } finally {
+    collector.disconnect();
+  }
 });
 
 router.post('/:id/routing/bgp/connection', requireWrite, async (req: Request, res: Response) => {
   const parsed = parseBgpConnection(req.body ?? {});
   if ('error' in parsed) return res.status(400).json({ error: parsed.error });
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'routing.bgp.connection.post', summary: `Add BGP connection ${parsed.name} to ${parsed.remoteAddress} (AS ${parsed.remoteAs})` },
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'routing.bgp.connection.post',
+      summary: `Add BGP connection ${parsed.name} to ${parsed.remoteAddress} (AS ${parsed.remoteAs})`,
+    },
     async (collector) => {
       const r = await collector.addBgpConnection(parsed);
-      return { success: true, ...(r.instanceCreated ? { instance_created: r.instanceCreated } : {}) };
-    });
+      return {
+        success: true,
+        ...(r.instanceCreated ? { instance_created: r.instanceCreated } : {}),
+      };
+    },
+  );
 });
 
-router.delete('/:id/routing/bgp/connection/:itemId', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.bgp.connection.delete', summary: 'Remove routing bgp connection' },
-    async (collector) => { await collector.removeBgpConnection(decodeURIComponent(req.params.itemId)); return { success: true }; });
-});
+router.delete(
+  '/:id/routing/bgp/connection/:itemId',
+  requireWrite,
+  async (req: Request, res: Response) => {
+    await withGuardedChange(
+      req.params.id,
+      req,
+      res,
+      { kind: 'routing.bgp.connection.delete', summary: 'Remove routing bgp connection' },
+      async (collector) => {
+        await collector.removeBgpConnection(decodeURIComponent(req.params.itemId));
+        return { success: true };
+      },
+    );
+  },
+);
 
 // ─── Routing Tables ───────────────────────────────────────────────────────────
 router.get('/:id/routing/tables', async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const collector = new DeviceCollector(deviceRow);
   try {
     await collector.connect();
     return res.json(await collector.getRoutingTablesData());
-  } finally { collector.disconnect(); }
+  } finally {
+    collector.disconnect();
+  }
 });
 
 router.post('/:id/routing/tables', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.tables.post', summary: 'Add routing tables' },
-    async (collector) => { await collector.addRoutingTable(req.body); return { success: true }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    { kind: 'routing.tables.post', summary: 'Add routing tables' },
+    async (collector) => {
+      await collector.addRoutingTable(req.body);
+      return { success: true };
+    },
+  );
 });
 
 router.delete('/:id/routing/tables/:itemId', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.tables.delete', summary: 'Remove routing tables' },
-    async (collector) => { await collector.removeRoutingTable(decodeURIComponent(req.params.itemId)); return { success: true }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    { kind: 'routing.tables.delete', summary: 'Remove routing tables' },
+    async (collector) => {
+      await collector.removeRoutingTable(decodeURIComponent(req.params.itemId));
+      return { success: true };
+    },
+  );
 });
 
 // ─── Route Filters ────────────────────────────────────────────────────────────
 router.get('/:id/routing/filters', async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const collector = new DeviceCollector(deviceRow);
   try {
     await collector.connect();
     return res.json(await collector.getRouteFiltersData());
-  } finally { collector.disconnect(); }
+  } finally {
+    collector.disconnect();
+  }
 });
 
 router.post('/:id/routing/filters/rule', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.filters.rule.post', summary: 'Add routing filters rule' },
-    async (collector) => { await collector.addFilterRule(req.body); return { success: true }; });
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    { kind: 'routing.filters.rule.post', summary: 'Add routing filters rule' },
+    async (collector) => {
+      await collector.addFilterRule(req.body);
+      return { success: true };
+    },
+  );
 });
 
-router.put('/:id/routing/filters/rule/:itemId', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.filters.rule.put', summary: 'Edit routing filters rule' },
-    async (collector) => { await collector.updateFilterRule(decodeURIComponent(req.params.itemId), req.body); return { success: true }; });
-});
+router.put(
+  '/:id/routing/filters/rule/:itemId',
+  requireWrite,
+  async (req: Request, res: Response) => {
+    await withGuardedChange(
+      req.params.id,
+      req,
+      res,
+      { kind: 'routing.filters.rule.put', summary: 'Edit routing filters rule' },
+      async (collector) => {
+        await collector.updateFilterRule(decodeURIComponent(req.params.itemId), req.body);
+        return { success: true };
+      },
+    );
+  },
+);
 
-router.delete('/:id/routing/filters/rule/:itemId', requireWrite, async (req: Request, res: Response) => {
-  await withGuardedChange(req.params.id, req, res, { kind: 'routing.filters.rule.delete', summary: 'Remove routing filters rule' },
-    async (collector) => { await collector.removeFilterRule(decodeURIComponent(req.params.itemId)); return { success: true }; });
-});
+router.delete(
+  '/:id/routing/filters/rule/:itemId',
+  requireWrite,
+  async (req: Request, res: Response) => {
+    await withGuardedChange(
+      req.params.id,
+      req,
+      res,
+      { kind: 'routing.filters.rule.delete', summary: 'Remove routing filters rule' },
+      async (collector) => {
+        await collector.removeFilterRule(decodeURIComponent(req.params.itemId));
+        return { success: true };
+      },
+    );
+  },
+);
 
 // ─── Router IDs ───────────────────────────────────────────────────────────────
 router.get('/:id/routing/router-id', async (req: Request, res: Response) => {
-  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.id]);
+  const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
   const collector = new DeviceCollector(deviceRow);
   try {
     await collector.connect();
     return res.json(await collector.getRouterIds());
-  } finally { collector.disconnect(); }
+  } finally {
+    collector.disconnect();
+  }
 });
 
 // POST /api/devices/:id/vlans (add bridge VLAN)
@@ -2830,10 +3621,16 @@ router.get('/:id/routing/router-id', async (req: Request, res: Response) => {
  * rewrite the whole entry, silently taking the other VLANs with it — so refuse, and
  * refuse *before* arming the guard, since a mid-apply failure would cost a reboot.
  */
-function multiVlanRefusal(vlan: { vlan_id: number; bridge: string; vlan_ids: string | null }): string | null {
+function multiVlanRefusal(vlan: {
+  vlan_id: number;
+  bridge: string;
+  vlan_ids: string | null;
+}): string | null {
   if (!isMultiVlanSpec(vlan.vlan_ids ?? undefined)) return null;
-  return `VLAN ${vlan.vlan_id} on ${vlan.bridge} is part of the multi-VLAN entry "${vlan.vlan_ids}". `
-    + `Changing it here would affect every VLAN in that entry, so split the entry on the device first.`;
+  return (
+    `VLAN ${vlan.vlan_id} on ${vlan.bridge} is part of the multi-VLAN entry "${vlan.vlan_ids}". ` +
+    `Changing it here would affect every VLAN in that entry, so split the entry on the device first.`
+  );
 }
 
 // Guarded: bridge VLAN table edits decide which ports (and the bridge/CPU port
@@ -2842,7 +3639,9 @@ router.post('/:id/vlans', requireWrite, async (req: Request, res: Response) => {
   const { bridge, vlan_id, tagged_ports = [], untagged_ports = [] } = req.body;
   // A whole number: 10.5 used to pass and become VLAN 10 on the device (U14).
   if (!bridge || !Number.isInteger(vlan_id) || vlan_id < 1 || vlan_id > 4094) {
-    return res.status(400).json({ error: 'bridge and vlan_id (a whole number, 1-4094) are required' });
+    return res
+      .status(400)
+      .json({ error: 'bridge and vlan_id (a whole number, 1-4094) are required' });
   }
 
   await withGuardedChange(
@@ -2852,22 +3651,35 @@ router.post('/:id/vlans', requireWrite, async (req: Request, res: Response) => {
     {
       kind: 'vlan.add',
       summary: `Add VLAN ${vlan_id} on ${bridge}`,
-      change: { kind: 'vlan.add', bridge, vlanId: vlan_id, tagged: tagged_ports, untagged: untagged_ports },
+      change: {
+        kind: 'vlan.add',
+        bridge,
+        vlanId: vlan_id,
+        tagged: tagged_ports,
+        untagged: untagged_ports,
+      },
     },
     async (c) => {
       await c.addBridgeVlan(bridge, vlan_id, tagged_ports, untagged_ports);
       return { message: `VLAN ${vlan_id} added` };
     },
-    async (c) => { await c.collectVlans(); }
+    async (c) => {
+      await c.collectVlans();
+    },
   );
 });
 
 // PUT /api/devices/:id/vlans/:vlanDbId (update tagged/untagged ports)
 router.put('/:id/vlans/:vlanDbId', requireWrite, async (req: Request, res: Response) => {
-  const vlan = await queryOne<{ id: number; vlan_id: number; bridge: string; vlan_ids: string | null }>(
-    `SELECT id, vlan_id, bridge, vlan_ids FROM vlans WHERE id = $1 AND device_id = $2`,
-    [req.params.vlanDbId, req.params.id]
-  );
+  const vlan = await queryOne<{
+    id: number;
+    vlan_id: number;
+    bridge: string;
+    vlan_ids: string | null;
+  }>(`SELECT id, vlan_id, bridge, vlan_ids FROM vlans WHERE id = $1 AND device_id = $2`, [
+    req.params.vlanDbId,
+    req.params.id,
+  ]);
   if (!vlan) return res.status(404).json({ error: 'VLAN not found' });
   const multi = multiVlanRefusal(vlan);
   if (multi) return res.status(409).json({ error: multi, reason: multi });
@@ -2882,15 +3694,20 @@ router.put('/:id/vlans/:vlanDbId', requireWrite, async (req: Request, res: Respo
       kind: 'vlan.update',
       summary: `Update VLAN ${vlan.vlan_id} membership on ${vlan.bridge}`,
       change: {
-        kind: 'vlan.update', bridge: vlan.bridge, vlanId: vlan.vlan_id,
-        tagged: tagged_ports, untagged: untagged_ports,
+        kind: 'vlan.update',
+        bridge: vlan.bridge,
+        vlanId: vlan.vlan_id,
+        tagged: tagged_ports,
+        untagged: untagged_ports,
       },
     },
     async (c) => {
       await c.updateBridgeVlan(vlan.bridge, vlan.vlan_id, tagged_ports, untagged_ports);
       return { message: `VLAN ${vlan.vlan_id} updated` };
     },
-    async (c) => { await c.collectVlans(); }
+    async (c) => {
+      await c.collectVlans();
+    },
   );
 });
 
@@ -2898,7 +3715,7 @@ router.put('/:id/vlans/:vlanDbId', requireWrite, async (req: Request, res: Respo
 router.delete('/:id/vlans/:vlanDbId', requireWrite, async (req: Request, res: Response) => {
   const vlan = await queryOne<{ vlan_id: number; bridge: string; vlan_ids: string | null }>(
     `SELECT vlan_id, bridge, vlan_ids FROM vlans WHERE id = $1 AND device_id = $2`,
-    [req.params.vlanDbId, req.params.id]
+    [req.params.vlanDbId, req.params.id],
   );
   if (!vlan) return res.status(404).json({ error: 'VLAN not found' });
   const multi = multiVlanRefusal(vlan);
@@ -2919,7 +3736,9 @@ router.delete('/:id/vlans/:vlanDbId', requireWrite, async (req: Request, res: Re
     },
     // Only drop the local row once the device is confirmed reachable — if the
     // change auto-reverts, the VLAN still exists on the device.
-    async () => { await query(`DELETE FROM vlans WHERE id = $1`, [req.params.vlanDbId]); }
+    async () => {
+      await query(`DELETE FROM vlans WHERE id = $1`, [req.params.vlanDbId]);
+    },
   );
 });
 
@@ -2951,17 +3770,35 @@ router.post('/:id/vlans/copy', requireWrite, async (req: Request, res: Response)
     untagged: op.untagged_ports,
   }));
 
-  await withGuardedChange(req.params.id, req, res,
-    { kind: 'vlan.copy', summary: `Copy ${operations.length} VLAN(s)`, change: { kind: 'batch', changes } },
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'vlan.copy',
+      summary: `Copy ${operations.length} VLAN(s)`,
+      change: { kind: 'batch', changes },
+    },
     async (collector) => {
-      const results: Array<{ vlan_id: number; action: string; success: boolean; error?: string }> = [];
+      const results: Array<{ vlan_id: number; action: string; success: boolean; error?: string }> =
+        [];
       let partial: string | null = null;
       for (const op of operations) {
         try {
           if (op.action === 'add') {
-            await collector.addBridgeVlan(op.bridge, op.vlan_id, op.tagged_ports, op.untagged_ports);
+            await collector.addBridgeVlan(
+              op.bridge,
+              op.vlan_id,
+              op.tagged_ports,
+              op.untagged_ports,
+            );
           } else {
-            await collector.updateBridgeVlan(op.bridge, op.vlan_id, op.tagged_ports, op.untagged_ports);
+            await collector.updateBridgeVlan(
+              op.bridge,
+              op.vlan_id,
+              op.tagged_ports,
+              op.untagged_ports,
+            );
           }
           results.push({ vlan_id: op.vlan_id, action: op.action, success: true });
         } catch (err) {
@@ -2969,16 +3806,27 @@ router.post('/:id/vlans/copy', requireWrite, async (req: Request, res: Response)
           // is a half-applied VLAN. Reporting it per-operation is not enough:
           // Change Guard must see it, or it disarms the revert.
           if (isPartialApply(err)) partial = (err as Error).message;
-          results.push({ vlan_id: op.vlan_id, action: op.action, success: false, error: err instanceof Error ? err.message : String(err) });
+          results.push({
+            vlan_id: op.vlan_id,
+            action: op.action,
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
       if (partial) {
-        const failed = results.filter((r) => !r.success).map((r) => `VLAN ${r.vlan_id}: ${r.error}`).join('; ');
+        const failed = results
+          .filter((r) => !r.success)
+          .map((r) => `VLAN ${r.vlan_id}: ${r.error}`)
+          .join('; ');
         throw new PartialApplyError(`Copying VLANs left the switch half-changed (${failed}).`);
       }
       return { results };
     },
-    async (c) => { await c.collectVlans(); });
+    async (c) => {
+      await c.collectVlans();
+    },
+  );
 });
 
 // ─── Bond (LAG / LACP) routes ────────────────────────────────────────────────
@@ -3000,15 +3848,27 @@ router.post('/:id/bonds', requireWrite, async (req: Request, res: Response) => {
       summary: `Create bond '${name}' over ${slaves.join(', ')}`,
       // Not simulated, but a member port the manager arrives on makes
       // auto-revert mandatory rather than best-effort.
-      change: { kind: 'batch', changes: (slaves as string[]).map((sl) => ({ kind: 'path-object.change', name: sl, what: `Moving it into bond '${name}'` })) },
+      change: {
+        kind: 'batch',
+        changes: (slaves as string[]).map((sl) => ({
+          kind: 'path-object.change',
+          name: sl,
+          what: `Moving it into bond '${name}'`,
+        })),
+      },
     },
     async (c) => {
       await c.createBond(name, slaves, mode, {
-        lacpRate: lacp_rate, hashPolicy: transmit_hash_policy, mtu, minLinks: min_links,
+        lacpRate: lacp_rate,
+        hashPolicy: transmit_hash_policy,
+        mtu,
+        minLinks: min_links,
       });
       return { message: 'Bond created' };
     },
-    async (c) => { await c.collectInterfaces(); }
+    async (c) => {
+      await c.collectInterfaces();
+    },
   );
 });
 
@@ -3021,7 +3881,10 @@ router.put('/:id/bonds/:bondName', requireWrite, async (req: Request, res: Respo
     return res.status(400).json({ error: 'mode and slaves are required' });
   }
   const bond = req.params.bondName;
-  await withGuardedChange(req.params.id, req, res,
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
     {
       kind: 'bond.update',
       summary: `Change bond '${bond}'`,
@@ -3029,11 +3892,17 @@ router.put('/:id/bonds/:bondName', requireWrite, async (req: Request, res: Respo
     },
     async (c) => {
       await c.updateBond(bond, slaves, mode, {
-        lacpRate: lacp_rate, hashPolicy: transmit_hash_policy, mtu, minLinks: min_links,
+        lacpRate: lacp_rate,
+        hashPolicy: transmit_hash_policy,
+        mtu,
+        minLinks: min_links,
       });
       return { message: 'Bond updated' };
     },
-    async (c) => { await c.collectInterfaces(); });
+    async (c) => {
+      await c.collectInterfaces();
+    },
+  );
 });
 
 // DELETE /api/devices/:id/bonds/:bondName
@@ -3054,37 +3923,46 @@ router.delete('/:id/bonds/:bondName', requireWrite, async (req: Request, res: Re
       return { message: 'Bond deleted' };
     },
     async (c) => {
-      await query(`DELETE FROM interfaces WHERE device_id = $1 AND name = $2`, [req.params.id, req.params.bondName]);
+      await query(`DELETE FROM interfaces WHERE device_id = $1 AND name = $2`, [
+        req.params.id,
+        req.params.bondName,
+      ]);
       await c.collectInterfaces();
-    }
+    },
   );
 });
 
 // PUT /api/devices/:id/bridge/:bridgeName/vlan-filtering
-router.put('/:id/bridge/:bridgeName/vlan-filtering', requireWrite, async (req: Request, res: Response) => {
-  const { enabled } = req.body as { enabled: boolean };
-  // Guarded: turning on vlan-filtering with untagged management on the bridge is
-  // the single most common way to lock yourself out of a MikroTik.
-  await withGuardedChange(
-    req.params.id,
-    req,
-    res,
-    {
-      kind: 'bridge.vlan-filtering',
-      summary: `${enabled ? 'Enable' : 'Disable'} VLAN filtering on bridge '${req.params.bridgeName}'`,
-      change: {
+router.put(
+  '/:id/bridge/:bridgeName/vlan-filtering',
+  requireWrite,
+  async (req: Request, res: Response) => {
+    const { enabled } = req.body as { enabled: boolean };
+    // Guarded: turning on vlan-filtering with untagged management on the bridge is
+    // the single most common way to lock yourself out of a MikroTik.
+    await withGuardedChange(
+      req.params.id,
+      req,
+      res,
+      {
         kind: 'bridge.vlan-filtering',
-        bridge: req.params.bridgeName,
-        enabled: Boolean(enabled),
+        summary: `${enabled ? 'Enable' : 'Disable'} VLAN filtering on bridge '${req.params.bridgeName}'`,
+        change: {
+          kind: 'bridge.vlan-filtering',
+          bridge: req.params.bridgeName,
+          enabled: Boolean(enabled),
+        },
       },
-    },
-    async (c) => {
-      await c.setBridgeVlanFiltering(req.params.bridgeName, Boolean(enabled));
-      return { success: true, vlan_filtering: enabled };
-    },
-    async (c) => { await c.collectInterfaces(); }
-  );
-});
+      async (c) => {
+        await c.setBridgeVlanFiltering(req.params.bridgeName, Boolean(enabled));
+        return { success: true, vlan_filtering: enabled };
+      },
+      async (c) => {
+        await c.collectInterfaces();
+      },
+    );
+  },
+);
 
 // ─── Settings this device overrides (#261) ──────────────────────────────────
 // GET shows each setting's effective value and where it comes from (device,
@@ -3093,7 +3971,12 @@ router.put('/:id/bridge/:bridgeName/vlan-filtering', requireWrite, async (req: R
 router.get('/:id/poll-settings', async (req: Request, res: Response) => {
   const s = await deviceSettings(Number(req.params.id));
   if (!s) return res.status(404).json({ error: 'Device not found' });
-  return res.json({ overrides: s.device, site: { id: s.siteId, name: s.siteName, overrides: s.site }, effective: s.effective, inherited: s.inherited });
+  return res.json({
+    overrides: s.device,
+    site: { id: s.siteId, name: s.siteName, overrides: s.site },
+    effective: s.effective,
+    inherited: s.inherited,
+  });
 });
 
 router.put('/:id/poll-settings', requireSiteAdmin, async (req: Request, res: Response) => {
@@ -3101,10 +3984,17 @@ router.put('/:id/poll-settings', requireSiteAdmin, async (req: Request, res: Res
   if (!current) return res.status(404).json({ error: 'Device not found' });
   const v = validateOverrides(current.device, req.body);
   if (!v.ok) return res.status(400).json({ error: v.error });
-  await query(`UPDATE devices SET poll_overrides = $2, updated_at = NOW() WHERE id = $1`,
-    [Number(req.params.id), Object.keys(v.value).length ? JSON.stringify(v.value) : null]);
+  await query(`UPDATE devices SET poll_overrides = $2, updated_at = NOW() WHERE id = $1`, [
+    Number(req.params.id),
+    Object.keys(v.value).length ? JSON.stringify(v.value) : null,
+  ]);
   const s = await deviceSettings(Number(req.params.id));
-  return res.json({ overrides: s!.device, site: { id: s!.siteId, name: s!.siteName, overrides: s!.site }, effective: s!.effective, inherited: s!.inherited });
+  return res.json({
+    overrides: s!.device,
+    site: { id: s!.siteId, name: s!.siteName, overrides: s!.site },
+    effective: s!.effective,
+    inherited: s!.inherited,
+  });
 });
 
 // ─── Bridge membership for any port (#258) ──────────────────────────────────
@@ -3112,13 +4002,18 @@ router.put('/:id/poll-settings', requireSiteAdmin, async (req: Request, res: Res
 /** Reads the device's bridge state for a pre-flight check; null when it answered with an error. */
 async function bridgeStateFor(id: string, res: Response, opts: { forDelete?: boolean } = {}) {
   const deviceRow = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [id]);
-  if (!deviceRow) { res.status(404).json({ error: 'Device not found' }); return null; }
+  if (!deviceRow) {
+    res.status(404).json({ error: 'Device not found' });
+    return null;
+  }
   const c = new DeviceCollector(deviceRow);
   try {
     await c.connect();
     return await c.readBridgeState(opts);
   } catch (err) {
-    res.status(502).json({ error: `Couldn't read the device's bridges: ${(err as Error).message}` });
+    res
+      .status(502)
+      .json({ error: `Couldn't read the device's bridges: ${(err as Error).message}` });
     return null;
   } finally {
     c.disconnect();
@@ -3126,15 +4021,22 @@ async function bridgeStateFor(id: string, res: Response, opts: { forDelete?: boo
 }
 
 /** An interface name as RouterOS allows it, without commas (list separators) or control characters. */
-const IFACE_NAME = { test: (v: string): boolean => v.length >= 1 && v.length <= 64 && ![...v].some((ch) => ch === ',' || ch.charCodeAt(0) < 32) };
+const IFACE_NAME = {
+  test: (v: string): boolean =>
+    v.length >= 1 && v.length <= 64 && ![...v].some((ch) => ch === ',' || ch.charCodeAt(0) < 32),
+};
 
 // POST /api/devices/:id/bridge-ports/move — put ports into a bridge (creating
 // it if asked), or take them out of any bridge. Guarded: moving the port the
 // manager arrives on out of its bridge cuts it off, and Change Guard predicts it.
 router.post('/:id/bridge-ports/move', requireWrite, async (req: Request, res: Response) => {
   const { ports, bridge, create_bridge, confirm_addresses } = req.body ?? {};
-  if (!Array.isArray(ports) || ports.length === 0 || ports.length > 128
-    || !ports.every((p) => typeof p === 'string' && IFACE_NAME.test(p))) {
+  if (
+    !Array.isArray(ports) ||
+    ports.length === 0 ||
+    ports.length > 128 ||
+    !ports.every((p) => typeof p === 'string' && IFACE_NAME.test(p))
+  ) {
     return res.status(400).json({ error: 'ports must be a list of interface names.' });
   }
   if (bridge !== null && (typeof bridge !== 'string' || !IFACE_NAME.test(bridge))) {
@@ -3145,10 +4047,16 @@ router.post('/:id/bridge-ports/move', requireWrite, async (req: Request, res: Re
   const t0 = Date.now();
   const state = await bridgeStateFor(req.params.id, res);
   if (!state) return;
-  console.log(`[bridge-move] device ${logSafe(req.params.id)}: read bridge state in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+  console.log(
+    `[bridge-move] device ${logSafe(req.params.id)}: read bridge state in ${((Date.now() - t0) / 1000).toFixed(1)}s`,
+  );
   const planned = planBridgePortMove({
-    ports, target: bridge, createTarget: create,
-    bridgePorts: state.bridgePorts, interfaces: state.interfaces, bridgeVlans: state.bridgeVlans,
+    ports,
+    target: bridge,
+    createTarget: create,
+    bridgePorts: state.bridgePorts,
+    interfaces: state.interfaces,
+    bridgeVlans: state.bridgeVlans,
   });
   if (!planned.ok) return res.status(400).json({ error: planned.error });
   const moving = planned.plan.ops.map((o) => o.port);
@@ -3165,13 +4073,19 @@ router.post('/:id/bridge-ports/move', requireWrite, async (req: Request, res: Re
   }
 
   const list = moving.join(', ');
-  const summary = !bridge ? `Take ${list} out of their bridge`
-    : create ? `Create bridge '${bridge}' and move ${list} into it`
+  const summary = !bridge
+    ? `Take ${list} out of their bridge`
+    : create
+      ? `Create bridge '${bridge}' and move ${list} into it`
       : `Move ${list} to bridge '${bridge}'`;
   await withGuardedChange(
-    req.params.id, req, res,
+    req.params.id,
+    req,
+    res,
     {
-      kind: 'bridge-port.move', summary, change: { kind: 'bridge-port.move', ports: moving, bridge: bridge ?? null },
+      kind: 'bridge-port.move',
+      summary,
+      change: { kind: 'bridge-port.move', ports: moving, bridge: bridge ?? null },
       // The user confirmed past "an address on this port stops working": the
       // dialog promises auto-revert, so it is not optional.
       requireProtection: !!bridge && confirm_addresses === true,
@@ -3180,7 +4094,10 @@ router.post('/:id/bridge-ports/move', requireWrite, async (req: Request, res: Re
       const r = await c.moveBridgePorts(ports, bridge ?? null, { create, state });
       return { message: summary, ...r };
     },
-    async (c) => { await c.collectInterfaces(); await c.collectVlans().catch(() => {}); },
+    async (c) => {
+      await c.collectInterfaces();
+      await c.collectVlans().catch(() => {});
+    },
   );
 });
 
@@ -3198,10 +4115,19 @@ router.post('/:id/bridges', requireWrite, async (req: Request, res: Response) =>
   const parsed = parseBridgeCreate(req.body ?? {});
   if ('error' in parsed) return res.status(400).json({ error: parsed.error });
   const f = parsed.fields;
-  await withGuardedChange(req.params.id, req, res,
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
     { kind: 'bridge.add', summary: `Create bridge '${f.name}'` },
-    async (c) => { await c.addBridge(f); return { message: `Bridge ${f.name} created` }; },
-    async (c) => { await c.collectInterfaces(); });
+    async (c) => {
+      await c.addBridge(f);
+      return { message: `Bridge ${f.name} created` };
+    },
+    async (c) => {
+      await c.collectInterfaces();
+    },
+  );
 });
 
 // PUT /api/devices/:id/bridges/:bridgeName { name?, protocol_mode?, priority?, comment?, disabled? }
@@ -3215,19 +4141,40 @@ router.put('/:id/bridges/:bridgeName', requireWrite, async (req: Request, res: R
   if ('error' in parsed) return res.status(400).json({ error: parsed.error });
   const f = parsed.fields;
   const changes: PlannedChange[] = [];
-  if (f.name && f.name !== name) changes.push({ kind: 'path-object.change', name, what: `Renaming the bridge to ${f.name}` });
-  if (f['protocol-mode'] || f.priority) changes.push({ kind: 'path-object.change', name, what: 'Changing spanning tree' });
+  if (f.name && f.name !== name)
+    changes.push({ kind: 'path-object.change', name, what: `Renaming the bridge to ${f.name}` });
+  if (f['protocol-mode'] || f.priority)
+    changes.push({ kind: 'path-object.change', name, what: 'Changing spanning tree' });
   if (f.disabled) changes.push({ kind: 'interface.disable', name, disabled: f.disabled === 'yes' });
-  const what = [f.name && f.name !== name ? `rename to '${f.name}'` : '', f['protocol-mode'] ? `protocol ${f['protocol-mode']}` : '',
-    f.priority ? `priority ${f.priority}` : '', f.disabled ? (f.disabled === 'yes' ? 'disable' : 'enable') : '',
-    f.comment !== undefined ? 'comment' : ''].filter(Boolean).join(', ');
-  await withGuardedChange(req.params.id, req, res,
+  const what = [
+    f.name && f.name !== name ? `rename to '${f.name}'` : '',
+    f['protocol-mode'] ? `protocol ${f['protocol-mode']}` : '',
+    f.priority ? `priority ${f.priority}` : '',
+    f.disabled ? (f.disabled === 'yes' ? 'disable' : 'enable') : '',
+    f.comment !== undefined ? 'comment' : '',
+  ]
+    .filter(Boolean)
+    .join(', ');
+  await withGuardedChange(
+    req.params.id,
+    req,
+    res,
     {
-      kind: 'bridge.set', summary: `Bridge '${name}': ${what}`,
-      ...(changes.length ? { change: changes.length === 1 ? changes[0] : { kind: 'batch', changes } } : {}),
+      kind: 'bridge.set',
+      summary: `Bridge '${name}': ${what}`,
+      ...(changes.length
+        ? { change: changes.length === 1 ? changes[0] : { kind: 'batch', changes } }
+        : {}),
     },
-    async (c) => { await c.updateBridge(name, f); return { message: `Bridge ${f.name ?? name} updated` }; },
-    async (c) => { await c.collectInterfaces(); await c.collectVlans().catch(() => {}); });
+    async (c) => {
+      await c.updateBridge(name, f);
+      return { message: `Bridge ${f.name ?? name} updated` };
+    },
+    async (c) => {
+      await c.collectInterfaces();
+      await c.collectVlans().catch(() => {});
+    },
+  );
 });
 
 router.delete('/:id/bridges/:bridgeName', requireWrite, async (req: Request, res: Response) => {
@@ -3241,10 +4188,22 @@ router.delete('/:id/bridges/:bridgeName', requireWrite, async (req: Request, res
   const refusal = bridgeDeleteRefusal(name, state);
   if (refusal) return res.status(409).json({ error: refusal });
   await withGuardedChange(
-    req.params.id, req, res,
-    { kind: 'bridge.delete', summary: `Delete bridge '${name}'`, change: { kind: 'bridge.delete', bridge: name } },
-    async (c) => { await c.deleteBridge(name, { state }); return { message: `Bridge ${name} deleted` }; },
-    async (c) => { await c.collectInterfaces(); await c.collectVlans().catch(() => {}); },
+    req.params.id,
+    req,
+    res,
+    {
+      kind: 'bridge.delete',
+      summary: `Delete bridge '${name}'`,
+      change: { kind: 'bridge.delete', bridge: name },
+    },
+    async (c) => {
+      await c.deleteBridge(name, { state });
+      return { message: `Bridge ${name} deleted` };
+    },
+    async (c) => {
+      await c.collectInterfaces();
+      await c.collectVlans().catch(() => {});
+    },
   );
 });
 
@@ -3252,7 +4211,7 @@ router.delete('/:id/bridges/:bridgeName', requireWrite, async (req: Request, res
 router.get('/:id/hardware', async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT id, ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
@@ -3270,7 +4229,7 @@ router.get('/:id/hardware', async (req: Request, res: Response) => {
 router.get('/:id/wireless', async (req: Request, res: Response) => {
   const rows = await query(
     `SELECT * FROM wireless_interfaces WHERE device_id = $1 ORDER BY name ASC`,
-    [req.params.id]
+    [req.params.id],
   );
   return res.json(rows);
 });
@@ -3293,14 +4252,19 @@ router.get('/:id/lte', async (req: Request, res: Response) => {
     // Bands seen serving this device. This is what a band lock gets checked
     // against, since a scan interrupts service and finds nothing at a site with
     // a single base station.
-    const observed = await query<{ interface_name: string; band: number; observations: number; last_seen: string }>(
+    const observed = await query<{
+      interface_name: string;
+      band: number;
+      observations: number;
+      last_seen: string;
+    }>(
       `SELECT interface_name, band, observations, last_seen
          FROM lte_observed_bands WHERE device_id = $1 ORDER BY band`,
       [req.params.id],
     );
 
     res.json({
-      interfaces: interfaces.map(i => {
+      interfaces: interfaces.map((i) => {
         const carriers = {
           primaryBand: (i.primary_band as LteBandInfo | null) ?? null,
           caBands: (i.ca_bands as LteBandInfo[] | null) ?? [],
@@ -3314,8 +4278,8 @@ router.get('/:id/lte', async (req: Request, res: Response) => {
           // what is being aggregated caps upload however wide the downlink is.
           uplink_anchor: uplinkAnchor(carriers),
           observed_bands: observed
-            .filter(o => o.interface_name === i.interface_name)
-            .map(o => ({ band: o.band, observations: o.observations, last_seen: o.last_seen })),
+            .filter((o) => o.interface_name === i.interface_name)
+            .map((o) => ({ band: o.band, observations: o.observations, last_seen: o.last_seen })),
         };
       }),
     });
@@ -3335,12 +4299,12 @@ router.get('/:id/lte/data-cap', async (req: Request, res: Response) => {
               margin_pct, reset_hour, reset_minute, timezone, cooldown_minutes,
               period_key, period_bytes, last_sent_at, updated_at
          FROM lte_data_cap_rules WHERE device_id = $1 ORDER BY interface_name`,
-      [req.params.id]
+      [req.params.id],
     );
     const sends = await query(
       `SELECT interface_name, at, trigger, phone_number, period_bytes, ok, error
          FROM lte_data_cap_sends WHERE device_id = $1 ORDER BY at DESC LIMIT 20`,
-      [req.params.id]
+      [req.params.id],
     );
     res.json({ rules, sends });
   } catch (error) {
@@ -3362,8 +4326,11 @@ router.put('/:id/lte/data-cap/:iface', requireWrite, async (req: Request, res: R
   // An unknown zone would silently park the counter in the wrong day, so reject
   // it here rather than discovering it at midnight.
   const tz = String(b.timezone ?? 'UTC');
-  try { new Intl.DateTimeFormat('en-CA', { timeZone: tz }); }
-  catch { return res.status(400).json({ error: `Unknown timezone "${tz}"` }); }
+  try {
+    new Intl.DateTimeFormat('en-CA', { timeZone: tz });
+  } catch {
+    return res.status(400).json({ error: `Unknown timezone "${tz}"` });
+  }
 
   const clamp = (v: unknown, lo: number, hi: number, dflt: number) => {
     const n = Number(v);
@@ -3382,10 +4349,19 @@ router.put('/:id/lte/data-cap/:iface', requireWrite, async (req: Request, res: R
          margin_pct = EXCLUDED.margin_pct, reset_hour = EXCLUDED.reset_hour,
          reset_minute = EXCLUDED.reset_minute, timezone = EXCLUDED.timezone,
          cooldown_minutes = EXCLUDED.cooldown_minutes, updated_at = NOW()`,
-      [req.params.id, req.params.iface, b.enabled === true, phone,
-       String(b.message ?? ''), Math.floor(threshold),
-       clamp(b.margin_pct, 0, 50, 5), clamp(b.reset_hour, 0, 23, 0),
-       clamp(b.reset_minute, 0, 59, 0), tz, clamp(b.cooldown_minutes, 1, 1440, 60)]
+      [
+        req.params.id,
+        req.params.iface,
+        b.enabled === true,
+        phone,
+        String(b.message ?? ''),
+        Math.floor(threshold),
+        clamp(b.margin_pct, 0, 50, 5),
+        clamp(b.reset_hour, 0, 23, 0),
+        clamp(b.reset_minute, 0, 59, 0),
+        tz,
+        clamp(b.cooldown_minutes, 1, 1440, 60),
+      ],
     );
     res.json({ message: 'Data-cap rule saved' });
   } catch (error) {
@@ -3409,10 +4385,13 @@ router.post('/:id/lte/data-cap/:iface/send', requireWrite, async (req: Request, 
   const rule = await queryOne<{ phone_number: string; message: string; period_bytes: string }>(
     `SELECT phone_number, message, period_bytes FROM lte_data_cap_rules
       WHERE device_id = $1 AND interface_name = $2`,
-    [req.params.id, req.params.iface]
+    [req.params.id, req.params.iface],
   );
-  const phone = String((req.body as { phone_number?: string })?.phone_number || rule?.phone_number || '').trim();
-  if (!phone) return res.status(400).json({ error: 'No phone number configured for this interface' });
+  const phone = String(
+    (req.body as { phone_number?: string })?.phone_number || rule?.phone_number || '',
+  ).trim();
+  if (!phone)
+    return res.status(400).json({ error: 'No phone number configured for this interface' });
 
   // Construction is inside the try on purpose: DeviceCollector decrypts the
   // stored credential in its constructor, so a corrupted or missing one throws
@@ -3426,14 +4405,14 @@ router.post('/:id/lte/data-cap/:iface/send', requireWrite, async (req: Request, 
     await query(
       `INSERT INTO lte_data_cap_sends (device_id, interface_name, trigger, phone_number, period_bytes, ok)
        VALUES ($1,$2,'manual',$3,$4,TRUE)`,
-      [deviceRow.id, req.params.iface, phone, rule ? Number(rule.period_bytes) : null]
+      [deviceRow.id, req.params.iface, phone, rule ? Number(rule.period_bytes) : null],
     ).catch(() => {});
     // The counter restarts with the carrier's, for the same reason the automatic
     // path resets it: the message is what zeroes their allowance.
     await query(
       `UPDATE lte_data_cap_rules SET last_sent_at = NOW(), period_bytes = 0
         WHERE device_id = $1 AND interface_name = $2`,
-      [deviceRow.id, req.params.iface]
+      [deviceRow.id, req.params.iface],
     ).catch(() => {});
     res.json({ message: `SMS sent to ${phone}.` });
   } catch (error) {
@@ -3447,7 +4426,7 @@ router.post('/:id/lte/data-cap/:iface/send', requireWrite, async (req: Request, 
     await query(
       `INSERT INTO lte_data_cap_sends (device_id, interface_name, trigger, phone_number, ok, error)
        VALUES ($1,$2,'manual',$3,FALSE,$4)`,
-      [deviceRow.id, req.params.iface, phone, msg]
+      [deviceRow.id, req.params.iface, phone, msg],
     ).catch(() => {});
     console.error('Error sending data-cap SMS:', raw);
     res.status(502).json({ error: `Could not send SMS: ${msg}` });
@@ -3458,9 +4437,16 @@ router.post('/:id/lte/data-cap/:iface/send', requireWrite, async (req: Request, 
 
 // GET /api/devices/:id/lte/history — handovers, re-registrations and band changes
 router.get('/:id/lte/history', async (req: Request, res: Response) => {
-  const { range = '24h', limit = '200', iface } = req.query as { range?: string; limit?: string; iface?: string };
+  const {
+    range = '24h',
+    limit = '200',
+    iface,
+  } = req.query as { range?: string; limit?: string; iface?: string };
   const windows: Record<string, string> = {
-    '1h': '1 hour', '24h': '24 hours', '7d': '7 days', '30d': '30 days',
+    '1h': '1 hour',
+    '24h': '24 hours',
+    '7d': '7 days',
+    '30d': '30 days',
   };
   const window = windows[range] || '24 hours';
   const cap = Math.min(Math.max(parseInt(limit, 10) || 200, 1), 1000);
@@ -3491,21 +4477,26 @@ router.get('/:id/lte/history', async (req: Request, res: Response) => {
 router.get('/:id/lte/dwell', async (req: Request, res: Response) => {
   const { range = '7d', iface } = req.query as { range?: string; iface?: string };
   const windows: Record<string, string> = {
-    '24h': '24 hours', '7d': '7 days', '30d': '30 days',
+    '24h': '24 hours',
+    '7d': '7 days',
+    '30d': '30 days',
   };
   const window = windows[range] || '7 days';
 
   try {
     const rows = await query<{
-      interface_name: string; at: string; cell_id: string | null;
-      enb_id: string | null; bands: string | null;
+      interface_name: string;
+      at: string;
+      cell_id: string | null;
+      enb_id: string | null;
+      bands: string | null;
     }>(
       `SELECT interface_name, at, cell_id, enb_id, bands
          FROM lte_cell_history
         WHERE device_id = $1 AND at > NOW() - $2::interval
           AND ($3::text IS NULL OR interface_name = $3)
         ORDER BY at ASC`,
-      [req.params.id, window, iface ?? null]
+      [req.params.id, window, iface ?? null],
     );
 
     // The state in force when the window opened. Without it, a link that changed
@@ -3514,33 +4505,48 @@ router.get('/:id/lte/dwell', async (req: Request, res: Response) => {
     // Per modem (outside review J7): one modem's last state, not whichever
     // modem's change came last.
     const priors = await query<{
-      interface_name: string; at: string; cell_id: string | null;
-      enb_id: string | null; bands: string | null;
+      interface_name: string;
+      at: string;
+      cell_id: string | null;
+      enb_id: string | null;
+      bands: string | null;
     }>(
       `SELECT DISTINCT ON (interface_name) interface_name, at, cell_id, enb_id, bands
          FROM lte_cell_history
         WHERE device_id = $1 AND at <= NOW() - $2::interval
           AND ($3::text IS NULL OR interface_name = $3)
         ORDER BY interface_name, at DESC`,
-      [req.params.id, window, iface ?? null]
+      [req.params.id, window, iface ?? null],
     );
 
     const [bounds] = await query<{ earliest: string | null }>(
       `SELECT MIN(at) AS earliest FROM lte_cell_history WHERE device_id = $1`,
-      [req.params.id]
+      [req.params.id],
     );
 
     const now = new Date();
     const windowStart = new Date(now.getTime() - intervalToMs(window));
-    const toEvent = (r: { at: string; cell_id: string | null; enb_id: string | null; bands: string | null }) =>
-      ({ at: new Date(r.at), cellId: r.cell_id, enbId: r.enb_id, bands: r.bands });
+    const toEvent = (r: {
+      at: string;
+      cell_id: string | null;
+      enb_id: string | null;
+      bands: string | null;
+    }) => ({ at: new Date(r.at), cellId: r.cell_id, enbId: r.enb_id, bands: r.bands });
 
     // Segments are built per modem: interleaving two modems' changes into one
     // timeline cut each modem's stretches at the other's changes (J7).
-    const modems = new Set([...rows.map((r) => r.interface_name), ...priors.map((p) => p.interface_name)]);
+    const modems = new Set([
+      ...rows.map((r) => r.interface_name),
+      ...priors.map((p) => p.interface_name),
+    ]);
     const segments = [...modems].flatMap((m) => {
       const prior = priors.find((p) => p.interface_name === m);
-      return buildSegments(rows.filter((r) => r.interface_name === m).map(toEvent), now, windowStart, prior ? toEvent(prior) : null);
+      return buildSegments(
+        rows.filter((r) => r.interface_name === m).map(toEvent),
+        now,
+        windowStart,
+        prior ? toEvent(prior) : null,
+      );
     });
     const measuredSeconds = segments.reduce((n, s) => n + s.seconds, 0);
 
@@ -3555,7 +4561,7 @@ router.get('/:id/lte/dwell', async (req: Request, res: Response) => {
       cells: summarise(
         segments,
         (s) => s.cellId,
-        (key, s) => (s.enbId ? `Cell ${key} · eNB ${s.enbId}` : `Cell ${key}`)
+        (key, s) => (s.enbId ? `Cell ${key} · eNB ${s.enbId}` : `Cell ${key}`),
       ),
     });
   } catch (error) {
@@ -3569,12 +4575,20 @@ router.get('/:id/lte/metrics', async (req: Request, res: Response) => {
   const { iface, range = '6h' } = req.query as { iface?: string; range?: string };
 
   const ranges: Record<string, string> = {
-    '1h': '1h', '6h': '6h', '24h': '24h', '7d': '7d', '30d': '30d',
+    '1h': '1h',
+    '6h': '6h',
+    '24h': '24h',
+    '7d': '7d',
+    '30d': '30d',
   };
   const fluxRange = ranges[range] || '6h';
   // Keep roughly 200 points regardless of window, so a month is as readable as an hour.
   const windows: Record<string, string> = {
-    '1h': '30s', '6h': '2m', '24h': '10m', '7d': '1h', '30d': '4h',
+    '1h': '30s',
+    '6h': '2m',
+    '24h': '10m',
+    '7d': '1h',
+    '30d': '4h',
   };
 
   const { getQueryApi } = await import('../config/influxdb');
@@ -3615,9 +4629,12 @@ router.get('/:id/lte/metrics', async (req: Request, res: Response) => {
           rows.push({
             time: String(obj['_time'] || ''),
             interface: String(obj['interface'] || ''),
-            rsrp: num(obj['rsrp']), rsrq: num(obj['rsrq']),
-            sinr: num(obj['sinr']), rssi: num(obj['rssi']),
-            cqi: num(obj['cqi']), carriers: num(obj['carriers']),
+            rsrp: num(obj['rsrp']),
+            rsrq: num(obj['rsrq']),
+            sinr: num(obj['sinr']),
+            rssi: num(obj['rssi']),
+            cqi: num(obj['cqi']),
+            carriers: num(obj['carriers']),
           });
         },
         error: reject,
@@ -3638,7 +4655,12 @@ router.get('/:id/wireless/metrics', async (req: Request, res: Response) => {
   const { iface, range = '6h' } = req.query as { iface?: string; range?: string };
 
   const ranges: Record<string, string> = {
-    '1h': '1h', '3h': '3h', '6h': '6h', '12h': '12h', '24h': '24h', '7d': '7d',
+    '1h': '1h',
+    '3h': '3h',
+    '6h': '6h',
+    '12h': '12h',
+    '24h': '24h',
+    '7d': '7d',
   };
   const fluxRange = ranges[range] || '6h';
 
@@ -3665,7 +4687,13 @@ router.get('/:id/wireless/metrics', async (req: Request, res: Response) => {
   `;
 
   try {
-    const rows: { time: string; interface: string; ssid?: string; registered_clients?: number; noise_floor?: number }[] = [];
+    const rows: {
+      time: string;
+      interface: string;
+      ssid?: string;
+      registered_clients?: number;
+      noise_floor?: number;
+    }[] = [];
     await new Promise<void>((resolve, reject) => {
       queryApi.queryRows(flux, {
         next(row, tableMeta) {
@@ -3674,7 +4702,8 @@ router.get('/:id/wireless/metrics', async (req: Request, res: Response) => {
             time: String(obj['_time'] || obj['time'] || ''),
             interface: String(obj['interface'] || ''),
             ssid: obj['ssid'] ? String(obj['ssid']) : undefined,
-            registered_clients: obj['registered_clients'] != null ? Number(obj['registered_clients']) : undefined,
+            registered_clients:
+              obj['registered_clients'] != null ? Number(obj['registered_clients']) : undefined,
             noise_floor: obj['noise_floor'] != null ? Number(obj['noise_floor']) : undefined,
           });
         },
@@ -3693,13 +4722,18 @@ router.get('/:id/wireless/metrics', async (req: Request, res: Response) => {
 router.post('/:id/test', requireWrite, async (req: Request, res: Response) => {
   const deviceRow = await queryOne<any>(
     `SELECT ip_address, api_port, api_tls, api_username, api_password_encrypted FROM devices WHERE id = $1`,
-    [req.params.id]
+    [req.params.id],
   );
   if (!deviceRow) return res.status(404).json({ error: 'Device not found' });
 
   const client = new RouterOSClient(
-    deviceRow.ip_address, deviceRow.api_port,
-    deviceRow.api_username, decrypt(deviceRow.api_password_encrypted), 8000, 30000, usesApiTls(deviceRow),
+    deviceRow.ip_address,
+    deviceRow.api_port,
+    deviceRow.api_username,
+    decrypt(deviceRow.api_password_encrypted),
+    8000,
+    30000,
+    usesApiTls(deviceRow),
   );
   try {
     await client.connect();
@@ -3724,17 +4758,23 @@ async function getToolDevice(id: string) {
 
 function makeToolClient(device: DeviceRow): RouterOSClient {
   return new RouterOSClient(
-    device.ip_address, device.api_port, device.api_username,
+    device.ip_address,
+    device.api_port,
+    device.api_username,
     decrypt(device.api_password_encrypted),
-    15_000,   // connect timeout
-    120_000,  // read timeout — traceroute/ip-scan can take a while
+    15_000, // connect timeout
+    120_000, // read timeout — traceroute/ip-scan can take a while
     usesApiTls(device),
   );
 }
 
 // POST /api/devices/:id/tools/ping
 router.post('/:id/tools/ping', requireWrite, async (req: Request, res: Response) => {
-  const { address, count, interface: iface } = req.body as { address?: string; count?: number; interface?: string };
+  const {
+    address,
+    count,
+    interface: iface,
+  } = req.body as { address?: string; count?: number; interface?: string };
   if (!address) return res.status(400).json({ error: 'address is required' });
 
   const device = await getToolDevice(req.params.id);
@@ -3777,7 +4817,7 @@ router.post('/:id/tools/traceroute', requireWrite, async (req: Request, res: Res
       if (row['id']) byId.set(row['id'], row);
     }
     const results = Array.from(byId.values()).sort(
-      (a, b) => Number(a['id'] || 0) - Number(b['id'] || 0)
+      (a, b) => Number(a['id'] || 0) - Number(b['id'] || 0),
     );
     return res.json(results);
   } catch (err) {
@@ -3789,7 +4829,11 @@ router.post('/:id/tools/traceroute', requireWrite, async (req: Request, res: Res
 
 // POST /api/devices/:id/tools/ip-scan
 router.post('/:id/tools/ip-scan', requireWrite, async (req: Request, res: Response) => {
-  const { addressRange, interface: iface, rdns } = req.body as {
+  const {
+    addressRange,
+    interface: iface,
+    rdns,
+  } = req.body as {
     addressRange?: string;
     interface?: string;
     rdns?: boolean;
@@ -3805,10 +4849,14 @@ router.post('/:id/tools/ip-scan', requireWrite, async (req: Request, res: Respon
     await client.connect();
     // /tool/ip-scan is a generator — it never sends !done on its own.
     // Use executeStreaming to collect results for up to 30s then cancel.
-    const raw = await client.executeStreaming('/tool/ip-scan', {
-      'address-range': addressRange,
-      interface: iface,
-    }, 30_000);
+    const raw = await client.executeStreaming(
+      '/tool/ip-scan',
+      {
+        'address-range': addressRange,
+        interface: iface,
+      },
+      30_000,
+    );
 
     // ip-scan re-emits the same host on every rescan cycle — deduplicate by address,
     // keeping the last-seen entry (RouterOS updates fields like status over time).
@@ -3833,7 +4881,7 @@ router.post('/:id/tools/ip-scan', requireWrite, async (req: Request, res: Respon
         } catch {
           return { ...r, hostname: '' };
         }
-      })
+      }),
     );
     return res.json(enriched);
   } catch (err) {
@@ -3871,8 +4919,14 @@ router.post('/:id/tools/wol', requireWrite, async (req: Request, res: Response) 
 
 // POST /api/devices/:id/tools/capture — packet capture via RouterOS sniffer + SFTP download
 router.post('/:id/tools/capture', requireWrite, async (req: Request, res: Response) => {
-  const { interface: iface, filter_ip, duration } = req.body as {
-    interface?: string; filter_ip?: string; duration?: number;
+  const {
+    interface: iface,
+    filter_ip,
+    duration,
+  } = req.body as {
+    interface?: string;
+    filter_ip?: string;
+    duration?: number;
   };
   const captureSec = Math.min(Math.max(5, Number(duration) || 10), 60);
 
@@ -3886,13 +4940,17 @@ router.post('/:id/tools/capture', requireWrite, async (req: Request, res: Respon
   try {
     sshLogin = await resolveAuth(device);
   } catch {
-    return res.status(400).json({ error: 'SSH credentials required for packet capture. Add an SSH login or deploy an SSH key.' });
+    return res.status(400).json({
+      error: 'SSH credentials required for packet capture. Add an SSH login or deploy an SSH key.',
+    });
   }
 
   // One capture per device: the sniffer is a single shared tool on the device,
   // so a second capture reconfigured and stopped the first (C4).
   if (capturesRunning.has(device.id)) {
-    return res.status(409).json({ error: 'A packet capture is already running on this device. Try again when it finishes.' });
+    return res.status(409).json({
+      error: 'A packet capture is already running on this device. Try again when it finishes.',
+    });
   }
   capturesRunning.add(device.id);
 
@@ -3942,12 +5000,17 @@ router.post('/:id/tools/capture', requireWrite, async (req: Request, res: Respon
       const ssh = new SshClient();
       ssh.on('ready', () => {
         ssh.sftp((err, sftp) => {
-          if (err) { ssh.end(); return reject(new Error(`SFTP init failed: ${err.message}`)); }
+          if (err) {
+            ssh.end();
+            return reject(new Error(`SFTP init failed: ${err.message}`));
+          }
           const chunks: Buffer[] = [];
           const stream = sftp.createReadStream(sftpPath);
           stream.on('data', (chunk: Buffer) => chunks.push(chunk));
           stream.on('end', () => {
-            sftp.unlink(sftpPath, () => { ssh.end(); });
+            sftp.unlink(sftpPath, () => {
+              ssh.end();
+            });
             resolve(Buffer.concat(chunks));
           });
           stream.on('error', (e: Error) => {
@@ -3958,8 +5021,18 @@ router.post('/:id/tools/capture', requireWrite, async (req: Request, res: Respon
               const chunks2: Buffer[] = [];
               const stream2 = sftp.createReadStream(altPath);
               stream2.on('data', (c: Buffer) => chunks2.push(c));
-              stream2.on('end', () => { sftp.unlink(altPath, () => { ssh.end(); }); resolve(Buffer.concat(chunks2)); });
-              stream2.on('error', (e2: Error) => { ssh.end(); reject(new Error(`SFTP read failed (tried ${sftpPath} and ${altPath}): ${e2.message}`)); });
+              stream2.on('end', () => {
+                sftp.unlink(altPath, () => {
+                  ssh.end();
+                });
+                resolve(Buffer.concat(chunks2));
+              });
+              stream2.on('error', (e2: Error) => {
+                ssh.end();
+                reject(
+                  new Error(`SFTP read failed (tried ${sftpPath} and ${altPath}): ${e2.message}`),
+                );
+              });
             } else {
               ssh.end();
               reject(new Error(`SFTP read failed (path=${sftpPath}): ${e.message}`));
@@ -3967,7 +5040,13 @@ router.post('/:id/tools/capture', requireWrite, async (req: Request, res: Respon
           });
         });
       });
-      ssh.on('error', (e) => reject(new Error(`SSH connect failed: ${explainSshError(e, device.ip_address, device.ssh_port ?? 22).message}`)));
+      ssh.on('error', (e) =>
+        reject(
+          new Error(
+            `SSH connect failed: ${explainSshError(e, device.ip_address, device.ssh_port ?? 22).message}`,
+          ),
+        ),
+      );
       ssh.connect({
         host: device.ip_address,
         port: device.ssh_port ?? 22,
@@ -3994,8 +5073,18 @@ router.post('/:id/tools/capture', requireWrite, async (req: Request, res: Respon
 // If target_device_id is provided: automatically enable/disable btest server on the target device.
 // If only address is provided: manual mode — user must ensure the btest server is already running.
 router.post('/:id/tools/btest', requireWrite, async (req: Request, res: Response) => {
-  const { target_device_id, address, direction = 'both', duration = 5, protocol = 'tcp' } = req.body as {
-    target_device_id?: number; address?: string; direction?: string; duration?: number; protocol?: string;
+  const {
+    target_device_id,
+    address,
+    direction = 'both',
+    duration = 5,
+    protocol = 'tcp',
+  } = req.body as {
+    target_device_id?: number;
+    address?: string;
+    direction?: string;
+    duration?: number;
+    protocol?: string;
   };
   if (!target_device_id && !address) {
     return res.status(400).json({ error: 'target_device_id or address is required' });
@@ -4018,12 +5107,20 @@ router.post('/:id/tools/btest', requireWrite, async (req: Request, res: Response
     targetUser = target.api_username;
     targetPassword = decrypt(target.api_password_encrypted);
     serverClient = new RouterOSClient(
-      target.ip_address, target.api_port, target.api_username, targetPassword, 15_000, 20_000, usesApiTls(target),
+      target.ip_address,
+      target.api_port,
+      target.api_username,
+      targetPassword,
+      15_000,
+      20_000,
+      usesApiTls(target),
     );
   }
 
   const client = new RouterOSClient(
-    device.ip_address, device.api_port, device.api_username,
+    device.ip_address,
+    device.api_port,
+    device.api_username,
     decrypt(device.api_password_encrypted),
     15_000,
     (testSec + 15) * 1000,
@@ -4041,9 +5138,13 @@ router.post('/:id/tools/btest', requireWrite, async (req: Request, res: Response
         const [prior] = await serverClient.execute('/tool/bandwidth-server/print');
         serverPrior = {
           enabled: prior?.['enabled'] === 'true' || prior?.['enabled'] === 'yes' ? 'yes' : 'no',
-          authenticate: prior?.['authenticate'] === 'false' || prior?.['authenticate'] === 'no' ? 'no' : 'yes',
+          authenticate:
+            prior?.['authenticate'] === 'false' || prior?.['authenticate'] === 'no' ? 'no' : 'yes',
         };
-        await serverClient.execute('/tool/bandwidth-server/set', { enabled: 'yes', authenticate: 'yes' });
+        await serverClient.execute('/tool/bandwidth-server/set', {
+          enabled: 'yes',
+          authenticate: 'yes',
+        });
       } finally {
         serverClient.disconnect();
       }
@@ -4060,11 +5161,17 @@ router.post('/:id/tools/btest', requireWrite, async (req: Request, res: Response
     if (targetUser) btestParams['user'] = targetUser;
     if (targetPassword) btestParams['password'] = targetPassword;
 
-    const rows = await client.executeStreaming('/tool/bandwidth-test', btestParams, (testSec + 15) * 1000);
+    const rows = await client.executeStreaming(
+      '/tool/bandwidth-test',
+      btestParams,
+      (testSec + 15) * 1000,
+    );
     client.disconnect();
 
-    const lastRow = rows.filter((r) => r['tx-total-average'] !== undefined || r['rx-total-average'] !== undefined).at(-1);
-    const toMbps = (v: string | undefined) => v ? Math.round(parseInt(v) / 1_000_000) : 0;
+    const lastRow = rows
+      .filter((r) => r['tx-total-average'] !== undefined || r['rx-total-average'] !== undefined)
+      .at(-1);
+    const toMbps = (v: string | undefined) => (v ? Math.round(parseInt(v) / 1_000_000) : 0);
 
     return res.json({
       tx_mbps: toMbps(lastRow?.['tx-total-average']),

@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, Loader2, CheckCircle, AlertCircle, KeyRound } from 'lucide-react';
-import {
-  devicesApi,
-  type BulkAddDeviceItem,
-  type DiscoveredDevice,
-} from '../../services/api';
+import { devicesApi, type BulkAddDeviceItem, type DiscoveredDevice } from '../../services/api';
 import type { DeviceType } from '../../types';
 import { parsePort } from '../../utils/parsePort';
 import { useSitePresets } from '../../hooks/useSitePresets';
@@ -33,11 +29,13 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
   const [results, setResults] = useState<ResultItem[] | null>(null);
   const [cancelled, setCancelled] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [progress, setProgress] = useState<{ current: number; total: number; currentName: string }>({
-    current: 0,
-    total: 0,
-    currentName: '',
-  });
+  const [progress, setProgress] = useState<{ current: number; total: number; currentName: string }>(
+    {
+      current: 0,
+      total: 0,
+      currentName: '',
+    },
+  );
   const [error, setError] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -46,7 +44,7 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
 
   const targets = useMemo(
     () => discoveredDevices.filter((d) => d.address && d.address.trim().length > 0),
-    [discoveredDevices]
+    [discoveredDevices],
   );
 
   useEffect(() => {
@@ -172,8 +170,13 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Try All Discovered Devices</h2>
-          <button onClick={onClose} className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Try All Discovered Devices
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -181,7 +184,8 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
         <div className="p-5 space-y-4">
           <p className="text-sm text-gray-600 dark:text-slate-300">
             Attempt to add <strong>{targets.length}</strong> discovered device(s) in one run.
-            Progress runs <strong>on the server</strong> — you can leave this page and reopen later (job id is shown while running).
+            Progress runs <strong>on the server</strong> — you can leave this page and reopen later
+            (job id is shown while running).
           </p>
 
           <div className="flex gap-2">
@@ -205,12 +209,21 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
 
           {mode === 'preset' ? (
             <div>
-              <label className="label flex items-center gap-1.5"><KeyRound className="w-3.5 h-3.5" />Credential Preset</label>
-              <select className="input" value={presetId ?? ''} onChange={(e) => setPresetId(e.target.value ? parseInt(e.target.value, 10) : null)} disabled={running}>
+              <label className="label flex items-center gap-1.5">
+                <KeyRound className="w-3.5 h-3.5" />
+                Credential Preset
+              </label>
+              <select
+                className="input"
+                value={presetId ?? ''}
+                onChange={(e) => setPresetId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                disabled={running}
+              >
                 <option value="">Select preset...</option>
                 {presets.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} ({p.api_username}{p.ssh_username ? ` · SSH ${p.ssh_username}` : ''})
+                    {p.name} ({p.api_username}
+                    {p.ssh_username ? ` · SSH ${p.ssh_username}` : ''})
                   </option>
                 ))}
               </select>
@@ -219,33 +232,69 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">API Username *</label>
-                <input className="input" value={manual.api_username} disabled={running} onChange={(e) => setManual((m) => ({ ...m, api_username: e.target.value }))} />
+                <input
+                  className="input"
+                  value={manual.api_username}
+                  disabled={running}
+                  onChange={(e) => setManual((m) => ({ ...m, api_username: e.target.value }))}
+                />
               </div>
               <div>
                 <label className="label">API Port</label>
-                <input className="input" type="number" value={manual.api_port} disabled={running} onChange={(e) => setManual((m) => ({ ...m, api_port: e.target.value }))} />
+                <input
+                  className="input"
+                  type="number"
+                  value={manual.api_port}
+                  disabled={running}
+                  onChange={(e) => setManual((m) => ({ ...m, api_port: e.target.value }))}
+                />
               </div>
               <div className="col-span-2">
                 <label className="label">API Password *</label>
-                <input className="input" type="password" value={manual.api_password} disabled={running} onChange={(e) => setManual((m) => ({ ...m, api_password: e.target.value }))} />
+                <input
+                  className="input"
+                  type="password"
+                  value={manual.api_password}
+                  disabled={running}
+                  onChange={(e) => setManual((m) => ({ ...m, api_password: e.target.value }))}
+                />
               </div>
               <div>
                 <label className="label">SSH Username</label>
-                <input className="input" value={manual.ssh_username} disabled={running} onChange={(e) => setManual((m) => ({ ...m, ssh_username: e.target.value }))} />
+                <input
+                  className="input"
+                  value={manual.ssh_username}
+                  disabled={running}
+                  onChange={(e) => setManual((m) => ({ ...m, ssh_username: e.target.value }))}
+                />
               </div>
               <div>
                 <label className="label">SSH Port</label>
-                <input className="input" type="number" value={manual.ssh_port} disabled={running} onChange={(e) => setManual((m) => ({ ...m, ssh_port: e.target.value }))} />
+                <input
+                  className="input"
+                  type="number"
+                  value={manual.ssh_port}
+                  disabled={running}
+                  onChange={(e) => setManual((m) => ({ ...m, ssh_port: e.target.value }))}
+                />
               </div>
               <div className="col-span-2">
                 <label className="label">SSH Password</label>
-                <input className="input" type="password" value={manual.ssh_password} disabled={running} onChange={(e) => setManual((m) => ({ ...m, ssh_password: e.target.value }))} />
+                <input
+                  className="input"
+                  type="password"
+                  value={manual.ssh_password}
+                  disabled={running}
+                  onChange={(e) => setManual((m) => ({ ...m, ssh_password: e.target.value }))}
+                />
               </div>
             </div>
           )}
 
           {jobId && running && (
-            <p className="text-xs text-gray-500 dark:text-slate-400 font-mono break-all">Job: {jobId}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 font-mono break-all">
+              Job: {jobId}
+            </p>
           )}
 
           {error && (
@@ -268,7 +317,9 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
               <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-blue-500 transition-all"
-                  style={{ width: `${progress.total ? Math.round((progress.current / progress.total) * 100) : 0}%` }}
+                  style={{
+                    width: `${progress.total ? Math.round((progress.current / progress.total) * 100) : 0}%`,
+                  }}
                 />
               </div>
               <div className="flex justify-end">
@@ -302,8 +353,12 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
                   <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
                     {results.map((r) => (
                       <tr key={`${r.ip}-${r.identity}`}>
-                        <td className="px-3 py-2 text-gray-700 dark:text-slate-300">{r.identity}</td>
-                        <td className="px-3 py-2 font-mono text-gray-500 dark:text-slate-400">{r.ip}</td>
+                        <td className="px-3 py-2 text-gray-700 dark:text-slate-300">
+                          {r.identity}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-gray-500 dark:text-slate-400">
+                          {r.ip}
+                        </td>
                         <td className="px-3 py-2">
                           {r.ok ? (
                             <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
@@ -324,14 +379,20 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
           )}
 
           <div className="flex items-center justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-secondary">Close</button>
+            <button type="button" onClick={onClose} className="btn-secondary">
+              Close
+            </button>
             <button
               type="button"
               onClick={() => void handleRun()}
               disabled={running}
               className="btn-primary flex items-center gap-2"
             >
-              {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              {running ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4" />
+              )}
               {running ? 'Trying...' : `Try All (${targets.length})`}
             </button>
           </div>

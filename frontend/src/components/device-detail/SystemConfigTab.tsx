@@ -4,8 +4,19 @@ import ReviewChangesButton from '../common/ReviewChangesButton';
 import SshKeyCard from './SshKeyCard';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  RefreshCw, Plus, Trash2, CheckCircle, AlertCircle, Download, Server, Cpu, FileText,
-  ShieldCheck, Pencil, Check, X,
+  RefreshCw,
+  Plus,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+  Download,
+  Server,
+  Cpu,
+  FileText,
+  ShieldCheck,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
 import { devicesApi, certificatesApi } from '../../services/api';
 import { LockoutVerdictDialog, lockoutVerdictOf, type LockoutVerdict } from '../ChangeGuardDialog';
@@ -74,8 +85,10 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
       time: clockData?.time || '',
       timezone: clockData?.timezone || '',
     };
-    setSysForm(sys); setLoadedSys(sys);
-    setClockForm(clock); setLoadedClock(clock);
+    setSysForm(sys);
+    setLoadedSys(sys);
+    setClockForm(clock);
+    setLoadedClock(clock);
     setSaveError('');
     setEditing(true);
   };
@@ -106,7 +119,11 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
   };
 
   // ─── IP Addresses ────────────────────────────────────────────────────────
-  const { data: ipAddresses = [], isLoading: ipLoading, refetch: refetchIp } = useQuery({
+  const {
+    data: ipAddresses = [],
+    isLoading: ipLoading,
+    refetch: refetchIp,
+  } = useQuery({
     queryKey: ['ip-addresses', deviceId],
     queryFn: () => devicesApi.getIpAddresses(deviceId).then((r) => r.data as IpAddress[]),
   });
@@ -119,7 +136,9 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
   const [newIp, setNewIp] = useState({ address: '', interface: '' });
   const [ipError, setIpError] = useState('');
   // Predicted lockout (409 + verdict) plus the retry that confirms it.
-  const [lockout, setLockout] = useState<{ verdict: LockoutVerdict; retry: () => void } | null>(null);
+  const [lockout, setLockout] = useState<{ verdict: LockoutVerdict; retry: () => void } | null>(
+    null,
+  );
 
   const addIpRequest = (confirm: boolean) =>
     devicesApi.addIpAddress(deviceId, confirm ? { ...newIp, confirm_lockout: true } : newIp);
@@ -133,7 +152,10 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
     },
     onError: (err: unknown) => {
       const verdict = lockoutVerdictOf(err);
-      if (verdict) { setLockout({ verdict, retry: () => addIpMutation.mutate(true) }); return; }
+      if (verdict) {
+        setLockout({ verdict, retry: () => addIpMutation.mutate(true) });
+        return;
+      }
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setIpError(msg || 'Failed to add IP address');
     },
@@ -149,7 +171,10 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
     onError: (err: unknown, vars) => {
       const verdict = lockoutVerdictOf(err);
       if (verdict) {
-        setLockout({ verdict, retry: () => removeIpMutation.mutate({ id: vars.id, confirm: true }) });
+        setLockout({
+          verdict,
+          retry: () => removeIpMutation.mutate({ id: vars.id, confirm: true }),
+        });
         return;
       }
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -159,7 +184,14 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
   // Editing an address in place (#285). Only changed fields are sent, so a
   // comment edit can't also rewrite the address.
-  const [editingIp, setEditingIp] = useState<{ id: string; orig: IpAddress; address: string; interface: string; comment: string; enabled: boolean } | null>(null);
+  const [editingIp, setEditingIp] = useState<{
+    id: string;
+    orig: IpAddress;
+    address: string;
+    interface: string;
+    comment: string;
+    enabled: boolean;
+  } | null>(null);
   const ipEdits = (e: NonNullable<typeof editingIp>) => {
     const d: { address?: string; interface?: string; comment?: string; disabled?: boolean } = {};
     if (e.address.trim() !== e.orig.address) d.address = e.address.trim();
@@ -205,8 +237,10 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
       setUpdateInfo({
         'installed-version': device.ros_version || '',
         'latest-version': device.latest_ros_version || '',
-        'status': device.firmware_update_available ? 'New version is available' : 'System is up to date',
-        'channel': '',
+        status: device.firmware_update_available
+          ? 'New version is available'
+          : 'System is up to date',
+        channel: '',
         'from-stored-state': 'yes',
       });
     }
@@ -233,8 +267,16 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
   const checkUpdateMutation = useMutation({
     mutationFn: () => devicesApi.checkUpdate(deviceId),
-    onMutate: () => { setUpdateChecking(true); setUpdateError(''); setInstallSuccess(''); },
-    onSuccess: (res) => { setUpdateInfo(res.data); setUpdateChecking(false); invalidateFirmwareState(); },
+    onMutate: () => {
+      setUpdateChecking(true);
+      setUpdateError('');
+      setInstallSuccess('');
+    },
+    onSuccess: (res) => {
+      setUpdateInfo(res.data);
+      setUpdateChecking(false);
+      invalidateFirmwareState();
+    },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setUpdateError(msg || 'Failed to check for updates');
@@ -255,8 +297,8 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
         setUpdateInfo({
           'installed-version': res.data.installed_version || '',
           'latest-version': res.data.installed_version || '',
-          'status': 'System is up to date',
-          'channel': '',
+          status: 'System is up to date',
+          channel: '',
         });
       }
       invalidateFirmwareState();
@@ -269,16 +311,22 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
   // RouterOS 7 uses 'installed-version'; RouterOS 6 uses 'version'
   const installedVersion = updateInfo?.['installed-version'] || updateInfo?.['version'] || '';
-  const latestVersion    = updateInfo?.['latest-version'] || '';
-  const statusSaysUpdate = updateInfo?.['status']?.toLowerCase().includes('new version') ||
-                           updateInfo?.['status']?.toLowerCase().includes('available');
-  const hasUpdate = updateInfo && latestVersion && (
-    (installedVersion && latestVersion !== installedVersion) ||
-    (!installedVersion && statusSaysUpdate)
-  );
+  const latestVersion = updateInfo?.['latest-version'] || '';
+  const statusSaysUpdate =
+    updateInfo?.['status']?.toLowerCase().includes('new version') ||
+    updateInfo?.['status']?.toLowerCase().includes('available');
+  const hasUpdate =
+    updateInfo &&
+    latestVersion &&
+    ((installedVersion && latestVersion !== installedVersion) ||
+      (!installedVersion && statusSaysUpdate));
 
   // ─── RouterBOOT upgrade check / install ──────────────────────────────────
-  const [rbInfo, setRbInfo] = useState<{ currentFirmware: string; upgradeFirmware: string; upgradeAvailable: boolean } | null>(null);
+  const [rbInfo, setRbInfo] = useState<{
+    currentFirmware: string;
+    upgradeFirmware: string;
+    upgradeAvailable: boolean;
+  } | null>(null);
   const [rbChecking, setRbChecking] = useState(false);
   const [rbError, setRbError] = useState('');
   const [rbInstallSuccess, setRbInstallSuccess] = useState('');
@@ -296,8 +344,16 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
 
   const checkRouterboardMutation = useMutation({
     mutationFn: () => devicesApi.checkRouterboard(deviceId),
-    onMutate: () => { setRbChecking(true); setRbError(''); setRbInstallSuccess(''); },
-    onSuccess: (res) => { setRbInfo(res.data); setRbChecking(false); invalidateFirmwareState(); },
+    onMutate: () => {
+      setRbChecking(true);
+      setRbError('');
+      setRbInstallSuccess('');
+    },
+    onSuccess: (res) => {
+      setRbInfo(res.data);
+      setRbChecking(false);
+      invalidateFirmwareState();
+    },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setRbError(msg || 'Failed to check RouterBOOT');
@@ -419,7 +475,10 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                     onChange={(e) => setSysForm((f) => ({ ...f, ntp_enabled: e.target.checked }))}
                     className="w-4 h-4"
                   />
-                  <label htmlFor="ntp_enabled" className="text-sm text-gray-700 dark:text-slate-300">
+                  <label
+                    htmlFor="ntp_enabled"
+                    className="text-sm text-gray-700 dark:text-slate-300"
+                  >
                     NTP enabled
                   </label>
                 </div>
@@ -445,8 +504,9 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                 </div>
                 {Number(sysConfig?.ntp['extra-servers'] || 0) > 0 && (
                   <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                    This device has {sysConfig?.ntp['extra-servers']} more NTP server{sysConfig?.ntp['extra-servers'] === '1' ? '' : 's'} after
-                    these two; they&apos;re kept as they are.
+                    This device has {sysConfig?.ntp['extra-servers']} more NTP server
+                    {sysConfig?.ntp['extra-servers'] === '1' ? '' : 's'} after these two;
+                    they&apos;re kept as they are.
                   </p>
                 )}
               </div>
@@ -460,16 +520,24 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
               <div className="space-y-2">
                 <div>
                   <label className="label">DNS Servers</label>
-                  <ListInput value={splitList(sysForm.dns_servers)} ariaLabel="DNS servers" placeholder="8.8.8.8"
+                  <ListInput
+                    value={splitList(sysForm.dns_servers)}
+                    ariaLabel="DNS servers"
+                    placeholder="8.8.8.8"
                     onChange={(v) => setSysForm((f) => ({ ...f, dns_servers: v.join(',') }))}
-                    validate={(e) => (isValidIPv4(e) || isValidIPv6(e) ? null : `${e} isn\u2019t an IP address`)} />
+                    validate={(e) =>
+                      isValidIPv4(e) || isValidIPv6(e) ? null : `${e} isn\u2019t an IP address`
+                    }
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="dns_remote"
                     checked={sysForm.dns_allow_remote}
-                    onChange={(e) => setSysForm((f) => ({ ...f, dns_allow_remote: e.target.checked }))}
+                    onChange={(e) =>
+                      setSysForm((f) => ({ ...f, dns_allow_remote: e.target.checked }))
+                    }
                     className="w-4 h-4"
                   />
                   <label htmlFor="dns_remote" className="text-sm text-gray-700 dark:text-slate-300">
@@ -513,7 +581,10 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
               ['DNS Servers', sysConfig.dns.servers || '—'],
               ['Allow Remote DNS', sysConfig.dns['allow-remote-requests'] === 'yes' ? 'Yes' : 'No'],
             ].map(([k, v]) => (
-              <div key={k} className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2">
+              <div
+                key={k}
+                className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2"
+              >
                 <span className="text-gray-500 dark:text-slate-400">{k}</span>
                 <span className="font-medium text-gray-900 dark:text-white text-right">{v}</span>
               </div>
@@ -554,135 +625,222 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
             {ipLoading ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Loading...</td></tr>
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  Loading...
+                </td>
+              </tr>
             ) : (ipAddresses as IpAddress[]).length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No IP addresses</td></tr>
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  No IP addresses
+                </td>
+              </tr>
             ) : (
-              (ipAddresses as IpAddress[]).map((ip) => editingIp?.id === ip['.id'] ? (
-                <tr key={ip['.id']} className="bg-blue-50/50 dark:bg-slate-700/40">
-                  <td className="px-4 py-2" colSpan={2}>
-                    <input className="input font-mono py-1 text-sm" value={editingIp.address} aria-label="Address / prefix"
-                      onChange={(e) => setEditingIp((x) => x && { ...x, address: e.target.value })} />
-                  </td>
-                  <td className="px-4 py-2">
-                    <select className="input py-1 text-sm" value={editingIp.interface} aria-label="Interface"
-                      onChange={(e) => setEditingIp((x) => x && { ...x, interface: e.target.value })}>
-                      {!(interfaces as Interface[]).some((i) => i.name === editingIp.interface) && <option value={editingIp.interface}>{editingIp.interface}</option>}
-                      {(interfaces as Interface[]).map((i) => <option key={i.name} value={i.name}>{i.name}</option>)}
-                    </select>
-                  </td>
-                  <td className="px-4 py-2">
-                    <input className="input py-1 text-sm" value={editingIp.comment} placeholder="Comment" aria-label="Comment"
-                      onChange={(e) => setEditingIp((x) => x && { ...x, comment: e.target.value })} />
-                  </td>
-                  <td className="px-4 py-2">
-                    <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300">
-                      <input type="checkbox" checked={editingIp.enabled}
-                        onChange={(e) => setEditingIp((x) => x && { ...x, enabled: e.target.checked })} /> enabled
-                    </label>
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => updateIpMutation.mutate({ e: editingIp })}
-                        disabled={updateIpMutation.isPending || Object.keys(ipEdits(editingIp)).length === 0}
-                        className="p-1 rounded text-green-600 hover:text-green-700 disabled:opacity-40" title="Save">
-                        {updateIpMutation.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                      </button>
-                      <button onClick={() => { setEditingIp(null); setIpError(''); }} className="p-1 rounded text-gray-400 hover:text-gray-600" title="Cancel">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={ip['.id']} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-2 font-mono text-gray-900 dark:text-white">{ip.address}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-gray-500 dark:text-slate-400">{ip.network || '—'}</td>
-                  <td className="px-4 py-2 text-gray-600 dark:text-slate-300">{ip.interface}</td>
-                  <td className="px-4 py-2 text-xs text-gray-500 dark:text-slate-400">{ip.comment || ''}</td>
-                  <td className="px-4 py-2">
-                    <span className={clsx(
-                      'text-xs font-medium',
-                      ip.disabled === 'true' ? 'text-gray-400' : 'text-green-600 dark:text-green-400'
-                    )}>
-                      {ip.dynamic === 'true' ? 'dynamic' : ip.disabled === 'true' ? 'disabled' : 'active'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2">
-                    {canWrite && ip.dynamic !== 'true' && (
+              (ipAddresses as IpAddress[]).map((ip) =>
+                editingIp?.id === ip['.id'] ? (
+                  <tr key={ip['.id']} className="bg-blue-50/50 dark:bg-slate-700/40">
+                    <td className="px-4 py-2" colSpan={2}>
+                      <input
+                        className="input font-mono py-1 text-sm"
+                        value={editingIp.address}
+                        aria-label="Address / prefix"
+                        onChange={(e) =>
+                          setEditingIp((x) => x && { ...x, address: e.target.value })
+                        }
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <select
+                        className="input py-1 text-sm"
+                        value={editingIp.interface}
+                        aria-label="Interface"
+                        onChange={(e) =>
+                          setEditingIp((x) => x && { ...x, interface: e.target.value })
+                        }
+                      >
+                        {!(interfaces as Interface[]).some(
+                          (i) => i.name === editingIp.interface,
+                        ) && <option value={editingIp.interface}>{editingIp.interface}</option>}
+                        {(interfaces as Interface[]).map((i) => (
+                          <option key={i.name} value={i.name}>
+                            {i.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        className="input py-1 text-sm"
+                        value={editingIp.comment}
+                        placeholder="Comment"
+                        aria-label="Comment"
+                        onChange={(e) =>
+                          setEditingIp((x) => x && { ...x, comment: e.target.value })
+                        }
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300">
+                        <input
+                          type="checkbox"
+                          checked={editingIp.enabled}
+                          onChange={(e) =>
+                            setEditingIp((x) => x && { ...x, enabled: e.target.checked })
+                          }
+                        />{' '}
+                        enabled
+                      </label>
+                    </td>
+                    <td className="px-4 py-2">
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => {
-                            setIpError('');
-                            setEditingIp({ id: ip['.id'], orig: ip, address: ip.address, interface: ip.interface, comment: ip.comment ?? '', enabled: ip.disabled !== 'true' });
-                          }}
-                          className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
-                          title="Edit"
+                          onClick={() => updateIpMutation.mutate({ e: editingIp })}
+                          disabled={
+                            updateIpMutation.isPending ||
+                            Object.keys(ipEdits(editingIp)).length === 0
+                          }
+                          className="p-1 rounded text-green-600 hover:text-green-700 disabled:opacity-40"
+                          title="Save"
                         >
-                          <Pencil className="w-3.5 h-3.5" />
+                          {updateIpMutation.isPending ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5" />
+                          )}
                         </button>
                         <button
                           onClick={() => {
-                            if (confirm(`Remove ${ip.address} from ${ip.interface}?`)) {
-                              removeIpMutation.mutate({ id: ip['.id'] });
-                            }
+                            setEditingIp(null);
+                            setIpError('');
                           }}
-                          className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
-                          title="Remove"
+                          className="p-1 rounded text-gray-400 hover:text-gray-600"
+                          title="Cancel"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    )}
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={ip['.id']} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                    <td className="px-4 py-2 font-mono text-gray-900 dark:text-white">
+                      {ip.address}
+                    </td>
+                    <td className="px-4 py-2 font-mono text-xs text-gray-500 dark:text-slate-400">
+                      {ip.network || '—'}
+                    </td>
+                    <td className="px-4 py-2 text-gray-600 dark:text-slate-300">{ip.interface}</td>
+                    <td className="px-4 py-2 text-xs text-gray-500 dark:text-slate-400">
+                      {ip.comment || ''}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={clsx(
+                          'text-xs font-medium',
+                          ip.disabled === 'true'
+                            ? 'text-gray-400'
+                            : 'text-green-600 dark:text-green-400',
+                        )}
+                      >
+                        {ip.dynamic === 'true'
+                          ? 'dynamic'
+                          : ip.disabled === 'true'
+                            ? 'disabled'
+                            : 'active'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      {canWrite && ip.dynamic !== 'true' && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              setIpError('');
+                              setEditingIp({
+                                id: ip['.id'],
+                                orig: ip,
+                                address: ip.address,
+                                interface: ip.interface,
+                                comment: ip.comment ?? '',
+                                enabled: ip.disabled !== 'true',
+                              });
+                            }}
+                            className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Remove ${ip.address} from ${ip.interface}?`)) {
+                                removeIpMutation.mutate({ id: ip['.id'] });
+                              }
+                            }}
+                            className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
+                            title="Remove"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ),
+              )
             )}
           </tbody>
         </table>
 
-        {canWrite && <div className="p-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <label className="label">Address / Prefix (e.g. 192.168.1.1/24)</label>
-              <input
-                className="input font-mono"
-                value={newIp.address}
-                onChange={(e) => setNewIp((f) => ({ ...f, address: e.target.value }))}
-                placeholder="192.168.1.1/24"
+        {canWrite && (
+          <div className="p-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <label className="label">Address / Prefix (e.g. 192.168.1.1/24)</label>
+                <input
+                  className="input font-mono"
+                  value={newIp.address}
+                  onChange={(e) => setNewIp((f) => ({ ...f, address: e.target.value }))}
+                  placeholder="192.168.1.1/24"
+                />
+              </div>
+              <div className="w-44">
+                <label className="label">Interface</label>
+                <select
+                  className="input"
+                  value={newIp.interface}
+                  onChange={(e) => setNewIp((f) => ({ ...f, interface: e.target.value }))}
+                >
+                  <option value="">Select...</option>
+                  {(interfaces as Interface[]).map((i) => (
+                    <option key={i.name} value={i.name}>
+                      {i.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={() => addIpMutation.mutate(false)}
+                disabled={!newIp.address || !newIp.interface || addIpMutation.isPending}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add
+              </button>
+              <ReviewChangesButton
+                request={() => addIpRequest(false)}
+                onApply={() => addIpMutation.mutate(false)}
+                applyLabel="Add"
+                deviceName={device.name}
+                disabled={!newIp.address || !newIp.interface || addIpMutation.isPending}
               />
             </div>
-            <div className="w-44">
-              <label className="label">Interface</label>
-              <select
-                className="input"
-                value={newIp.interface}
-                onChange={(e) => setNewIp((f) => ({ ...f, interface: e.target.value }))}
-              >
-                <option value="">Select...</option>
-                {(interfaces as Interface[]).map((i) => (
-                  <option key={i.name} value={i.name}>{i.name}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={() => addIpMutation.mutate(false)}
-              disabled={!newIp.address || !newIp.interface || addIpMutation.isPending}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add
-            </button>
-            <ReviewChangesButton request={() => addIpRequest(false)} onApply={() => addIpMutation.mutate(false)} applyLabel="Add"
-              deviceName={device.name} disabled={!newIp.address || !newIp.interface || addIpMutation.isPending} />
+            {ipError && (
+              <div className="flex items-center gap-2 mt-2 text-sm text-red-500">
+                <AlertCircle className="w-4 h-4" /> {ipError}
+              </div>
+            )}
           </div>
-          {ipError && (
-            <div className="flex items-center gap-2 mt-2 text-sm text-red-500">
-              <AlertCircle className="w-4 h-4" /> {ipError}
-            </div>
-          )}
-        </div>}
+        )}
       </div>
 
       {/* ── Certificates ── */}
@@ -693,13 +851,16 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
         </h3>
         <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
           Collected on each slow poll.{' '}
-          {certData && (certData.alertingEnabled
-            ? `Alerting ${certData.warnDays} days before expiry.`
-            : 'Expiry alerting is off — enable "Certificate expiring soon" in Settings → Alerts.')}
+          {certData &&
+            (certData.alertingEnabled
+              ? `Alerting ${certData.warnDays} days before expiry.`
+              : 'Expiry alerting is off — enable "Certificate expiring soon" in Settings → Alerts.')}
         </p>
-        {certLoading
-          ? <p className="text-sm text-gray-400">Loading…</p>
-          : <CertificateList certificates={certData?.certificates ?? []} storageKey="device" />}
+        {certLoading ? (
+          <p className="text-sm text-gray-400">Loading…</p>
+        ) : (
+          <CertificateList certificates={certData?.certificates ?? []} storageKey="device" />
+        )}
       </div>
 
       {/* ── Software & Firmware Updates ── */}
@@ -714,19 +875,21 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
           <div className="flex items-start gap-2 p-3 mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-700 dark:text-blue-300">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <p>
-              <span className="font-medium">Update order matters:</span> Install the RouterOS update first and let the device reboot, then apply the RouterBOOT upgrade. The new bootloader is bundled inside the RouterOS package.
+              <span className="font-medium">Update order matters:</span> Install the RouterOS update
+              first and let the device reboot, then apply the RouterBOOT upgrade. The new bootloader
+              is bundled inside the RouterOS package.
             </p>
           </div>
         )}
 
         {/* Spaced from the RouterOS section below (#308). */}
         <div className="card p-5 mb-6">
-
           {/* No SSH login stored means the key is installed for the API user (see resolveKeyCredentials). */}
-          <SshKeyCard deviceId={deviceId} sshUsername={device.ssh_username || device.api_username} />
-
+          <SshKeyCard
+            deviceId={deviceId}
+            sshUsername={device.ssh_username || device.api_username}
+          />
         </div>
-
 
         {/* ── RouterOS ── */}
         <div className="space-y-3">
@@ -736,14 +899,14 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
               RouterOS
             </h4>
             {canWrite && (
-            <button
-              onClick={() => checkUpdateMutation.mutate()}
-              disabled={updateChecking}
-              className="btn-secondary flex items-center gap-2 text-xs py-1"
-            >
-              <RefreshCw className={clsx('w-3 h-3', updateChecking && 'animate-spin')} />
-              {updateChecking ? 'Checking...' : 'Check for Updates'}
-            </button>
+              <button
+                onClick={() => checkUpdateMutation.mutate()}
+                disabled={updateChecking}
+                className="btn-secondary flex items-center gap-2 text-xs py-1"
+              >
+                <RefreshCw className={clsx('w-3 h-3', updateChecking && 'animate-spin')} />
+                {updateChecking ? 'Checking...' : 'Check for Updates'}
+              </button>
             )}
           </div>
 
@@ -770,15 +933,25 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                   ['Status', updateInfo['status'] || '—'],
                   ['Installed Version', installedVersion || '—'],
                   ['Latest Version', latestVersion || '—'],
-                  ['Channel', updateInfo['channel']
-                    || (updateInfo['from-stored-state'] ? 'not checked yet' : '—')],
+                  [
+                    'Channel',
+                    updateInfo['channel'] ||
+                      (updateInfo['from-stored-state'] ? 'not checked yet' : '—'),
+                  ],
                 ].map(([k, v]) => (
-                  <div key={k} className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2">
+                  <div
+                    key={k}
+                    className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2"
+                  >
                     <span className="text-gray-500 dark:text-slate-400">{k}</span>
-                    <span className={clsx(
-                      'font-medium text-right',
-                      k === 'Status' && hasUpdate ? 'text-orange-500' : 'text-gray-900 dark:text-white'
-                    )}>
+                    <span
+                      className={clsx(
+                        'font-medium text-right',
+                        k === 'Status' && hasUpdate
+                          ? 'text-orange-500'
+                          : 'text-gray-900 dark:text-white',
+                      )}
+                    >
                       {v}
                     </span>
                   </div>
@@ -789,8 +962,12 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                 <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
                   <div className="flex-1 text-sm">
-                    <p className="font-medium text-orange-700 dark:text-orange-400">Update available: {latestVersion}</p>
-                    <p className="text-orange-600 dark:text-orange-500 text-xs mt-0.5">The device will reboot after installing.</p>
+                    <p className="font-medium text-orange-700 dark:text-orange-400">
+                      Update available: {latestVersion}
+                    </p>
+                    <p className="text-orange-600 dark:text-orange-500 text-xs mt-0.5">
+                      The device will reboot after installing.
+                    </p>
                     <button
                       onClick={() => setChangelogVersion(latestVersion)}
                       className="mt-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
@@ -808,7 +985,11 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                       disabled={installUpdateMutation.isPending}
                       className="btn-primary flex items-center gap-2 text-sm flex-shrink-0"
                     >
-                      {installUpdateMutation.isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                      {installUpdateMutation.isPending ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
                       Install &amp; Reboot
                     </button>
                   )}
@@ -819,10 +1000,13 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                 </div>
               )}
             </div>
-          ) : !updateChecking && !installSuccess && (
-            <p className="text-sm text-gray-400 dark:text-slate-500">
-              Click &quot;Check for Updates&quot; to query the MikroTik update server.
-            </p>
+          ) : (
+            !updateChecking &&
+            !installSuccess && (
+              <p className="text-sm text-gray-400 dark:text-slate-500">
+                Click &quot;Check for Updates&quot; to query the MikroTik update server.
+              </p>
+            )
           )}
         </div>
 
@@ -836,14 +1020,14 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
               RouterBOOT Firmware
             </h4>
             {canWrite && (
-            <button
-              onClick={() => checkRouterboardMutation.mutate()}
-              disabled={rbChecking}
-              className="btn-secondary flex items-center gap-2 text-xs py-1"
-            >
-              <RefreshCw className={clsx('w-3 h-3', rbChecking && 'animate-spin')} />
-              {rbChecking ? 'Checking...' : 'Check RouterBOOT'}
-            </button>
+              <button
+                onClick={() => checkRouterboardMutation.mutate()}
+                disabled={rbChecking}
+                className="btn-secondary flex items-center gap-2 text-xs py-1"
+              >
+                <RefreshCw className={clsx('w-3 h-3', rbChecking && 'animate-spin')} />
+                {rbChecking ? 'Checking...' : 'Check RouterBOOT'}
+              </button>
             )}
           </div>
 
@@ -866,9 +1050,14 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                     ['Current Bootloader', rbInfo.currentFirmware || '—'],
                     ['Available Upgrade', rbInfo.upgradeFirmware || '—'],
                   ].map(([k, v]) => (
-                    <div key={k} className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2">
+                    <div
+                      key={k}
+                      className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2"
+                    >
                       <span className="text-gray-500 dark:text-slate-400">{k}</span>
-                      <span className="font-medium text-right text-gray-900 dark:text-white">{v}</span>
+                      <span className="font-medium text-right text-gray-900 dark:text-white">
+                        {v}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -877,15 +1066,23 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                   <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
                     <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0" />
                     <div className="flex-1 text-sm">
-                      <p className="font-medium text-orange-700 dark:text-orange-400">Upgrade available: {rbInfo.upgradeFirmware}</p>
+                      <p className="font-medium text-orange-700 dark:text-orange-400">
+                        Upgrade available: {rbInfo.upgradeFirmware}
+                      </p>
                       <p className="text-orange-600 dark:text-orange-500 text-xs mt-0.5">
-                        {hasUpdate ? 'Install RouterOS first, then apply this upgrade.' : 'The device will reboot after upgrading.'}
+                        {hasUpdate
+                          ? 'Install RouterOS first, then apply this upgrade.'
+                          : 'The device will reboot after upgrading.'}
                       </p>
                     </div>
                     {canWrite && (
                       <button
                         onClick={() => {
-                          if (confirm(`Upgrade RouterBOOT to ${rbInfo.upgradeFirmware} and reboot the device?`)) {
+                          if (
+                            confirm(
+                              `Upgrade RouterBOOT to ${rbInfo.upgradeFirmware} and reboot the device?`,
+                            )
+                          ) {
                             installRouterboardMutation.mutate();
                           }
                         }}
@@ -893,7 +1090,11 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                         title={hasUpdate ? 'Install the RouterOS update first' : undefined}
                         className="btn-primary flex items-center gap-2 text-sm flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {installRouterboardMutation.isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
+                        {installRouterboardMutation.isPending ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Cpu className="w-4 h-4" />
+                        )}
                         Upgrade &amp; Reboot
                       </button>
                     )}
@@ -909,10 +1110,14 @@ export default function SystemConfigTab({ deviceId, device }: Props) {
                 RouterBOOT is not available on this device (CHR or virtual instance).
               </p>
             )
-          ) : !rbChecking && !rbInstallSuccess && (
-            <p className="text-sm text-gray-400 dark:text-slate-500">
-              Click &quot;Check RouterBOOT&quot; to read the bootloader firmware status from the device.
-            </p>
+          ) : (
+            !rbChecking &&
+            !rbInstallSuccess && (
+              <p className="text-sm text-gray-400 dark:text-slate-500">
+                Click &quot;Check RouterBOOT&quot; to read the bootloader firmware status from the
+                device.
+              </p>
+            )
           )}
         </div>
       </div>

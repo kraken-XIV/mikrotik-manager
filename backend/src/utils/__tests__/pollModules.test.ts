@@ -22,10 +22,14 @@ describe('resolveModules', () => {
   });
 
   it('handles all four off', () => {
-    expect(resolveModules({
-      poll_clients_enabled: false, poll_neighbors_enabled: false,
-      poll_logs_enabled: false, poll_certificates_enabled: false,
-    })).toEqual({ clients: false, neighbors: false, logs: false, certificates: false });
+    expect(
+      resolveModules({
+        poll_clients_enabled: false,
+        poll_neighbors_enabled: false,
+        poll_logs_enabled: false,
+        poll_certificates_enabled: false,
+      }),
+    ).toEqual({ clients: false, neighbors: false, logs: false, certificates: false });
   });
 });
 
@@ -35,7 +39,6 @@ describe('describeDisabled', () => {
   });
 
   it('names what is off', () => {
-    expect(describeDisabled({ ...ALL_MODULES, clients: false, logs: false }))
-      .toBe('clients, logs');
+    expect(describeDisabled({ ...ALL_MODULES, clients: false, logs: false })).toBe('clients, logs');
   });
 });

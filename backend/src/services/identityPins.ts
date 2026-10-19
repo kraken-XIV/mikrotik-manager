@@ -33,19 +33,23 @@ export const IDENTITY_KINDS: readonly IdentityKind[] = ['api-tls', 'ssh-host', '
 const KIND_LABEL: Record<IdentityKind, string> = {
   'api-tls': 'API-SSL certificate',
   'ssh-host': 'SSH host key',
-  'serial': 'serial number',
+  serial: 'serial number',
 };
 
 export class IdentityMismatchError extends Error {
   readonly code = 'identity_changed';
-  constructor(readonly kind: IdentityKind, deviceName: string) {
-    super(kind === 'serial'
-      ? `A device with a different serial number is answering at ${deviceName}'s address, so the manager ` +
-        `stopped before reading or changing anything on it. If ${deviceName} was replaced, choose ` +
-        `"This is the new device" on the device's page; if two devices swapped addresses, correct the address instead.`
-      : `${deviceName}'s ${KIND_LABEL[kind]} has changed since the manager first connected, so the manager ` +
-        `stopped before sending its login. If the device was reset or its ${kind === 'api-tls' ? 'certificate' : 'host key'} ` +
-        `was replaced, check the new one and choose "Trust new ${kind === 'api-tls' ? 'certificate' : 'host key'}" on the device's page.`
+  constructor(
+    readonly kind: IdentityKind,
+    deviceName: string,
+  ) {
+    super(
+      kind === 'serial'
+        ? `A device with a different serial number is answering at ${deviceName}'s address, so the manager ` +
+            `stopped before reading or changing anything on it. If ${deviceName} was replaced, choose ` +
+            `"This is the new device" on the device's page; if two devices swapped addresses, correct the address instead.`
+        : `${deviceName}'s ${KIND_LABEL[kind]} has changed since the manager first connected, so the manager ` +
+            `stopped before sending its login. If the device was reset or its ${kind === 'api-tls' ? 'certificate' : 'host key'} ` +
+            `was replaced, check the new one and choose "Trust new ${kind === 'api-tls' ? 'certificate' : 'host key'}" on the device's page.`,
     );
   }
 }
@@ -61,15 +65,24 @@ export function normalizeSerial(serial: string): string {
  * swapped before this check existed is still caught. Throws
  * IdentityMismatchError when it differs.
  */
-export async function verifyDeviceSerial(deviceId: number, deviceName: string, reported: string): Promise<void> {
+export async function verifyDeviceSerial(
+  deviceId: number,
+  deviceName: string,
+  reported: string,
+): Promise<void> {
   const serial = normalizeSerial(reported);
   if (!serial) return;
-  const rows = await query<{ serial_number: string | null; fingerprint: string | null; seen_fingerprint: string | null }>(
+  const rows = await query<{
+    serial_number: string | null;
+    fingerprint: string | null;
+    seen_fingerprint: string | null;
+  }>(
     `SELECT d.serial_number, p.fingerprint, p.seen_fingerprint
        FROM devices d
        LEFT JOIN device_identity_pins p ON p.device_id = d.id AND p.kind = 'serial'
       WHERE d.id = $1`,
-    [deviceId]);
+    [deviceId],
+  );
   const row = rows[0];
   if (!row) return;
   let pinned = row.fingerprint;
@@ -81,11 +94,21 @@ export async function verifyDeviceSerial(deviceId: number, deviceName: string, r
     if (row.seen_fingerprint) {
       await query(
         `UPDATE device_identity_pins SET seen_fingerprint = NULL, mismatch_at = NULL WHERE device_id = $1 AND kind = 'serial'`,
-        [deviceId]);
+        [deviceId],
+      );
     }
     return;
   }
-  await recordMismatch({ device_id: deviceId, name: deviceName, fingerprint: pinned, seen_fingerprint: row.seen_fingerprint }, 'serial', serial);
+  await recordMismatch(
+    {
+      device_id: deviceId,
+      name: deviceName,
+      fingerprint: pinned,
+      seen_fingerprint: row.seen_fingerprint,
+    },
+    'serial',
+    serial,
+  );
   throw new IdentityMismatchError('serial', deviceName);
 }
 
@@ -132,7 +155,10 @@ interface PinRow {
  * yet (a device being added) passes unpinned.
  */
 export async function verifyDeviceIdentity(
-  kind: IdentityKind, host: string, port: number, presented: string,
+  kind: IdentityKind,
+  host: string,
+  port: number,
+  presented: string,
 ): Promise<void> {
   const fp = normalizeFingerprint(presented);
   const portColumn = kind === 'api-tls' ? 'd.api_port' : 'COALESCE(d.ssh_port, 22)';
@@ -153,7 +179,8 @@ export async function verifyDeviceIdentity(
       if (row.seen_fingerprint) {
         await query(
           `UPDATE device_identity_pins SET seen_fingerprint = NULL, mismatch_at = NULL WHERE device_id = $1 AND kind = $2`,
-          [row.device_id, kind]);
+          [row.device_id, kind],
+        );
       }
       continue;
     }
@@ -163,7 +190,11 @@ export async function verifyDeviceIdentity(
 }
 
 /** Pin an identity seen before the device existed in the manager (while adding it). */
-export async function pinIdentity(deviceId: number, kind: IdentityKind, presented: string): Promise<void> {
+export async function pinIdentity(
+  deviceId: number,
+  kind: IdentityKind,
+  presented: string,
+): Promise<void> {
   await pin(deviceId, kind, normalizeFingerprint(presented));
 }
 
@@ -171,24 +202,30 @@ async function pin(deviceId: number, kind: IdentityKind, fp: string): Promise<vo
   await query(
     `INSERT INTO device_identity_pins (device_id, kind, fingerprint) VALUES ($1, $2, $3)
      ON CONFLICT (device_id, kind) DO NOTHING`,
-    [deviceId, kind, fp]);
+    [deviceId, kind, fp],
+  );
 }
 
 async function recordMismatch(row: PinRow, kind: IdentityKind, fp: string): Promise<void> {
   if (row.seen_fingerprint === fp) return; // already recorded and alerted
   await query(
     `UPDATE device_identity_pins SET seen_fingerprint = $3, mismatch_at = NOW() WHERE device_id = $1 AND kind = $2`,
-    [row.device_id, kind, fp]);
-  const message = kind === 'serial'
-    ? `A device with a different serial number is answering at ${row.name}'s address. The manager has stopped ` +
-      `polling it until an admin confirms it is the right device.`
-    : `${row.name}'s ${KIND_LABEL[kind]} has changed. The manager has stopped connecting to it ` +
-      `over ${kind === 'api-tls' ? 'API-SSL' : 'SSH'} until an admin confirms the new one.`;
+    [row.device_id, kind, fp],
+  );
+  const message =
+    kind === 'serial'
+      ? `A device with a different serial number is answering at ${row.name}'s address. The manager has stopped ` +
+        `polling it until an admin confirms it is the right device.`
+      : `${row.name}'s ${KIND_LABEL[kind]} has changed. The manager has stopped connecting to it ` +
+        `over ${kind === 'api-tls' ? 'API-SSL' : 'SSH'} until an admin confirms the new one.`;
   await query(
     `INSERT INTO events (device_id, event_time, severity, topic, message) VALUES ($1, NOW(), 'critical', 'manager,security', $2)`,
-    [row.device_id, message]).catch(() => {});
+    [row.device_id, message],
+  ).catch(() => {});
   void alertService.dispatch('device_identity_changed', message, {
-    deviceId: row.device_id, deviceName: row.name, cooldownKey: `device_identity_changed:${row.device_id}:${kind}:${fp}`,
+    deviceId: row.device_id,
+    deviceName: row.name,
+    cooldownKey: `device_identity_changed:${row.device_id}:${kind}:${fp}`,
   });
 }
 
@@ -199,7 +236,8 @@ export async function trustNewIdentity(deviceId: number, kind: IdentityKind): Pr
         SET fingerprint = seen_fingerprint, pinned_at = NOW(), seen_fingerprint = NULL, mismatch_at = NULL
       WHERE device_id = $1 AND kind = $2 AND seen_fingerprint IS NOT NULL
       RETURNING device_id`,
-    [deviceId, kind]);
+    [deviceId, kind],
+  );
   // A device now trusted with a certificate the manager didn't issue no
   // longer carries the manager's certificate (#200).
   if (kind === 'api-tls' && rows.length > 0) {
@@ -210,7 +248,10 @@ export async function trustNewIdentity(deviceId: number, kind: IdentityKind): Pr
 
 /** Forget a pin, so the next connection pins afresh (the manager replaced it itself). */
 export async function forgetIdentity(deviceId: number, kind: IdentityKind): Promise<void> {
-  await query(`DELETE FROM device_identity_pins WHERE device_id = $1 AND kind = $2`, [deviceId, kind]);
+  await query(`DELETE FROM device_identity_pins WHERE device_id = $1 AND kind = $2`, [
+    deviceId,
+    kind,
+  ]);
 }
 
 export interface IdentityPinView {
@@ -224,7 +265,13 @@ export interface IdentityPinView {
   mismatch_at: string | null;
 }
 
-function view(r: { kind: IdentityKind; fingerprint: string; pinned_at: string; seen_fingerprint: string | null; mismatch_at: string | null }): IdentityPinView {
+function view(r: {
+  kind: IdentityKind;
+  fingerprint: string;
+  pinned_at: string;
+  seen_fingerprint: string | null;
+  mismatch_at: string | null;
+}): IdentityPinView {
   const show = (fp: string) => (r.kind === 'ssh-host' ? sshFingerprintDisplay(fp) : fp);
   return {
     kind: r.kind,
@@ -239,19 +286,37 @@ function view(r: { kind: IdentityKind; fingerprint: string; pinned_at: string; s
 }
 
 export async function devicePins(deviceId: number): Promise<IdentityPinView[]> {
-  const rows = await query<{ kind: IdentityKind; fingerprint: string; pinned_at: string; seen_fingerprint: string | null; mismatch_at: string | null }>(
+  const rows = await query<{
+    kind: IdentityKind;
+    fingerprint: string;
+    pinned_at: string;
+    seen_fingerprint: string | null;
+    mismatch_at: string | null;
+  }>(
     `SELECT kind, fingerprint, pinned_at, seen_fingerprint, mismatch_at FROM device_identity_pins WHERE device_id = $1 ORDER BY kind`,
-    [deviceId]);
+    [deviceId],
+  );
   return rows.map(view);
 }
 
 /** Every device with a changed identity waiting for an admin, for the Security page. */
-export async function pendingIdentityChanges(siteId: SiteScope): Promise<Array<IdentityPinView & { device_id: number; device_name: string }>> {
+export async function pendingIdentityChanges(
+  siteId: SiteScope,
+): Promise<Array<IdentityPinView & { device_id: number; device_name: string }>> {
   const scope = siteScopeDevices(siteId, 'd');
-  const rows = await query<{ device_id: number; device_name: string; kind: IdentityKind; fingerprint: string; pinned_at: string; seen_fingerprint: string | null; mismatch_at: string | null }>(
+  const rows = await query<{
+    device_id: number;
+    device_name: string;
+    kind: IdentityKind;
+    fingerprint: string;
+    pinned_at: string;
+    seen_fingerprint: string | null;
+    mismatch_at: string | null;
+  }>(
     `SELECT p.device_id, d.name AS device_name, p.kind, p.fingerprint, p.pinned_at, p.seen_fingerprint, p.mismatch_at
        FROM device_identity_pins p JOIN devices d ON d.id = p.device_id
       WHERE p.seen_fingerprint IS NOT NULL${scope ? ` AND ${scope}` : ''}
-      ORDER BY p.mismatch_at DESC`);
+      ORDER BY p.mismatch_at DESC`,
+  );
   return rows.map((r) => ({ ...view(r), device_id: r.device_id, device_name: r.device_name }));
 }

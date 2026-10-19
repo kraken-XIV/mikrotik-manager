@@ -22,10 +22,14 @@ import type { ReadSpec } from '../mikrotik/RouterOSClient';
 
 type Row = Record<string, string>;
 interface Reader {
-  executeMany(reads: ReadSpec[], opts?: { timeoutMs?: number }): Promise<Array<{ rows?: Row[]; error?: Error }>>;
+  executeMany(
+    reads: ReadSpec[],
+    opts?: { timeoutMs?: number },
+  ): Promise<Array<{ rows?: Row[]; error?: Error }>>;
 }
 
-const ROUTE_FIELDS = '.id,dst-address,gateway,immediate-gw,distance,active,inactive,disabled,type,blackhole,routing-table';
+const ROUTE_FIELDS =
+  '.id,dst-address,gateway,immediate-gw,distance,active,inactive,disabled,type,blackhole,routing-table';
 
 /** "10.1.2.0/24" etc.: the network of `ip` at every prefix length, longest first. */
 export function coveringPrefixes(ip: string): string[] {
@@ -62,12 +66,19 @@ function ipv6ToBig(ip: string): bigint | null {
 /** RFC 5952 form, as RouterOS writes it: lower case, longest zero run as "::". */
 function bigToIpv6(n: bigint): string {
   const g = Array.from({ length: 8 }, (_, i) => Number((n >> BigInt(112 - i * 16)) & 0xffffn));
-  let best = -1; let bestLen = 0;
+  let best = -1;
+  let bestLen = 0;
   for (let i = 0; i < 8;) {
-    if (g[i] !== 0) { i++; continue; }
+    if (g[i] !== 0) {
+      i++;
+      continue;
+    }
     let j = i;
     while (j < 8 && g[j] === 0) j++;
-    if (j - i > bestLen && j - i > 1) { best = i; bestLen = j - i; }
+    if (j - i > bestLen && j - i > 1) {
+      best = i;
+      bestLen = j - i;
+    }
     i = j;
   }
   const hex = g.map((x) => x.toString(16));
@@ -82,14 +93,23 @@ function bigToIpv6(n: bigint): string {
  * table must fail the analysis, not read as empty, P2-7); otherwise it
  * counts as no routes there (IPv6 switched off, say).
  */
-export async function readCoveringRoutes(reader: Reader, ip: string | null, family: 4 | 6 = 4, strict = true): Promise<Row[]> {
+export async function readCoveringRoutes(
+  reader: Reader,
+  ip: string | null,
+  family: 4 | 6 = 4,
+  strict = true,
+): Promise<Row[]> {
   const menu = family === 6 ? '/ipv6/route/print' : '/ip/route/print';
   const prefixes = ip ? coveringPrefixes(ip) : [family === 6 ? '::/0' : '0.0.0.0/0'];
   if (prefixes.length === 0) return [];
   // A host route may be written with or without its /32 (/128).
   const host = ip ? [ip] : [];
   const results = await reader.executeMany(
-    [...prefixes, ...host].map((p) => ({ command: menu, params: { '.proplist': ROUTE_FIELDS }, queries: [`?dst-address=${p}`] })),
+    [...prefixes, ...host].map((p) => ({
+      command: menu,
+      params: { '.proplist': ROUTE_FIELDS },
+      queries: [`?dst-address=${p}`],
+    })),
   );
   const seen = new Set<string>();
   const out: Row[] = [];
@@ -111,13 +131,21 @@ export async function readCoveringRoutes(reader: Reader, ip: string | null, fami
  * RouterOS 7.24 writes them (separate dst-port) and as older versions do
  * ("address:port"). Empty where connection tracking is off.
  */
-export async function readApiConnections(reader: Reader, deviceIp: string, apiPort: number): Promise<Row[]> {
+export async function readApiConnections(
+  reader: Reader,
+  deviceIp: string,
+  apiPort: number,
+): Promise<Row[]> {
   const fields = { '.proplist': '.id,protocol,src-address,src-port,dst-address,dst-port' };
   const v6 = net.isIP(deviceIp) === 6;
   const menu = v6 ? '/ipv6/firewall/connection/print' : '/ip/firewall/connection/print';
   const old = v6 ? `[${deviceIp}]:${apiPort}` : `${deviceIp}:${apiPort}`;
   const results = await reader.executeMany([
-    { command: menu, params: fields, queries: [`?dst-address=${deviceIp}`, `?dst-port=${apiPort}`] },
+    {
+      command: menu,
+      params: fields,
+      queries: [`?dst-address=${deviceIp}`, `?dst-port=${apiPort}`],
+    },
     { command: menu, params: fields, queries: [`?dst-address=${old}`] },
   ]);
   const seen = new Set<string>();
@@ -125,7 +153,10 @@ export async function readApiConnections(reader: Reader, deviceIp: string, apiPo
   for (const r of results) {
     for (const row of r.rows ?? []) {
       const key = row['.id'] ?? JSON.stringify(row);
-      if (!seen.has(key)) { seen.add(key); out.push(row); }
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(row);
+      }
     }
   }
   return out;

@@ -1,7 +1,16 @@
 import {
-  classifyWifiRole, parseCapsmanStatus, parseCapStatus, isCapsmanManaged,
-  normalizeRadios, matchRadiosToDevices, lookupDeviceForMac, macIndexKeys, buildMacIndex,
-  hasRadios, wirelessDeviceSql, chooseWifiPackage,
+  classifyWifiRole,
+  parseCapsmanStatus,
+  parseCapStatus,
+  isCapsmanManaged,
+  normalizeRadios,
+  matchRadiosToDevices,
+  lookupDeviceForMac,
+  macIndexKeys,
+  buildMacIndex,
+  hasRadios,
+  wirelessDeviceSql,
+  chooseWifiPackage,
 } from '../capsman';
 
 describe('classifyWifiRole', () => {
@@ -36,7 +45,8 @@ describe('classifyWifiRole', () => {
 
 describe('parseCapsmanStatus', () => {
   // Verbatim from the issue.
-  const line = 'managed by CAPsMAN 02:F8:E3:80:10:97%management_vlan, traffic processing on CAP, mode: AP, SSID: HomeAccessPoint, channel: 5280/ax/eCee';
+  const line =
+    'managed by CAPsMAN 02:F8:E3:80:10:97%management_vlan, traffic processing on CAP, mode: AP, SSID: HomeAccessPoint, channel: 5280/ax/eCee';
 
   it('extracts controller, interface, SSID, mode and channel', () => {
     const s = parseCapsmanStatus({ status: line })!;
@@ -54,7 +64,9 @@ describe('parseCapsmanStatus', () => {
   });
 
   it('copes with a status line that omits the optional parts', () => {
-    const s = parseCapsmanStatus({ status: 'managed by CAPsMAN 02:F8:E3:80:10:97, traffic processing on CAP' })!;
+    const s = parseCapsmanStatus({
+      status: 'managed by CAPsMAN 02:F8:E3:80:10:97, traffic processing on CAP',
+    })!;
     expect(s.controllerMac).toBe('02:F8:E3:80:10:97');
     expect(s.controllerInterface).toBeNull();
     expect(s.ssid).toBeNull();
@@ -67,7 +79,9 @@ describe('parseCapsmanStatus', () => {
 
 describe('parseCapStatus', () => {
   it('extracts the CAP identity from the controller side', () => {
-    const r = parseCapStatus({ status: 'operated by CAP 02:F8:E1:50:13:5F%management_vlan, traffic processing on CAP' })!;
+    const r = parseCapStatus({
+      status: 'operated by CAP 02:F8:E1:50:13:5F%management_vlan, traffic processing on CAP',
+    })!;
     expect(r.capMac).toBe('02:F8:E1:50:13:5F');
     expect(r.capInterface).toBe('management_vlan');
   });
@@ -101,18 +115,34 @@ describe('isCapsmanManaged', () => {
 describe('normalizeRadios', () => {
   // Real rows from a RouterOS 7.23 wAP ax.
   const rows = [
-    { '.id': '*1', 'radio-mac': 'd0:ea:11:0a:de:78', interface: 'wifi1', local: 'true', 'hw-type': 'QCA5018' },
-    { '.id': '*2', 'radio-mac': 'D0:EA:11:0A:DE:79', interface: 'wifi2', local: 'true', 'hw-type': 'QCN6122' },
+    {
+      '.id': '*1',
+      'radio-mac': 'd0:ea:11:0a:de:78',
+      interface: 'wifi1',
+      local: 'true',
+      'hw-type': 'QCA5018',
+    },
+    {
+      '.id': '*2',
+      'radio-mac': 'D0:EA:11:0A:DE:79',
+      interface: 'wifi2',
+      local: 'true',
+      'hw-type': 'QCN6122',
+    },
   ];
 
   it('upper-cases MACs so lookups are case-stable', () => {
-    expect(normalizeRadios(rows).map((r) => r.radioMac))
-      .toEqual(['D0:EA:11:0A:DE:78', 'D0:EA:11:0A:DE:79']);
+    expect(normalizeRadios(rows).map((r) => r.radioMac)).toEqual([
+      'D0:EA:11:0A:DE:78',
+      'D0:EA:11:0A:DE:79',
+    ]);
   });
 
   it('reads the local flag', () => {
     expect(normalizeRadios(rows).every((r) => r.local)).toBe(true);
-    expect(normalizeRadios([{ 'radio-mac': 'AA:BB:CC:DD:EE:FF', local: 'false' }])[0].local).toBe(false);
+    expect(normalizeRadios([{ 'radio-mac': 'AA:BB:CC:DD:EE:FF', local: 'false' }])[0].local).toBe(
+      false,
+    );
   });
 });
 
@@ -186,7 +216,7 @@ describe('parseRadioMonitor', () => {
   it('returns nulls rather than zeros when monitor gave nothing', () => {
     const s = parseRadioMonitor(undefined);
     expect(s.channel).toBeNull();
-    expect(s.registeredPeers).toBeNull();   // absent must not read as "0 clients"
+    expect(s.registeredPeers).toBeNull(); // absent must not read as "0 clients"
   });
 
   it('treats an empty peer count as unknown, not zero', () => {
@@ -201,28 +231,34 @@ describe('resolveDatapath', () => {
   ];
 
   it('prefers inline datapath fields on the interface', () => {
-    expect(resolveDatapath({ 'datapath.bridge': 'bridge9', 'datapath.vlan-id': '99' }, datapaths))
-      .toEqual({ bridge: 'bridge9', vlanId: '99' });
+    expect(
+      resolveDatapath({ 'datapath.bridge': 'bridge9', 'datapath.vlan-id': '99' }, datapaths),
+    ).toEqual({ bridge: 'bridge9', vlanId: '99' });
   });
 
   it('follows a named datapath reference', () => {
-    expect(resolveDatapath({ datapath: 'guest-dp' }, datapaths))
-      .toEqual({ bridge: 'bridge1', vlanId: '20' });
+    expect(resolveDatapath({ datapath: 'guest-dp' }, datapaths)).toEqual({
+      bridge: 'bridge1',
+      vlanId: '20',
+    });
   });
 
   it('follows an .id datapath reference', () => {
-    expect(resolveDatapath({ datapath: '*3' }, datapaths))
-      .toEqual({ bridge: 'bridge1', vlanId: '20' });
+    expect(resolveDatapath({ datapath: '*3' }, datapaths)).toEqual({
+      bridge: 'bridge1',
+      vlanId: '20',
+    });
   });
 
   it('reports a datapath with no VLAN as untagged rather than inventing one', () => {
-    expect(resolveDatapath({ datapath: 'mgmt-dp' }, datapaths))
-      .toEqual({ bridge: 'bridge1', vlanId: null });
+    expect(resolveDatapath({ datapath: 'mgmt-dp' }, datapaths)).toEqual({
+      bridge: 'bridge1',
+      vlanId: null,
+    });
   });
 
   it('returns nulls when the interface has no datapath at all', () => {
-    expect(resolveDatapath({ name: 'wifi1' }, datapaths))
-      .toEqual({ bridge: null, vlanId: null });
+    expect(resolveDatapath({ name: 'wifi1' }, datapaths)).toEqual({ bridge: null, vlanId: null });
   });
 });
 
@@ -239,12 +275,15 @@ describe('clientsPerRadio', () => {
 
   it('attributes clients on a virtual AP to its physical radio', () => {
     const counts = clientsPerRadio(interfaces, [
-      { interface: 'wifi3' }, { interface: 'wifi3' }, { interface: 'wifi3' },
-      { interface: 'wifi5' }, { interface: 'wifi5' },
+      { interface: 'wifi3' },
+      { interface: 'wifi3' },
+      { interface: 'wifi3' },
+      { interface: 'wifi5' },
+      { interface: 'wifi5' },
       { interface: 'wifi6' },
     ]);
-    expect(counts.get('D0:EA:11:0A:DE:78')).toBe(5);   // wifi3 + wifi5
-    expect(counts.get('D0:EA:11:0A:DE:79')).toBe(1);   // wifi6
+    expect(counts.get('D0:EA:11:0A:DE:78')).toBe(5); // wifi3 + wifi5
+    expect(counts.get('D0:EA:11:0A:DE:79')).toBe(1); // wifi6
   });
 
   it('counts clients registered directly on a physical radio', () => {
@@ -289,8 +328,8 @@ describe('lookupDeviceForMac — a remote radio never belongs to the controller 
     // Exactly the shape reported: the controller mirrors the CAP's interface, so
     // both devices index the same radio MAC.
     const idx = buildMacIndex([
-      { device_id: 12, mac_address: '04:F4:1C:A2:C4:66' },   // controller's mirror
-      { device_id: 22, mac_address: '04:F4:1C:A2:C4:66' },   // the CAP itself
+      { device_id: 12, mac_address: '04:F4:1C:A2:C4:66' }, // controller's mirror
+      { device_id: 22, mac_address: '04:F4:1C:A2:C4:66' }, // the CAP itself
     ]);
     expect(lookupDeviceForMac('04:F4:1C:A2:C4:66', idx, 12)).toBe(22);
   });
@@ -325,18 +364,28 @@ describe('lookupDeviceForMac — a remote radio never belongs to the controller 
 describe('matchRadiosToDevices — controller mirrors (#94 field report)', () => {
   const CONTROLLER = 12;
   const index = buildMacIndex([
-    { device_id: CONTROLLER, mac_address: '04:F4:1C:A2:C4:65' },   // mirrors
+    { device_id: CONTROLLER, mac_address: '04:F4:1C:A2:C4:65' }, // mirrors
     { device_id: CONTROLLER, mac_address: '04:F4:1C:A2:C4:66' },
-    { device_id: 22, mac_address: '04:F4:1C:A2:C4:65' },           // bathroom AP
+    { device_id: 22, mac_address: '04:F4:1C:A2:C4:65' }, // bathroom AP
     { device_id: 22, mac_address: '04:F4:1C:A2:C4:66' },
   ]);
 
   it('puts both radios of one AP on that AP, not the controller', () => {
     const radios = normalizeRadios([
-      { 'radio-mac': '04:F4:1C:A2:C4:65', interface: 'wifi-legacy-bathroom-ap-001-main-5g', local: 'false' },
-      { 'radio-mac': '04:F4:1C:A2:C4:66', interface: 'wifi-legacy-bathroom-ap-001-main-2g', local: 'false' },
+      {
+        'radio-mac': '04:F4:1C:A2:C4:65',
+        interface: 'wifi-legacy-bathroom-ap-001-main-5g',
+        local: 'false',
+      },
+      {
+        'radio-mac': '04:F4:1C:A2:C4:66',
+        interface: 'wifi-legacy-bathroom-ap-001-main-2g',
+        local: 'false',
+      },
     ]);
-    expect(matchRadiosToDevices(radios, index, CONTROLLER).map((m) => m.deviceId)).toEqual([22, 22]);
+    expect(matchRadiosToDevices(radios, index, CONTROLLER).map((m) => m.deviceId)).toEqual([
+      22, 22,
+    ]);
   });
 
   it('still keeps a genuinely local radio on the controller', () => {
@@ -352,9 +401,13 @@ describe('matchRadiosToDevices — controller mirrors (#94 field report)', () =>
 
 // ── Legacy CAPsMAN (#250), from the reporter's CHR and RB951 on 7.24.5 ───────
 
-import { legacyManagerEnabled, legacyCapInterfaces, parseLegacyChannel, legacyRadios } from '../capsman';
+import {
+  legacyManagerEnabled,
+  legacyCapInterfaces,
+  parseLegacyChannel,
+  legacyRadios,
+} from '../capsman';
 import { legacyFixture } from '../__fixtures__/legacyCapsman';
-
 
 describe('legacy CAPsMAN (#250)', () => {
   it('recognises an enabled controller and a CAP', () => {
@@ -367,40 +420,79 @@ describe('legacy CAPsMAN (#250)', () => {
 
   it('splits the channel from the transmit power', () => {
     expect(parseLegacyChannel('2412/20/gn(30dBm)')).toEqual({ channel: '2412/20/gn', txPower: 30 });
-    expect(parseLegacyChannel('5180/20-Ceee/ac')).toEqual({ channel: '5180/20-Ceee/ac', txPower: null });
+    expect(parseLegacyChannel('5180/20-Ceee/ac')).toEqual({
+      channel: '5180/20-Ceee/ac',
+      txPower: null,
+    });
     expect(parseLegacyChannel('')).toEqual({ channel: null, txPower: null });
   });
 
   it("reads the reporter's controller: one radio on BonusRoom with three clients", () => {
-    const [r, ...rest] = legacyRadios(legacyFixture.interface, null, legacyFixture.remoteCap, null, legacyFixture.registrations);
+    const [r, ...rest] = legacyRadios(
+      legacyFixture.interface,
+      null,
+      legacyFixture.remoteCap,
+      null,
+      legacyFixture.registrations,
+    );
     expect(rest).toHaveLength(0);
     expect(r).toMatchObject({
-      radioMac: 'D4:CA:6D:BB:0E:57', interfaceName: 'BonusRoom 2.4Ghz', state: 'running-ap',
-      channel: '2412/20/gn', txPower: 30, registeredPeers: 3, authorizedPeers: 3,
-      ssid: 'Laney Legacy', capIdentity: 'BonusRoom',
+      radioMac: 'D4:CA:6D:BB:0E:57',
+      interfaceName: 'BonusRoom 2.4Ghz',
+      state: 'running-ap',
+      channel: '2412/20/gn',
+      txPower: 30,
+      registeredPeers: 3,
+      authorizedPeers: 3,
+      ssid: 'Laney Legacy',
+      capIdentity: 'BonusRoom',
     });
   });
 
   it('takes the SSID from the named configuration when it was read', () => {
-    const [r] = legacyRadios(legacyFixture.interface, null, null, [{ name: 'Laney Legacy 2.4Ghz', ssid: 'From Config' }], []);
+    const [r] = legacyRadios(
+      legacyFixture.interface,
+      null,
+      null,
+      [{ name: 'Laney Legacy 2.4Ghz', ssid: 'From Config' }],
+      [],
+    );
     expect(r.ssid).toBe('From Config');
     expect(r.registeredPeers).toBe(0);
   });
 
   it('leaves the AP unnamed when two CAPs could own the radio', () => {
-    const twin = { ...legacyFixture.remoteCap[0], identity: 'Twin', 'base-mac': 'D4:CA:6D:BB:0E:50' };
-    const [r] = legacyRadios(legacyFixture.interface, null, [...legacyFixture.remoteCap, twin], null, null);
+    const twin = {
+      ...legacyFixture.remoteCap[0],
+      identity: 'Twin',
+      'base-mac': 'D4:CA:6D:BB:0E:50',
+    };
+    const [r] = legacyRadios(
+      legacyFixture.interface,
+      null,
+      [...legacyFixture.remoteCap, twin],
+      null,
+      null,
+    );
     expect(r.capIdentity).toBeNull();
     expect(r.registeredPeers).toBe(3); // from the interface when the table wasn't read
   });
 
   it('prefers /caps-man/radio for the AP, and counts clients on virtual APs toward their radio', () => {
-    const virtual = { name: 'BonusRoom Guest', 'radio-mac': '', 'master-interface': 'BonusRoom 2.4Ghz' };
+    const virtual = {
+      name: 'BonusRoom Guest',
+      'radio-mac': '',
+      'master-interface': 'BonusRoom 2.4Ghz',
+    };
     const [r] = legacyRadios(
       [...legacyFixture.interface, virtual],
       [{ 'radio-mac': 'D4:CA:6D:BB:0E:57', 'remote-cap-identity': 'BonusRoom-radio' }],
-      null, null,
-      [...legacyFixture.registrations, { interface: 'BonusRoom Guest', 'mac-address': '00:11:22:33:44:55' }],
+      null,
+      null,
+      [
+        ...legacyFixture.registrations,
+        { interface: 'BonusRoom Guest', 'mac-address': '00:11:22:33:44:55' },
+      ],
     );
     expect(r.capIdentity).toBe('BonusRoom-radio');
     expect(r.registeredPeers).toBe(4);
@@ -413,7 +505,9 @@ describe('radios on any device type (hAP ac² added as a router)', () => {
     expect(hasRadios({ device_type: 'router', wifi_role: 'controller' })).toBe(false);
     expect(hasRadios({ device_type: 'router', wifi_role: 'none' })).toBe(false);
     expect(hasRadios({ device_type: 'wireless_ap', wifi_role: null })).toBe(true);
-    expect(wirelessDeviceSql('d')).toBe("(d.device_type = 'wireless_ap' OR d.wifi_role IN ('standalone','cap','controller_cap','controller'))");
+    expect(wirelessDeviceSql('d')).toBe(
+      "(d.device_type = 'wireless_ap' OR d.wifi_role IN ('standalone','cap','controller_cap','controller'))",
+    );
   });
   it('calls a device standalone only when it lists radios', () => {
     expect(classifyWifiRole(null, null, true)).toBe('standalone');

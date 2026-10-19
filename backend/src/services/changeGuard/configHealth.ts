@@ -48,7 +48,8 @@ export interface ConfigFinding {
 
 const L2_DOC = 'https://help.mikrotik.com/docs/spaces/ROS/pages/19136718/Layer2+misconfiguration';
 const VLAN_TABLE_DOC = 'https://help.mikrotik.com/docs/spaces/ROS/pages/28606465/Bridge+VLAN+Table';
-const BRIDGING_DOC = 'https://help.mikrotik.com/docs/spaces/ROS/pages/328068/Bridging+and+Switching';
+const BRIDGING_DOC =
+  'https://help.mikrotik.com/docs/spaces/ROS/pages/328068/Bridging+and+Switching';
 
 const isTrue = (v: string | undefined): boolean => v === 'true' || v === 'yes';
 const stripCidr = (addr: string): string => (addr || '').split('/')[0].trim();
@@ -109,13 +110,13 @@ function ruleIpOnBridgePort(snap: DeviceSnapshot): ConfigFinding[] {
         severity: 'info',
         title: `${a['address']} is configured on ${configured} but served by ${actual}`,
         detail:
-          `${configured} is a member port of bridge ${actual}, so RouterOS moved the address to `
-          + `the bridge — it works, but the configuration names a port that is not the one `
-          + `answering. Anything reasoning about this address from the config alone, including `
-          + `firewall rules scoped to ${configured}, will not match where the traffic really is.`,
+          `${configured} is a member port of bridge ${actual}, so RouterOS moved the address to ` +
+          `the bridge — it works, but the configuration names a port that is not the one ` +
+          `answering. Anything reasoning about this address from the config alone, including ` +
+          `firewall rules scoped to ${configured}, will not match where the traffic really is.`,
         remediation:
-          `Move ${a['address']} onto ${actual} directly so the configuration says what is `
-          + `actually happening.`,
+          `Move ${a['address']} onto ${actual} directly so the configuration says what is ` +
+          `actually happening.`,
         docUrl: L2_DOC,
         objects: [configured, actual, a['address']],
       });
@@ -128,12 +129,12 @@ function ruleIpOnBridgePort(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'critical',
       title: `${a['address']} is unreachable — it sits on bridge port ${configured}`,
       detail:
-        `${configured} is a member port of bridge ${port['bridge']}, so it forwards every frame `
-        + `into the bridge instead of terminating it locally, and RouterOS has not relocated the `
-        + `address to the bridge. ${a['address']} is configured but nothing can reach it.`,
+        `${configured} is a member port of bridge ${port['bridge']}, so it forwards every frame ` +
+        `into the bridge instead of terminating it locally, and RouterOS has not relocated the ` +
+        `address to the bridge. ${a['address']} is configured but nothing can reach it.`,
       remediation:
-        `Move the address onto ${port['bridge']} itself (or onto a VLAN interface on that bridge), `
-        + `or remove ${configured} from the bridge if it is meant to be routed.`,
+        `Move the address onto ${port['bridge']} itself (or onto a VLAN interface on that bridge), ` +
+        `or remove ${configured} from the bridge if it is meant to be routed.`,
       docUrl: L2_DOC,
       objects: [configured, a['address']],
     });
@@ -160,12 +161,12 @@ function ruleVlanIfaceOnBridgePort(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'critical',
       title: `VLAN interface ${v['name']} is built on bridge port ${parent}`,
       detail:
-        `${parent} is a member of bridge ${port['bridge']}, so tagged frames are handed to the `
-        + `bridge rather than to ${v['name']}. The VLAN interface receives nothing, and anything `
-        + `depending on it — including management — is unreachable.`,
+        `${parent} is a member of bridge ${port['bridge']}, so tagged frames are handed to the ` +
+        `bridge rather than to ${v['name']}. The VLAN interface receives nothing, and anything ` +
+        `depending on it — including management — is unreachable.`,
       remediation:
-        `Create the VLAN interface on bridge ${port['bridge']} instead of on ${parent}, and let the `
-        + `bridge VLAN table decide which ports carry VLAN ${v['vlan-id']}.`,
+        `Create the VLAN interface on bridge ${port['bridge']} instead of on ${parent}, and let the ` +
+        `bridge VLAN table decide which ports carry VLAN ${v['vlan-id']}.`,
       docUrl: L2_DOC,
       objects: [v['name'], parent],
     });
@@ -190,12 +191,12 @@ function ruleBridgedVlanInterface(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'critical',
       title: `VLAN interface ${name} is a port of bridge ${p['bridge']}`,
       detail:
-        `Adding a VLAN interface as a bridge port feeds tagged traffic back into the same `
-        + `broadcast domain it came from. This creates a forwarding loop, and where STP is `
-        + `running it shows up as ports flapping between forwarding and blocking.`,
+        `Adding a VLAN interface as a bridge port feeds tagged traffic back into the same ` +
+        `broadcast domain it came from. This creates a forwarding loop, and where STP is ` +
+        `running it shows up as ports flapping between forwarding and blocking.`,
       remediation:
-        `Remove ${name} from bridge ${p['bridge']} and use the bridge VLAN table to carry the `
-        + `VLAN on the physical ports instead.`,
+        `Remove ${name} from bridge ${p['bridge']} and use the bridge VLAN table to carry the ` +
+        `VLAN on the physical ports instead.`,
       docUrl: L2_DOC,
       objects: [name, p['bridge']],
     });
@@ -222,12 +223,12 @@ function ruleBondSlaveIsBridgePort(snap: DeviceSnapshot): ConfigFinding[] {
         severity: 'critical',
         title: `${slave} is both a slave of bond ${bond['name']} and a port of bridge ${port['bridge']}`,
         detail:
-          `An interface can belong to a bond or to a bridge, not both. With both configured the `
-          + `forwarding path is undefined: frames may bypass the bond, and the bond silently runs `
-          + `with fewer working members than it reports.`,
+          `An interface can belong to a bond or to a bridge, not both. With both configured the ` +
+          `forwarding path is undefined: frames may bypass the bond, and the bond silently runs ` +
+          `with fewer working members than it reports.`,
         remediation:
-          `Remove ${slave} from bridge ${port['bridge']} and add the bond ${bond['name']} as the `
-          + `bridge port instead.`,
+          `Remove ${slave} from bridge ${port['bridge']} and add the bond ${bond['name']} as the ` +
+          `bridge port instead.`,
         docUrl: BRIDGING_DOC,
         objects: [slave, bond['name'], port['bridge']],
       });
@@ -255,12 +256,12 @@ function ruleMtuExceedsL2Mtu(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'warning',
       title: `${i['name']} has MTU ${mtu} above its L2MTU of ${l2mtu}`,
       detail:
-        `The interface is configured to carry ${mtu}-byte payloads but the underlying layer-2 `
-        + `path only supports ${l2mtu}. Frames above the L2MTU are dropped without an error, so `
-        + `small traffic works while large transfers stall.`,
+        `The interface is configured to carry ${mtu}-byte payloads but the underlying layer-2 ` +
+        `path only supports ${l2mtu}. Frames above the L2MTU are dropped without an error, so ` +
+        `small traffic works while large transfers stall.`,
       remediation:
-        `Lower the MTU on ${i['name']} to ${l2mtu} or below, or raise the L2MTU on this interface `
-        + `and every interface along the path.`,
+        `Lower the MTU on ${i['name']} to ${l2mtu} or below, or raise the L2MTU on this interface ` +
+        `and every interface along the path.`,
       docUrl: L2_DOC,
       objects: [i['name']],
     });
@@ -287,12 +288,12 @@ function ruleMultiVidUntagged(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'warning',
       title: `Bridge VLAN entry ${row['vlan-ids']} on ${row['bridge']} has untagged ports`,
       detail:
-        `This one entry covers ${vids.length} VLANs and marks ${untagged.join(', ')} untagged in `
-        + `all of them. A port can only meaningfully be untagged in one VLAN, so the result is `
-        + `ambiguous. RouterOS warns about this and applies it regardless.`,
+        `This one entry covers ${vids.length} VLANs and marks ${untagged.join(', ')} untagged in ` +
+        `all of them. A port can only meaningfully be untagged in one VLAN, so the result is ` +
+        `ambiguous. RouterOS warns about this and applies it regardless.`,
       remediation:
-        `Split the entry: keep the range for tagged trunk ports, and give each untagged access `
-        + `port its own single-VLAN entry with a matching PVID.`,
+        `Split the entry: keep the range for tagged trunk ports, and give each untagged access ` +
+        `port its own single-VLAN entry with a matching PVID.`,
       docUrl: VLAN_TABLE_DOC,
       objects: [row['bridge'], row['vlan-ids'], ...untagged],
     });
@@ -309,7 +310,11 @@ function rulePvidWithTaggedOnlyFrameType(snap: DeviceSnapshot): ConfigFinding[] 
   const out: ConfigFinding[] = [];
   for (const p of snap.bridgePorts) {
     if (isTrue(p['disabled'])) continue;
-    if (p['frame-types'] !== 'admit-only-vlan-tagged' && p['frame-type'] !== 'admit-only-vlan-tagged') continue;
+    if (
+      p['frame-types'] !== 'admit-only-vlan-tagged' &&
+      p['frame-type'] !== 'admit-only-vlan-tagged'
+    )
+      continue;
     const pvid = parseInt(p['pvid'] || '1', 10);
     if (isNaN(pvid) || pvid === 1) continue;
     out.push({
@@ -318,12 +323,12 @@ function rulePvidWithTaggedOnlyFrameType(snap: DeviceSnapshot): ConfigFinding[] 
       severity: 'warning',
       title: `PVID ${pvid} on ${p['interface']} has no effect`,
       detail:
-        `${p['interface']} admits only VLAN-tagged frames, which disables the dynamic untagged `
-        + `entry a PVID would otherwise create. The PVID of ${pvid} is stored but never applied, `
-        + `so untagged devices on this port are dropped rather than placed in VLAN ${pvid}.`,
+        `${p['interface']} admits only VLAN-tagged frames, which disables the dynamic untagged ` +
+        `entry a PVID would otherwise create. The PVID of ${pvid} is stored but never applied, ` +
+        `so untagged devices on this port are dropped rather than placed in VLAN ${pvid}.`,
       remediation:
-        `Either set frame-types back to admit-all (or admit-only-untagged-and-priority-tagged) if `
-        + `untagged traffic belongs here, or clear the PVID so the configuration says what it does.`,
+        `Either set frame-types back to admit-all (or admit-only-untagged-and-priority-tagged) if ` +
+        `untagged traffic belongs here, or clear the PVID so the configuration says what it does.`,
       docUrl: VLAN_TABLE_DOC,
       objects: [p['interface'], p['bridge'], String(pvid)],
     });
@@ -344,21 +349,23 @@ function ruleMultipleHwBridges(snap: DeviceSnapshot): ConfigFinding[] {
   }
   if (hwBridges.size < 2) return [];
   const names = [...hwBridges].sort();
-  return [{
-    rule: 'multiple-hw-bridges',
-    fingerprint: `multiple-hw-bridges:${names.join(',')}`,
-    severity: 'warning',
-    title: `${names.length} bridges request hardware offload (${names.join(', ')})`,
-    detail:
-      `A switch chip can hardware-offload the ports of only one bridge. With several bridges `
-      + `asking for it, the ones that lose out fall back to CPU forwarding — no error is raised, `
-      + `but throughput on those ports drops to what the CPU can handle.`,
-    remediation:
-      `Consolidate the ports onto a single hardware-offloaded bridge and separate the networks `
-      + `with the bridge VLAN table, or accept CPU forwarding and disable hw on the extra bridges.`,
-    docUrl: BRIDGING_DOC,
-    objects: names,
-  }];
+  return [
+    {
+      rule: 'multiple-hw-bridges',
+      fingerprint: `multiple-hw-bridges:${names.join(',')}`,
+      severity: 'warning',
+      title: `${names.length} bridges request hardware offload (${names.join(', ')})`,
+      detail:
+        `A switch chip can hardware-offload the ports of only one bridge. With several bridges ` +
+        `asking for it, the ones that lose out fall back to CPU forwarding — no error is raised, ` +
+        `but throughput on those ports drops to what the CPU can handle.`,
+      remediation:
+        `Consolidate the ports onto a single hardware-offloaded bridge and separate the networks ` +
+        `with the bridge VLAN table, or accept CPU forwarding and disable hw on the extra bridges.`,
+      docUrl: BRIDGING_DOC,
+      objects: names,
+    },
+  ];
 }
 
 /**
@@ -369,7 +376,7 @@ function ruleMultipleHwBridges(snap: DeviceSnapshot): ConfigFinding[] {
 function ruleVlanIfaceNotTaggedOnBridge(snap: DeviceSnapshot): ConfigFinding[] {
   const out: ConfigFinding[] = [];
   const filtering = new Set(
-    snap.bridges.filter((b) => isTrue(b['vlan-filtering'])).map((b) => b['name'])
+    snap.bridges.filter((b) => isTrue(b['vlan-filtering'])).map((b) => b['name']),
   );
   for (const v of snap.vlanInterfaces) {
     if (isTrue(v['disabled'])) continue;
@@ -385,14 +392,13 @@ function ruleVlanIfaceNotTaggedOnBridge(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'critical',
       title: `${v['name']} carries no traffic — ${parent} is not tagged in VLAN ${vid}`,
       detail:
-        `${parent} has VLAN filtering enabled, and the bridge itself is the CPU port. For `
-        + `${v['name']} to receive VLAN ${vid}, ${parent} must be listed as a tagged member of `
-        + `VLAN ${vid} in the bridge VLAN table. `
-        + (membership.found
+        `${parent} has VLAN filtering enabled, and the bridge itself is the CPU port. For ` +
+        `${v['name']} to receive VLAN ${vid}, ${parent} must be listed as a tagged member of ` +
+        `VLAN ${vid} in the bridge VLAN table. ` +
+        (membership.found
           ? `The VLAN exists on the bridge but ${parent} is not tagged in it.`
           : `There is no bridge VLAN entry for VLAN ${vid} at all.`),
-      remediation:
-        `Add ${parent} to the tagged list of VLAN ${vid} on bridge ${parent} in the bridge VLAN table.`,
+      remediation: `Add ${parent} to the tagged list of VLAN ${vid} on bridge ${parent} in the bridge VLAN table.`,
       docUrl: VLAN_TABLE_DOC,
       objects: [v['name'], parent, String(vid)],
     });
@@ -413,26 +419,31 @@ function ruleMgmtVlanDynamicOnly(snap: DeviceSnapshot, device: GuardDevice): Con
 
   const vid = path.mgmtVlanId;
   const membership = vlanMembership(snap, path.bridge, vid);
-  const effective = membership.untagged.includes(path.bridge) || membership.tagged.includes(path.bridge);
-  const isStatic = membership.untaggedStatic.includes(path.bridge) || membership.taggedStatic.includes(path.bridge);
+  const effective =
+    membership.untagged.includes(path.bridge) || membership.tagged.includes(path.bridge);
+  const isStatic =
+    membership.untaggedStatic.includes(path.bridge) ||
+    membership.taggedStatic.includes(path.bridge);
   if (!effective || isStatic) return [];
 
-  return [{
-    rule: 'mgmt-vlan-dynamic-only',
-    fingerprint: `mgmt-vlan-dynamic-only:${path.bridge}:${vid}`,
-    severity: 'warning',
-    title: `Management on VLAN ${vid} depends on a dynamic bridge VLAN entry`,
-    detail:
-      `Bridge ${path.bridge} carries management on VLAN ${vid}, but its membership in that VLAN `
-      + `is not configured — it exists only as a dynamic entry derived from a port PVID. That `
-      + `entry disappears the moment a port is set to admit only tagged frames, and management `
-      + `goes with it. Nothing in the saved configuration records why this device is reachable.`,
-    remediation:
-      `Add ${path.bridge} explicitly to VLAN ${vid} in the bridge VLAN table (untagged, matching `
-      + `how management arrives today) so the reachability is written down rather than incidental.`,
-    docUrl: VLAN_TABLE_DOC,
-    objects: [path.bridge, String(vid)],
-  }];
+  return [
+    {
+      rule: 'mgmt-vlan-dynamic-only',
+      fingerprint: `mgmt-vlan-dynamic-only:${path.bridge}:${vid}`,
+      severity: 'warning',
+      title: `Management on VLAN ${vid} depends on a dynamic bridge VLAN entry`,
+      detail:
+        `Bridge ${path.bridge} carries management on VLAN ${vid}, but its membership in that VLAN ` +
+        `is not configured — it exists only as a dynamic entry derived from a port PVID. That ` +
+        `entry disappears the moment a port is set to admit only tagged frames, and management ` +
+        `goes with it. Nothing in the saved configuration records why this device is reachable.`,
+      remediation:
+        `Add ${path.bridge} explicitly to VLAN ${vid} in the bridge VLAN table (untagged, matching ` +
+        `how management arrives today) so the reachability is written down rather than incidental.`,
+      docUrl: VLAN_TABLE_DOC,
+      objects: [path.bridge, String(vid)],
+    },
+  ];
 }
 
 /**
@@ -441,14 +452,16 @@ function ruleMgmtVlanDynamicOnly(snap: DeviceSnapshot, device: GuardDevice): Con
  */
 function rulePortInNoVlan(snap: DeviceSnapshot): ConfigFinding[] {
   const filtering = new Set(
-    snap.bridges.filter((b) => isTrue(b['vlan-filtering'])).map((b) => b['name'])
+    snap.bridges.filter((b) => isTrue(b['vlan-filtering'])).map((b) => b['name']),
   );
   if (filtering.size === 0) return [];
 
   const member = new Set<string>();
   for (const row of snap.bridgeVlans) {
-    for (const p of rosList(row['current-tagged'] ?? row['tagged'])) member.add(`${row['bridge']}:${p}`);
-    for (const p of rosList(row['current-untagged'] ?? row['untagged'])) member.add(`${row['bridge']}:${p}`);
+    for (const p of rosList(row['current-tagged'] ?? row['tagged']))
+      member.add(`${row['bridge']}:${p}`);
+    for (const p of rosList(row['current-untagged'] ?? row['untagged']))
+      member.add(`${row['bridge']}:${p}`);
   }
 
   const out: ConfigFinding[] = [];
@@ -464,12 +477,12 @@ function rulePortInNoVlan(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'warning',
       title: `${name} is a member of no VLAN on VLAN-filtering bridge ${bridge}`,
       detail:
-        `${bridge} enforces the VLAN table on ingress, and ${name} appears in no entry — not `
-        + `tagged, not untagged, and not via a PVID-derived dynamic entry. Anything plugged into `
-        + `this port links up and is then dropped silently.`,
+        `${bridge} enforces the VLAN table on ingress, and ${name} appears in no entry — not ` +
+        `tagged, not untagged, and not via a PVID-derived dynamic entry. Anything plugged into ` +
+        `this port links up and is then dropped silently.`,
       remediation:
-        `Either add ${name} to the VLANs it should carry, or remove it from ${bridge} so the `
-        + `configuration reflects that it is unused.`,
+        `Either add ${name} to the VLANs it should carry, or remove it from ${bridge} so the ` +
+        `configuration reflects that it is unused.`,
       docUrl: VLAN_TABLE_DOC,
       objects: [name, bridge],
     });
@@ -499,8 +512,8 @@ function ruleDuplicateAddress(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'warning',
       title: `${ip} is configured on ${ifaces.length} interfaces`,
       detail:
-        `${ip} appears on ${ifaces.join(', ')}. Only one of them can answer for it, and which one `
-        + `depends on internal ordering rather than on anything in the configuration.`,
+        `${ip} appears on ${ifaces.join(', ')}. Only one of them can answer for it, and which one ` +
+        `depends on internal ordering rather than on anything in the configuration.`,
       remediation: `Remove the address from every interface except the one that should own it.`,
       docUrl: L2_DOC,
       objects: [ip, ...ifaces],
@@ -515,7 +528,8 @@ const SEVERITY_RANK: Record<FindingSeverity, number> = { critical: 0, warning: 1
 
 /** Run every rule against a snapshot. Pure — no device or database access. */
 
-const STP_DOC = 'https://help.mikrotik.com/docs/spaces/ROS/pages/328068/Bridging+and+Switching#BridgingandSwitching-SpanningTreeProtocol';
+const STP_DOC =
+  'https://help.mikrotik.com/docs/spaces/ROS/pages/328068/Bridging+and+Switching#BridgingandSwitching-SpanningTreeProtocol';
 
 /**
  * Spanning tree turned off on a bridge with more than one active port.
@@ -549,14 +563,14 @@ function ruleStpDisabled(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'warning',
       title: `Spanning tree is off on bridge ${name} (${ports.length} active ports)`,
       detail:
-        `protocol-mode is "none", so this bridge runs no spanning tree. Nothing is wrong `
-        + `while the cabling is correct — but a second path between two switches, whether `
-        + `patched deliberately or by accident, becomes a forwarding loop. A loop at layer 2 `
-        + `has no TTL to stop it: broadcasts multiply until the segment is unusable, and it `
-        + `usually takes the management path with it.`,
+        `protocol-mode is "none", so this bridge runs no spanning tree. Nothing is wrong ` +
+        `while the cabling is correct — but a second path between two switches, whether ` +
+        `patched deliberately or by accident, becomes a forwarding loop. A loop at layer 2 ` +
+        `has no TTL to stop it: broadcasts multiply until the segment is unusable, and it ` +
+        `usually takes the management path with it.`,
       remediation:
-        `Set a spanning tree protocol on the bridge: /interface/bridge set ${name} `
-        + `protocol-mode=rstp. Leave it off only where the bridge physically cannot loop.`,
+        `Set a spanning tree protocol on the bridge: /interface/bridge set ${name} ` +
+        `protocol-mode=rstp. Leave it off only where the bridge physically cannot loop.`,
       docUrl: STP_DOC,
       objects: [name, ...ports],
     });
@@ -582,10 +596,10 @@ function ruleStpLegacyMode(snap: DeviceSnapshot): ConfigFinding[] {
       severity: 'info' as FindingSeverity,
       title: `Bridge ${b['name']} runs classic STP rather than RSTP`,
       detail:
-        `Recovery from a failed link takes 30-50 seconds under classic STP, against `
-        + `well under a second with RSTP. Everything through this bridge is offline for that `
-        + `whole interval. RSTP falls back to classic automatically when it meets a neighbour `
-        + `that only speaks it, so changing this is safe even in a mixed network.`,
+        `Recovery from a failed link takes 30-50 seconds under classic STP, against ` +
+        `well under a second with RSTP. Everything through this bridge is offline for that ` +
+        `whole interval. RSTP falls back to classic automatically when it meets a neighbour ` +
+        `that only speaks it, so changing this is safe even in a mixed network.`,
       remediation: `/interface/bridge set ${b['name']} protocol-mode=rstp`,
       docUrl: STP_DOC,
       objects: [b['name']],
@@ -601,7 +615,11 @@ export interface StpFleetInput {
   fleetBridges: StpBridge[];
   devices: { id: number; name: string; device_type: string | null }[];
   /** Discovered neighbours of this device: port, managed far end if resolved, advertised capabilities. */
-  neighbours: { from_interface: string | null; to_device_id: number | null; neighbor_caps: string | null }[];
+  neighbours: {
+    from_interface: string | null;
+    to_device_id: number | null;
+    neighbor_caps: string | null;
+  }[];
   /** Every neighbour sighting, to name a root no managed device owns. */
   sightings: StpLink[];
 }
@@ -617,19 +635,35 @@ export interface StpFleetInput {
  * - An access point as root of a tree of several switches: a reboot or link
  *   flap there reconverges everything around the weakest box.
  */
-export function stpFleetRules(snap: DeviceSnapshot, input: StpFleetInput): { findings: ConfigFinding[]; replaces: string[] } {
+export function stpFleetRules(
+  snap: DeviceSnapshot,
+  input: StpFleetInput,
+): { findings: ConfigFinding[]; replaces: string[] } {
   const findings: ConfigFinding[] = [];
   const replaces: string[] = [];
-  const name = (id: number) => input.devices.find((d) => d.id === id)?.name.trim() ?? `device ${id}`;
+  const name = (id: number) =>
+    input.devices.find((d) => d.id === id)?.name.trim() ?? `device ${id}`;
 
   for (const b of snap.bridges) {
     const bridge = b['name'];
     if (!bridge || (b['protocol-mode'] || '').toLowerCase() !== 'none') continue;
-    const members = new Set(snap.bridgePorts.filter((p) => p['bridge'] === bridge && !isTrue(p['disabled'])).map((p) => p['interface']));
-    const switchPorts = [...new Set(input.neighbours
-      .filter((n) => n.from_interface && members.has(n.from_interface)
-        && (n.to_device_id != null || /bridge/i.test(n.neighbor_caps ?? '')))
-      .map((n) => n.from_interface!))];
+    const members = new Set(
+      snap.bridgePorts
+        .filter((p) => p['bridge'] === bridge && !isTrue(p['disabled']))
+        .map((p) => p['interface']),
+    );
+    const switchPorts = [
+      ...new Set(
+        input.neighbours
+          .filter(
+            (n) =>
+              n.from_interface &&
+              members.has(n.from_interface) &&
+              (n.to_device_id != null || /bridge/i.test(n.neighbor_caps ?? '')),
+          )
+          .map((n) => n.from_interface!),
+      ),
+    ];
     if (switchPorts.length < 2) continue;
     replaces.push(`stp-disabled:${bridge}`);
     findings.push({
@@ -638,16 +672,18 @@ export function stpFleetRules(snap: DeviceSnapshot, input: StpFleetInput): { fin
       severity: 'critical',
       title: `Spanning tree is off on bridge ${bridge}, which has switches on ${switchPorts.length} ports`,
       detail:
-        `protocol-mode is "none" and discovery sees switches on ${switchPorts.join(', ')}. If any two of them are `
-        + `also connected to each other, by design or by a stray patch cable, this bridge forwards in a loop: `
-        + `broadcasts multiply until the network is unusable, and nothing here will stop it.`,
+        `protocol-mode is "none" and discovery sees switches on ${switchPorts.join(', ')}. If any two of them are ` +
+        `also connected to each other, by design or by a stray patch cable, this bridge forwards in a loop: ` +
+        `broadcasts multiply until the network is unusable, and nothing here will stop it.`,
       remediation: `/interface/bridge set ${bridge} protocol-mode=rstp`,
       docUrl: STP_DOC,
       objects: [bridge, ...switchPorts],
     });
   }
 
-  const domains = stpDomains(input.fleetBridges, input.sightings).filter((d) => d.memberDeviceIds.length >= 2);
+  const domains = stpDomains(input.fleetBridges, input.sightings).filter(
+    (d) => d.memberDeviceIds.length >= 2,
+  );
   for (const d of domains) {
     if (!d.memberDeviceIds.includes(input.deviceId)) continue;
     const isOwner = d.ownerDeviceId === input.deviceId;
@@ -661,9 +697,9 @@ export function stpFleetRules(snap: DeviceSnapshot, input: StpFleetInput): { fin
           ? `${input.deviceName.trim()} is the spanning-tree root only because it has the lowest MAC address`
           : `This tree's root (${d.guessedName ?? d.rootBridgeId}) won on lowest MAC address, not by choice`,
         detail:
-          `Every bridge in this tree (with ${others.join(', ')}) has RouterOS's default priority, 0x8000, so the `
-          + `root was decided by which has the lowest MAC. Replace or add a switch and the root can move to it, `
-          + `and the whole tree reconverges around a box nobody chose.`,
+          `Every bridge in this tree (with ${others.join(', ')}) has RouterOS's default priority, 0x8000, so the ` +
+          `root was decided by which has the lowest MAC. Replace or add a switch and the root can move to it, ` +
+          `and the whole tree reconverges around a box nobody chose.`,
         remediation: isOwner
           ? `If this should be the root, make it so on purpose: /interface/bridge set [find] priority=0x4000`
           : 'Give the switch that should be root a lower priority, e.g. /interface/bridge set [find] priority=0x4000 on it.',
@@ -679,11 +715,11 @@ export function stpFleetRules(snap: DeviceSnapshot, input: StpFleetInput): { fin
         severity: 'warning',
         title: `An access point, ${input.deviceName.trim()}, is the spanning-tree root for ${d.memberDeviceIds.length - 1} other device(s)`,
         detail:
-          `Every switch in this tree routes its idea of the network through this AP. When it reboots or its link `
-          + `flaps, the tree reconverges around whichever switch has the next-best priority, and traffic stops while it does.`,
+          `Every switch in this tree routes its idea of the network through this AP. When it reboots or its link ` +
+          `flaps, the tree reconverges around whichever switch has the next-best priority, and traffic stops while it does.`,
         remediation:
-          `Give the core switch a lower priority than the AP (e.g. priority=0x4000 on the switch), or raise the AP's: `
-          + `/interface/bridge set [find] priority=0xF000`,
+          `Give the core switch a lower priority than the AP (e.g. priority=0x4000 on the switch), or raise the AP's: ` +
+          `/interface/bridge set [find] priority=0xF000`,
         docUrl: STP_DOC,
         objects: [d.rootBridgeId],
       });
@@ -718,9 +754,10 @@ function ruleDeviceMode(snap: DeviceSnapshot): ConfigFinding[] {
   const blocked = (key: string) => ['false', 'no'].includes(fields.get(key) ?? '');
   const mode = dm['mode'] || 'unknown';
   const out: ConfigFinding[] = [];
-  const how = `Changing device-mode needs physical access: run /system/device-mode/update with the `
-    + `feature set to yes, then press the device's reset or mode button (or power-cycle it) within `
-    + `the confirmation window.`;
+  const how =
+    `Changing device-mode needs physical access: run /system/device-mode/update with the ` +
+    `feature set to yes, then press the device's reset or mode button (or power-cycle it) within ` +
+    `the confirmation window.`;
 
   if (isTrue(dm['flagged'])) {
     out.push({
@@ -728,11 +765,13 @@ function ruleDeviceMode(snap: DeviceSnapshot): ConfigFinding[] {
       fingerprint: 'device-mode-flagged',
       severity: 'warning',
       title: 'RouterOS has flagged this device',
-      detail: `RouterOS flags a device when it finds configuration it considers suspicious, and `
-        + `then refuses to change device-mode until the flag is cleared. Something on this device `
-        + `triggered it, which is worth checking for compromise.`,
-      remediation: `Review the configuration for anything you didn't add, then clear the flag `
-        + `with /system/device-mode/update flagged=no and confirm at the device. ${how}`,
+      detail:
+        `RouterOS flags a device when it finds configuration it considers suspicious, and ` +
+        `then refuses to change device-mode until the flag is cleared. Something on this device ` +
+        `triggered it, which is worth checking for compromise.`,
+      remediation:
+        `Review the configuration for anything you didn't add, then clear the flag ` +
+        `with /system/device-mode/update flagged=no and confirm at the device. ${how}`,
       docUrl: DEVICE_MODE_DOC,
       objects: [],
     });
@@ -744,9 +783,10 @@ function ruleDeviceMode(snap: DeviceSnapshot): ConfigFinding[] {
       fingerprint: 'device-mode-no-scheduler',
       severity: 'warning',
       title: `Device-mode (${mode}) blocks the scheduler, so Change Guard can't protect changes`,
-      detail: `Change Guard arms its automatic undo as a scheduler entry on the device. With the `
-        + `scheduler blocked it can't, and a change that could cut off management is refused rather `
-        + `than made unprotected.`,
+      detail:
+        `Change Guard arms its automatic undo as a scheduler entry on the device. With the ` +
+        `scheduler blocked it can't, and a change that could cut off management is refused rather ` +
+        `than made unprotected.`,
       remediation: `Allow the scheduler: /system/device-mode/update scheduler=yes. ${how}`,
       docUrl: DEVICE_MODE_DOC,
       objects: ['scheduler'],
@@ -760,10 +800,12 @@ function ruleDeviceMode(snap: DeviceSnapshot): ConfigFinding[] {
       fingerprint: `device-mode-blocks-features:${off.map((f) => f.key).join(',')}`,
       severity: 'info',
       title: `Device-mode (${mode}) blocks ${off.map((f) => f.key).join(', ')}`,
-      detail: `These are switched off on the device, so ${off.map((f) => f.what).join(', ')} won't `
-        + `work here; RouterOS answers "not allowed by device-mode". That's fine if it's deliberate.`,
-      remediation: `Allow what you need, for example /system/device-mode/update `
-        + `${off.map((f) => `${f.key}=yes`).join(' ')}. ${how}`,
+      detail:
+        `These are switched off on the device, so ${off.map((f) => f.what).join(', ')} won't ` +
+        `work here; RouterOS answers "not allowed by device-mode". That's fine if it's deliberate.`,
+      remediation:
+        `Allow what you need, for example /system/device-mode/update ` +
+        `${off.map((f) => `${f.key}=yes`).join(' ')}. ${how}`,
       docUrl: DEVICE_MODE_DOC,
       objects: off.map((f) => f.key),
     });
@@ -782,26 +824,36 @@ function ruleDeviceMode(snap: DeviceSnapshot): ConfigFinding[] {
 export function ruleL3HwOffloadOff(snap: DeviceSnapshot): ConfigFinding[] {
   const chip = (snap.switches ?? []).find((s) => isL3HwChip(s['type']));
   if (!chip || isTrue(chip['l3-hw-offloading'])) return [];
-  const vlanNames = new Set(snap.vlanInterfaces.filter((v) => !isTrue(v['disabled'])).map((v) => v['name']));
-  const routed = [...new Set(snap.addresses
-    .filter((a) => !isTrue(a['disabled']) && vlanNames.has(a['interface']))
-    .map((a) => a['interface']))].sort();
+  const vlanNames = new Set(
+    snap.vlanInterfaces.filter((v) => !isTrue(v['disabled'])).map((v) => v['name']),
+  );
+  const routed = [
+    ...new Set(
+      snap.addresses
+        .filter((a) => !isTrue(a['disabled']) && vlanNames.has(a['interface']))
+        .map((a) => a['interface']),
+    ),
+  ].sort();
   if (routed.length < 2) return [];
-  return [{
-    rule: 'l3-hw-offload-off',
-    // Per chip, not per VLAN set: adding a VLAN shouldn't make it a new finding.
-    fingerprint: `l3-hw-offload-off:${chip['name'] || 'switch1'}`,
-    severity: 'info',
-    title: `Routing between ${routed.length} VLANs runs on the CPU`,
-    detail: `${routed.join(', ')} have addresses, so this device routes between them, and its switch chip ` +
-      `(${chip['type']}) can do that in hardware, but L3 hardware offloading is off. Every routed packet ` +
-      `goes through the CPU, at a fraction of the ports' speed.`,
-    remediation: 'Turn on L3 hardware offloading from the device\u2019s L3 offload card (VLANs tab). Routed traffic then ' +
-      'bypasses the CPU, so firewall filter and NAT rules no longer apply to it: check that nothing relies on them first. ' +
-      'Only VLAN interfaces on a hardware-offloaded bridge with VLAN filtering are routed in hardware.',
-    objects: [chip['name'] || 'switch1', ...routed],
-    docUrl: 'https://help.mikrotik.com/docs/spaces/ROS/pages/62390319/L3+Hardware+Offloading',
-  }];
+  return [
+    {
+      rule: 'l3-hw-offload-off',
+      // Per chip, not per VLAN set: adding a VLAN shouldn't make it a new finding.
+      fingerprint: `l3-hw-offload-off:${chip['name'] || 'switch1'}`,
+      severity: 'info',
+      title: `Routing between ${routed.length} VLANs runs on the CPU`,
+      detail:
+        `${routed.join(', ')} have addresses, so this device routes between them, and its switch chip ` +
+        `(${chip['type']}) can do that in hardware, but L3 hardware offloading is off. Every routed packet ` +
+        `goes through the CPU, at a fraction of the ports' speed.`,
+      remediation:
+        'Turn on L3 hardware offloading from the device\u2019s L3 offload card (VLANs tab). Routed traffic then ' +
+        'bypasses the CPU, so firewall filter and NAT rules no longer apply to it: check that nothing relies on them first. ' +
+        'Only VLAN interfaces on a hardware-offloaded bridge with VLAN filtering are routed in hardware.',
+      objects: [chip['name'] || 'switch1', ...routed],
+      docUrl: 'https://help.mikrotik.com/docs/spaces/ROS/pages/62390319/L3+Hardware+Offloading',
+    },
+  ];
 }
 
 /** A switch chip that supports L3 hardware offloading: Marvell Prestera 98DX. */
@@ -829,7 +881,7 @@ export function auditConfig(snap: DeviceSnapshot, device: GuardDevice): ConfigFi
     ...ruleL3HwOffloadOff(snap),
   ];
   return findings.sort(
-    (a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.rule.localeCompare(b.rule)
+    (a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.rule.localeCompare(b.rule),
   );
 }
 
@@ -849,17 +901,43 @@ export async function runConfigHealth(device: GuardDevice): Promise<ConfigHealth
   // Spanning-tree checks that need the rest of the fleet (#260).
   try {
     const [fleetBridges, devices, neighbours, sightings] = await Promise.all([
-      query<StpBridge>(`SELECT device_id, bridge_name, bridge_id, root_bridge, root_bridge_id, root_port, root_path_cost, designated_bridge_id, designated_port_id FROM device_bridges`),
-      query<{ id: number; name: string; device_type: string | null }>(`SELECT id, name, device_type FROM devices`),
-      query<{ from_interface: string | null; to_device_id: number | null; neighbor_caps: string | null }>(
-        `SELECT from_interface, to_device_id, neighbor_caps FROM topology_links WHERE from_device_id = $1`, [device.id]),
-      query<StpLink>(`SELECT DISTINCT NULL::int AS from_device_id, NULL::int AS to_device_id, neighbor_mac, neighbor_identity FROM topology_links WHERE neighbor_mac IS NOT NULL`),
+      query<StpBridge>(
+        `SELECT device_id, bridge_name, bridge_id, root_bridge, root_bridge_id, root_port, root_path_cost, designated_bridge_id, designated_port_id FROM device_bridges`,
+      ),
+      query<{ id: number; name: string; device_type: string | null }>(
+        `SELECT id, name, device_type FROM devices`,
+      ),
+      query<{
+        from_interface: string | null;
+        to_device_id: number | null;
+        neighbor_caps: string | null;
+      }>(
+        `SELECT from_interface, to_device_id, neighbor_caps FROM topology_links WHERE from_device_id = $1`,
+        [device.id],
+      ),
+      query<StpLink>(
+        `SELECT DISTINCT NULL::int AS from_device_id, NULL::int AS to_device_id, neighbor_mac, neighbor_identity FROM topology_links WHERE neighbor_mac IS NOT NULL`,
+      ),
     ]);
-    const fleet = stpFleetRules(snap, { deviceId: device.id, deviceName: device.name, fleetBridges, devices, neighbours, sightings });
-    findings = [...findings.filter((f) => !fleet.replaces.includes(f.fingerprint)), ...fleet.findings]
-      .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.rule.localeCompare(b.rule));
+    const fleet = stpFleetRules(snap, {
+      deviceId: device.id,
+      deviceName: device.name,
+      fleetBridges,
+      devices,
+      neighbours,
+      sightings,
+    });
+    findings = [
+      ...findings.filter((f) => !fleet.replaces.includes(f.fingerprint)),
+      ...fleet.findings,
+    ].sort(
+      (a, b) =>
+        SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.rule.localeCompare(b.rule),
+    );
   } catch (e) {
-    console.warn(`[config-health] spanning-tree fleet checks skipped for ${device.name}: ${(e as Error).message}`);
+    console.warn(
+      `[config-health] spanning-tree fleet checks skipped for ${device.name}: ${(e as Error).message}`,
+    );
   }
   const checkedAt = new Date();
 
@@ -870,14 +948,24 @@ export async function runConfigHealth(device: GuardDevice): Promise<ConfigHealth
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
        ON CONFLICT (device_id, fingerprint) DO UPDATE SET
          rule=$2, severity=$4, title=$5, detail=$6, remediation=$7, doc_url=$8, objects=$9, last_seen=NOW()`,
-      [device.id, f.rule, f.fingerprint, f.severity, f.title, f.detail, f.remediation, f.docUrl, f.objects]
+      [
+        device.id,
+        f.rule,
+        f.fingerprint,
+        f.severity,
+        f.title,
+        f.detail,
+        f.remediation,
+        f.docUrl,
+        f.objects,
+      ],
     );
   }
 
   await query(
     `DELETE FROM device_config_findings
      WHERE device_id = $1 AND NOT (fingerprint = ANY($2::text[]))`,
-    [device.id, findings.map((f) => f.fingerprint)]
+    [device.id, findings.map((f) => f.fingerprint)],
   );
 
   await query(`UPDATE devices SET config_health_checked_at = NOW() WHERE id = $1`, [device.id]);

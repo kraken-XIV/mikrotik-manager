@@ -2,9 +2,30 @@ import NumberSetting from '../components/settings/NumberSetting';
 import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Settings, Users, Key, Plus, Trash2, CheckCircle, AlertCircle, Pencil, X,
-  ShieldCheck, ShieldAlert, RefreshCw, Upload, Lock, Bell, Send, ClipboardList, Zap, LogIn,
-  Activity, Moon, Globe, HardDrive } from 'lucide-react';
+  Settings,
+  Users,
+  Key,
+  Plus,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+  Pencil,
+  X,
+  ShieldCheck,
+  ShieldAlert,
+  RefreshCw,
+  Upload,
+  Lock,
+  Bell,
+  Send,
+  ClipboardList,
+  Zap,
+  LogIn,
+  Activity,
+  Moon,
+  Globe,
+  HardDrive,
+} from 'lucide-react';
 import { settingsApi, authApi, certApi, alertsApi, auditLogApi, tagsApi } from '../services/api';
 import { docsUrl } from '../version';
 import MaintenanceWindowsCard from '../components/settings/MaintenanceWindowsCard';
@@ -14,7 +35,11 @@ import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import type { User, UserRole } from '../types';
 import {
-  parseBackupCron, scheduleToCron, describeBackupSchedule, WEEKDAY_NAMES, ordinal,
+  parseBackupCron,
+  scheduleToCron,
+  describeBackupSchedule,
+  WEEKDAY_NAMES,
+  ordinal,
   type BackupFrequency,
 } from '../utils/backupSchedule';
 import clsx from 'clsx';
@@ -28,12 +53,27 @@ import EncryptionKeyCard from '../components/settings/EncryptionKeyCard';
 import OidcSettings from '../components/settings/OidcSettings';
 import PlatformBackupSettings from '../components/settings/PlatformBackupSettings';
 import { useIsSiteScoped } from '../hooks/useCanWrite';
-import SiteAccessDialog, { type UserSiteRole, type UserGroupRole } from '../components/settings/SiteAccessDialog';
+import SiteAccessDialog, {
+  type UserSiteRole,
+  type UserGroupRole,
+} from '../components/settings/SiteAccessDialog';
 
 const ROLE_META: Record<UserRole, { label: string; color: string; desc: string }> = {
-  admin:    { label: 'Admin',    color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',    desc: 'Full access including user management' },
-  operator: { label: 'Operator', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', desc: 'Manage devices and configs, no user admin' },
-  viewer:   { label: 'Viewer',   color: 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300',   desc: 'Read-only access' },
+  admin: {
+    label: 'Admin',
+    color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    desc: 'Full access including user management',
+  },
+  operator: {
+    label: 'Operator',
+    color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+    desc: 'Manage devices and configs, no user admin',
+  },
+  viewer: {
+    label: 'Viewer',
+    color: 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300',
+    desc: 'Read-only access',
+  },
 };
 
 function RoleBadge({ role }: { role: string }) {
@@ -68,7 +108,8 @@ export default function SettingsPage() {
   // on the default showed its backups scheduled in "Africa/Abidjan". Right only
   // because Abidjan also sits at UTC+0.
   const timezoneOptions = useMemo<string[]>(() => {
-    const supported = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+    const supported = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
+      .supportedValuesOf;
     let zones: string[] = [];
     try {
       zones = supported ? supported('timeZone') : [];
@@ -78,11 +119,30 @@ export default function SettingsPage() {
     return ['UTC', ...zones.filter((z) => z !== 'UTC')];
   }, []);
   const browserTimezone = useMemo(() => {
-    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return ''; }
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return '';
+    }
   }, []);
 
   const siteScoped = useIsSiteScoped();
-  const [activeTab, setActiveTab] = useState<'general' | 'users' | 'sso' | 'security' | 'certificate' | 'alerting' | 'audit' | 'tags' | 'maintenance' | 'automation' | 'poller' | 'darksite' | 'sshkeys' | 'platformbackup'>(siteScoped ? 'security' : 'general');
+  const [activeTab, setActiveTab] = useState<
+    | 'general'
+    | 'users'
+    | 'sso'
+    | 'security'
+    | 'certificate'
+    | 'alerting'
+    | 'audit'
+    | 'tags'
+    | 'maintenance'
+    | 'automation'
+    | 'poller'
+    | 'darksite'
+    | 'sshkeys'
+    | 'platformbackup'
+  >(siteScoped ? 'security' : 'general');
   const [auditSearch, setAuditSearch] = useState('');
   const [auditPage, setAuditPage] = useState(1);
   const [newTagName, setNewTagName] = useState('');
@@ -107,14 +167,20 @@ export default function SettingsPage() {
     enabled: isAdmin && !siteScoped,
   });
 
-  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'viewer' as UserRole });
+  const [newUser, setNewUser] = useState({
+    username: '',
+    password: '',
+    role: 'viewer' as UserRole,
+  });
   const [userError, setUserError] = useState('');
   const [userSuccess, setUserSuccess] = useState('');
   const [editUser, setEditUser] = useState<EditUserState | null>(null);
   // Per-site access (P1-7): the users list returns each account's site roles.
   const [accessUser, setAccessUser] = useState<User | null>(null);
-  const siteRolesOf = (u: User): UserSiteRole[] => (u as User & { site_roles?: UserSiteRole[] }).site_roles ?? [];
-  const groupRolesOf = (u: User): UserGroupRole[] => (u as User & { group_roles?: UserGroupRole[] }).group_roles ?? [];
+  const siteRolesOf = (u: User): UserSiteRole[] =>
+    (u as User & { site_roles?: UserSiteRole[] }).site_roles ?? [];
+  const groupRolesOf = (u: User): UserGroupRole[] =>
+    (u as User & { group_roles?: UserGroupRole[] }).group_roles ?? [];
   const isLimited = (u: User) => siteRolesOf(u).length > 0 || groupRolesOf(u).length > 0;
   const [editError, setEditError] = useState('');
 
@@ -174,7 +240,11 @@ export default function SettingsPage() {
   const [pwSuccess, setPwSuccess] = useState('');
 
   // ─── TOTP / 2FA ────────────────────────────────────────────────────────────
-  const [totpSetupData, setTotpSetupData] = useState<{ secret: string; uri: string; qr: string } | null>(null);
+  const [totpSetupData, setTotpSetupData] = useState<{
+    secret: string;
+    uri: string;
+    qr: string;
+  } | null>(null);
   const [totpConfirmCode, setTotpConfirmCode] = useState('');
   const [totpSetupPassword, setTotpSetupPassword] = useState('');
   const [totpDisablePassword, setTotpDisablePassword] = useState('');
@@ -189,7 +259,12 @@ export default function SettingsPage() {
 
   const startTotpSetupMutation = useMutation({
     mutationFn: () => authApi.totpSetup(totpSetupPassword),
-    onSuccess: (res) => { setTotpSetupData(res.data); setTotpConfirmCode(''); setTotpSetupPassword(''); setTotpError(''); },
+    onSuccess: (res) => {
+      setTotpSetupData(res.data);
+      setTotpConfirmCode('');
+      setTotpSetupPassword('');
+      setTotpError('');
+    },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setTotpError(msg || 'Failed to start TOTP setup');
@@ -291,7 +366,6 @@ export default function SettingsPage() {
       reader.readAsText(file);
     });
 
-
   // ─── Tags ─────────────────────────────────────────────────────────────────
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
@@ -317,7 +391,10 @@ export default function SettingsPage() {
 
   const { data: auditData } = useQuery({
     queryKey: ['audit-log', auditPage, auditSearch],
-    queryFn: () => auditLogApi.list({ page: auditPage, limit: 50, search: auditSearch || undefined }).then((r) => r.data),
+    queryFn: () =>
+      auditLogApi
+        .list({ page: auditPage, limit: 50, search: auditSearch || undefined })
+        .then((r) => r.data),
     enabled: activeTab === 'audit',
   });
   const auditPages = Math.max(1, Math.ceil((auditData?.total ?? 0) / 50));
@@ -358,7 +435,9 @@ export default function SettingsPage() {
   const [chModal, setChModal] = useState<{ mode: 'add' | 'edit'; id?: number } | null>(null);
   const [chForm, setChForm] = useState<ChannelFormState>(EMPTY_FORM);
   const [chError, setChError] = useState('');
-  const [chTestStatus, setChTestStatus] = useState<Record<number, 'idle' | 'testing' | 'ok' | 'err'>>({});
+  const [chTestStatus, setChTestStatus] = useState<
+    Record<number, 'idle' | 'testing' | 'ok' | 'err'>
+  >({});
   const [chTestMsg, setChTestMsg] = useState<Record<number, string>>({});
 
   const saveChannelMutation = useMutation({
@@ -391,7 +470,9 @@ export default function SettingsPage() {
       setChTestStatus((s) => ({ ...s, [id]: 'ok' }));
       setChTestMsg((s) => ({ ...s, [id]: 'Test message sent!' }));
     } catch (err) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Test failed';
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
+        'Test failed';
       setChTestStatus((s) => ({ ...s, [id]: 'err' }));
       setChTestMsg((s) => ({ ...s, [id]: msg }));
     }
@@ -415,12 +496,18 @@ export default function SettingsPage() {
     firmware_update_available: 'RouterOS update available',
     cve_active: 'Serious RouterOS CVE affects the fleet (exploited, critical or high)',
     wireguard_stale: 'WireGuard peer stale: no handshake for longer than the threshold (minutes)',
-    interface_errors: 'Interface errors: bad frames on a port, per minute averaged over 5 minutes (threshold)',
-    interface_flapping: 'Interface flapping: a port went down this many times in an hour (threshold)',
-    optic_degraded: "Optic light level: this many dB away from the port's usual level either way, past a receive limit below, or the module at 70 °C (threshold, dB)",
-    routing_peer_down: 'Routing peer down: a BGP session or OSPF neighbour that was up has been down this long (threshold, minutes)',
-    platform_backup_failed: 'Platform backup failed: a backup of MikroTik Manager itself failed or didn’t reach a destination',
-    device_cert_renewal_failed: 'Device certificate renewal failed: the manager couldn’t renew a certificate its CA issued to a device',
+    interface_errors:
+      'Interface errors: bad frames on a port, per minute averaged over 5 minutes (threshold)',
+    interface_flapping:
+      'Interface flapping: a port went down this many times in an hour (threshold)',
+    optic_degraded:
+      "Optic light level: this many dB away from the port's usual level either way, past a receive limit below, or the module at 70 °C (threshold, dB)",
+    routing_peer_down:
+      'Routing peer down: a BGP session or OSPF neighbour that was up has been down this long (threshold, minutes)',
+    platform_backup_failed:
+      'Platform backup failed: a backup of MikroTik Manager itself failed or didn’t reach a destination',
+    device_cert_renewal_failed:
+      'Device certificate renewal failed: the manager couldn’t renew a certificate its CA issued to a device',
   };
 
   const cfgStr = (key: string) => (chForm.config[key] as string) ?? '';
@@ -441,7 +528,9 @@ export default function SettingsPage() {
         { key: 'certificate' as const, label: 'Certificate', icon: Lock },
         ...(isAdmin ? [{ key: 'audit' as const, label: 'Audit Log', icon: ClipboardList }] : []),
         ...(isAdmin ? [{ key: 'poller' as const, label: 'Polling', icon: Activity }] : []),
-        ...(isAdmin ? [{ key: 'platformbackup' as const, label: 'Backup & Restore', icon: HardDrive }] : []),
+        ...(isAdmin
+          ? [{ key: 'platformbackup' as const, label: 'Backup & Restore', icon: HardDrive }]
+          : []),
         // Its own entry rather than a card inside General, where it sat six
         // cards down and was not found (#159).
         { key: 'darksite' as const, label: 'Dark Site Mode', icon: Moon },
@@ -449,9 +538,7 @@ export default function SettingsPage() {
     },
     {
       label: 'My Account',
-      tabs: [
-        { key: 'security' as const, label: 'My Password', icon: Key },
-      ],
+      tabs: [{ key: 'security' as const, label: 'My Password', icon: Key }],
     },
     {
       label: 'Fleet',
@@ -459,10 +546,12 @@ export default function SettingsPage() {
         ...(isAdmin ? [{ key: 'sshkeys' as const, label: 'SSH Keys', icon: Key }] : []),
         { key: 'alerting' as const, label: 'Alerting', icon: Bell },
         { key: 'automation' as const, label: 'Automation', icon: Zap },
-        ...(isAdmin ? [
-          { key: 'tags' as const, label: 'Tags', icon: ShieldCheck },
-          { key: 'maintenance' as const, label: 'Maintenance', icon: ShieldAlert },
-        ] : []),
+        ...(isAdmin
+          ? [
+              { key: 'tags' as const, label: 'Tags', icon: ShieldCheck },
+              { key: 'maintenance' as const, label: 'Maintenance', icon: ShieldAlert },
+            ]
+          : []),
       ],
     },
   ];
@@ -474,7 +563,9 @@ export default function SettingsPage() {
     staleTime: 300_000,
   });
   const passwordLogin = loginHints?.password_login !== false;
-  const visibleGroups = passwordLogin ? allTabGroups : allTabGroups.filter((g) => g.label !== 'My Account');
+  const visibleGroups = passwordLogin
+    ? allTabGroups
+    : allTabGroups.filter((g) => g.label !== 'My Account');
   const tabGroups = siteScoped
     ? visibleGroups.filter((g) => g.label === 'My Account')
     : visibleGroups;
@@ -498,7 +589,9 @@ export default function SettingsPage() {
           {tabGroups.map((group) => (
             <optgroup key={group.label} label={group.label}>
               {group.tabs.map((tab) => (
-                <option key={tab.key} value={tab.key}>{tab.label}</option>
+                <option key={tab.key} value={tab.key}>
+                  {tab.label}
+                </option>
               ))}
             </optgroup>
           ))}
@@ -519,7 +612,7 @@ export default function SettingsPage() {
                       'px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-2 whitespace-nowrap text-left',
                       activeTab === tab.key
                         ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                        : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200'
+                        : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200',
                     )}
                   >
                     <tab.icon className="w-4 h-4 flex-shrink-0" />
@@ -532,1870 +625,2566 @@ export default function SettingsPage() {
         </nav>
 
         <div className="flex-1 min-w-0 w-full space-y-4">
-
-      {/* ── General ── */}
-      {activeTab === 'general' && (
-        // Two flowing columns on wide screens. A single 512px column of eight
-        // cards left most of a monitor empty and made this the longest scroll in
-        // the app. Columns rather than a grid, so a short card such as
-        // Appearance does not leave a hole the height of its taller neighbour.
-        <div className="max-w-6xl xl:columns-2 xl:gap-4 [&>*]:mb-4 [&>*]:break-inside-avoid">
-          {isAdmin && <EncryptionKeyCard />}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Appearance</h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-slate-300">Theme</label>
-                <p className="text-xs text-gray-400 dark:text-slate-500">Choose your preferred color scheme</p>
-              </div>
-              <div className="flex gap-2">
-                {(['light', 'dark'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTheme(t)}
-                    className={clsx(
-                      'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors capitalize',
-                      theme === t
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400'
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Polling Intervals</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              The defaults. A site (Sites → edit) or a device (its Overview tab) can override them.
-            </p>
-            <div className="space-y-3">
-              {[
-                { key: 'polling_fast_interval', label: 'Fast poll (interface stats, clients)', unit: 'sec' },
-                { key: 'polling_slow_interval', label: 'Slow poll (config, VLANs)', unit: 'sec' },
-                { key: 'polling_logs_interval', label: 'Log poll (events)', unit: 'sec' },
-              ].map(({ key, label, unit }) => (
-                <div key={key} className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</div>
-                    <div className="text-xs text-gray-400">{unit}</div>
-                  </div>
-                  <NumberSetting
-                    className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    value={settings[key] as number ?? ''}
-                    onCommit={(v) => updateSettingsMutation.mutate({ [key]: v })}
-                    min="10"
-                    step="10"
-                    disabled={!isAdmin}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Login Rate Limit */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Login Rate Limiting</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              Limits login attempts per IP address to protect against brute-force attacks.
-            </p>
-            <div className="space-y-3">
-              {[
-                { key: 'login_rate_limit_max', label: 'Max attempts', unit: 'attempts' },
-                { key: 'login_rate_limit_window_sec', label: 'Time window', unit: 'sec' },
-              ].map(({ key, label, unit }) => (
-                <div key={key} className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</div>
-                    <div className="text-xs text-gray-400">{unit}</div>
-                  </div>
-                  <NumberSetting
-                    className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    value={settings[key] as number ?? ''}
-                    onCommit={(v) => updateSettingsMutation.mutate({ [key]: v })}
-                    min="1"
-                    step="1"
-                    disabled={!isAdmin}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* MAC Scan */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">MAC Scan</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              Runs <code className="font-mono">/tool/mac-scan</code> on each switch to map MAC addresses to IP addresses, enriching the Clients section.
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Enable MAC scan</div>
-                </div>
-                <button
-                  onClick={() => isAdmin && updateSettingsMutation.mutate({ mac_scan_enabled: !settings['mac_scan_enabled'] })}
-                  disabled={!isAdmin}
-                  className={clsx(
-                    'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
-                    isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                    settings['mac_scan_enabled'] ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
-                  )}
-                >
-                  <span className={clsx(
-                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
-                    settings['mac_scan_enabled'] ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-                </button>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Scan interval</div>
-                  <div className="text-xs text-gray-400">seconds</div>
-                </div>
-                <NumberSetting
-                  className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  value={settings['mac_scan_interval'] as number ?? 300}
-                  onCommit={(v) => updateSettingsMutation.mutate({ mac_scan_interval: v })}
-                  min="60"
-                  step="30"
-                  disabled={!isAdmin || !settings['mac_scan_enabled']}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Configuration Snapshots */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Configuration Snapshots</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              Periodically captures each device&apos;s <code className="font-mono">/export</code> for the Config History / drift detection feature.
-              This runs <strong>over SSH</strong>, so it only executes on devices that have <strong>SSH credentials configured</strong> — devices without them are skipped (no connection is attempted).
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Enable config snapshots</div>
-                <button
-                  onClick={() => isAdmin && updateSettingsMutation.mutate({ config_snapshot_enabled: settings['config_snapshot_enabled'] === false })}
-                  disabled={!isAdmin}
-                  className={clsx(
-                    'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
-                    isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                    settings['config_snapshot_enabled'] !== false ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
-                  )}
-                >
-                  <span className={clsx(
-                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
-                    settings['config_snapshot_enabled'] !== false ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-                </button>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Snapshot interval</div>
-                  <div className="text-xs text-gray-400">minutes</div>
-                </div>
-                <NumberSetting
-                  className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  value={settings['config_snapshot_interval_min'] as number ?? 60}
-                  onCommit={(v) => updateSettingsMutation.mutate({ config_snapshot_interval_min: v })}
-                  min="15"
-                  step="15"
-                  disabled={!isAdmin || settings['config_snapshot_enabled'] === false}
-                />
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Retention</div>
-                  <div className="text-xs text-gray-400">snapshots kept per device</div>
-                </div>
-                <NumberSetting
-                  className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  value={settings['config_snapshot_retention'] as number ?? 30}
-                  onCommit={(v) => updateSettingsMutation.mutate({ config_snapshot_retention: v })}
-                  min="1"
-                  step="1"
-                  disabled={!isAdmin || settings['config_snapshot_enabled'] === false}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Change Guard */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Change Guard</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              Before a change that could cut the manager off, the device arms its own revert. If the manager
-              can&apos;t reach it afterwards, the device puts the change back by itself.
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Protect risky changes</div>
-                <button
-                  onClick={() => isAdmin && updateSettingsMutation.mutate({ change_guard_enabled: settings['change_guard_enabled'] === false })}
-                  disabled={!isAdmin}
-                  className={clsx(
-                    'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
-                    isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                    settings['change_guard_enabled'] !== false ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
-                  )}
-                >
-                  <span className={clsx(
-                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
-                    settings['change_guard_enabled'] !== false ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-                </button>
-              </div>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-700 dark:text-slate-300">How it reverts</div>
-                  <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5 max-w-md">
-                    {settings['change_guard_mode'] === 'script'
-                      ? 'Puts back only what the change touched, with no reboot. Works with a RouterOS login in the write group. Changes it can\u2019t cover (bulk commands, firmware, routing, WireGuard, wireless) use a full restore instead.'
-                      : 'Restores the whole configuration from a backup taken just before the change, and reboots. Needs the policy permission on the RouterOS login (the full group has it).'}
-                    {' '}<a className="underline" href={docsUrl('change-guard/#settings')} target="_blank" rel="noreferrer">More</a>
-                  </div>
-                </div>
-                <select
-                  className="input w-44 disabled:opacity-50 disabled:cursor-not-allowed"
-                  value={settings['change_guard_mode'] === 'script' ? 'script' : 'binary'}
-                  onChange={(e) => updateSettingsMutation.mutate({ change_guard_mode: e.target.value })}
-                  disabled={!isAdmin || settings['change_guard_enabled'] === false}
-                >
-                  <option value="binary">Full restore (reboots)</option>
-                  <option value="script">Targeted, no reboot</option>
-                </select>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Revert after</div>
-                  <div className="text-xs text-gray-400">seconds without contact (60 to 900)</div>
-                </div>
-                <NumberSetting
-                  className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  value={settings['change_guard_timeout_sec'] as number ?? 120}
-                  onCommit={(v) => updateSettingsMutation.mutate({ change_guard_timeout_sec: Math.min(900, Math.max(60, v)) })}
-                  min="60"
-                  max="900"
-                  step="10"
-                  disabled={!isAdmin || settings['change_guard_enabled'] === false}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Config Health */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Config Health</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              A standing audit of each device&apos;s live configuration for things RouterOS accepts but
-              that don&apos;t work, shown on the Operations dashboard and each device&apos;s Config Health
-              card. Read-only on the device.
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Run the audit automatically</div>
-                <button
-                  onClick={() => isAdmin && updateSettingsMutation.mutate({ config_health_enabled: settings['config_health_enabled'] === false })}
-                  disabled={!isAdmin}
-                  className={clsx(
-                    'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
-                    isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                    settings['config_health_enabled'] !== false ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
-                  )}
-                >
-                  <span className={clsx(
-                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
-                    settings['config_health_enabled'] !== false ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-                </button>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="text-sm font-medium text-gray-700 dark:text-slate-300">How often</div>
-                <select
-                  className="input w-36 disabled:opacity-50 disabled:cursor-not-allowed"
-                  value={String(settings['config_health_interval_min'] ?? 60)}
-                  onChange={(e) => updateSettingsMutation.mutate({ config_health_interval_min: Number(e.target.value) })}
-                  disabled={!isAdmin || settings['config_health_enabled'] === false}
-                >
-                  {[[15, 'Every 15 minutes'], [30, 'Every 30 minutes'], [60, 'Hourly'], [240, 'Every 4 hours'],
-                    [720, 'Every 12 hours'], [1440, 'Daily']].map(([v, label]) => (
-                    <option key={v} value={String(v)}>{label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Reverse DNS */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Reverse DNS Lookup</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              Performs PTR record lookups on client IP addresses to resolve hostnames. Runs every 5 minutes, filling in clients that have an IP but no hostname.
-            </p>
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Enable reverse DNS</div>
-              <button
-                onClick={() => isAdmin && updateSettingsMutation.mutate({ reverse_dns_enabled: !settings['reverse_dns_enabled'] })}
-                disabled={!isAdmin}
-                className={clsx(
-                  'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
-                  isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                  settings['reverse_dns_enabled'] ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
-                )}
-              >
-                <span className={clsx(
-                  'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
-                  settings['reverse_dns_enabled'] ? 'translate-x-5' : 'translate-x-0'
-                )} />
-              </button>
-            </div>
-          </div>
-
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Data Retention</h3>
-            <div className="space-y-3">
-              {[
-                { key: 'retention_events_days', label: 'Events retention', desc: 'Auto-delete event log entries older than this many days' },
-                { key: 'retention_proxy_days', label: 'Proxy log retention', desc: 'Auto-delete parsed proxy connection records older than this many days' },
-                { key: 'retention_clients_days', label: 'Client retention', desc: 'Auto-delete inactive client records not seen within this many days' },
-                { key: 'retention_scan_days', label: 'Scan retention', desc: 'Auto-delete spectral and nearby-AP scan results older than this many days' },
-                { key: 'retention_lte_history_days', label: 'LTE history retention', desc: 'Auto-delete LTE cell and band change history older than this many days' },
-                { key: 'retention_alert_history_days', label: 'Alert history retention', desc: 'Auto-delete the record of sent alerts older than this many days' },
-                { key: 'retention_audit_days', label: 'Audit log retention', desc: 'Auto-delete audit log entries older than this many days' },
-                { key: 'retention_availability_days', label: 'Outage history retention', desc: 'Auto-delete ended outages older than this many days (uptime reports look back up to 90)' },
-                { key: 'netflow_retention_days', label: 'Traffic detail retention', desc: 'Auto-delete per-client NetFlow time-series data older than this many days' },
-                { key: 'netflow_daily_retention_days', label: 'Traffic daily rollup retention', desc: 'Auto-delete per-client daily traffic totals older than this many days' },
-              ].map(({ key, label, desc }) => (
-                <div key={key} className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</div>
-                    <div className="text-xs text-gray-400">{desc}</div>
-                  </div>
-                  <NumberSetting
-                    className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    value={settings[key] as number ?? ''}
-                    onCommit={(v) => updateSettingsMutation.mutate({ [key]: v })}
-                    min="1"
-                    max="3650"
-                    disabled={!isAdmin}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Passwords and keys in backups (#172) */}
-          {(() => {
-            const on = settings['backup_include_secrets'] === true;
-            return (
+          {/* ── General ── */}
+          {activeTab === 'general' && (
+            // Two flowing columns on wide screens. A single 512px column of eight
+            // cards left most of a monitor empty and made this the longest scroll in
+            // the app. Columns rather than a grid, so a short card such as
+            // Appearance does not leave a hole the height of its taller neighbour.
+            <div className="max-w-6xl xl:columns-2 xl:gap-4 [&>*]:mb-4 [&>*]:break-inside-avoid">
+              {isAdmin && <EncryptionKeyCard />}
               <div className="card p-5">
-                <div className="flex items-start justify-between gap-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Appearance</h3>
+                <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Include passwords and keys in backups</h3>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">
-                      Without them, RouterOS v7 leaves Wi-Fi keys, VPN and PPP secrets, WireGuard private keys
-                      and SNMP communities out of a backup, so a restore can&apos;t bring a device back exactly.
-                      With them, those backups are encrypted on disk, marked in the Backups list, and only admins
-                      can view or download them. Config History never includes them. RouterOS v6 exports always
-                      include them, so v6 backups are handled the same way either way.
+                    <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                      Theme
+                    </label>
+                    <p className="text-xs text-gray-400 dark:text-slate-500">
+                      Choose your preferred color scheme
                     </p>
                   </div>
-                  <button
-                    onClick={() => isAdmin && updateSettingsMutation.mutate({ backup_include_secrets: !on })}
-                    disabled={!isAdmin}
-                    aria-label="Include passwords and keys in backups"
-                    className={clsx(
-                      'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
-                      isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                      on ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
-                    )}
-                  >
-                    <span className={clsx(
-                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
-                      on ? 'translate-x-5' : 'translate-x-0'
-                    )} />
-                  </button>
+                  <div className="flex gap-2">
+                    {(['light', 'dark'] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setTheme(t)}
+                        className={clsx(
+                          'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors capitalize',
+                          theme === t
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400',
+                        )}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            );
-          })()}
 
-          {/* Scheduled Backups */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Scheduled Backups</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              Automatically backs up all online devices on a schedule via SSH export.
-              Backups appear in the Backups section with type <code className="font-mono">scheduled</code>.
-            </p>
-            {(() => {
-              const enabled = !!settings['backup_schedule_enabled'];
-              const sched = parseBackupCron(settings['backup_schedule_cron'] as string);
-              const controlsDisabled = !isAdmin || !enabled;
-              const appTimezone = (settings['app_timezone'] as string) || 'UTC';
-              // Showing the clock in the chosen zone makes a wrong setting
-              // obvious immediately, rather than at 2am three days later.
-              let currentTimeInAppTz = '';
-              try {
-                currentTimeInAppTz = new Intl.DateTimeFormat(undefined, {
-                  timeZone: appTimezone, hour: '2-digit', minute: '2-digit', hour12: false,
-                }).format(new Date());
-              } catch { currentTimeInAppTz = 'unknown zone'; }
-              const apply = (next: typeof sched) =>
-                updateSettingsMutation.mutate({ backup_schedule_cron: scheduleToCron(next) });
-              return (
-                <div className="space-y-4">
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                  Polling Intervals
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  The defaults. A site (Sites → edit) or a device (its Overview tab) can override
+                  them.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    {
+                      key: 'polling_fast_interval',
+                      label: 'Fast poll (interface stats, clients)',
+                      unit: 'sec',
+                    },
+                    {
+                      key: 'polling_slow_interval',
+                      label: 'Slow poll (config, VLANs)',
+                      unit: 'sec',
+                    },
+                    { key: 'polling_logs_interval', label: 'Log poll (events)', unit: 'sec' },
+                  ].map(({ key, label, unit }) => (
+                    <div key={key} className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                          {label}
+                        </div>
+                        <div className="text-xs text-gray-400">{unit}</div>
+                      </div>
+                      <NumberSetting
+                        className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        value={(settings[key] as number) ?? ''}
+                        onCommit={(v) => updateSettingsMutation.mutate({ [key]: v })}
+                        min="10"
+                        step="10"
+                        disabled={!isAdmin}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Login Rate Limit */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                  Login Rate Limiting
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  Limits login attempts per IP address to protect against brute-force attacks.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    { key: 'login_rate_limit_max', label: 'Max attempts', unit: 'attempts' },
+                    { key: 'login_rate_limit_window_sec', label: 'Time window', unit: 'sec' },
+                  ].map(({ key, label, unit }) => (
+                    <div key={key} className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                          {label}
+                        </div>
+                        <div className="text-xs text-gray-400">{unit}</div>
+                      </div>
+                      <NumberSetting
+                        className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        value={(settings[key] as number) ?? ''}
+                        onCommit={(v) => updateSettingsMutation.mutate({ [key]: v })}
+                        min="1"
+                        step="1"
+                        disabled={!isAdmin}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* MAC Scan */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">MAC Scan</h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  Runs <code className="font-mono">/tool/mac-scan</code> on each switch to map MAC
+                  addresses to IP addresses, enriching the Clients section.
+                </p>
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Enable scheduled backups</div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                        Enable MAC scan
+                      </div>
+                    </div>
                     <button
-                      onClick={() => isAdmin && updateSettingsMutation.mutate({ backup_schedule_enabled: !enabled })}
+                      onClick={() =>
+                        isAdmin &&
+                        updateSettingsMutation.mutate({
+                          mac_scan_enabled: !settings['mac_scan_enabled'],
+                        })
+                      }
                       disabled={!isAdmin}
                       className={clsx(
                         'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                         isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                        enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
+                        settings['mac_scan_enabled']
+                          ? 'bg-blue-600'
+                          : 'bg-gray-300 dark:bg-slate-600',
                       )}
                     >
-                      <span className={clsx(
-                        'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
-                        enabled ? 'translate-x-5' : 'translate-x-0'
-                      )} />
+                      <span
+                        className={clsx(
+                          'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
+                          settings['mac_scan_enabled'] ? 'translate-x-5' : 'translate-x-0',
+                        )}
+                      />
                     </button>
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* Frequency */}
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Frequency</label>
-                      <select
-                        className="input w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        value={sched.frequency}
-                        disabled={controlsDisabled}
-                        onChange={(e) => apply({ ...sched, frequency: e.target.value as BackupFrequency })}
-                      >
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                      </select>
+                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                        Scan interval
+                      </div>
+                      <div className="text-xs text-gray-400">seconds</div>
                     </div>
+                    <NumberSetting
+                      className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      value={(settings['mac_scan_interval'] as number) ?? 300}
+                      onCommit={(v) => updateSettingsMutation.mutate({ mac_scan_interval: v })}
+                      min="60"
+                      step="30"
+                      disabled={!isAdmin || !settings['mac_scan_enabled']}
+                    />
+                  </div>
+                </div>
+              </div>
 
-                    {/* Day selector — weekly or monthly */}
-                    {sched.frequency === 'weekly' && (
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Day of week</label>
-                        <select
-                          className="input w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                          value={sched.weekday}
-                          disabled={controlsDisabled}
-                          onChange={(e) => apply({ ...sched, weekday: parseInt(e.target.value, 10) })}
-                        >
-                          {WEEKDAY_NAMES.map((name, i) => (
-                            <option key={i} value={i}>{name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    {sched.frequency === 'monthly' && (
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Day of month</label>
-                        <select
-                          className="input w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                          value={sched.dayOfMonth}
-                          disabled={controlsDisabled}
-                          onChange={(e) => apply({ ...sched, dayOfMonth: parseInt(e.target.value, 10) })}
-                        >
-                          {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                            <option key={d} value={d}>{ordinal(d)}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    {/* Time of day */}
+              {/* Configuration Snapshots */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                  Configuration Snapshots
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  Periodically captures each device&apos;s{' '}
+                  <code className="font-mono">/export</code> for the Config History / drift
+                  detection feature. This runs <strong>over SSH</strong>, so it only executes on
+                  devices that have <strong>SSH credentials configured</strong> — devices without
+                  them are skipped (no connection is attempted).
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                      Enable config snapshots
+                    </div>
+                    <button
+                      onClick={() =>
+                        isAdmin &&
+                        updateSettingsMutation.mutate({
+                          config_snapshot_enabled: settings['config_snapshot_enabled'] === false,
+                        })
+                      }
+                      disabled={!isAdmin}
+                      className={clsx(
+                        'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
+                        isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                        settings['config_snapshot_enabled'] !== false
+                          ? 'bg-blue-600'
+                          : 'bg-gray-300 dark:bg-slate-600',
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
+                          settings['config_snapshot_enabled'] !== false
+                            ? 'translate-x-5'
+                            : 'translate-x-0',
+                        )}
+                      />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Time</label>
-                      <input
-                        type="time"
-                        className="input w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        value={`${String(sched.hour).padStart(2, '0')}:${String(sched.minute).padStart(2, '0')}`}
-                        disabled={controlsDisabled}
-                        onChange={(e) => {
-                          const [h, m] = e.target.value.split(':').map((n) => parseInt(n, 10));
-                          if (Number.isNaN(h) || Number.isNaN(m)) return;
-                          apply({ ...sched, hour: h, minute: m });
-                        }}
+                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                        Snapshot interval
+                      </div>
+                      <div className="text-xs text-gray-400">minutes</div>
+                    </div>
+                    <NumberSetting
+                      className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      value={(settings['config_snapshot_interval_min'] as number) ?? 60}
+                      onCommit={(v) =>
+                        updateSettingsMutation.mutate({ config_snapshot_interval_min: v })
+                      }
+                      min="15"
+                      step="15"
+                      disabled={!isAdmin || settings['config_snapshot_enabled'] === false}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                        Retention
+                      </div>
+                      <div className="text-xs text-gray-400">snapshots kept per device</div>
+                    </div>
+                    <NumberSetting
+                      className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      value={(settings['config_snapshot_retention'] as number) ?? 30}
+                      onCommit={(v) =>
+                        updateSettingsMutation.mutate({ config_snapshot_retention: v })
+                      }
+                      min="1"
+                      step="1"
+                      disabled={!isAdmin || settings['config_snapshot_enabled'] === false}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Change Guard */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Change Guard</h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  Before a change that could cut the manager off, the device arms its own revert. If
+                  the manager can&apos;t reach it afterwards, the device puts the change back by
+                  itself.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                      Protect risky changes
+                    </div>
+                    <button
+                      onClick={() =>
+                        isAdmin &&
+                        updateSettingsMutation.mutate({
+                          change_guard_enabled: settings['change_guard_enabled'] === false,
+                        })
+                      }
+                      disabled={!isAdmin}
+                      className={clsx(
+                        'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
+                        isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                        settings['change_guard_enabled'] !== false
+                          ? 'bg-blue-600'
+                          : 'bg-gray-300 dark:bg-slate-600',
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
+                          settings['change_guard_enabled'] !== false
+                            ? 'translate-x-5'
+                            : 'translate-x-0',
+                        )}
+                      />
+                    </button>
+                  </div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                        How it reverts
+                      </div>
+                      <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5 max-w-md">
+                        {settings['change_guard_mode'] === 'script'
+                          ? 'Puts back only what the change touched, with no reboot. Works with a RouterOS login in the write group. Changes it can\u2019t cover (bulk commands, firmware, routing, WireGuard, wireless) use a full restore instead.'
+                          : 'Restores the whole configuration from a backup taken just before the change, and reboots. Needs the policy permission on the RouterOS login (the full group has it).'}{' '}
+                        <a
+                          className="underline"
+                          href={docsUrl('change-guard/#settings')}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          More
+                        </a>
+                      </div>
+                    </div>
+                    <select
+                      className="input w-44 disabled:opacity-50 disabled:cursor-not-allowed"
+                      value={settings['change_guard_mode'] === 'script' ? 'script' : 'binary'}
+                      onChange={(e) =>
+                        updateSettingsMutation.mutate({ change_guard_mode: e.target.value })
+                      }
+                      disabled={!isAdmin || settings['change_guard_enabled'] === false}
+                    >
+                      <option value="binary">Full restore (reboots)</option>
+                      <option value="script">Targeted, no reboot</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                        Revert after
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        seconds without contact (60 to 900)
+                      </div>
+                    </div>
+                    <NumberSetting
+                      className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      value={(settings['change_guard_timeout_sec'] as number) ?? 120}
+                      onCommit={(v) =>
+                        updateSettingsMutation.mutate({
+                          change_guard_timeout_sec: Math.min(900, Math.max(60, v)),
+                        })
+                      }
+                      min="60"
+                      max="900"
+                      step="10"
+                      disabled={!isAdmin || settings['change_guard_enabled'] === false}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Config Health */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Config Health</h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  A standing audit of each device&apos;s live configuration for things RouterOS
+                  accepts but that don&apos;t work, shown on the Operations dashboard and each
+                  device&apos;s Config Health card. Read-only on the device.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                      Run the audit automatically
+                    </div>
+                    <button
+                      onClick={() =>
+                        isAdmin &&
+                        updateSettingsMutation.mutate({
+                          config_health_enabled: settings['config_health_enabled'] === false,
+                        })
+                      }
+                      disabled={!isAdmin}
+                      className={clsx(
+                        'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
+                        isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                        settings['config_health_enabled'] !== false
+                          ? 'bg-blue-600'
+                          : 'bg-gray-300 dark:bg-slate-600',
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
+                          settings['config_health_enabled'] !== false
+                            ? 'translate-x-5'
+                            : 'translate-x-0',
+                        )}
+                      />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                      How often
+                    </div>
+                    <select
+                      className="input w-36 disabled:opacity-50 disabled:cursor-not-allowed"
+                      value={String(settings['config_health_interval_min'] ?? 60)}
+                      onChange={(e) =>
+                        updateSettingsMutation.mutate({
+                          config_health_interval_min: Number(e.target.value),
+                        })
+                      }
+                      disabled={!isAdmin || settings['config_health_enabled'] === false}
+                    >
+                      {[
+                        [15, 'Every 15 minutes'],
+                        [30, 'Every 30 minutes'],
+                        [60, 'Hourly'],
+                        [240, 'Every 4 hours'],
+                        [720, 'Every 12 hours'],
+                        [1440, 'Daily'],
+                      ].map(([v, label]) => (
+                        <option key={v} value={String(v)}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reverse DNS */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                  Reverse DNS Lookup
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  Performs PTR record lookups on client IP addresses to resolve hostnames. Runs
+                  every 5 minutes, filling in clients that have an IP but no hostname.
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                    Enable reverse DNS
+                  </div>
+                  <button
+                    onClick={() =>
+                      isAdmin &&
+                      updateSettingsMutation.mutate({
+                        reverse_dns_enabled: !settings['reverse_dns_enabled'],
+                      })
+                    }
+                    disabled={!isAdmin}
+                    className={clsx(
+                      'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
+                      isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                      settings['reverse_dns_enabled']
+                        ? 'bg-blue-600'
+                        : 'bg-gray-300 dark:bg-slate-600',
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
+                        settings['reverse_dns_enabled'] ? 'translate-x-5' : 'translate-x-0',
+                      )}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Data Retention</h3>
+                <div className="space-y-3">
+                  {[
+                    {
+                      key: 'retention_events_days',
+                      label: 'Events retention',
+                      desc: 'Auto-delete event log entries older than this many days',
+                    },
+                    {
+                      key: 'retention_proxy_days',
+                      label: 'Proxy log retention',
+                      desc: 'Auto-delete parsed proxy connection records older than this many days',
+                    },
+                    {
+                      key: 'retention_clients_days',
+                      label: 'Client retention',
+                      desc: 'Auto-delete inactive client records not seen within this many days',
+                    },
+                    {
+                      key: 'retention_scan_days',
+                      label: 'Scan retention',
+                      desc: 'Auto-delete spectral and nearby-AP scan results older than this many days',
+                    },
+                    {
+                      key: 'retention_lte_history_days',
+                      label: 'LTE history retention',
+                      desc: 'Auto-delete LTE cell and band change history older than this many days',
+                    },
+                    {
+                      key: 'retention_alert_history_days',
+                      label: 'Alert history retention',
+                      desc: 'Auto-delete the record of sent alerts older than this many days',
+                    },
+                    {
+                      key: 'retention_audit_days',
+                      label: 'Audit log retention',
+                      desc: 'Auto-delete audit log entries older than this many days',
+                    },
+                    {
+                      key: 'retention_availability_days',
+                      label: 'Outage history retention',
+                      desc: 'Auto-delete ended outages older than this many days (uptime reports look back up to 90)',
+                    },
+                    {
+                      key: 'netflow_retention_days',
+                      label: 'Traffic detail retention',
+                      desc: 'Auto-delete per-client NetFlow time-series data older than this many days',
+                    },
+                    {
+                      key: 'netflow_daily_retention_days',
+                      label: 'Traffic daily rollup retention',
+                      desc: 'Auto-delete per-client daily traffic totals older than this many days',
+                    },
+                  ].map(({ key, label, desc }) => (
+                    <div key={key} className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                          {label}
+                        </div>
+                        <div className="text-xs text-gray-400">{desc}</div>
+                      </div>
+                      <NumberSetting
+                        className="input w-24 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        value={(settings[key] as number) ?? ''}
+                        onCommit={(v) => updateSettingsMutation.mutate({ [key]: v })}
+                        min="1"
+                        max="3650"
+                        disabled={!isAdmin}
                       />
                     </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
 
-                  {/* Timezone belongs beside the schedule, because it is the
+              {/* Passwords and keys in backups (#172) */}
+              {(() => {
+                const on = settings['backup_include_secrets'] === true;
+                return (
+                  <div className="card p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                          Include passwords and keys in backups
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                          Without them, RouterOS v7 leaves Wi-Fi keys, VPN and PPP secrets,
+                          WireGuard private keys and SNMP communities out of a backup, so a restore
+                          can&apos;t bring a device back exactly. With them, those backups are
+                          encrypted on disk, marked in the Backups list, and only admins can view or
+                          download them. Config History never includes them. RouterOS v6 exports
+                          always include them, so v6 backups are handled the same way either way.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          isAdmin && updateSettingsMutation.mutate({ backup_include_secrets: !on })
+                        }
+                        disabled={!isAdmin}
+                        aria-label="Include passwords and keys in backups"
+                        className={clsx(
+                          'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
+                          isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                          on ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                        )}
+                      >
+                        <span
+                          className={clsx(
+                            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
+                            on ? 'translate-x-5' : 'translate-x-0',
+                          )}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Scheduled Backups */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                  Scheduled Backups
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  Automatically backs up all online devices on a schedule via SSH export. Backups
+                  appear in the Backups section with type{' '}
+                  <code className="font-mono">scheduled</code>.
+                </p>
+                {(() => {
+                  const enabled = !!settings['backup_schedule_enabled'];
+                  const sched = parseBackupCron(settings['backup_schedule_cron'] as string);
+                  const controlsDisabled = !isAdmin || !enabled;
+                  const appTimezone = (settings['app_timezone'] as string) || 'UTC';
+                  // Showing the clock in the chosen zone makes a wrong setting
+                  // obvious immediately, rather than at 2am three days later.
+                  let currentTimeInAppTz = '';
+                  try {
+                    currentTimeInAppTz = new Intl.DateTimeFormat(undefined, {
+                      timeZone: appTimezone,
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false,
+                    }).format(new Date());
+                  } catch {
+                    currentTimeInAppTz = 'unknown zone';
+                  }
+                  const apply = (next: typeof sched) =>
+                    updateSettingsMutation.mutate({ backup_schedule_cron: scheduleToCron(next) });
+                  return (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                          Enable scheduled backups
+                        </div>
+                        <button
+                          onClick={() =>
+                            isAdmin &&
+                            updateSettingsMutation.mutate({ backup_schedule_enabled: !enabled })
+                          }
+                          disabled={!isAdmin}
+                          className={clsx(
+                            'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
+                            isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                            enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                          )}
+                        >
+                          <span
+                            className={clsx(
+                              'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
+                              enabled ? 'translate-x-5' : 'translate-x-0',
+                            )}
+                          />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* Frequency */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
+                            Frequency
+                          </label>
+                          <select
+                            className="input w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            value={sched.frequency}
+                            disabled={controlsDisabled}
+                            onChange={(e) =>
+                              apply({ ...sched, frequency: e.target.value as BackupFrequency })
+                            }
+                          >
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                          </select>
+                        </div>
+
+                        {/* Day selector — weekly or monthly */}
+                        {sched.frequency === 'weekly' && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
+                              Day of week
+                            </label>
+                            <select
+                              className="input w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                              value={sched.weekday}
+                              disabled={controlsDisabled}
+                              onChange={(e) =>
+                                apply({ ...sched, weekday: parseInt(e.target.value, 10) })
+                              }
+                            >
+                              {WEEKDAY_NAMES.map((name, i) => (
+                                <option key={i} value={i}>
+                                  {name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        {sched.frequency === 'monthly' && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
+                              Day of month
+                            </label>
+                            <select
+                              className="input w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                              value={sched.dayOfMonth}
+                              disabled={controlsDisabled}
+                              onChange={(e) =>
+                                apply({ ...sched, dayOfMonth: parseInt(e.target.value, 10) })
+                              }
+                            >
+                              {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                                <option key={d} value={d}>
+                                  {ordinal(d)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Time of day */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
+                            Time
+                          </label>
+                          <input
+                            type="time"
+                            className="input w-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            value={`${String(sched.hour).padStart(2, '0')}:${String(sched.minute).padStart(2, '0')}`}
+                            disabled={controlsDisabled}
+                            onChange={(e) => {
+                              const [h, m] = e.target.value.split(':').map((n) => parseInt(n, 10));
+                              if (Number.isNaN(h) || Number.isNaN(m)) return;
+                              apply({ ...sched, hour: h, minute: m });
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Timezone belongs beside the schedule, because it is the
                       schedule's unit. Scheduled work used to be evaluated against
                       the container clock — UTC in the shipped image — so "02:00"
                       meant 02:00 UTC wherever you were (#117). */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="text-xs text-gray-500 dark:text-slate-400">Timezone</label>
-                    <select
-                      value={appTimezone}
-                      disabled={!isAdmin}
-                      onChange={(e) => updateSettingsMutation.mutate({ app_timezone: e.target.value })}
-                      className="input text-xs py-1 max-w-[260px]"
-                    >
-                      {!timezoneOptions.includes(appTimezone) && (
-                        <option value={appTimezone}>{appTimezone}</option>
-                      )}
-                      {timezoneOptions.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
-                    </select>
-                    {browserTimezone && browserTimezone !== appTimezone && (
-                      <button
-                        type="button"
-                        disabled={!isAdmin}
-                        onClick={() => updateSettingsMutation.mutate({ app_timezone: browserTimezone })}
-                        className="text-xs underline text-blue-600 dark:text-blue-400 disabled:opacity-50"
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="text-xs text-gray-500 dark:text-slate-400">
+                          Timezone
+                        </label>
+                        <select
+                          value={appTimezone}
+                          disabled={!isAdmin}
+                          onChange={(e) =>
+                            updateSettingsMutation.mutate({ app_timezone: e.target.value })
+                          }
+                          className="input text-xs py-1 max-w-[260px]"
+                        >
+                          {!timezoneOptions.includes(appTimezone) && (
+                            <option value={appTimezone}>{appTimezone}</option>
+                          )}
+                          {timezoneOptions.map((tz) => (
+                            <option key={tz} value={tz}>
+                              {tz}
+                            </option>
+                          ))}
+                        </select>
+                        {browserTimezone && browserTimezone !== appTimezone && (
+                          <button
+                            type="button"
+                            disabled={!isAdmin}
+                            onClick={() =>
+                              updateSettingsMutation.mutate({ app_timezone: browserTimezone })
+                            }
+                            className="text-xs underline text-blue-600 dark:text-blue-400 disabled:opacity-50"
+                          >
+                            Use {browserTimezone}
+                          </button>
+                        )}
+                      </div>
+
+                      <p
+                        className={clsx(
+                          'text-xs',
+                          enabled
+                            ? 'text-gray-500 dark:text-slate-400'
+                            : 'text-gray-400 dark:text-slate-600',
+                        )}
                       >
-                        Use {browserTimezone}
-                      </button>
-                    )}
-                  </div>
-
-                  <p className={clsx('text-xs', enabled ? 'text-gray-500 dark:text-slate-400' : 'text-gray-400 dark:text-slate-600')}>
-                    {enabled
-                      ? <>Runs <span className="font-medium text-gray-700 dark:text-slate-300">{describeBackupSchedule(sched).toLowerCase()}</span>{' '}
-                          in <span className="font-medium text-gray-700 dark:text-slate-300">{appTimezone}</span>
-                          {' '}(currently {currentTimeInAppTz}).</>
-                      : 'Enable to choose a backup schedule.'}
-                  </p>
-                  {sched.frequency === 'monthly' && (
-                    <p className="text-xs text-gray-400 dark:text-slate-500">
-                      Days are limited to 1–28 so the backup runs every month, including February.
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* ── Users ── */}
-      {activeTab === 'darksite' && (
-        <div className="max-w-2xl">
-          <DarkSiteCard isAdmin={isAdmin} />
-        </div>
-      )}
-
-      {activeTab === 'poller' && (
-        <div className="space-y-4">
-          <div className="card p-5">
-            <PollerHealthCard />
-          </div>
-          <PollModulesCard
-            settings={settings}
-            onChange={(data) => updateSettingsMutation.mutate(data)}
-            saving={updateSettingsMutation.isPending}
-          />
-          <FirmwareTimeoutCard
-            settings={settings}
-            onSave={(data) => updateSettingsMutation.mutate(data)}
-            saving={updateSettingsMutation.isPending}
-          />
-        </div>
-      )}
-
-      {activeTab === 'users' && (
-        <div className="space-y-4">
-          {accessUser && (
-            <SiteAccessDialog
-              user={{ ...accessUser, site_roles: siteRolesOf(accessUser), group_roles: groupRolesOf(accessUser) }}
-              isSelf={accessUser.id === user?.id}
-              onClose={() => setAccessUser(null)}
-            />
-          )}
-          {/* Role legend */}
-          <div className="card p-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-              Role Permissions
-            </h3>
-            <div className="grid grid-cols-3 gap-3">
-              {(Object.entries(ROLE_META) as [UserRole, typeof ROLE_META[UserRole]][]).map(([role, meta]) => (
-                <div key={role} className="flex items-start gap-2">
-                  <RoleBadge role={role} />
-                  <span className="text-xs text-gray-500 dark:text-slate-400">{meta.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Users table */}
-          <div className="card overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                System Users ({(users as User[]).length})
-              </h3>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-700">
-                  <th className="table-header px-4 py-2.5 text-left">Username</th>
-                  <th className="table-header px-4 py-2.5 text-left">Role</th>
-                  <th className="table-header px-4 py-2.5 text-left">Access</th>
-                  <th className="table-header px-4 py-2.5 text-left">Created</th>
-                  <th className="table-header px-4 py-2.5 w-20" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
-                {(users as User[]).map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
-                      <div className="flex items-center gap-2">
-                        {u.username}
-                        {u.id === user?.id && (
-                          <span className="text-xs text-blue-500">(you)</span>
-                        )}
-                        {u.auth_provider === 'oidc' && (
-                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">SSO</span>
-                        )}
-                      </div>
-                      {u.email && (
-                        <div className="text-xs text-gray-400 dark:text-slate-500 font-normal">{u.email}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      {/* A site-limited account's roles are per site; its own role column doesn't apply (P1-7). */}
-                      {isLimited(u) ? <span className="text-xs text-gray-500 dark:text-slate-400">per site</span> : <RoleBadge role={u.role} />}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-600 dark:text-slate-300">
-                      {isLimited(u)
-                        ? [...groupRolesOf(u).map((r) => `${r.group_name} (group): ${r.role}`), ...siteRolesOf(u).map((r) => `${r.site_name}: ${r.role}`)].join(', ')
-                        : 'Whole fleet'}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">
-                      {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      {isAdmin && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setEditError('');
-                              setEditUser({
-                                id: u.id,
-                                username: u.username,
-                                currentRole: u.role,
-                                role: u.role,
-                                password: '',
-                                confirmPassword: '',
-                              });
-                            }}
-                            className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
-                            title="Edit user"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setAccessUser(u)}
-                            className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
-                            title="Site access"
-                          >
-                            <Globe className="w-3.5 h-3.5" />
-                          </button>
-                          {u.id !== user?.id && (
-                            <button
-                              onClick={() => {
-                                if (confirm(`Delete user "${u.username}"?`)) {
-                                  deleteUserMutation.mutate(u.id);
-                                }
-                              }}
-                              className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
-                              title="Delete user"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Add user form */}
-          {isAdmin && <div className="card p-5 max-w-lg">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Add User</h3>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Username</label>
-                  <input
-                    className="input"
-                    value={newUser.username}
-                    onChange={(e) => setNewUser((f) => ({ ...f, username: e.target.value }))}
-                    placeholder="username"
-                  />
-                </div>
-                <div>
-                  <label className="label">Role</label>
-                  <select
-                    className="input"
-                    value={newUser.role}
-                    onChange={(e) => setNewUser((f) => ({ ...f, role: e.target.value as UserRole }))}
-                  >
-                    <option value="viewer">Viewer (read-only)</option>
-                    <option value="operator">Operator</option>
-                    <option value="admin">Admin (full access)</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="label">Password</label>
-                <input
-                  type="password"
-                  className="input"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser((f) => ({ ...f, password: e.target.value }))}
-                  autoComplete="new-password"
-                />
-              </div>
-
-              {userError && (
-                <div className="flex items-center gap-2 text-sm text-red-500">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {userError}
-                </div>
-              )}
-              {userSuccess && (
-                <div className="flex items-center gap-2 text-sm text-green-500">
-                  <CheckCircle className="w-4 h-4 flex-shrink-0" /> {userSuccess}
-                </div>
-              )}
-
-              <button
-                onClick={() => createUserMutation.mutate()}
-                disabled={!newUser.username || !newUser.password || createUserMutation.isPending}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add User
-              </button>
-            </div>
-          </div>}
-        </div>
-      )}
-
-      {/* ── Device Credential Presets ── */}
-
-      {activeTab === 'sshkeys' && isAdmin && <FleetSshKeysCard />}
-      {activeTab === 'platformbackup' && isAdmin && <PlatformBackupSettings />}
-
-      {/* ── My Password ── */}
-      {activeTab === 'security' && !passwordLogin && (
-        <div className="card p-5 max-w-2xl text-sm text-gray-600 dark:text-slate-300">
-          Password sign-in is turned off on this server, so accounts are managed through SSO.
-        </div>
-      )}
-      {activeTab === 'security' && passwordLogin && (
-        <div className="max-w-md space-y-4">
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Change My Password</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="label">Current Password</label>
-                <input
-                  type="password"
-                  className="input"
-                  value={pwForm.current}
-                  onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))}
-                  autoComplete="current-password"
-                />
-              </div>
-              <div>
-                <label className="label">New Password</label>
-                <input
-                  type="password"
-                  className="input"
-                  value={pwForm.next}
-                  onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
-                  autoComplete="new-password"
-                />
-              </div>
-              <div>
-                <label className="label">Confirm New Password</label>
-                <input
-                  type="password"
-                  className="input"
-                  value={pwForm.confirm}
-                  onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))}
-                  autoComplete="new-password"
-                />
-              </div>
-
-              {pwError && (
-                <div className="flex items-center gap-2 text-sm text-red-500">
-                  <AlertCircle className="w-4 h-4" /> {pwError}
-                </div>
-              )}
-              {pwSuccess && (
-                <div className="flex items-center gap-2 text-sm text-green-500">
-                  <CheckCircle className="w-4 h-4" /> {pwSuccess}
-                </div>
-              )}
-
-              <button
-                onClick={() => {
-                  if (pwForm.next !== pwForm.confirm) {
-                    setPwError('Passwords do not match');
-                    return;
-                  }
-                  changePasswordMutation.mutate();
-                }}
-                disabled={
-                  !pwForm.current || !pwForm.next || !pwForm.confirm || changePasswordMutation.isPending
-                }
-                className="btn-primary"
-              >
-                Change Password
-              </button>
-            </div>
-          </div>
-
-          {/* ── TOTP / 2FA ── */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-blue-500" />
-              Two-Factor Authentication
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-              Add an extra layer of security with a TOTP authenticator app (Google Authenticator, Authy, etc.)
-            </p>
-
-            {totpMsg && (
-              <div className="flex items-center gap-2 text-sm text-green-500 mb-3">
-                <CheckCircle className="w-4 h-4" /> {totpMsg}
-              </div>
-            )}
-            {totpError && (
-              <div className="flex items-center gap-2 text-sm text-red-500 mb-3">
-                <AlertCircle className="w-4 h-4" /> {totpError}
-              </div>
-            )}
-
-            {totpStatus?.totp_enabled ? (
-              /* Already enabled — show disable form */
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
-                  <ShieldCheck className="w-4 h-4" /> 2FA is currently enabled
-                </div>
-                <div>
-                  <label className="label">Enter your password to disable 2FA</label>
-                  <input
-                    type="password"
-                    className="input"
-                    value={totpDisablePassword}
-                    onChange={(e) => setTotpDisablePassword(e.target.value)}
-                    autoComplete="current-password"
-                  />
-                </div>
-                <button
-                  onClick={() => disableTotpMutation.mutate()}
-                  disabled={!totpDisablePassword || disableTotpMutation.isPending}
-                  className="btn-danger"
-                >
-                  Disable 2FA
-                </button>
-              </div>
-            ) : totpSetupData ? (
-              /* Setup in progress — show QR + confirm step */
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Scan this QR code with your authenticator app, then enter the 6-digit code to confirm.
-                </p>
-                <div className="flex justify-center">
-                  <img src={totpSetupData.qr} alt="TOTP QR code" className="w-44 h-44 rounded-lg border border-gray-200 dark:border-slate-700" />
-                </div>
-                <details className="text-xs text-gray-500 dark:text-gray-400">
-                  <summary className="cursor-pointer select-none">Can&apos;t scan? Enter secret manually</summary>
-                  <code className="mt-1 block font-mono break-all">{totpSetupData.secret}</code>
-                </details>
-                <div>
-                  <label className="label">6-digit verification code</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    className="input text-center tracking-widest font-mono text-lg"
-                    value={totpConfirmCode}
-                    onChange={(e) => setTotpConfirmCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="000000"
-                    autoComplete="one-time-code"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => confirmTotpMutation.mutate()}
-                    disabled={totpConfirmCode.length !== 6 || confirmTotpMutation.isPending}
-                    className="btn-primary"
-                  >
-                    Enable 2FA
-                  </button>
-                  <button
-                    onClick={() => { setTotpSetupData(null); setTotpConfirmCode(''); setTotpError(''); }}
-                    className="btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* Not enabled, not in setup */
-              <div className="space-y-3">
-                <div>
-                  <label className="label">Confirm your password to set up 2FA</label>
-                  <input
-                    type="password"
-                    className="input max-w-xs"
-                    value={totpSetupPassword}
-                    onChange={(e) => setTotpSetupPassword(e.target.value)}
-                    autoComplete="current-password"
-                  />
-                </div>
-              <button
-                onClick={() => startTotpSetupMutation.mutate()}
-                disabled={!totpSetupPassword || startTotpSetupMutation.isPending}
-                className="btn-primary"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                Set up 2FA
-              </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Certificate ── */}
-      {activeTab === 'certificate' && (
-        <div className="space-y-4 max-w-2xl">
-          {/* Current cert info */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-blue-500" />
-              Current Certificate
-            </h3>
-            {certLoading ? (
-              <p className="text-sm text-gray-400">Loading...</p>
-            ) : !certInfo?.exists ? (
-              <p className="text-sm text-amber-500">No certificate found.</p>
-            ) : (
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                  <div className="text-gray-500 dark:text-slate-400">Subject</div>
-                  <div className="font-medium text-gray-900 dark:text-white">{certInfo.subject}</div>
-
-                  <div className="text-gray-500 dark:text-slate-400">Issuer</div>
-                  <div className="text-gray-700 dark:text-slate-300 flex items-center gap-2">
-                    {certInfo.issuer}
-                    {certInfo.is_self_signed && (
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                        Self-Signed
-                      </span>
-                    )}
-                    {!certInfo.is_self_signed && (
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                        Trusted CA
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="text-gray-500 dark:text-slate-400">Valid From</div>
-                  <div className="text-gray-700 dark:text-slate-300">
-                    {certInfo.valid_from ? new Date(certInfo.valid_from).toLocaleDateString() : '—'}
-                  </div>
-
-                  <div className="text-gray-500 dark:text-slate-400">Expires</div>
-                  <div className={clsx(
-                    'font-medium',
-                    (certInfo.days_remaining ?? 0) < 30 ? 'text-red-500' :
-                    (certInfo.days_remaining ?? 0) < 90 ? 'text-amber-500' : 'text-green-600 dark:text-green-400'
-                  )}>
-                    {certInfo.valid_to ? new Date(certInfo.valid_to).toLocaleDateString() : '—'}
-                    {certInfo.days_remaining !== undefined && (
-                      <span className="ml-1 font-normal text-xs">
-                        ({certInfo.days_remaining > 0 ? `${certInfo.days_remaining} days remaining` : 'EXPIRED'})
-                      </span>
-                    )}
-                  </div>
-
-                  {certInfo.san && (
-                    <>
-                      <div className="text-gray-500 dark:text-slate-400">SANs</div>
-                      <div className="text-xs font-mono text-gray-600 dark:text-slate-400">{certInfo.san}</div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Regenerate self-signed */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-gray-500" />
-              Regenerate Self-Signed Certificate
-            </h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              Generates a new 10-year self-signed certificate. Use this to replace an expired self-signed cert
-              or to reset back to defaults. Nginx reloads automatically within a few seconds.
-            </p>
-            <button
-              onClick={() => {
-                if (confirm('Regenerate the self-signed certificate? The current certificate will be replaced and nginx will reload.')) {
-                  regenerateMutation.mutate();
-                }
-              }}
-              disabled={regenerateMutation.isPending || !isAdmin}
-              className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <RefreshCw className={clsx('w-4 h-4', regenerateMutation.isPending && 'animate-spin')} />
-              {regenerateMutation.isPending ? 'Generating...' : 'Regenerate Self-Signed'}
-            </button>
-          </div>
-
-          {/* Upload custom cert */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-              <Upload className="w-4 h-4 text-gray-500" />
-              Install Custom Certificate
-            </h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              Paste PEM-encoded certificate and private key, or use the file pickers to load from disk.
-              The certificate and key must match. Nginx reloads automatically within a few seconds.
-            </p>
-            <div className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="label mb-0">Certificate (PEM)</label>
-                  <button
-                    type="button"
-                    className="text-xs text-blue-500 hover:text-blue-600"
-                    onClick={() => certFileRef.current?.click()}
-                  >
-                    Load from file...
-                  </button>
-                  <input
-                    ref={certFileRef}
-                    type="file"
-                    accept=".pem,.crt,.cer"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const f = e.target.files?.[0];
-                      if (f) setCertUpload((s) => ({ ...s, certificate: '' }));
-                      if (f) {
-                        const text = await readFile(f);
-                        setCertUpload((s) => ({ ...s, certificate: text }));
-                      }
-                      e.target.value = '';
-                    }}
-                  />
-                </div>
-                <textarea
-                  className="input font-mono text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                  rows={6}
-                  value={certUpload.certificate}
-                  onChange={(e) => setCertUpload((s) => ({ ...s, certificate: e.target.value }))}
-                  placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-                  spellCheck={false}
-                  readOnly={!isAdmin}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="label mb-0">Private Key (PEM)</label>
-                  <button
-                    type="button"
-                    className="text-xs text-blue-500 hover:text-blue-600"
-                    onClick={() => keyFileRef.current?.click()}
-                  >
-                    Load from file...
-                  </button>
-                  <input
-                    ref={keyFileRef}
-                    type="file"
-                    accept=".pem,.key"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const f = e.target.files?.[0];
-                      if (f) {
-                        const text = await readFile(f);
-                        setCertUpload((s) => ({ ...s, private_key: text }));
-                      }
-                      e.target.value = '';
-                    }}
-                  />
-                </div>
-                <textarea
-                  className="input font-mono text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                  rows={6}
-                  value={certUpload.private_key}
-                  onChange={(e) => setCertUpload((s) => ({ ...s, private_key: e.target.value }))}
-                  placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
-                  spellCheck={false}
-                  readOnly={!isAdmin}
-                />
-              </div>
-
-              {certError && (
-                <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-600 dark:text-red-400">{certError}</p>
-                </div>
-              )}
-              {certSuccess && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  <p className="text-sm text-green-600 dark:text-green-400">{certSuccess}</p>
-                </div>
-              )}
-
-              <button
-                onClick={() => {
-                  setCertError('');
-                  uploadMutation.mutate();
-                }}
-                disabled={!certUpload.certificate || !certUpload.private_key || uploadMutation.isPending || !isAdmin}
-                className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Upload className="w-4 h-4" />
-                {uploadMutation.isPending ? 'Installing...' : 'Install Certificate'}
-              </button>
-            </div>
-          </div>
-
-          <div className="card p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              <strong>Note:</strong> HTTP (port 80) automatically redirects to HTTPS (port 443).
-              Browser warnings for self-signed certificates are normal and can be bypassed by accepting
-              the security exception. Use a CA-signed certificate to eliminate browser warnings.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Edit user modal ── */}
-      {editUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="card w-full max-w-sm mx-4 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Edit User: {editUser.username}
-              </h3>
-              <button onClick={() => setEditUser(null)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="label">Role</label>
-                <select
-                  className="input"
-                  value={editUser.role}
-                  onChange={(e) => setEditUser((s) => s && ({ ...s, role: e.target.value as UserRole }))}
-                  disabled={editUser.id === user?.id}
-                >
-                  <option value="viewer">Viewer (read-only)</option>
-                  <option value="operator">Operator</option>
-                  <option value="admin">Admin (full access)</option>
-                </select>
-                {editUser.id === user?.id && (
-                  <p className="text-xs text-gray-400 mt-1">Cannot change your own role</p>
-                )}
-              </div>
-
-              <div>
-                <label className="label">New Password (leave blank to keep current)</label>
-                <input
-                  type="password"
-                  className="input"
-                  value={editUser.password}
-                  onChange={(e) => setEditUser((s) => s && ({ ...s, password: e.target.value }))}
-                  autoComplete="new-password"
-                  placeholder="Leave blank to keep unchanged"
-                />
-              </div>
-              {editUser.password && (
-                <div>
-                  <label className="label">Confirm New Password</label>
-                  <input
-                    type="password"
-                    className="input"
-                    value={editUser.confirmPassword}
-                    onChange={(e) =>
-                      setEditUser((s) => s && ({ ...s, confirmPassword: e.target.value }))
-                    }
-                    autoComplete="new-password"
-                  />
-                </div>
-              )}
-
-              {editError && (
-                <div className="flex items-center gap-2 text-sm text-red-500">
-                  <AlertCircle className="w-4 h-4" /> {editError}
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button onClick={() => setEditUser(null)} className="btn-secondary">Cancel</button>
-                <button
-                  onClick={handleUpdateUser}
-                  disabled={updateUserMutation.isPending}
-                  className="btn-primary"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Alerting ── */}
-      {activeTab === 'alerting' && (
-        // Read-only for viewers: every change here needs write access (U10).
-        <fieldset disabled={!canWrite} className="space-y-4 min-w-0">
-
-          {/* Hardware health limit (#168) */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Hardware health</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-3">
-              A device shows as degraded when a power supply or fan reports a failure, or a temperature
-              reaches this limit. Readings can be ignored per device on its Overview tab.
-            </p>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
-              Temperature limit
-              <input
-                key={String(settings['health_temp_limit_c'] ?? 85)}
-                type="number"
-                min={40}
-                max={150}
-                className="input w-20 py-1"
-                defaultValue={Number(settings['health_temp_limit_c'] ?? 85)}
-                disabled={!isAdmin}
-                onBlur={(e) => {
-                  const v = Number(e.target.value);
-                  if (Number.isInteger(v) && v >= 40 && v <= 150 && v !== Number(settings['health_temp_limit_c'] ?? 85)) {
-                    updateSettingsMutation.mutate({ health_temp_limit_c: v });
-                  }
-                }}
-              />
-              °C
-            </label>
-          </div>
-
-          {/* Alert Rules */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Alert Rules</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-              Enable or disable each alert event. Threshold and cooldown apply where relevant.
-            </p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-gray-500 dark:text-slate-400 border-b border-gray-100 dark:border-slate-700">
-                    <th className="pb-2 pr-4 font-medium">Event</th>
-                    <th className="pb-2 pr-4 font-medium text-center">Enabled</th>
-                    <th className="pb-2 pr-4 font-medium text-center">Threshold</th>
-                    <th className="pb-2 font-medium text-center">Cooldown (min)</th>
-                  </tr>
-                </thead>
-                <tbody className="table-zebra">
-                  {alertRules.map((rule) => (
-                    <tr key={rule.event_type} className="border-b border-gray-50 dark:border-slate-800">
-                      <td className="py-2.5 pr-4 text-gray-700 dark:text-slate-300">
-                        {RULE_LABELS[rule.event_type] ?? rule.event_type}
-                      </td>
-                      <td className="py-2.5 pr-4 text-center">
-                        <button
-                          onClick={() => canWrite && updateRuleMutation.mutate({ type: rule.event_type, data: { enabled: !rule.enabled, threshold: rule.threshold, cooldown_min: rule.cooldown_min } })}
-                          disabled={!canWrite}
-                          className={clsx(
-                            'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors',
-                            canWrite ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                            rule.enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
-                          )}
-                        >
-                          <span className={clsx('inline-block h-4 w-4 transform rounded-full bg-white shadow transition', rule.enabled ? 'translate-x-4' : 'translate-x-0')} />
-                        </button>
-                      </td>
-                      <td className="py-2.5 pr-4 text-center">
-                        {['high_cpu', 'high_memory', 'cert_expiry', 'wireguard_stale', 'interface_errors', 'interface_flapping', 'optic_degraded', 'routing_peer_down'].includes(rule.event_type) ? (
-                          <NumberSetting
-                            className="input w-20 text-center py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                            value={rule.threshold ?? ''}
-                            onCommit={(v) => updateRuleMutation.mutate({ type: rule.event_type, data: { enabled: rule.enabled, threshold: v, cooldown_min: rule.cooldown_min } })}
-                            min="1"
-                            disabled={!canWrite}
-                          />
+                        {enabled ? (
+                          <>
+                            Runs{' '}
+                            <span className="font-medium text-gray-700 dark:text-slate-300">
+                              {describeBackupSchedule(sched).toLowerCase()}
+                            </span>{' '}
+                            in{' '}
+                            <span className="font-medium text-gray-700 dark:text-slate-300">
+                              {appTimezone}
+                            </span>{' '}
+                            (currently {currentTimeInAppTz}).
+                          </>
                         ) : (
-                          <span className="text-gray-300 dark:text-slate-600">—</span>
+                          'Enable to choose a backup schedule.'
                         )}
-                      </td>
-                      <td className="py-2.5 text-center">
-                        <NumberSetting
-                          className="input w-20 text-center py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                          value={rule.cooldown_min}
-                          onCommit={(v) => updateRuleMutation.mutate({ type: rule.event_type, data: { enabled: rule.enabled, threshold: rule.threshold, cooldown_min: v } })}
-                          min="1"
-                          disabled={!canWrite}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Optional fixed receive limits for optics (#249). */}
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 text-sm">
-              <p className="font-medium text-gray-900 dark:text-white">Optic receive limits</p>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 mb-2">
-                Optional. A port turns red, and alerts under &quot;Optic light level&quot;, when its receive light goes under
-                the low limit or over the high one. Leave empty for off. Each port is always also judged against its own usual
-                level. The right limits depend on the optics: for 100G optics around -8 and +2 dBm, but a 10G LR link runs fine
-                near -12 dBm, so set them for the optics you run.
-              </p>
-              <div className="flex flex-wrap items-center gap-4">
-                <DbmLimit label="Low limit" placeholder="-8" value={settings['optic_rx_low_dbm']} disabled={!isAdmin}
-                  onCommit={(v) => updateSettingsMutation.mutate({ optic_rx_low_dbm: v })} />
-                <DbmLimit label="High limit" placeholder="2" value={settings['optic_rx_high_dbm']} disabled={!isAdmin}
-                  onCommit={(v) => updateSettingsMutation.mutate({ optic_rx_high_dbm: v })} />
-              </div>
-            </div>
-          </div>
-
-          {/* Alert Channels */}
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Alert Channels</h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Where to send alerts — email, Slack, Discord, or Telegram.</p>
-              </div>
-              {canWrite && (
-                <button
-                  className="btn-primary text-xs flex items-center gap-1"
-                  onClick={() => { setChForm(EMPTY_FORM); setChError(''); setChModal({ mode: 'add' }); }}
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add Channel
-                </button>
-              )}
-            </div>
-
-            {alertChannels.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-slate-500">No channels configured yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {alertChannels.map((ch) => (
-                  <div key={ch.id} className="p-3 rounded-lg border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm text-gray-800 dark:text-white">{ch.name}</span>
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400 uppercase">{ch.type}</span>
-                          {!ch.enabled && <span className="text-xs text-amber-500">disabled</span>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button
-                          className={clsx(
-                            'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors',
-                            chTestStatus[ch.id] === 'ok'
-                              ? 'border-green-400 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
-                              : chTestStatus[ch.id] === 'err'
-                              ? 'border-red-400 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-                              : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400'
-                          )}
-                          onClick={() => testChannel(ch.id)}
-                          disabled={chTestStatus[ch.id] === 'testing'}
-                        >
-                          {chTestStatus[ch.id] === 'testing' ? (
-                            <RefreshCw className="w-3 h-3 animate-spin" />
-                          ) : chTestStatus[ch.id] === 'ok' ? (
-                            <CheckCircle className="w-3 h-3" />
-                          ) : chTestStatus[ch.id] === 'err' ? (
-                            <AlertCircle className="w-3 h-3" />
-                          ) : (
-                            <Send className="w-3 h-3" />
-                          )}
-                          {chTestStatus[ch.id] === 'testing' ? 'Testing…' : chTestStatus[ch.id] === 'ok' ? 'Sent!' : chTestStatus[ch.id] === 'err' ? 'Failed' : 'Test'}
-                        </button>
-                        {canWrite && (
-                          <button
-                            className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 hover:text-blue-500 transition-colors"
-                            title="Edit channel"
-                            onClick={() => {
-                              setChForm({ name: ch.name, type: ch.type, enabled: ch.enabled, config: ch.config });
-                              setChError('');
-                              setChModal({ mode: 'edit', id: ch.id });
-                            }}
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {canWrite && (
-                          <button
-                            className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 hover:text-red-500 transition-colors"
-                            title="Delete channel"
-                            onClick={() => { if (confirm(`Delete channel "${ch.name}"?`)) deleteChannelMutation.mutate(ch.id); }}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {chTestMsg[ch.id] && (
-                      <p className={clsx('text-xs pl-0.5', chTestStatus[ch.id] === 'err' ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
-                        {chTestMsg[ch.id]}
                       </p>
-                    )}
-                  </div>
-                ))}
+                      {sched.frequency === 'monthly' && (
+                        <p className="text-xs text-gray-400 dark:text-slate-500">
+                          Days are limited to 1–28 so the backup runs every month, including
+                          February.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Alert History */}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Recent Alert History</h3>
-            {alertHistory.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-slate-500">No alerts sent yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+          {/* ── Users ── */}
+          {activeTab === 'darksite' && (
+            <div className="max-w-2xl">
+              <DarkSiteCard isAdmin={isAdmin} />
+            </div>
+          )}
+
+          {activeTab === 'poller' && (
+            <div className="space-y-4">
+              <div className="card p-5">
+                <PollerHealthCard />
+              </div>
+              <PollModulesCard
+                settings={settings}
+                onChange={(data) => updateSettingsMutation.mutate(data)}
+                saving={updateSettingsMutation.isPending}
+              />
+              <FirmwareTimeoutCard
+                settings={settings}
+                onSave={(data) => updateSettingsMutation.mutate(data)}
+                saving={updateSettingsMutation.isPending}
+              />
+            </div>
+          )}
+
+          {activeTab === 'users' && (
+            <div className="space-y-4">
+              {accessUser && (
+                <SiteAccessDialog
+                  user={{
+                    ...accessUser,
+                    site_roles: siteRolesOf(accessUser),
+                    group_roles: groupRolesOf(accessUser),
+                  }}
+                  isSelf={accessUser.id === user?.id}
+                  onClose={() => setAccessUser(null)}
+                />
+              )}
+              {/* Role legend */}
+              <div className="card p-4">
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                  Role Permissions
+                </h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {(Object.entries(ROLE_META) as [UserRole, (typeof ROLE_META)[UserRole]][]).map(
+                    ([role, meta]) => (
+                      <div key={role} className="flex items-start gap-2">
+                        <RoleBadge role={role} />
+                        <span className="text-xs text-gray-500 dark:text-slate-400">
+                          {meta.desc}
+                        </span>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              {/* Users table */}
+              <div className="card overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                    System Users ({(users as User[]).length})
+                  </h3>
+                </div>
+                <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-gray-500 dark:text-slate-400 border-b border-gray-100 dark:border-slate-700">
-                      <th className="pb-2 pr-3 font-medium">Time</th>
-                      <th className="pb-2 pr-3 font-medium">Event</th>
-                      <th className="pb-2 pr-3 font-medium">Device</th>
-                      <th className="pb-2 pr-3 font-medium">Message</th>
-                      <th className="pb-2 font-medium">Channels</th>
+                    <tr className="border-b border-gray-100 dark:border-slate-700">
+                      <th className="table-header px-4 py-2.5 text-left">Username</th>
+                      <th className="table-header px-4 py-2.5 text-left">Role</th>
+                      <th className="table-header px-4 py-2.5 text-left">Access</th>
+                      <th className="table-header px-4 py-2.5 text-left">Created</th>
+                      <th className="table-header px-4 py-2.5 w-20" />
                     </tr>
                   </thead>
-                  <tbody className="table-zebra">
-                    {alertHistory.map((h) => (
-                      <tr key={h.id} className="border-b border-gray-50 dark:border-slate-800">
-                        <td className="py-2 pr-3 text-gray-400 whitespace-nowrap">
-                          {new Date(h.sent_at).toLocaleString()}
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+                    {(users as User[]).map((u) => (
+                      <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                        <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
+                          <div className="flex items-center gap-2">
+                            {u.username}
+                            {u.id === user?.id && (
+                              <span className="text-xs text-blue-500">(you)</span>
+                            )}
+                            {u.auth_provider === 'oidc' && (
+                              <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                SSO
+                              </span>
+                            )}
+                          </div>
+                          {u.email && (
+                            <div className="text-xs text-gray-400 dark:text-slate-500 font-normal">
+                              {u.email}
+                            </div>
+                          )}
                         </td>
-                        <td className="py-2 pr-3 font-mono text-gray-600 dark:text-slate-300 whitespace-nowrap">
-                          {h.event_type}
+                        <td className="px-4 py-2.5">
+                          {/* A site-limited account's roles are per site; its own role column doesn't apply (P1-7). */}
+                          {isLimited(u) ? (
+                            <span className="text-xs text-gray-500 dark:text-slate-400">
+                              per site
+                            </span>
+                          ) : (
+                            <RoleBadge role={u.role} />
+                          )}
                         </td>
-                        <td className="py-2 pr-3 text-gray-500 dark:text-slate-400">{h.device_name ?? '—'}</td>
-                        <td className="py-2 pr-3 text-gray-700 dark:text-slate-300 max-w-xs truncate">{h.message}</td>
-                        <td className="py-2 text-gray-500 dark:text-slate-400">
-                          {(h.channels_notified ?? []).join(', ') || '—'}
+                        <td className="px-4 py-2.5 text-xs text-gray-600 dark:text-slate-300">
+                          {isLimited(u)
+                            ? [
+                                ...groupRolesOf(u).map((r) => `${r.group_name} (group): ${r.role}`),
+                                ...siteRolesOf(u).map((r) => `${r.site_name}: ${r.role}`),
+                              ].join(', ')
+                            : 'Whole fleet'}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">
+                          {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {isAdmin && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditError('');
+                                  setEditUser({
+                                    id: u.id,
+                                    username: u.username,
+                                    currentRole: u.role,
+                                    role: u.role,
+                                    password: '',
+                                    confirmPassword: '',
+                                  });
+                                }}
+                                className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
+                                title="Edit user"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setAccessUser(u)}
+                                className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
+                                title="Site access"
+                              >
+                                <Globe className="w-3.5 h-3.5" />
+                              </button>
+                              {u.id !== user?.id && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Delete user "${u.username}"?`)) {
+                                      deleteUserMutation.mutate(u.id);
+                                    }
+                                  }}
+                                  className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
+                                  title="Delete user"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        </fieldset>
-      )}
 
-      {/* ── Channel Modal ── */}
-      {chModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                {chModal.mode === 'add' ? 'Add Alert Channel' : 'Edit Alert Channel'}
-              </h3>
-              <button onClick={() => setChModal(null)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700">
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
+              {/* Add user form */}
+              {isAdmin && (
+                <div className="card p-5 max-w-lg">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Add User</h3>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="label">Username</label>
+                        <input
+                          className="input"
+                          value={newUser.username}
+                          onChange={(e) => setNewUser((f) => ({ ...f, username: e.target.value }))}
+                          placeholder="username"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Role</label>
+                        <select
+                          className="input"
+                          value={newUser.role}
+                          onChange={(e) =>
+                            setNewUser((f) => ({ ...f, role: e.target.value as UserRole }))
+                          }
+                        >
+                          <option value="viewer">Viewer (read-only)</option>
+                          <option value="operator">Operator</option>
+                          <option value="admin">Admin (full access)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="label">Password</label>
+                      <input
+                        type="password"
+                        className="input"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser((f) => ({ ...f, password: e.target.value }))}
+                        autoComplete="new-password"
+                      />
+                    </div>
+
+                    {userError && (
+                      <div className="flex items-center gap-2 text-sm text-red-500">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" /> {userError}
+                      </div>
+                    )}
+                    {userSuccess && (
+                      <div className="flex items-center gap-2 text-sm text-green-500">
+                        <CheckCircle className="w-4 h-4 flex-shrink-0" /> {userSuccess}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => createUserMutation.mutate()}
+                      disabled={
+                        !newUser.username || !newUser.password || createUserMutation.isPending
+                      }
+                      className="btn-primary flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add User
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="p-4 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Name</label>
-                <input className="input w-full" value={chForm.name} onChange={(e) => setChForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. My Slack" />
-              </div>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Type</label>
-                  <select className="input w-full" value={chForm.type} onChange={(e) => setChForm((f) => ({ ...f, type: e.target.value as AlertChannel['type'], config: {} }))} disabled={chModal.mode === 'edit'}>
-                    {(['slack', 'discord', 'telegram', 'ntfy', 'gotify', 'email'] as const).map((t) => (
-                      <option key={t} value={t}>{t === 'ntfy' ? 'ntfy' : t.charAt(0).toUpperCase() + t.slice(1)}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-end pb-0.5 gap-2">
-                  <label className="text-xs font-medium text-gray-600 dark:text-slate-400">Enabled</label>
-                  <button
-                    type="button"
-                    onClick={() => setChForm((f) => ({ ...f, enabled: !f.enabled }))}
-                    className={clsx('relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors', chForm.enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600')}
-                  >
-                    <span className={clsx('inline-block h-4 w-4 transform rounded-full bg-white shadow transition', chForm.enabled ? 'translate-x-4' : 'translate-x-0')} />
-                  </button>
-                </div>
-              </div>
+          )}
 
-              {/* Type-specific config fields */}
-              {chForm.type === 'slack' || chForm.type === 'discord' ? (
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Webhook URL</label>
-                  <input className="input w-full font-mono text-xs" value={cfgStr('webhook_url')} onChange={(e) => setCfg('webhook_url', e.target.value)} placeholder="https://hooks.slack.com/..." />
-                </div>
-              ) : chForm.type === 'telegram' ? (
-                <>
+          {/* ── Device Credential Presets ── */}
+
+          {activeTab === 'sshkeys' && isAdmin && <FleetSshKeysCard />}
+          {activeTab === 'platformbackup' && isAdmin && <PlatformBackupSettings />}
+
+          {/* ── My Password ── */}
+          {activeTab === 'security' && !passwordLogin && (
+            <div className="card p-5 max-w-2xl text-sm text-gray-600 dark:text-slate-300">
+              Password sign-in is turned off on this server, so accounts are managed through SSO.
+            </div>
+          )}
+          {activeTab === 'security' && passwordLogin && (
+            <div className="max-w-md space-y-4">
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+                  Change My Password
+                </h3>
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Bot Token</label>
-                    <input className="input w-full font-mono text-xs" value={cfgStr('bot_token')} onChange={(e) => setCfg('bot_token', e.target.value)} placeholder="123456:ABC-DEF..." />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Chat ID</label>
-                    <input className="input w-full" value={cfgStr('chat_id')} onChange={(e) => setCfg('chat_id', e.target.value)} placeholder="-100123456789" />
-                  </div>
-                </>
-              ) : chForm.type === 'gotify' ? (
-                <>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Server URL</label>
-                    <input className="input w-full font-mono text-xs" value={cfgStr('server_url')} onChange={(e) => setCfg('server_url', e.target.value)} placeholder="https://gotify.example.com" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">App Token</label>
-                    <input type="password" className="input w-full font-mono text-xs" value={cfgStr('app_token')} onChange={(e) => setCfg('app_token', e.target.value)} placeholder="A1b2C3..." />
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
-                      In Gotify, create an application under Apps and copy its token. Outages are sent at priority 8, recoveries at 2.
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Manager URL (optional)</label>
-                    <input className="input w-full font-mono text-xs" value={cfgStr('click_url')} onChange={(e) => setCfg('click_url', e.target.value)} placeholder="https://mikrotik.example.com" />
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">Makes each notification open the device it refers to.</p>
-                  </div>
-                </>
-              ) : chForm.type === 'ntfy' ? (
-                <>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Server URL</label>
-                    <input className="input w-full font-mono text-xs" value={cfgStr('server_url')} onChange={(e) => setCfg('server_url', e.target.value)} placeholder="https://ntfy.sh" />
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">Leave blank for the public ntfy.sh, or point at your own instance.</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Topic</label>
-                    <input className="input w-full font-mono text-xs" value={cfgStr('topic')} onChange={(e) => setCfg('topic', e.target.value)} placeholder="mikrotik-alerts" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Access Token</label>
-                    <input type="password" className="input w-full font-mono text-xs" value={cfgStr('token')} onChange={(e) => setCfg('token', e.target.value)} placeholder="tk_..." />
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
-                      Preferred over a username and password. Anyone who can publish to an unprotected topic can spoof your alerts.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Username</label>
-                      <input className="input w-full" value={cfgStr('username')} onChange={(e) => setCfg('username', e.target.value)} placeholder="(optional)" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Password</label>
-                      <input type="password" className="input w-full" value={cfgStr('password')} onChange={(e) => setCfg('password', e.target.value)} placeholder="••••••••" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Manager URL (optional)</label>
-                    <input className="input w-full font-mono text-xs" value={cfgStr('click_url')} onChange={(e) => setCfg('click_url', e.target.value)} placeholder="https://mikrotik.example.com" />
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">Makes each notification tappable, opening the device it refers to.</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">SMTP Host</label>
-                      <input className="input w-full" value={cfgStr('smtp_host')} onChange={(e) => setCfg('smtp_host', e.target.value)} placeholder="smtp.example.com" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Port</label>
-                      <input type="number" className="input w-full" value={(chForm.config['smtp_port'] as number) ?? 587} onChange={(e) => setCfg('smtp_port', parseInt(e.target.value))} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">SMTP User</label>
-                      <input className="input w-full" value={cfgStr('smtp_user')} onChange={(e) => setCfg('smtp_user', e.target.value)} placeholder="user@example.com" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">SMTP Password</label>
-                      <input type="password" className="input w-full" value={cfgStr('smtp_pass')} onChange={(e) => setCfg('smtp_pass', e.target.value)} placeholder="••••••••" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">From Address</label>
-                    <input className="input w-full" value={cfgStr('from_address')} onChange={(e) => setCfg('from_address', e.target.value)} placeholder="alerts@example.com" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Recipients (comma-separated)</label>
+                    <label className="label">Current Password</label>
                     <input
-                      className="input w-full"
-                      value={(chForm.config['recipients'] as string[] | undefined)?.join(', ') ?? ''}
-                      onChange={(e) => setCfg('recipients', e.target.value.split(',').map((s) => s.trim()).filter(Boolean))}
-                      placeholder="admin@example.com, noc@example.com"
+                      type="password"
+                      className="input"
+                      value={pwForm.current}
+                      onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))}
+                      autoComplete="current-password"
                     />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="smtp_secure" checked={!!(chForm.config['smtp_secure'])} onChange={(e) => setCfg('smtp_secure', e.target.checked)} className="rounded" />
-                    <label htmlFor="smtp_secure" className="text-xs text-gray-600 dark:text-slate-400">Use TLS/SSL (port 465)</label>
+                  <div>
+                    <label className="label">New Password</label>
+                    <input
+                      type="password"
+                      className="input"
+                      value={pwForm.next}
+                      onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
+                      autoComplete="new-password"
+                    />
                   </div>
-                </>
-              )}
+                  <div>
+                    <label className="label">Confirm New Password</label>
+                    <input
+                      type="password"
+                      className="input"
+                      value={pwForm.confirm}
+                      onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))}
+                      autoComplete="new-password"
+                    />
+                  </div>
 
-              {chError && (
-                <div className="flex items-center gap-2 text-sm text-red-500">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {chError}
-                </div>
-              )}
-
-              <div className="flex items-center justify-between gap-3 pt-1">
-                <div className="flex items-center gap-2">
-                  {chModal?.mode === 'edit' && chModal.id != null && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => testChannel(chModal.id!)}
-                        disabled={chTestStatus[chModal.id!] === 'testing'}
-                        className={clsx(
-                          'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
-                          chTestStatus[chModal.id!] === 'ok'
-                            ? 'border-green-400 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
-                            : chTestStatus[chModal.id!] === 'err'
-                            ? 'border-red-400 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-                            : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600'
-                        )}
-                      >
-                        {chTestStatus[chModal.id!] === 'testing' ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        ) : chTestStatus[chModal.id!] === 'ok' ? (
-                          <CheckCircle className="w-3.5 h-3.5" />
-                        ) : chTestStatus[chModal.id!] === 'err' ? (
-                          <AlertCircle className="w-3.5 h-3.5" />
-                        ) : (
-                          <Send className="w-3.5 h-3.5" />
-                        )}
-                        {chTestStatus[chModal.id!] === 'testing' ? 'Testing…' : chTestStatus[chModal.id!] === 'ok' ? 'Sent!' : chTestStatus[chModal.id!] === 'err' ? 'Failed' : 'Send Test'}
-                      </button>
-                      {chTestMsg[chModal.id!] && (
-                        <span className={clsx('text-xs', chTestStatus[chModal.id!] === 'err' ? 'text-red-500' : 'text-green-600 dark:text-green-400')}>
-                          {chTestMsg[chModal.id!]}
-                        </span>
-                      )}
-                    </>
+                  {pwError && (
+                    <div className="flex items-center gap-2 text-sm text-red-500">
+                      <AlertCircle className="w-4 h-4" /> {pwError}
+                    </div>
                   )}
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setChModal(null)} className="btn-secondary">Cancel</button>
+                  {pwSuccess && (
+                    <div className="flex items-center gap-2 text-sm text-green-500">
+                      <CheckCircle className="w-4 h-4" /> {pwSuccess}
+                    </div>
+                  )}
+
                   <button
-                    onClick={() => saveChannelMutation.mutate()}
-                    disabled={!chForm.name || saveChannelMutation.isPending}
+                    onClick={() => {
+                      if (pwForm.next !== pwForm.confirm) {
+                        setPwError('Passwords do not match');
+                        return;
+                      }
+                      changePasswordMutation.mutate();
+                    }}
+                    disabled={
+                      !pwForm.current ||
+                      !pwForm.next ||
+                      !pwForm.confirm ||
+                      changePasswordMutation.isPending
+                    }
                     className="btn-primary"
                   >
-                    {saveChannelMutation.isPending ? 'Saving...' : 'Save Channel'}
+                    Change Password
                   </button>
                 </div>
               </div>
+
+              {/* ── TOTP / 2FA ── */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-500" />
+                  Two-Factor Authentication
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                  Add an extra layer of security with a TOTP authenticator app (Google
+                  Authenticator, Authy, etc.)
+                </p>
+
+                {totpMsg && (
+                  <div className="flex items-center gap-2 text-sm text-green-500 mb-3">
+                    <CheckCircle className="w-4 h-4" /> {totpMsg}
+                  </div>
+                )}
+                {totpError && (
+                  <div className="flex items-center gap-2 text-sm text-red-500 mb-3">
+                    <AlertCircle className="w-4 h-4" /> {totpError}
+                  </div>
+                )}
+
+                {totpStatus?.totp_enabled ? (
+                  /* Already enabled — show disable form */
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
+                      <ShieldCheck className="w-4 h-4" /> 2FA is currently enabled
+                    </div>
+                    <div>
+                      <label className="label">Enter your password to disable 2FA</label>
+                      <input
+                        type="password"
+                        className="input"
+                        value={totpDisablePassword}
+                        onChange={(e) => setTotpDisablePassword(e.target.value)}
+                        autoComplete="current-password"
+                      />
+                    </div>
+                    <button
+                      onClick={() => disableTotpMutation.mutate()}
+                      disabled={!totpDisablePassword || disableTotpMutation.isPending}
+                      className="btn-danger"
+                    >
+                      Disable 2FA
+                    </button>
+                  </div>
+                ) : totpSetupData ? (
+                  /* Setup in progress — show QR + confirm step */
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      Scan this QR code with your authenticator app, then enter the 6-digit code to
+                      confirm.
+                    </p>
+                    <div className="flex justify-center">
+                      <img
+                        src={totpSetupData.qr}
+                        alt="TOTP QR code"
+                        className="w-44 h-44 rounded-lg border border-gray-200 dark:border-slate-700"
+                      />
+                    </div>
+                    <details className="text-xs text-gray-500 dark:text-gray-400">
+                      <summary className="cursor-pointer select-none">
+                        Can&apos;t scan? Enter secret manually
+                      </summary>
+                      <code className="mt-1 block font-mono break-all">{totpSetupData.secret}</code>
+                    </details>
+                    <div>
+                      <label className="label">6-digit verification code</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        className="input text-center tracking-widest font-mono text-lg"
+                        value={totpConfirmCode}
+                        onChange={(e) =>
+                          setTotpConfirmCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+                        }
+                        placeholder="000000"
+                        autoComplete="one-time-code"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => confirmTotpMutation.mutate()}
+                        disabled={totpConfirmCode.length !== 6 || confirmTotpMutation.isPending}
+                        className="btn-primary"
+                      >
+                        Enable 2FA
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTotpSetupData(null);
+                          setTotpConfirmCode('');
+                          setTotpError('');
+                        }}
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Not enabled, not in setup */
+                  <div className="space-y-3">
+                    <div>
+                      <label className="label">Confirm your password to set up 2FA</label>
+                      <input
+                        type="password"
+                        className="input max-w-xs"
+                        value={totpSetupPassword}
+                        onChange={(e) => setTotpSetupPassword(e.target.value)}
+                        autoComplete="current-password"
+                      />
+                    </div>
+                    <button
+                      onClick={() => startTotpSetupMutation.mutate()}
+                      disabled={!totpSetupPassword || startTotpSetupMutation.isPending}
+                      className="btn-primary"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      Set up 2FA
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
-      {/* ── Automation (API tokens, webhooks, scheduled reports) ── */}
-      {activeTab === 'automation' && (
-        <AutomationSettings isAdmin={isAdmin} />
-      )}
-      {activeTab === 'sso' && (
-        <OidcSettings isAdmin={isAdmin} />
-      )}
-      {/* ── Tags ── */}
-      {activeTab === 'tags' && (
-        <div className="space-y-4">
-          <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Device Tags</h3>
-            {isAdmin && (
-              <div className="flex items-center gap-2 mb-4">
-                <input
-                  type="color"
-                  value={newTagColor}
-                  onChange={(e) => setNewTagColor(e.target.value)}
-                  className="w-8 h-8 rounded cursor-pointer border border-gray-300 dark:border-slate-600 p-0.5"
-                />
-                <input
-                  type="text"
-                  placeholder="Tag name…"
-                  value={newTagName}
-                  onChange={(e) => setNewTagName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && newTagName.trim() && createTagMutation.mutate()}
-                  className="input flex-1 text-sm"
-                />
+          )}
+
+          {/* ── Certificate ── */}
+          {activeTab === 'certificate' && (
+            <div className="space-y-4 max-w-2xl">
+              {/* Current cert info */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-500" />
+                  Current Certificate
+                </h3>
+                {certLoading ? (
+                  <p className="text-sm text-gray-400">Loading...</p>
+                ) : !certInfo?.exists ? (
+                  <p className="text-sm text-amber-500">No certificate found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                      <div className="text-gray-500 dark:text-slate-400">Subject</div>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {certInfo.subject}
+                      </div>
+
+                      <div className="text-gray-500 dark:text-slate-400">Issuer</div>
+                      <div className="text-gray-700 dark:text-slate-300 flex items-center gap-2">
+                        {certInfo.issuer}
+                        {certInfo.is_self_signed && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                            Self-Signed
+                          </span>
+                        )}
+                        {!certInfo.is_self_signed && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                            Trusted CA
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-gray-500 dark:text-slate-400">Valid From</div>
+                      <div className="text-gray-700 dark:text-slate-300">
+                        {certInfo.valid_from
+                          ? new Date(certInfo.valid_from).toLocaleDateString()
+                          : '—'}
+                      </div>
+
+                      <div className="text-gray-500 dark:text-slate-400">Expires</div>
+                      <div
+                        className={clsx(
+                          'font-medium',
+                          (certInfo.days_remaining ?? 0) < 30
+                            ? 'text-red-500'
+                            : (certInfo.days_remaining ?? 0) < 90
+                              ? 'text-amber-500'
+                              : 'text-green-600 dark:text-green-400',
+                        )}
+                      >
+                        {certInfo.valid_to ? new Date(certInfo.valid_to).toLocaleDateString() : '—'}
+                        {certInfo.days_remaining !== undefined && (
+                          <span className="ml-1 font-normal text-xs">
+                            (
+                            {certInfo.days_remaining > 0
+                              ? `${certInfo.days_remaining} days remaining`
+                              : 'EXPIRED'}
+                            )
+                          </span>
+                        )}
+                      </div>
+
+                      {certInfo.san && (
+                        <>
+                          <div className="text-gray-500 dark:text-slate-400">SANs</div>
+                          <div className="text-xs font-mono text-gray-600 dark:text-slate-400">
+                            {certInfo.san}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Regenerate self-signed */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 text-gray-500" />
+                  Regenerate Self-Signed Certificate
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  Generates a new 10-year self-signed certificate. Use this to replace an expired
+                  self-signed cert or to reset back to defaults. Nginx reloads automatically within
+                  a few seconds.
+                </p>
                 <button
-                  onClick={() => createTagMutation.mutate()}
-                  disabled={!newTagName.trim() || createTagMutation.isPending}
-                  className="btn-primary text-sm px-3 py-1.5"
+                  onClick={() => {
+                    if (
+                      confirm(
+                        'Regenerate the self-signed certificate? The current certificate will be replaced and nginx will reload.',
+                      )
+                    ) {
+                      regenerateMutation.mutate();
+                    }
+                  }}
+                  disabled={regenerateMutation.isPending || !isAdmin}
+                  className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Plus className="w-4 h-4" />
+                  <RefreshCw
+                    className={clsx('w-4 h-4', regenerateMutation.isPending && 'animate-spin')}
+                  />
+                  {regenerateMutation.isPending ? 'Generating...' : 'Regenerate Self-Signed'}
                 </button>
               </div>
-            )}
-            <div className="space-y-2">
-              {tags.map((tag) => (
-                <TagRow
-                  key={tag.id}
-                  tag={tag}
-                  canEdit={isAdmin}
-                  onDelete={(id) => { if (confirm('Delete this tag? It is removed from every device that has it.')) deleteTagMutation.mutate(id); }}
-                />
-              ))}
-              {tags.length === 0 && (
-                <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">No tags created yet</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* ── Maintenance Windows ── */}
-      {activeTab === 'maintenance' && (
-        <div className="space-y-4">
-          <MaintenanceWindowsCard isAdmin={isAdmin} timeZone={(settings['app_timezone'] as string) || 'UTC'} />
-        </div>
-      )}
-
-      {/* ── Audit Log ── */}
-      {activeTab === 'audit' && (
-        <div className="space-y-4">
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-blue-500" />
-                Audit Log
-              </h3>
-              <input
-                type="text"
-                placeholder="Search user, path, IP…"
-                value={auditSearch}
-                onChange={(e) => { setAuditSearch(e.target.value); setAuditPage(1); }}
-                className="input w-64 text-sm"
-              />
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
-                    <th className="pb-2 pr-4">Time</th>
-                    <th className="pb-2 pr-4">User</th>
-                    <th className="pb-2 pr-4">Action</th>
-                    <th className="pb-2 pr-4">Entity</th>
-                    <th className="pb-2 pr-4">Status</th>
-                    <th className="pb-2">IP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(auditData?.rows ?? []).map((row) => (
-                    <tr key={row.id} className="border-b border-gray-100 dark:border-slate-700/50">
-                      <td className="py-2 pr-4 font-mono text-xs text-gray-400 whitespace-nowrap">
-                        {new Date(row.created_at).toLocaleString()}
-                      </td>
-                      <td className="py-2 pr-4 font-medium">{row.username ?? '—'}</td>
-                      <td className="py-2 pr-4 font-mono text-xs">
-                        <span className={clsx(
-                          'px-1.5 py-0.5 rounded text-xs font-semibold mr-2',
-                          row.method === 'DELETE' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                          row.method === 'POST' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                          'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                        )}>
-                          {row.method}
-                        </span>
-                        <span className="text-gray-500 dark:text-slate-400 truncate max-w-[200px] inline-block align-bottom" title={row.path}>{row.path}</span>
-                      </td>
-                      <td className="py-2 pr-4 text-gray-500 dark:text-slate-400">
-                        {row.entity_type ? (row.entity_id ? `${row.entity_type}#${row.entity_id}` : row.entity_type) : '—'}
-                      </td>
-                      <td className="py-2 pr-4">
-                        <span className={clsx(
-                          'px-1.5 py-0.5 rounded text-xs font-semibold',
-                          (row.status_code ?? 200) < 300 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                          (row.status_code ?? 200) < 500 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                          'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                        )}>
-                          {row.status_code ?? '—'}
-                        </span>
-                      </td>
-                      <td className="py-2 font-mono text-xs text-gray-400">{row.ip_address ?? '—'}</td>
-                    </tr>
-                  ))}
-                  {(auditData?.rows ?? []).length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-gray-400 dark:text-slate-500">
-                        No audit log entries yet
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {(auditData?.total ?? 0) > 50 && (
-              <div className="flex items-center justify-between mt-4 text-sm text-gray-500 dark:text-slate-400">
-                <span>{(auditData?.total ?? 0).toLocaleString()} total entries</span>
-                {/* Jump straight to a page (discussion #85), not only one at a time. */}
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setAuditPage(1)} disabled={auditPage <= 1}
-                    className="btn-secondary text-xs px-3 py-1 disabled:opacity-50">First</button>
-                  <button
-                    onClick={() => setAuditPage((p) => Math.max(1, p - 1))}
-                    disabled={auditPage <= 1}
-                    className="btn-secondary text-xs px-3 py-1 disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-                  <label className="flex items-center gap-1.5 px-1">
-                    Page
-                    <input
-                      key={auditPage}
-                      type="number" min={1} max={auditPages} defaultValue={auditPage}
-                      aria-label="Go to page"
-                      className="input py-0.5 px-1.5 text-xs w-16 text-center"
-                      onKeyDown={(e) => {
-                        if (e.key !== 'Enter') return;
-                        const n = Math.round(Number((e.target as HTMLInputElement).value));
-                        if (Number.isFinite(n)) setAuditPage(Math.min(auditPages, Math.max(1, n)));
-                      }}
-                      onBlur={(e) => {
-                        const n = Math.round(Number(e.target.value));
-                        if (Number.isFinite(n) && n !== auditPage) setAuditPage(Math.min(auditPages, Math.max(1, n)));
-                      }}
+              {/* Upload custom cert */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-gray-500" />
+                  Install Custom Certificate
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  Paste PEM-encoded certificate and private key, or use the file pickers to load
+                  from disk. The certificate and key must match. Nginx reloads automatically within
+                  a few seconds.
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="label mb-0">Certificate (PEM)</label>
+                      <button
+                        type="button"
+                        className="text-xs text-blue-500 hover:text-blue-600"
+                        onClick={() => certFileRef.current?.click()}
+                      >
+                        Load from file...
+                      </button>
+                      <input
+                        ref={certFileRef}
+                        type="file"
+                        accept=".pem,.crt,.cer"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0];
+                          if (f) setCertUpload((s) => ({ ...s, certificate: '' }));
+                          if (f) {
+                            const text = await readFile(f);
+                            setCertUpload((s) => ({ ...s, certificate: text }));
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                    </div>
+                    <textarea
+                      className="input font-mono text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                      rows={6}
+                      value={certUpload.certificate}
+                      onChange={(e) =>
+                        setCertUpload((s) => ({ ...s, certificate: e.target.value }))
+                      }
+                      placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                      spellCheck={false}
+                      readOnly={!isAdmin}
                     />
-                    of {auditPages.toLocaleString()}
-                  </label>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="label mb-0">Private Key (PEM)</label>
+                      <button
+                        type="button"
+                        className="text-xs text-blue-500 hover:text-blue-600"
+                        onClick={() => keyFileRef.current?.click()}
+                      >
+                        Load from file...
+                      </button>
+                      <input
+                        ref={keyFileRef}
+                        type="file"
+                        accept=".pem,.key"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0];
+                          if (f) {
+                            const text = await readFile(f);
+                            setCertUpload((s) => ({ ...s, private_key: text }));
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                    </div>
+                    <textarea
+                      className="input font-mono text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                      rows={6}
+                      value={certUpload.private_key}
+                      onChange={(e) =>
+                        setCertUpload((s) => ({ ...s, private_key: e.target.value }))
+                      }
+                      placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
+                      spellCheck={false}
+                      readOnly={!isAdmin}
+                    />
+                  </div>
+
+                  {certError && (
+                    <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-red-600 dark:text-red-400">{certError}</p>
+                    </div>
+                  )}
+                  {certSuccess && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <p className="text-sm text-green-600 dark:text-green-400">{certSuccess}</p>
+                    </div>
+                  )}
+
                   <button
-                    onClick={() => setAuditPage((p) => p + 1)}
-                    disabled={auditPage >= auditPages}
-                    className="btn-secondary text-xs px-3 py-1 disabled:opacity-50"
+                    onClick={() => {
+                      setCertError('');
+                      uploadMutation.mutate();
+                    }}
+                    disabled={
+                      !certUpload.certificate ||
+                      !certUpload.private_key ||
+                      uploadMutation.isPending ||
+                      !isAdmin
+                    }
+                    className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    <Upload className="w-4 h-4" />
+                    {uploadMutation.isPending ? 'Installing...' : 'Install Certificate'}
                   </button>
-                  <button onClick={() => setAuditPage(auditPages)} disabled={auditPage >= auditPages}
-                    className="btn-secondary text-xs px-3 py-1 disabled:opacity-50">Last</button>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+
+              <div className="card p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  <strong>Note:</strong> HTTP (port 80) automatically redirects to HTTPS (port 443).
+                  Browser warnings for self-signed certificates are normal and can be bypassed by
+                  accepting the security exception. Use a CA-signed certificate to eliminate browser
+                  warnings.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Edit user modal ── */}
+          {editUser && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <div className="card w-full max-w-sm mx-4 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                    Edit User: {editUser.username}
+                  </h3>
+                  <button
+                    onClick={() => setEditUser(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="label">Role</label>
+                    <select
+                      className="input"
+                      value={editUser.role}
+                      onChange={(e) =>
+                        setEditUser((s) => s && { ...s, role: e.target.value as UserRole })
+                      }
+                      disabled={editUser.id === user?.id}
+                    >
+                      <option value="viewer">Viewer (read-only)</option>
+                      <option value="operator">Operator</option>
+                      <option value="admin">Admin (full access)</option>
+                    </select>
+                    {editUser.id === user?.id && (
+                      <p className="text-xs text-gray-400 mt-1">Cannot change your own role</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="label">New Password (leave blank to keep current)</label>
+                    <input
+                      type="password"
+                      className="input"
+                      value={editUser.password}
+                      onChange={(e) => setEditUser((s) => s && { ...s, password: e.target.value })}
+                      autoComplete="new-password"
+                      placeholder="Leave blank to keep unchanged"
+                    />
+                  </div>
+                  {editUser.password && (
+                    <div>
+                      <label className="label">Confirm New Password</label>
+                      <input
+                        type="password"
+                        className="input"
+                        value={editUser.confirmPassword}
+                        onChange={(e) =>
+                          setEditUser((s) => s && { ...s, confirmPassword: e.target.value })
+                        }
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  )}
+
+                  {editError && (
+                    <div className="flex items-center gap-2 text-sm text-red-500">
+                      <AlertCircle className="w-4 h-4" /> {editError}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button onClick={() => setEditUser(null)} className="btn-secondary">
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdateUser}
+                      disabled={updateUserMutation.isPending}
+                      className="btn-primary"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Alerting ── */}
+          {activeTab === 'alerting' && (
+            // Read-only for viewers: every change here needs write access (U10).
+            <fieldset disabled={!canWrite} className="space-y-4 min-w-0">
+              {/* Hardware health limit (#168) */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                  Hardware health
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-3">
+                  A device shows as degraded when a power supply or fan reports a failure, or a
+                  temperature reaches this limit. Readings can be ignored per device on its Overview
+                  tab.
+                </p>
+                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+                  Temperature limit
+                  <input
+                    key={String(settings['health_temp_limit_c'] ?? 85)}
+                    type="number"
+                    min={40}
+                    max={150}
+                    className="input w-20 py-1"
+                    defaultValue={Number(settings['health_temp_limit_c'] ?? 85)}
+                    disabled={!isAdmin}
+                    onBlur={(e) => {
+                      const v = Number(e.target.value);
+                      if (
+                        Number.isInteger(v) &&
+                        v >= 40 &&
+                        v <= 150 &&
+                        v !== Number(settings['health_temp_limit_c'] ?? 85)
+                      ) {
+                        updateSettingsMutation.mutate({ health_temp_limit_c: v });
+                      }
+                    }}
+                  />
+                  °C
+                </label>
+              </div>
+
+              {/* Alert Rules */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Alert Rules</h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  Enable or disable each alert event. Threshold and cooldown apply where relevant.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs text-gray-500 dark:text-slate-400 border-b border-gray-100 dark:border-slate-700">
+                        <th className="pb-2 pr-4 font-medium">Event</th>
+                        <th className="pb-2 pr-4 font-medium text-center">Enabled</th>
+                        <th className="pb-2 pr-4 font-medium text-center">Threshold</th>
+                        <th className="pb-2 font-medium text-center">Cooldown (min)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="table-zebra">
+                      {alertRules.map((rule) => (
+                        <tr
+                          key={rule.event_type}
+                          className="border-b border-gray-50 dark:border-slate-800"
+                        >
+                          <td className="py-2.5 pr-4 text-gray-700 dark:text-slate-300">
+                            {RULE_LABELS[rule.event_type] ?? rule.event_type}
+                          </td>
+                          <td className="py-2.5 pr-4 text-center">
+                            <button
+                              onClick={() =>
+                                canWrite &&
+                                updateRuleMutation.mutate({
+                                  type: rule.event_type,
+                                  data: {
+                                    enabled: !rule.enabled,
+                                    threshold: rule.threshold,
+                                    cooldown_min: rule.cooldown_min,
+                                  },
+                                })
+                              }
+                              disabled={!canWrite}
+                              className={clsx(
+                                'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors',
+                                canWrite ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                                rule.enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                              )}
+                            >
+                              <span
+                                className={clsx(
+                                  'inline-block h-4 w-4 transform rounded-full bg-white shadow transition',
+                                  rule.enabled ? 'translate-x-4' : 'translate-x-0',
+                                )}
+                              />
+                            </button>
+                          </td>
+                          <td className="py-2.5 pr-4 text-center">
+                            {[
+                              'high_cpu',
+                              'high_memory',
+                              'cert_expiry',
+                              'wireguard_stale',
+                              'interface_errors',
+                              'interface_flapping',
+                              'optic_degraded',
+                              'routing_peer_down',
+                            ].includes(rule.event_type) ? (
+                              <NumberSetting
+                                className="input w-20 text-center py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                value={rule.threshold ?? ''}
+                                onCommit={(v) =>
+                                  updateRuleMutation.mutate({
+                                    type: rule.event_type,
+                                    data: {
+                                      enabled: rule.enabled,
+                                      threshold: v,
+                                      cooldown_min: rule.cooldown_min,
+                                    },
+                                  })
+                                }
+                                min="1"
+                                disabled={!canWrite}
+                              />
+                            ) : (
+                              <span className="text-gray-300 dark:text-slate-600">—</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 text-center">
+                            <NumberSetting
+                              className="input w-20 text-center py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                              value={rule.cooldown_min}
+                              onCommit={(v) =>
+                                updateRuleMutation.mutate({
+                                  type: rule.event_type,
+                                  data: {
+                                    enabled: rule.enabled,
+                                    threshold: rule.threshold,
+                                    cooldown_min: v,
+                                  },
+                                })
+                              }
+                              min="1"
+                              disabled={!canWrite}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Optional fixed receive limits for optics (#249). */}
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 text-sm">
+                  <p className="font-medium text-gray-900 dark:text-white">Optic receive limits</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 mb-2">
+                    Optional. A port turns red, and alerts under &quot;Optic light level&quot;, when
+                    its receive light goes under the low limit or over the high one. Leave empty for
+                    off. Each port is always also judged against its own usual level. The right
+                    limits depend on the optics: for 100G optics around -8 and +2 dBm, but a 10G LR
+                    link runs fine near -12 dBm, so set them for the optics you run.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <DbmLimit
+                      label="Low limit"
+                      placeholder="-8"
+                      value={settings['optic_rx_low_dbm']}
+                      disabled={!isAdmin}
+                      onCommit={(v) => updateSettingsMutation.mutate({ optic_rx_low_dbm: v })}
+                    />
+                    <DbmLimit
+                      label="High limit"
+                      placeholder="2"
+                      value={settings['optic_rx_high_dbm']}
+                      disabled={!isAdmin}
+                      onCommit={(v) => updateSettingsMutation.mutate({ optic_rx_high_dbm: v })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Alert Channels */}
+              <div className="card p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Alert Channels</h3>
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                      Where to send alerts — email, Slack, Discord, or Telegram.
+                    </p>
+                  </div>
+                  {canWrite && (
+                    <button
+                      className="btn-primary text-xs flex items-center gap-1"
+                      onClick={() => {
+                        setChForm(EMPTY_FORM);
+                        setChError('');
+                        setChModal({ mode: 'add' });
+                      }}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Channel
+                    </button>
+                  )}
+                </div>
+
+                {alertChannels.length === 0 ? (
+                  <p className="text-sm text-gray-400 dark:text-slate-500">
+                    No channels configured yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {alertChannels.map((ch) => (
+                      <div
+                        key={ch.id}
+                        className="p-3 rounded-lg border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 space-y-2"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm text-gray-800 dark:text-white">
+                                {ch.name}
+                              </span>
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400 uppercase">
+                                {ch.type}
+                              </span>
+                              {!ch.enabled && (
+                                <span className="text-xs text-amber-500">disabled</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              className={clsx(
+                                'flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors',
+                                chTestStatus[ch.id] === 'ok'
+                                  ? 'border-green-400 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                                  : chTestStatus[ch.id] === 'err'
+                                    ? 'border-red-400 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
+                                    : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400',
+                              )}
+                              onClick={() => testChannel(ch.id)}
+                              disabled={chTestStatus[ch.id] === 'testing'}
+                            >
+                              {chTestStatus[ch.id] === 'testing' ? (
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                              ) : chTestStatus[ch.id] === 'ok' ? (
+                                <CheckCircle className="w-3 h-3" />
+                              ) : chTestStatus[ch.id] === 'err' ? (
+                                <AlertCircle className="w-3 h-3" />
+                              ) : (
+                                <Send className="w-3 h-3" />
+                              )}
+                              {chTestStatus[ch.id] === 'testing'
+                                ? 'Testing…'
+                                : chTestStatus[ch.id] === 'ok'
+                                  ? 'Sent!'
+                                  : chTestStatus[ch.id] === 'err'
+                                    ? 'Failed'
+                                    : 'Test'}
+                            </button>
+                            {canWrite && (
+                              <button
+                                className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 hover:text-blue-500 transition-colors"
+                                title="Edit channel"
+                                onClick={() => {
+                                  setChForm({
+                                    name: ch.name,
+                                    type: ch.type,
+                                    enabled: ch.enabled,
+                                    config: ch.config,
+                                  });
+                                  setChError('');
+                                  setChModal({ mode: 'edit', id: ch.id });
+                                }}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {canWrite && (
+                              <button
+                                className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-400 hover:text-red-500 transition-colors"
+                                title="Delete channel"
+                                onClick={() => {
+                                  if (confirm(`Delete channel "${ch.name}"?`))
+                                    deleteChannelMutation.mutate(ch.id);
+                                }}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {chTestMsg[ch.id] && (
+                          <p
+                            className={clsx(
+                              'text-xs pl-0.5',
+                              chTestStatus[ch.id] === 'err'
+                                ? 'text-red-500'
+                                : 'text-green-600 dark:text-green-400',
+                            )}
+                          >
+                            {chTestMsg[ch.id]}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Alert History */}
+              <div className="card p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                  Recent Alert History
+                </h3>
+                {alertHistory.length === 0 ? (
+                  <p className="text-sm text-gray-400 dark:text-slate-500">No alerts sent yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-left text-gray-500 dark:text-slate-400 border-b border-gray-100 dark:border-slate-700">
+                          <th className="pb-2 pr-3 font-medium">Time</th>
+                          <th className="pb-2 pr-3 font-medium">Event</th>
+                          <th className="pb-2 pr-3 font-medium">Device</th>
+                          <th className="pb-2 pr-3 font-medium">Message</th>
+                          <th className="pb-2 font-medium">Channels</th>
+                        </tr>
+                      </thead>
+                      <tbody className="table-zebra">
+                        {alertHistory.map((h) => (
+                          <tr key={h.id} className="border-b border-gray-50 dark:border-slate-800">
+                            <td className="py-2 pr-3 text-gray-400 whitespace-nowrap">
+                              {new Date(h.sent_at).toLocaleString()}
+                            </td>
+                            <td className="py-2 pr-3 font-mono text-gray-600 dark:text-slate-300 whitespace-nowrap">
+                              {h.event_type}
+                            </td>
+                            <td className="py-2 pr-3 text-gray-500 dark:text-slate-400">
+                              {h.device_name ?? '—'}
+                            </td>
+                            <td className="py-2 pr-3 text-gray-700 dark:text-slate-300 max-w-xs truncate">
+                              {h.message}
+                            </td>
+                            <td className="py-2 text-gray-500 dark:text-slate-400">
+                              {(h.channels_notified ?? []).join(', ') || '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </fieldset>
+          )}
+
+          {/* ── Channel Modal ── */}
+          {chModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+                <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-700">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                    {chModal.mode === 'add' ? 'Add Alert Channel' : 'Edit Alert Channel'}
+                  </h3>
+                  <button
+                    onClick={() => setChModal(null)}
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700"
+                  >
+                    <X className="w-4 h-4 text-gray-500" />
+                  </button>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                      Name
+                    </label>
+                    <input
+                      className="input w-full"
+                      value={chForm.name}
+                      onChange={(e) => setChForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="e.g. My Slack"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        Type
+                      </label>
+                      <select
+                        className="input w-full"
+                        value={chForm.type}
+                        onChange={(e) =>
+                          setChForm((f) => ({
+                            ...f,
+                            type: e.target.value as AlertChannel['type'],
+                            config: {},
+                          }))
+                        }
+                        disabled={chModal.mode === 'edit'}
+                      >
+                        {(['slack', 'discord', 'telegram', 'ntfy', 'gotify', 'email'] as const).map(
+                          (t) => (
+                            <option key={t} value={t}>
+                              {t === 'ntfy' ? 'ntfy' : t.charAt(0).toUpperCase() + t.slice(1)}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </div>
+                    <div className="flex items-end pb-0.5 gap-2">
+                      <label className="text-xs font-medium text-gray-600 dark:text-slate-400">
+                        Enabled
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setChForm((f) => ({ ...f, enabled: !f.enabled }))}
+                        className={clsx(
+                          'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                          chForm.enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                        )}
+                      >
+                        <span
+                          className={clsx(
+                            'inline-block h-4 w-4 transform rounded-full bg-white shadow transition',
+                            chForm.enabled ? 'translate-x-4' : 'translate-x-0',
+                          )}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Type-specific config fields */}
+                  {chForm.type === 'slack' || chForm.type === 'discord' ? (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                        Webhook URL
+                      </label>
+                      <input
+                        className="input w-full font-mono text-xs"
+                        value={cfgStr('webhook_url')}
+                        onChange={(e) => setCfg('webhook_url', e.target.value)}
+                        placeholder="https://hooks.slack.com/..."
+                      />
+                    </div>
+                  ) : chForm.type === 'telegram' ? (
+                    <>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          Bot Token
+                        </label>
+                        <input
+                          className="input w-full font-mono text-xs"
+                          value={cfgStr('bot_token')}
+                          onChange={(e) => setCfg('bot_token', e.target.value)}
+                          placeholder="123456:ABC-DEF..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          Chat ID
+                        </label>
+                        <input
+                          className="input w-full"
+                          value={cfgStr('chat_id')}
+                          onChange={(e) => setCfg('chat_id', e.target.value)}
+                          placeholder="-100123456789"
+                        />
+                      </div>
+                    </>
+                  ) : chForm.type === 'gotify' ? (
+                    <>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          Server URL
+                        </label>
+                        <input
+                          className="input w-full font-mono text-xs"
+                          value={cfgStr('server_url')}
+                          onChange={(e) => setCfg('server_url', e.target.value)}
+                          placeholder="https://gotify.example.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          App Token
+                        </label>
+                        <input
+                          type="password"
+                          className="input w-full font-mono text-xs"
+                          value={cfgStr('app_token')}
+                          onChange={(e) => setCfg('app_token', e.target.value)}
+                          placeholder="A1b2C3..."
+                        />
+                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                          In Gotify, create an application under Apps and copy its token. Outages
+                          are sent at priority 8, recoveries at 2.
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          Manager URL (optional)
+                        </label>
+                        <input
+                          className="input w-full font-mono text-xs"
+                          value={cfgStr('click_url')}
+                          onChange={(e) => setCfg('click_url', e.target.value)}
+                          placeholder="https://mikrotik.example.com"
+                        />
+                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                          Makes each notification open the device it refers to.
+                        </p>
+                      </div>
+                    </>
+                  ) : chForm.type === 'ntfy' ? (
+                    <>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          Server URL
+                        </label>
+                        <input
+                          className="input w-full font-mono text-xs"
+                          value={cfgStr('server_url')}
+                          onChange={(e) => setCfg('server_url', e.target.value)}
+                          placeholder="https://ntfy.sh"
+                        />
+                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                          Leave blank for the public ntfy.sh, or point at your own instance.
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          Topic
+                        </label>
+                        <input
+                          className="input w-full font-mono text-xs"
+                          value={cfgStr('topic')}
+                          onChange={(e) => setCfg('topic', e.target.value)}
+                          placeholder="mikrotik-alerts"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          Access Token
+                        </label>
+                        <input
+                          type="password"
+                          className="input w-full font-mono text-xs"
+                          value={cfgStr('token')}
+                          onChange={(e) => setCfg('token', e.target.value)}
+                          placeholder="tk_..."
+                        />
+                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                          Preferred over a username and password. Anyone who can publish to an
+                          unprotected topic can spoof your alerts.
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                            Username
+                          </label>
+                          <input
+                            className="input w-full"
+                            value={cfgStr('username')}
+                            onChange={(e) => setCfg('username', e.target.value)}
+                            placeholder="(optional)"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                            Password
+                          </label>
+                          <input
+                            type="password"
+                            className="input w-full"
+                            value={cfgStr('password')}
+                            onChange={(e) => setCfg('password', e.target.value)}
+                            placeholder="••••••••"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          Manager URL (optional)
+                        </label>
+                        <input
+                          className="input w-full font-mono text-xs"
+                          value={cfgStr('click_url')}
+                          onChange={(e) => setCfg('click_url', e.target.value)}
+                          placeholder="https://mikrotik.example.com"
+                        />
+                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                          Makes each notification tappable, opening the device it refers to.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                            SMTP Host
+                          </label>
+                          <input
+                            className="input w-full"
+                            value={cfgStr('smtp_host')}
+                            onChange={(e) => setCfg('smtp_host', e.target.value)}
+                            placeholder="smtp.example.com"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                            Port
+                          </label>
+                          <input
+                            type="number"
+                            className="input w-full"
+                            value={(chForm.config['smtp_port'] as number) ?? 587}
+                            onChange={(e) => setCfg('smtp_port', parseInt(e.target.value))}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                            SMTP User
+                          </label>
+                          <input
+                            className="input w-full"
+                            value={cfgStr('smtp_user')}
+                            onChange={(e) => setCfg('smtp_user', e.target.value)}
+                            placeholder="user@example.com"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                            SMTP Password
+                          </label>
+                          <input
+                            type="password"
+                            className="input w-full"
+                            value={cfgStr('smtp_pass')}
+                            onChange={(e) => setCfg('smtp_pass', e.target.value)}
+                            placeholder="••••••••"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          From Address
+                        </label>
+                        <input
+                          className="input w-full"
+                          value={cfgStr('from_address')}
+                          onChange={(e) => setCfg('from_address', e.target.value)}
+                          placeholder="alerts@example.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                          Recipients (comma-separated)
+                        </label>
+                        <input
+                          className="input w-full"
+                          value={
+                            (chForm.config['recipients'] as string[] | undefined)?.join(', ') ?? ''
+                          }
+                          onChange={(e) =>
+                            setCfg(
+                              'recipients',
+                              e.target.value
+                                .split(',')
+                                .map((s) => s.trim())
+                                .filter(Boolean),
+                            )
+                          }
+                          placeholder="admin@example.com, noc@example.com"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="smtp_secure"
+                          checked={!!chForm.config['smtp_secure']}
+                          onChange={(e) => setCfg('smtp_secure', e.target.checked)}
+                          className="rounded"
+                        />
+                        <label
+                          htmlFor="smtp_secure"
+                          className="text-xs text-gray-600 dark:text-slate-400"
+                        >
+                          Use TLS/SSL (port 465)
+                        </label>
+                      </div>
+                    </>
+                  )}
+
+                  {chError && (
+                    <div className="flex items-center gap-2 text-sm text-red-500">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" /> {chError}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <div className="flex items-center gap-2">
+                      {chModal?.mode === 'edit' && chModal.id != null && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => testChannel(chModal.id!)}
+                            disabled={chTestStatus[chModal.id!] === 'testing'}
+                            className={clsx(
+                              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                              chTestStatus[chModal.id!] === 'ok'
+                                ? 'border-green-400 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                                : chTestStatus[chModal.id!] === 'err'
+                                  ? 'border-red-400 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
+                                  : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600',
+                            )}
+                          >
+                            {chTestStatus[chModal.id!] === 'testing' ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            ) : chTestStatus[chModal.id!] === 'ok' ? (
+                              <CheckCircle className="w-3.5 h-3.5" />
+                            ) : chTestStatus[chModal.id!] === 'err' ? (
+                              <AlertCircle className="w-3.5 h-3.5" />
+                            ) : (
+                              <Send className="w-3.5 h-3.5" />
+                            )}
+                            {chTestStatus[chModal.id!] === 'testing'
+                              ? 'Testing…'
+                              : chTestStatus[chModal.id!] === 'ok'
+                                ? 'Sent!'
+                                : chTestStatus[chModal.id!] === 'err'
+                                  ? 'Failed'
+                                  : 'Send Test'}
+                          </button>
+                          {chTestMsg[chModal.id!] && (
+                            <span
+                              className={clsx(
+                                'text-xs',
+                                chTestStatus[chModal.id!] === 'err'
+                                  ? 'text-red-500'
+                                  : 'text-green-600 dark:text-green-400',
+                              )}
+                            >
+                              {chTestMsg[chModal.id!]}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      <button onClick={() => setChModal(null)} className="btn-secondary">
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => saveChannelMutation.mutate()}
+                        disabled={!chForm.name || saveChannelMutation.isPending}
+                        className="btn-primary"
+                      >
+                        {saveChannelMutation.isPending ? 'Saving...' : 'Save Channel'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ── Automation (API tokens, webhooks, scheduled reports) ── */}
+          {activeTab === 'automation' && <AutomationSettings isAdmin={isAdmin} />}
+          {activeTab === 'sso' && <OidcSettings isAdmin={isAdmin} />}
+          {/* ── Tags ── */}
+          {activeTab === 'tags' && (
+            <div className="space-y-4">
+              <div className="card p-5">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+                  Device Tags
+                </h3>
+                {isAdmin && (
+                  <div className="flex items-center gap-2 mb-4">
+                    <input
+                      type="color"
+                      value={newTagColor}
+                      onChange={(e) => setNewTagColor(e.target.value)}
+                      className="w-8 h-8 rounded cursor-pointer border border-gray-300 dark:border-slate-600 p-0.5"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Tag name…"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' && newTagName.trim() && createTagMutation.mutate()
+                      }
+                      className="input flex-1 text-sm"
+                    />
+                    <button
+                      onClick={() => createTagMutation.mutate()}
+                      disabled={!newTagName.trim() || createTagMutation.isPending}
+                      className="btn-primary text-sm px-3 py-1.5"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {tags.map((tag) => (
+                    <TagRow
+                      key={tag.id}
+                      tag={tag}
+                      canEdit={isAdmin}
+                      onDelete={(id) => {
+                        if (
+                          confirm('Delete this tag? It is removed from every device that has it.')
+                        )
+                          deleteTagMutation.mutate(id);
+                      }}
+                    />
+                  ))}
+                  {tags.length === 0 && (
+                    <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">
+                      No tags created yet
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Maintenance Windows ── */}
+          {activeTab === 'maintenance' && (
+            <div className="space-y-4">
+              <MaintenanceWindowsCard
+                isAdmin={isAdmin}
+                timeZone={(settings['app_timezone'] as string) || 'UTC'}
+              />
+            </div>
+          )}
+
+          {/* ── Audit Log ── */}
+          {activeTab === 'audit' && (
+            <div className="space-y-4">
+              <div className="card p-5">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-blue-500" />
+                    Audit Log
+                  </h3>
+                  <input
+                    type="text"
+                    placeholder="Search user, path, IP…"
+                    value={auditSearch}
+                    onChange={(e) => {
+                      setAuditSearch(e.target.value);
+                      setAuditPage(1);
+                    }}
+                    className="input w-64 text-sm"
+                  />
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+                        <th className="pb-2 pr-4">Time</th>
+                        <th className="pb-2 pr-4">User</th>
+                        <th className="pb-2 pr-4">Action</th>
+                        <th className="pb-2 pr-4">Entity</th>
+                        <th className="pb-2 pr-4">Status</th>
+                        <th className="pb-2">IP</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(auditData?.rows ?? []).map((row) => (
+                        <tr
+                          key={row.id}
+                          className="border-b border-gray-100 dark:border-slate-700/50"
+                        >
+                          <td className="py-2 pr-4 font-mono text-xs text-gray-400 whitespace-nowrap">
+                            {new Date(row.created_at).toLocaleString()}
+                          </td>
+                          <td className="py-2 pr-4 font-medium">{row.username ?? '—'}</td>
+                          <td className="py-2 pr-4 font-mono text-xs">
+                            <span
+                              className={clsx(
+                                'px-1.5 py-0.5 rounded text-xs font-semibold mr-2',
+                                row.method === 'DELETE'
+                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                  : row.method === 'POST'
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                              )}
+                            >
+                              {row.method}
+                            </span>
+                            <span
+                              className="text-gray-500 dark:text-slate-400 truncate max-w-[200px] inline-block align-bottom"
+                              title={row.path}
+                            >
+                              {row.path}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-4 text-gray-500 dark:text-slate-400">
+                            {row.entity_type
+                              ? row.entity_id
+                                ? `${row.entity_type}#${row.entity_id}`
+                                : row.entity_type
+                              : '—'}
+                          </td>
+                          <td className="py-2 pr-4">
+                            <span
+                              className={clsx(
+                                'px-1.5 py-0.5 rounded text-xs font-semibold',
+                                (row.status_code ?? 200) < 300
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                  : (row.status_code ?? 200) < 500
+                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                              )}
+                            >
+                              {row.status_code ?? '—'}
+                            </span>
+                          </td>
+                          <td className="py-2 font-mono text-xs text-gray-400">
+                            {row.ip_address ?? '—'}
+                          </td>
+                        </tr>
+                      ))}
+                      {(auditData?.rows ?? []).length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="py-8 text-center text-gray-400 dark:text-slate-500"
+                          >
+                            No audit log entries yet
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {(auditData?.total ?? 0) > 50 && (
+                  <div className="flex items-center justify-between mt-4 text-sm text-gray-500 dark:text-slate-400">
+                    <span>{(auditData?.total ?? 0).toLocaleString()} total entries</span>
+                    {/* Jump straight to a page (discussion #85), not only one at a time. */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setAuditPage(1)}
+                        disabled={auditPage <= 1}
+                        className="btn-secondary text-xs px-3 py-1 disabled:opacity-50"
+                      >
+                        First
+                      </button>
+                      <button
+                        onClick={() => setAuditPage((p) => Math.max(1, p - 1))}
+                        disabled={auditPage <= 1}
+                        className="btn-secondary text-xs px-3 py-1 disabled:opacity-50"
+                      >
+                        Prev
+                      </button>
+                      <label className="flex items-center gap-1.5 px-1">
+                        Page
+                        <input
+                          key={auditPage}
+                          type="number"
+                          min={1}
+                          max={auditPages}
+                          defaultValue={auditPage}
+                          aria-label="Go to page"
+                          className="input py-0.5 px-1.5 text-xs w-16 text-center"
+                          onKeyDown={(e) => {
+                            if (e.key !== 'Enter') return;
+                            const n = Math.round(Number((e.target as HTMLInputElement).value));
+                            if (Number.isFinite(n))
+                              setAuditPage(Math.min(auditPages, Math.max(1, n)));
+                          }}
+                          onBlur={(e) => {
+                            const n = Math.round(Number(e.target.value));
+                            if (Number.isFinite(n) && n !== auditPage)
+                              setAuditPage(Math.min(auditPages, Math.max(1, n)));
+                          }}
+                        />
+                        of {auditPages.toLocaleString()}
+                      </label>
+                      <button
+                        onClick={() => setAuditPage((p) => p + 1)}
+                        disabled={auditPage >= auditPages}
+                        className="btn-secondary text-xs px-3 py-1 disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                      <button
+                        onClick={() => setAuditPage(auditPages)}
+                        disabled={auditPage >= auditPages}
+                        className="btn-secondary text-xs px-3 py-1 disabled:opacity-50"
+                      >
+                        Last
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -2403,8 +3192,18 @@ export default function SettingsPage() {
 }
 
 /** A dBm limit: decimals allowed, empty means off (#249). Saves on blur or Enter. */
-function DbmLimit({ label, value, placeholder, disabled, onCommit }: {
-  label: string; value: unknown; placeholder: string; disabled?: boolean; onCommit: (v: number | null) => void;
+function DbmLimit({
+  label,
+  value,
+  placeholder,
+  disabled,
+  onCommit,
+}: {
+  label: string;
+  value: unknown;
+  placeholder: string;
+  disabled?: boolean;
+  onCommit: (v: number | null) => void;
 }) {
   const saved = value === null || value === undefined || value === '' ? '' : String(value);
   const [draft, setDraft] = useState<string | null>(null);
@@ -2412,7 +3211,10 @@ function DbmLimit({ label, value, placeholder, disabled, onCommit }: {
     if (draft === null) return;
     const t = draft.trim();
     setDraft(null);
-    if (t === '') { if (saved !== '') onCommit(null); return; }
+    if (t === '') {
+      if (saved !== '') onCommit(null);
+      return;
+    }
     const n = Number(t);
     if (!Number.isFinite(n) || n < -40 || n > 10) return;
     if (String(n) !== saved) onCommit(n);
@@ -2420,9 +3222,18 @@ function DbmLimit({ label, value, placeholder, disabled, onCommit }: {
   return (
     <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-slate-300">
       {label}
-      <input className="input w-20 text-center py-1 text-xs" inputMode="decimal" placeholder={placeholder} disabled={disabled}
-        value={draft ?? saved} onChange={(e) => setDraft(e.target.value)} onBlur={commit}
-        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+      <input
+        className="input w-20 text-center py-1 text-xs"
+        inputMode="decimal"
+        placeholder={placeholder}
+        disabled={disabled}
+        value={draft ?? saved}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+        }}
+      />
       dBm
     </label>
   );

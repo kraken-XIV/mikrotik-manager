@@ -13,7 +13,7 @@ seconds. API-SSL (port 8729) encrypts the whole session.
 
 While any device is still on the plain API, the Security page shows a notice listing them
 ("N devices are managed over the unencrypted API"). Once every device is on API-SSL the
-notice goes away. Muting the *MikroTik Manager connects over the plain API* check hides it
+notice goes away. Muting the _MikroTik Manager connects over the plain API_ check hides it
 too: muted fleet-wide, the notice goes; muted on a device, that device isn't counted. **Switch to API-SSL** (per device, or **Switch all online** when more
 than one is online) does this on the device:
 
@@ -21,21 +21,21 @@ than one is online) does this on the device:
    Otherwise it creates a self-signed certificate named `mtm-api-ssl` (valid 10 years) and
    signs it on the device, which takes a few seconds, longer on small devices.
 2. Enables `api-ssl` on port 8729 with that certificate. If the plain `api` service only
-   accepts connections from certain addresses (its *Available From* list) and `api-ssl`
+   accepts connections from certain addresses (its _Available From_ list) and `api-ssl`
    accepts any, `api-ssl` gets the same list. A list already set on `api-ssl` is kept.
 3. Logs in over API-SSL on a new connection. Only if that works does the manager move its
    connection for the device to 8729.
 
 If the login over API-SSL fails, the device stays on 8728 and the card says why. The usual
-cause is a firewall rule, or the `api-ssl` service's *Available From* list, that lets 8728 in
+cause is a firewall rule, or the `api-ssl` service's _Available From_ list, that lets 8728 in
 but not 8729. The plain `api` service is left running unless you tick **Then turn off plain
 API on each** before switching.
 
 ### Turning the plain API off
 
 Once a device is on API-SSL, plain `api` is only an open door (#201). **Turn off plain API**
-(on the device's **Security** tab, or for every device at once under *Unencrypted API (api) is
-enabled* in Common Findings on the Security page) first checks two things:
+(on the device's **Security** tab, or for every device at once under _Unencrypted API (api) is
+enabled_ in Common Findings on the Security page) first checks two things:
 
 - the manager can log in over API-SSL right now, on a fresh connection;
 - nothing else is connected to plain API (a script or monitoring tool). If something is, the
@@ -45,20 +45,20 @@ enabled* in Common Findings on the Security page) first checks two things:
 The change then runs under Change Guard. A device managed over the plain API is refused; switch
 it to API-SSL first.
 
-The same switch is on each device's **Security** tab, next to the *MikroTik Manager connects
-over the plain API* finding.
+The same switch is on each device's **Security** tab, next to the _MikroTik Manager connects
+over the plain API_ finding.
 
 ### Which addresses a service accepts
 
 The **Management Services** table on a device's **Security** tab shows each service's
-*Allowed From* list (RouterOS's *Available From*; empty means any address). **edit** changes
+_Allowed From_ list (RouterOS's _Available From_; empty means any address). **edit** changes
 it: enter addresses or prefixes separated by commas, or leave it empty for any. On the
 service the manager connects through, a list that leaves out the address the device sees the
 manager connecting from is refused, since saving it would cut the manager off. The change
 also runs under [Change Guard](change-guard.md), which undoes it if the manager loses the
 device anyway.
 
-Before 0.25.0 the column showed *any* for every service on current RouterOS 7, which renamed
+Before 0.25.0 the column showed _any_ for every service on current RouterOS 7, which renamed
 the field, and a service with an open session could be listed as that session instead.
 
 The certificate is self-signed, so there is no certificate authority to check it against.
@@ -121,7 +121,7 @@ changing.
 Plain WebFig (the `www` service, port 80) sends whoever signs in to it, and everything they
 do, unencrypted. The manager never uses WebFig itself; this is for the people who do.
 
-The *Unencrypted WebFig (www) is enabled* finding on a device's **Security** tab has a
+The _Unencrypted WebFig (www) is enabled_ finding on a device's **Security** tab has a
 **Switch to HTTPS** button. On the Security page, expand the same finding under **Common
 Findings** for **Switch all to HTTPS**, which does each listed device in turn. It does this
 on the device:
@@ -136,12 +136,12 @@ on the device:
    `www` off.
 
 If HTTPS doesn't answer, `www` is left on and the result says why. The usual cause is a
-firewall rule, or `www-ssl`'s *Available From* list, that lets port 80 in but not 443.
+firewall rule, or `www-ssl`'s _Available From_ list, that lets port 80 in but not 443.
 
 The certificate is self-signed, so browsers warn the first time. A certificate from your own
 CA can be assigned to `www-ssl` on the device instead; a working one is kept from then on.
 
-A related finding, *HTTPS WebFig (www-ssl) has no certificate*, appears when `www-ssl` is
+A related finding, _HTTPS WebFig (www-ssl) has no certificate_, appears when `www-ssl` is
 enabled without one. It can't complete an HTTPS connection like that; the same button fixes
 it.
 
@@ -173,20 +173,20 @@ release, with MikroTik's line quoted.
 
 - **Fetching:** release notes never change, so each one is read once.
 - **When NVD has the CVE:** if it has the CVE but doesn't list your version, the match still
-  shows. A *may not apply* match is confirmed when the release notes for your line name the CVE.
+  shows. A _may not apply_ match is confirmed when the release notes for your line name the CVE.
 - **Description and rating:** for a CVE that NVD's RouterOS list doesn't have yet, the manager
-  looks it up in NVD by id, a few a day. If NVD has no entry yet, the CVE shows as *unrated*.
+  looks it up in NVD by id, a few a day. If NVD has no entry yet, the CVE shows as _unrated_.
 - **Alerts:** the [CVE alert](alerting.md) fires for these too, once they're rated critical or
   high.
 
-**What a match means.** A match says the version is *listed* as affected. It doesn't say the
+**What a match means.** A match says the version is _listed_ as affected. It doesn't say the
 device can be attacked: many CVEs need a particular service (SSH, winbox, btest, the web
 interface, hotspot) to be reachable. Read each one before acting. A few NVD entries give no
 usable version range; they aren't matched, and the page says how many.
 
 **Matches that may not apply.** NVD often lists a CVE as "before 7.5" with no starting
 version, which takes in every RouterOS 6 release even when the flaw was only ever in v7. On a
-v6 device such a match is shown greyed out as *may not apply*, with the reason, and isn't
+v6 device such a match is shown greyed out as _may not apply_, with the reason, and isn't
 counted in the version's total. Actively exploited CVEs are never greyed out.
 
 **Corrections.** A few entries are known to be wrong for a release line and are left out,
@@ -195,10 +195,10 @@ but RouterOS 6 has no VXLAN. If you find another, please
 [open an issue](https://github.com/2GT-Media-Group-LLC/mikrotik-manager/issues) with the CVE id.
 
 **Dark Site Mode.** The download is listed under **Settings → Dark Site Mode** as
-*RouterOS vulnerability list*. Turned off, nothing is fetched and the card says so. The release
-notes also follow the *RouterOS changelogs* switch.
+_RouterOS vulnerability list_. Turned off, nothing is fetched and the card says so. The release
+notes also follow the _RouterOS changelogs_ switch.
 
-| Method | Path | Purpose |
-|---|---|---|
-| `GET` | `/api/security/cves` | The versions in the current site, with their CVEs |
-| `POST` | `/api/security/cves/refresh` | Download the lists now |
+| Method | Path                         | Purpose                                           |
+| ------ | ---------------------------- | ------------------------------------------------- |
+| `GET`  | `/api/security/cves`         | The versions in the current site, with their CVEs |
+| `POST` | `/api/security/cves/refresh` | Download the lists now                            |

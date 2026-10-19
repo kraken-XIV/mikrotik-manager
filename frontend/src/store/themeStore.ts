@@ -28,8 +28,8 @@ export const useThemeStore = create<ThemeState>()(
       onRehydrateStorage: () => (state) => {
         if (state) applyTheme(state.theme);
       },
-    }
-  )
+    },
+  ),
 );
 
 function applyTheme(theme: Theme): void {

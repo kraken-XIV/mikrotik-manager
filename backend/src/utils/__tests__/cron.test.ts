@@ -7,9 +7,21 @@ describe('zonedParts', () => {
   it('reads wall-clock fields in the requested zone', () => {
     expect(zonedParts(AT, 'UTC')).toEqual({ minute: 30, hour: 9, dom: 2, month: 9, dow: 3 });
     // UTC-7 in September.
-    expect(zonedParts(AT, 'America/Los_Angeles')).toEqual({ minute: 30, hour: 2, dom: 2, month: 9, dow: 3 });
+    expect(zonedParts(AT, 'America/Los_Angeles')).toEqual({
+      minute: 30,
+      hour: 2,
+      dom: 2,
+      month: 9,
+      dow: 3,
+    });
     // UTC+3 in September.
-    expect(zonedParts(AT, 'Europe/Sofia')).toEqual({ minute: 30, hour: 12, dom: 2, month: 9, dow: 3 });
+    expect(zonedParts(AT, 'Europe/Sofia')).toEqual({
+      minute: 30,
+      hour: 12,
+      dom: 2,
+      month: 9,
+      dow: 3,
+    });
   });
 
   it('rolls the date backwards across the dateline', () => {
@@ -78,8 +90,8 @@ describe('cronMatches — the #117 bug', () => {
 
   it('runs when either dom or dow matches, per the standard rule', () => {
     const at = new Date('2026-09-02T09:30:00Z'); // 2nd, a Wednesday, 09:30 UTC
-    expect(cronMatches('30 9 2 * 0', at, 'UTC')).toBe(true);   // dom matches, dow does not
-    expect(cronMatches('30 9 15 * 3', at, 'UTC')).toBe(true);  // dow matches, dom does not
+    expect(cronMatches('30 9 2 * 0', at, 'UTC')).toBe(true); // dom matches, dow does not
+    expect(cronMatches('30 9 15 * 3', at, 'UTC')).toBe(true); // dow matches, dom does not
     expect(cronMatches('30 9 15 * 0', at, 'UTC')).toBe(false); // neither
   });
 

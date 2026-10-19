@@ -47,12 +47,12 @@ Installs from before 0.24.47 keep the setting they had, which was on.
 
 ## What it shows
 
-| View | Answers |
-|---|---|
-| **Top talkers** | Which clients are using the most, over 1h → 30d |
+| View                      | Answers                                                                  |
+| ------------------------- | ------------------------------------------------------------------------ |
+| **Top talkers**           | Which clients are using the most, over 1h → 30d                          |
 | **Application breakdown** | HTTPS, QUIC, DNS, SSH, email, WireGuard and others, by port and protocol |
-| **Per-client history** | What one client has been doing over time |
-| **Time series** | Throughput across the selected range |
+| **Per-client history**    | What one client has been doing over time                                 |
+| **Time series**           | Throughput across the selected range                                     |
 
 Top talkers can be filtered by IP, name, MAC or vendor, and sorted. Selecting a client opens
 its detail page — see [Clients](clients.md).
@@ -66,17 +66,17 @@ multi-site install it appears in the all-sites view only. On a single-site insta
 selection that includes every device, nothing is filtered and all of it shows (0.24.48;
 0.24.47 hid it, and its site filter also made long ranges slow enough to time out).
 
-Application classification is by port and protocol. It identifies what a flow *looks* like, not
+Application classification is by port and protocol. It identifies what a flow _looks_ like, not
 what it is: anything on 443 reads as HTTPS whether or not it is a browser.
 
 ## Retention
 
 Two settings, both in **Settings**:
 
-| Setting | Default | Covers |
-|---|---|---|
-| `netflow_retention_days` | 30 | Per-client time series (one-minute detail) |
-| `netflow_daily_retention_days` | 365 | Daily per-client rollups |
+| Setting                        | Default | Covers                                     |
+| ------------------------------ | ------- | ------------------------------------------ |
+| `netflow_retention_days`       | 30      | Per-client time series (one-minute detail) |
+| `netflow_daily_retention_days` | 365     | Daily per-client rollups                   |
 
 Flow records are the bulky ones; the daily rollups are small and are what the longer ranges are
 drawn from. Raising the first is the expensive change.
@@ -101,7 +101,7 @@ lines.
 The 24h, 7d and 30d rankings read an hourly rollup (`proxy_usage_hourly`, one row per hour,
 device, proxy, port, client/user/destination and peer) that is updated as logs arrive, so
 they stay fast however many connections are stored; **1h** reads the stored connections and
-is exact to the minute. The rollup starts at the hour containing *now minus the range*, so
+is exact to the minute. The rollup starts at the hour containing _now minus the range_, so
 a range can reach up to an hour further back. It is built from the stored connections in the
 background after the first start following an update, so startup is not held up (until it
 finishes, the card reads the stored connections directly; the instance list is filled the
@@ -111,7 +111,7 @@ set the app setting `proxy_usage_rollup` to `false`.
 ## If no data appears
 
 1. Is the collector enabled? `netflow_enabled` in **Settings**.
-2. Is UDP 2055 reachable from the device? The platform must be reachable *from* the router,
+2. Is UDP 2055 reachable from the device? The platform must be reachable _from_ the router,
    which is not the same direction as the API connection.
 3. Does the exporter match a known device? If flows arrive from an address the platform cannot
    match, they are refused unless **Accept flows from unidentified exporters** is on, and

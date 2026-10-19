@@ -2,7 +2,10 @@ import { decodePacket, pruneTemplateCache, TemplateCache } from '../decoder';
 
 // ─── Fixture builders ─────────────────────────────────────────────────────────
 
-interface FieldSpec { id: number; length: number }
+interface FieldSpec {
+  id: number;
+  length: number;
+}
 
 function u16(n: number): Buffer {
   const b = Buffer.alloc(2);
@@ -75,7 +78,15 @@ const V9_FIELDS: FieldSpec[] = [
   { id: 2, length: 4 },
 ];
 
-function record(src: string, dst: string, srcPort: number, dstPort: number, proto: number, bytes: number, packets: number): Buffer {
+function record(
+  src: string,
+  dst: string,
+  srcPort: number,
+  dstPort: number,
+  proto: number,
+  bytes: number,
+  packets: number,
+): Buffer {
   return Buffer.concat([
     ipv4(src),
     ipv4(dst),
@@ -94,10 +105,13 @@ describe('NetFlow v9 decoding', () => {
     const cache: TemplateCache = new Map();
     const packet = v9Packet(0, [
       flowset(0, templateBody(256, V9_FIELDS)),
-      flowset(256, Buffer.concat([
-        record('192.168.1.10', '93.184.216.34', 54321, 443, 6, 1500, 10),
-        record('93.184.216.34', '192.168.1.10', 443, 54321, 6, 90000, 60),
-      ])),
+      flowset(
+        256,
+        Buffer.concat([
+          record('192.168.1.10', '93.184.216.34', 54321, 443, 6, 1500, 10),
+          record('93.184.216.34', '192.168.1.10', 443, 54321, 6, 90000, 60),
+        ]),
+      ),
     ]);
 
     const result = decodePacket(packet, '10.0.0.1', cache);
@@ -215,12 +229,19 @@ describe('IPFIX decoding', () => {
     const templateBuf = Buffer.concat([
       u16(301),
       u16(6),
-      u16(8), u16(4),
-      u16(12), u16(4),
-      u16(0x8000 | 99), u16(4), u32(14988), // enterprise number (MikroTik PEN)
-      u16(1), u16(4),
-      u16(2), u16(4),
-      u16(4), u16(1),
+      u16(8),
+      u16(4),
+      u16(12),
+      u16(4),
+      u16(0x8000 | 99),
+      u16(4),
+      u32(14988), // enterprise number (MikroTik PEN)
+      u16(1),
+      u16(4),
+      u16(2),
+      u16(4),
+      u16(4),
+      u16(1),
     ]);
     const dataRecord = Buffer.concat([
       ipv4('192.168.1.60'),
@@ -230,10 +251,7 @@ describe('IPFIX decoding', () => {
       u32(7),
       Buffer.from([6]),
     ]);
-    const packet = ipfixPacket(7, [
-      flowset(2, templateBuf),
-      flowset(301, dataRecord),
-    ]);
+    const packet = ipfixPacket(7, [flowset(2, templateBuf), flowset(301, dataRecord)]);
 
     const result = decodePacket(packet, '10.0.0.1', cache);
     expect(result.flows).toHaveLength(1);
@@ -258,7 +276,15 @@ describe('IPFIX decoding', () => {
     const dst = Buffer.alloc(16);
     dst[0] = 0x26;
     dst[1] = 0x07;
-    const dataRecord = Buffer.concat([src, dst, u16(50000), u16(443), Buffer.from([6]), u32(2048), u32(4)]);
+    const dataRecord = Buffer.concat([
+      src,
+      dst,
+      u16(50000),
+      u16(443),
+      Buffer.from([6]),
+      u32(2048),
+      u32(4),
+    ]);
 
     const packet = ipfixPacket(7, [
       flowset(2, templateBody(302, fields)),
@@ -333,11 +359,14 @@ describe('malformed / hostile packets', () => {
   it('rejects the whole template when a zero-length field sits among valid ones', () => {
     const cache: TemplateCache = new Map();
     const packet = ipfixPacket(1, [
-      flowset(2, templateBody(257, [
-        { id: 8, length: 4 },
-        { id: 12, length: 0 }, // malformed
-        { id: 1, length: 4 },
-      ])),
+      flowset(
+        2,
+        templateBody(257, [
+          { id: 8, length: 4 },
+          { id: 12, length: 0 }, // malformed
+          { id: 1, length: 4 },
+        ]),
+      ),
     ]);
 
     expect(decodePacket(packet, '10.0.0.9', cache).templatesParsed).toBe(0);
@@ -366,7 +395,13 @@ describe('malformed / hostile packets', () => {
 
     // Declares a 16-byte IPv6 field but supplies only 4 bytes of data
     const truncated = ipfixPacket(1, [
-      flowset(2, templateBody(260, [{ id: 27, length: 16 }, { id: 1, length: 4 }])),
+      flowset(
+        2,
+        templateBody(260, [
+          { id: 27, length: 16 },
+          { id: 1, length: 4 },
+        ]),
+      ),
       flowset(260, Buffer.alloc(4)),
     ]);
     const result = decodePacket(truncated, '10.0.0.9', cache);
@@ -405,7 +440,7 @@ describe('malformed / hostile packets', () => {
     decodePacket(
       v9Packet(0, [flowset(256, record('192.168.1.10', '1.1.1.1', 50000, 53, 17, 120, 2))]),
       '10.0.0.1',
-      cache
+      cache,
     );
     expect(cache.get(key)!.lastUsed).toBeGreaterThan(0);
   });
@@ -415,7 +450,7 @@ describe('malformed / hostile packets', () => {
     decodePacket(
       ipfixPacket(1, [flowset(2, templateBody(256, [{ id: 1, length: 0 }]))]),
       '10.0.0.9',
-      cache
+      cache,
     );
 
     const good = v9Packet(0, [

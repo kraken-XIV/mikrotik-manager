@@ -68,13 +68,18 @@ router.get('/', async (req: Request, res: Response) => {
   if (severity) {
     // Accept comma-separated list e.g. "error,warning"
     // 'error' also includes 'critical' rows
-    const requested = String(severity).split(',').map((s) => s.trim()).filter(Boolean);
+    const requested = String(severity)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     const expanded = new Set<string>();
     for (const s of requested) {
       expanded.add(s);
       if (s === 'error') expanded.add('critical');
     }
-    const placeholders = Array.from(expanded).map(() => `$${idx++}`).join(',');
+    const placeholders = Array.from(expanded)
+      .map(() => `$${idx++}`)
+      .join(',');
     filters.push(`e.severity IN (${placeholders})`);
     params.push(...Array.from(expanded));
   }
@@ -107,7 +112,7 @@ router.get('/', async (req: Request, res: Response) => {
      WHERE ${where}
      ORDER BY e.event_time DESC
      LIMIT $${idx++} OFFSET $${idx++}`,
-    [...params, parseInt(String(limit), 10), parseInt(String(offset), 10)]
+    [...params, parseInt(String(limit), 10), parseInt(String(offset), 10)],
   );
 
   // ?counts=0 returns the rows alone. The dashboard shows five events and never reads
@@ -124,13 +129,13 @@ router.get('/', async (req: Request, res: Response) => {
     // stored event (millions on a busy install), several seconds on every refresh.
     query<{ count: string }>(
       `SELECT COUNT(*) as count FROM (SELECT 1 FROM events e WHERE ${where} LIMIT ${EVENTS_COUNT_CAP + 1}) c`,
-      params
+      params,
     ),
     query<{ count: string }>(
       `SELECT COUNT(*) as count FROM events
        WHERE severity IN ('error','critical') AND event_time > NOW() - INTERVAL '24 hours'
          AND NOT ${CLOCK_CHANGE_SQL}
-         ${siteFilterBare ? `AND ${siteFilterBare}` : ''}`
+         ${siteFilterBare ? `AND ${siteFilterBare}` : ''}`,
     ),
   ]);
 

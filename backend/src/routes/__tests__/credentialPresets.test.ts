@@ -11,7 +11,7 @@ jest.mock('../../middleware/auth', () => ({
   requireAdmin: (
     req: { user?: { role: string } },
     res: { status: (c: number) => { json: (b: unknown) => void } },
-    next: () => void
+    next: () => void,
   ) => {
     if (req.user?.role !== 'admin') {
       res.status(403).json({ error: 'Admin access required' });
@@ -37,11 +37,12 @@ function makeApp(role: string) {
   const app = express();
   app.use(express.json());
   app.use((req, _res, next) => {
-    (req as express.Request & { user?: { userId: number; username: string; role: string } }).user = {
-      userId: 1,
-      username: 'test',
-      role,
-    };
+    (req as express.Request & { user?: { userId: number; username: string; role: string } }).user =
+      {
+        userId: 1,
+        username: 'test',
+        role,
+      };
     next();
   });
   app.use('/', credentialPresetsRoutes);

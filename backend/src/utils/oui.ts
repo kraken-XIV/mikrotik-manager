@@ -50,7 +50,10 @@ export function initOuiDatabase(allowDownload = true): Promise<void> {
 
 export function lookupVendor(mac: string): string {
   if (!db) return '';
-  const oui = mac.replace(/[:\-.]/g, '').substring(0, 6).toUpperCase();
+  const oui = mac
+    .replace(/[:\-.]/g, '')
+    .substring(0, 6)
+    .toUpperCase();
   return db.get(oui) ?? '';
 }
 
@@ -79,7 +82,8 @@ async function _load(allowDownload: boolean): Promise<void> {
     const fd = fs.openSync(CACHE_FILE, 'r');
     let fresh: string | null = null;
     try {
-      if (Date.now() - fs.fstatSync(fd).mtimeMs < CACHE_MAX_AGE_MS) fresh = fs.readFileSync(fd, 'utf8');
+      if (Date.now() - fs.fstatSync(fd).mtimeMs < CACHE_MAX_AGE_MS)
+        fresh = fs.readFileSync(fd, 'utf8');
     } finally {
       fs.closeSync(fd);
     }
@@ -92,14 +96,18 @@ async function _load(allowDownload: boolean): Promise<void> {
         return;
       }
     }
-  } catch { /* cache miss */ }
+  } catch {
+    /* cache miss */
+  }
 
   if (!allowDownload) {
     const stale = _readStaleCache();
     db = stale ?? new Map();
-    console.log(stale
-      ? `OUI: download disabled (Dark Site Mode); using cached copy, ${db.size} entries`
-      : 'OUI: download disabled (Dark Site Mode) and no cached copy; vendor lookups will be empty');
+    console.log(
+      stale
+        ? `OUI: download disabled (Dark Site Mode); using cached copy, ${db.size} entries`
+        : 'OUI: download disabled (Dark Site Mode) and no cached copy; vendor lookups will be empty',
+    );
     return;
   }
 
@@ -119,7 +127,9 @@ async function _load(allowDownload: boolean): Promise<void> {
         for (const [k, v] of map) obj[k] = v;
         if (CACHE_FILE) fs.writeFileSync(CACHE_FILE, JSON.stringify(obj));
       } catch (writeErr) {
-        console.warn(`OUI: could not save the cache (${(writeErr as Error).message}); using the downloaded copy for now`);
+        console.warn(
+          `OUI: could not save the cache (${(writeErr as Error).message}); using the downloaded copy for now`,
+        );
       }
     } else {
       console.warn('OUI: Downloaded file too small, ignoring');
@@ -128,9 +138,11 @@ async function _load(allowDownload: boolean): Promise<void> {
   } catch (err) {
     const stale = _readStaleCache();
     db = stale ?? new Map();
-    console.warn(stale
-      ? `OUI: Download failed (${(err as Error).message}); using older cached copy, ${db.size} entries`
-      : `OUI: Download failed (${(err as Error).message}). Vendor lookups will be empty.`);
+    console.warn(
+      stale
+        ? `OUI: Download failed (${(err as Error).message}); using older cached copy, ${db.size} entries`
+        : `OUI: Download failed (${(err as Error).message}). Vendor lookups will be empty.`,
+    );
   }
 }
 
@@ -141,7 +153,7 @@ function _parseCsv(csv: string): Map<string, string> {
     // Quoted fields may contain commas, e.g. "Cisco Systems, Inc"
     const fields = _csvSplit(line);
     if (fields[0]?.trim() !== 'MA-L') continue;
-    const oui  = fields[1]?.trim().toUpperCase();
+    const oui = fields[1]?.trim().toUpperCase();
     const name = fields[2]?.trim();
     if (oui?.length === 6 && name) map.set(oui, name);
   }
@@ -153,9 +165,14 @@ function _csvSplit(line: string): string[] {
   let cur = '';
   let inQuote = false;
   for (const ch of line) {
-    if (ch === '"')           { inQuote = !inQuote; }
-    else if (ch === ',' && !inQuote) { fields.push(cur); cur = ''; }
-    else                      { cur += ch; }
+    if (ch === '"') {
+      inQuote = !inQuote;
+    } else if (ch === ',' && !inQuote) {
+      fields.push(cur);
+      cur = '';
+    } else {
+      cur += ch;
+    }
   }
   fields.push(cur);
   return fields;
@@ -174,6 +191,9 @@ function _fetch(url: string): Promise<string> {
       res.on('error', reject);
     });
     req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('timeout'));
+    });
   });
 }

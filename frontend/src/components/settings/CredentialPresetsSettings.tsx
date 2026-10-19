@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Plus, Pencil, Trash2, KeyRound, X, AlertCircle, CheckCircle, Loader2,
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, KeyRound, X, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import {
   credentialPresetsApi,
@@ -68,9 +66,17 @@ export default function CredentialPresetsSettings() {
   const user = useAuthStore((st) => st.user);
   const siteRoles = (user as { siteRoles?: Record<string, string> } | null)?.siteRoles;
   const fleetAdmin = user?.role === 'admin' && !siteRoles;
-  const adminSites = siteRoles ? Object.entries(siteRoles).filter(([, r]) => r === 'admin').map(([id]) => Number(id)) : [];
+  const adminSites = siteRoles
+    ? Object.entries(siteRoles)
+        .filter(([, r]) => r === 'admin')
+        .map(([id]) => Number(id))
+    : [];
   const isAdmin = fleetAdmin || adminSites.length > 0;
-  const { data: sites = [] } = useQuery({ queryKey: ['sites'], queryFn: () => sitesApi.list().then((r) => r.data), staleTime: 300_000 });
+  const { data: sites = [] } = useQuery({
+    queryKey: ['sites'],
+    queryFn: () => sitesApi.list().then((r) => r.data),
+    staleTime: 300_000,
+  });
   // Where this user may put a preset: anywhere for a fleet admin, else their sites.
   const siteChoices = fleetAdmin ? sites : sites.filter((st) => adminSites.includes(st.id));
   const { data: presets = [], isLoading } = useQuery({
@@ -128,7 +134,8 @@ export default function CredentialPresetsSettings() {
     onError: (err: unknown) => {
       const msg =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
-        (err as Error)?.message ?? 'Failed to save preset';
+        (err as Error)?.message ??
+        'Failed to save preset';
       setError(msg);
     },
   });
@@ -148,10 +155,9 @@ export default function CredentialPresetsSettings() {
               Device Credential Presets
             </h3>
             <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-              Reusable RouterOS API &amp; SSH credential sets. When adding a
-              discovered device you can pick a preset instead of retyping the
-              same username and password. Passwords are encrypted at rest and
-              never returned to the browser.
+              Reusable RouterOS API &amp; SSH credential sets. When adding a discovered device you
+              can pick a preset instead of retyping the same username and password. Passwords are
+              encrypted at rest and never returned to the browser.
             </p>
           </div>
           {isAdmin && (
@@ -195,9 +201,7 @@ export default function CredentialPresetsSettings() {
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
               {presets.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-2.5 cell-primary">
-                    {p.name}
-                  </td>
+                  <td className="px-4 py-2.5 cell-primary">{p.name}</td>
                   <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
                     {p.site_id != null ? (p.site_name ?? `Site ${p.site_id}`) : 'All sites'}
                   </td>
@@ -240,7 +244,11 @@ export default function CredentialPresetsSettings() {
                         </button>
                         <button
                           onClick={() => {
-                            if (confirm(`Delete credential preset "${p.name}"? Devices already using these credentials keep working — presets are not linked after use.`)) {
+                            if (
+                              confirm(
+                                `Delete credential preset "${p.name}"? Devices already using these credentials keep working — presets are not linked after use.`,
+                              )
+                            ) {
                               deleteMutation.mutate(p.id);
                             }
                           }}
@@ -278,12 +286,21 @@ export default function CredentialPresetsSettings() {
             <div className="p-5 space-y-4">
               <div>
                 <label className="label">Site</label>
-                <select className="input" value={form.site_id} onChange={(e) => set('site_id', e.target.value)}>
+                <select
+                  className="input"
+                  value={form.site_id}
+                  onChange={(e) => set('site_id', e.target.value)}
+                >
                   {fleetAdmin && <option value="">All sites (fleet-wide)</option>}
-                  {siteChoices.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
+                  {siteChoices.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.name}
+                    </option>
+                  ))}
                 </select>
                 <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
-                  A site&apos;s preset is only offered for devices in that site, and that site&apos;s admins manage it.
+                  A site&apos;s preset is only offered for devices in that site, and that
+                  site&apos;s admins manage it.
                 </p>
               </div>
               <div>
@@ -407,9 +424,8 @@ export default function CredentialPresetsSettings() {
                   onChange={(e) => set('allow_operator_use', e.target.checked)}
                 />
                 <span>
-                  Allow operator accounts to select this preset when adding or
-                  updating devices. Uncheck for admin-only presets (for example
-                  shared break-glass credentials).
+                  Allow operator accounts to select this preset when adding or updating devices.
+                  Uncheck for admin-only presets (for example shared break-glass credentials).
                 </span>
               </label>
 

@@ -43,7 +43,10 @@ export default function ChangePasswordPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    if (next !== confirm) { setError('The new passwords do not match.'); return; }
+    if (next !== confirm) {
+      setError('The new passwords do not match.');
+      return;
+    }
     setSaving(true);
     try {
       const { data } = await authApi.changePassword(current, next);
@@ -68,43 +71,88 @@ export default function ChangePasswordPage() {
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
             <Network className="w-7 h-7 text-white" />
           </div>
-          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>Mikrotik Manager</h1>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+            Mikrotik Manager
+          </h1>
         </div>
 
-        <div className={`backdrop-blur-sm rounded-xl shadow-2xl p-6 ${
-          isDark ? 'bg-slate-900/80 border border-slate-700/60' : 'bg-white/75 border border-slate-300/60'
-        }`}>
-          <h2 className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+        <div
+          className={`backdrop-blur-sm rounded-xl shadow-2xl p-6 ${
+            isDark
+              ? 'bg-slate-900/80 border border-slate-700/60'
+              : 'bg-white/75 border border-slate-300/60'
+          }`}
+        >
+          <h2
+            className={`text-lg font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}
+          >
             <KeyRound className="w-5 h-5 text-blue-500" /> Set a new password
           </h2>
           <p className={`text-sm mt-1 mb-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            {user?.username ? <><strong>{user.username}</strong> is</> : 'This account is'} still using the
-            default password. Choose a new one to continue: at least 10 characters, with a letter and a number.
+            {user?.username ? (
+              <>
+                <strong>{user.username}</strong> is
+              </>
+            ) : (
+              'This account is'
+            )}{' '}
+            still using the default password. Choose a new one to continue: at least 10 characters,
+            with a letter and a number.
           </p>
 
           <form onSubmit={submit} className="space-y-4">
             {!carried && (
               <div>
-                <label className={labelClass} htmlFor="current">Current password</label>
-                <input id="current" type={show ? 'text' : 'password'} className={inputClass}
-                       value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" autoFocus />
+                <label className={labelClass} htmlFor="current">
+                  Current password
+                </label>
+                <input
+                  id="current"
+                  type={show ? 'text' : 'password'}
+                  className={inputClass}
+                  value={current}
+                  onChange={(e) => setCurrent(e.target.value)}
+                  autoComplete="current-password"
+                  autoFocus
+                />
               </div>
             )}
             <div>
-              <label className={labelClass} htmlFor="new">New password</label>
+              <label className={labelClass} htmlFor="new">
+                New password
+              </label>
               <div className="relative">
-                <input id="new" type={show ? 'text' : 'password'} className={`${inputClass} pr-10`}
-                       value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" autoFocus={!!carried} />
-                <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide passwords' : 'Show passwords'}
-                        className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <input
+                  id="new"
+                  type={show ? 'text' : 'password'}
+                  className={`${inputClass} pr-10`}
+                  value={next}
+                  onChange={(e) => setNext(e.target.value)}
+                  autoComplete="new-password"
+                  autoFocus={!!carried}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShow(!show)}
+                  aria-label={show ? 'Hide passwords' : 'Show passwords'}
+                  className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+                >
                   {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
             <div>
-              <label className={labelClass} htmlFor="confirm">Confirm new password</label>
-              <input id="confirm" type={show ? 'text' : 'password'} className={inputClass}
-                     value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
+              <label className={labelClass} htmlFor="confirm">
+                Confirm new password
+              </label>
+              <input
+                id="confirm"
+                type={show ? 'text' : 'password'}
+                className={inputClass}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+              />
             </div>
 
             {error && (
@@ -113,11 +161,20 @@ export default function ChangePasswordPage() {
               </div>
             )}
 
-            <button type="submit" className="btn-primary w-full" disabled={saving || !current || !next || !confirm}>
+            <button
+              type="submit"
+              className="btn-primary w-full"
+              disabled={saving || !current || !next || !confirm}
+            >
               {saving ? 'Saving…' : 'Save and continue'}
             </button>
-            <button type="button" onClick={() => { void signOut().then(() => navigate('/login', { replace: true })); }}
-                    className={`w-full text-sm ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
+            <button
+              type="button"
+              onClick={() => {
+                void signOut().then(() => navigate('/login', { replace: true }));
+              }}
+              className={`w-full text-sm ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+            >
               Sign out
             </button>
           </form>

@@ -9,11 +9,11 @@ not.
 
 Every device is polled on three cadences, dispatched through Redis-backed queues:
 
-| Poll | Default | Collects |
-|---|---|---|
-| Fast | 30 s | Interface traffic, resources, clients, status |
-| Logs | 60 s | Device log events |
-| Slow | 5 min | Interfaces, VLANs, system info, wireless, STP |
+| Poll | Default | Collects                                      |
+| ---- | ------- | --------------------------------------------- |
+| Fast | 30 s    | Interface traffic, resources, clients, status |
+| Logs | 60 s    | Device log events                             |
+| Slow | 5 min   | Interfaces, VLANs, system info, wireless, STP |
 
 The intervals are set in **Settings → Polling** (the defaults above), and a site or a single
 device can override them, along with MAC scan, config snapshots and whether backups include
@@ -143,7 +143,7 @@ Below **1.0** the backlog grows every cycle and devices go stale. Comfortably ab
 the fleet is being polled on schedule.
 
 **Headroom alone is not enough**, which is why backlog and drain estimate sit beside it. It
-describes flow — whether the workers can keep up *from here* — and is blind to work already
+describes flow — whether the workers can keep up _from here_ — and is blind to work already
 queued. A healthy headroom next to a large backlog means capacity is fine but you are still
 working through a queue.
 
@@ -164,14 +164,14 @@ duration and last error. Their difference is that distinction.
 
 All of these are environment variables and need a container restart.
 
-| Variable | Default | Effect |
-|---|---|---|
-| `POLLER_CONCURRENCY` | 12 | Workers per queue. The first lever when headroom is low |
-| `POLLER_INTERVAL_MS` | 10000 | Scheduler tick: how often it checks what's due. Polls run at their own intervals; this only needs to be as short as the shortest of them (10 s is the shortest fast poll) |
-| `POLLER_JOB_TIMEOUT_MS` | 45000 | Ceiling on one poll, so a dead device cannot hold a worker. A poll that runs past it is cancelled and its connection closed |
-| `POLLER_JOB_RETENTION_SEC` | 3600 | How long finished jobs are kept |
-| `POLLER_JOB_RETENTION_COUNT` | 5000 | How many finished jobs are kept |
-| `REDIS_MAXMEMORY` | 512mb | Ceiling on Redis |
+| Variable                     | Default | Effect                                                                                                                                                                    |
+| ---------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POLLER_CONCURRENCY`         | 12      | Workers per queue. The first lever when headroom is low                                                                                                                   |
+| `POLLER_INTERVAL_MS`         | 10000   | Scheduler tick: how often it checks what's due. Polls run at their own intervals; this only needs to be as short as the shortest of them (10 s is the shortest fast poll) |
+| `POLLER_JOB_TIMEOUT_MS`      | 45000   | Ceiling on one poll, so a dead device cannot hold a worker. A poll that runs past it is cancelled and its connection closed                                               |
+| `POLLER_JOB_RETENTION_SEC`   | 3600    | How long finished jobs are kept                                                                                                                                           |
+| `POLLER_JOB_RETENTION_COUNT` | 5000    | How many finished jobs are kept                                                                                                                                           |
+| `REDIS_MAXMEMORY`            | 512mb   | Ceiling on Redis                                                                                                                                                          |
 
 Raise concurrency first. Lengthen the poll intervals second (in Settings, or for the sites
 that need it) — it reduces freshness, which is the thing you are paying for.
@@ -196,14 +196,14 @@ docker compose --profile workers up -d --scale poller=3
 Each `poller` container runs `POLLER_CONCURRENCY` polls at once against the same Redis and
 Postgres, and nothing else: no API, no schedule, no firmware rollouts, reports or backups, which
 stay with the backend. Their live updates reach the browser through the backend. **Settings →
-Polling** counts every process's workers (*Workers: 36, in 3 processes*), and headroom uses
+Polling** counts every process's workers (_Workers: 36, in 3 processes_), and headroom uses
 the total. To leave all polling to the workers, set `POLLER_ROLE=api` on the backend in `.env`.
 
-| `POLLER_ROLE` | Runs |
-|---|---|
-| `all` (default) | The API, the schedule and poll workers |
-| `api` | The API and the schedule; polls go to `poller` containers |
-| `worker` | Poll workers only (what the `poller` service sets) |
+| `POLLER_ROLE`   | Runs                                                      |
+| --------------- | --------------------------------------------------------- |
+| `all` (default) | The API, the schedule and poll workers                    |
+| `api`           | The API and the schedule; polls go to `poller` containers |
+| `worker`        | Poll workers only (what the `poller` service sets)        |
 
 Worth knowing:
 
@@ -223,12 +223,12 @@ trip per device per cycle.
 
 **Settings → Polling → Collectors.**
 
-| Collector | Cadence | Cost of switching it off |
-|---|---|---|
-| Connected clients | fast poll | No client list, per-client traffic or fingerprinting |
-| Neighbour discovery | slow poll | Topology stops updating; no automatic discovery |
-| Device logs | own 60s poll | No events; log alerts go quiet. The session is skipped entirely |
-| Certificates | slow poll | No certificate inventory or expiry warnings |
+| Collector           | Cadence      | Cost of switching it off                                        |
+| ------------------- | ------------ | --------------------------------------------------------------- |
+| Connected clients   | fast poll    | No client list, per-client traffic or fingerprinting            |
+| Neighbour discovery | slow poll    | Topology stops updating; no automatic discovery                 |
+| Device logs         | own 60s poll | No events; log alerts go quiet. The session is skipped entirely |
+| Certificates        | slow poll    | No certificate inventory or expiry warnings                     |
 
 Measured on the reference fleet, turning off clients and logs:
 
@@ -256,7 +256,7 @@ after the upgrade — 109,649 rows on a five-device fleet that had been running 
 **A device already queued is not enqueued again.** Deduplication is by job id, so a
 backlog cannot compound: one outstanding poll per device and kind, however long it waits.
 
-**Periodic polls are not retried in-job.** The schedule *is* the retry — a device that did
+**Periodic polls are not retried in-job.** The schedule _is_ the retry — a device that did
 not answer is unlikely to answer a second later, and a retry occupies a worker the rest of
 the fleet needs.
 

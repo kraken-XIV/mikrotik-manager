@@ -10,18 +10,25 @@ import { X, Maximize2, Minimize2 } from 'lucide-react';
  */
 
 const HANDLES = [
-  { dir: 'n',  cursor: 'ns-resize',   style: { top: 0, left: 6, right: 6, height: 6 } },
+  { dir: 'n', cursor: 'ns-resize', style: { top: 0, left: 6, right: 6, height: 6 } },
   { dir: 'ne', cursor: 'nesw-resize', style: { top: 0, right: 0, width: 10, height: 10 } },
-  { dir: 'e',  cursor: 'ew-resize',   style: { top: 6, right: 0, bottom: 6, width: 6 } },
+  { dir: 'e', cursor: 'ew-resize', style: { top: 6, right: 0, bottom: 6, width: 6 } },
   { dir: 'se', cursor: 'nwse-resize', style: { bottom: 0, right: 0, width: 10, height: 10 } },
-  { dir: 's',  cursor: 'ns-resize',   style: { bottom: 0, left: 6, right: 6, height: 6 } },
+  { dir: 's', cursor: 'ns-resize', style: { bottom: 0, left: 6, right: 6, height: 6 } },
   { dir: 'sw', cursor: 'nesw-resize', style: { bottom: 0, left: 0, width: 10, height: 10 } },
-  { dir: 'w',  cursor: 'ew-resize',   style: { top: 6, left: 0, bottom: 6, width: 6 } },
+  { dir: 'w', cursor: 'ew-resize', style: { top: 6, left: 0, bottom: 6, width: 6 } },
   { dir: 'nw', cursor: 'nwse-resize', style: { top: 0, left: 0, width: 10, height: 10 } },
 ] as const;
 
 export default function FloatingWindow({
-  title, icon, onClose, children, width = 560, height = 620, minWidth = 360, minHeight = 260,
+  title,
+  icon,
+  onClose,
+  children,
+  width = 560,
+  height = 620,
+  minWidth = 360,
+  minHeight = 260,
 }: {
   title: ReactNode;
   icon?: ReactNode;
@@ -37,11 +44,18 @@ export default function FloatingWindow({
   const [geom, setGeom] = useState(() => {
     const w = Math.min(width, window.innerWidth - 32);
     const h = Math.min(height, window.innerHeight - 32);
-    return { x: Math.max(16, (window.innerWidth - w) / 2), y: Math.max(16, (window.innerHeight - h) / 2), w, h };
+    return {
+      x: Math.max(16, (window.innerWidth - w) / 2),
+      y: Math.max(16, (window.innerHeight - h) / 2),
+      w,
+      h,
+    };
   });
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
@@ -86,8 +100,14 @@ export default function FloatingWindow({
       let { l, t, w, h } = o;
       if (dir.includes('e')) w = Math.max(minWidth, o.w + dx);
       if (dir.includes('s')) h = Math.max(minHeight, o.h + dy);
-      if (dir.includes('w')) { w = Math.max(minWidth, o.w - dx); l = o.l + o.w - w; }
-      if (dir.includes('n')) { h = Math.max(minHeight, o.h - dy); t = o.t + o.h - h; }
+      if (dir.includes('w')) {
+        w = Math.max(minWidth, o.w - dx);
+        l = o.l + o.w - w;
+      }
+      if (dir.includes('n')) {
+        h = Math.max(minHeight, o.h - dy);
+        t = o.t + o.h - h;
+      }
       Object.assign(el.style, { left: `${l}px`, top: `${t}px`, width: `${w}px`, height: `${h}px` });
     });
   };
@@ -101,28 +121,59 @@ export default function FloatingWindow({
         aria-modal="true"
         className="flex flex-col shadow-2xl overflow-hidden"
         style={{
-          background: 'var(--surface)', border: '1px solid var(--line)', zIndex: 10000,
+          background: 'var(--surface)',
+          border: '1px solid var(--line)',
+          zIndex: 10000,
           ...(maximized
             ? { position: 'fixed', inset: 0, borderRadius: 0 }
-            : { position: 'fixed', left: geom.x, top: geom.y, width: geom.w, height: geom.h, borderRadius: '0.75rem', minWidth, minHeight }),
+            : {
+                position: 'fixed',
+                left: geom.x,
+                top: geom.y,
+                width: geom.w,
+                height: geom.h,
+                borderRadius: '0.75rem',
+                minWidth,
+                minHeight,
+              }),
         }}
       >
-        {!maximized && HANDLES.map(({ dir, cursor, style }) => (
-          <div key={dir} style={{ position: 'absolute', zIndex: 10, cursor, ...style }} onMouseDown={(e) => onResize(e, dir)} />
-        ))}
+        {!maximized &&
+          HANDLES.map(({ dir, cursor, style }) => (
+            <div
+              key={dir}
+              style={{ position: 'absolute', zIndex: 10, cursor, ...style }}
+              onMouseDown={(e) => onResize(e, dir)}
+            />
+          ))}
         <div
           className="flex items-center gap-2 px-4 py-2.5 select-none shrink-0"
-          style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', cursor: maximized ? 'default' : 'grab' }}
+          style={{
+            background: 'var(--surface-2)',
+            borderBottom: '1px solid var(--line)',
+            cursor: maximized ? 'default' : 'grab',
+          }}
           onMouseDown={onDrag}
           onDoubleClick={() => setMaximized((m) => !m)}
         >
           {icon}
-          <span className="text-sm font-medium flex-1 truncate" style={{ color: 'var(--ink)' }}>{title}</span>
-          <button onClick={() => setMaximized((m) => !m)} title={maximized ? 'Restore' : 'Maximize'}
-            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" style={{ color: 'var(--ink-3)' }}>
+          <span className="text-sm font-medium flex-1 truncate" style={{ color: 'var(--ink)' }}>
+            {title}
+          </span>
+          <button
+            onClick={() => setMaximized((m) => !m)}
+            title={maximized ? 'Restore' : 'Maximize'}
+            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+            style={{ color: 'var(--ink-3)' }}
+          >
             {maximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
-          <button onClick={onClose} title="Close" className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10" style={{ color: 'var(--ink-3)' }}>
+          <button
+            onClick={onClose}
+            title="Close"
+            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+            style={{ color: 'var(--ink-3)' }}
+          >
             <X className="w-4 h-4" />
           </button>
         </div>

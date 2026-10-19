@@ -5,9 +5,10 @@ import * as nodeCrypto from 'crypto';
 
 // Reproduce ciphertext exactly as legacy code produced it under a given key.
 function legacyEncrypt(plain: string, material: string): string {
-  const key = material.length === 32
-    ? Buffer.from(material, 'utf8')
-    : nodeCrypto.createHash('sha256').update(material).digest();
+  const key =
+    material.length === 32
+      ? Buffer.from(material, 'utf8')
+      : nodeCrypto.createHash('sha256').update(material).digest();
   const iv = nodeCrypto.randomBytes(16);
   const cipher = nodeCrypto.createCipheriv('aes-256-gcm', key, iv);
   const enc = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
@@ -95,8 +96,8 @@ describe('self-healing secrets', () => {
 
     // Boot with no env key → auto-generate a new current key.
     const crypto = await import('../crypto');
-    expect(crypto.decrypt(legacyCipher)).toBe('router-admin-pw');    // legacy fallback works
-    expect(crypto.needsReencryption(legacyCipher)).toBe(true);        // flagged for forward migration
+    expect(crypto.decrypt(legacyCipher)).toBe('router-admin-pw'); // legacy fallback works
+    expect(crypto.needsReencryption(legacyCipher)).toBe(true); // flagged for forward migration
     expect(crypto.needsReencryption(crypto.encrypt('x'))).toBe(false); // current-key data is not
   });
 });

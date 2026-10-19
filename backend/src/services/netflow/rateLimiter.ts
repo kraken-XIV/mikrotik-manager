@@ -24,7 +24,10 @@ export class PacketRateLimiter {
   private windowStart: number;
   private droppedCount = 0;
 
-  constructor(private readonly opts: RateLimiterOptions, now: number = Date.now()) {
+  constructor(
+    private readonly opts: RateLimiterOptions,
+    now: number = Date.now(),
+  ) {
     this.windowStart = now;
   }
 

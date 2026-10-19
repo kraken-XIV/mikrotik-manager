@@ -130,13 +130,13 @@ the old network and not apply the change. `down` then `up` works on all of them.
 IPv4 devices work the same either way.
 
 !!! note "Reachable over a VPN but not over its public IP?"
-    RouterOS's own `IP → Services` list restricts each service (`api`, `api-ssl`) by an
-    **"Available From"** address list. It accepts the TCP connection from anywhere, then
-    silently drops it mid-login if the source isn't on that list — which shows up here as
-    "The device closed the connection during login," not a normal refused/timed-out error.
-    If a device connects fine over WireGuard (or another VPN) but not from its public IP,
-    check that field: either add the reachable range, or leave it restricted and keep using
-    the VPN, which is the safer choice for internet-facing management anyway.
+RouterOS's own `IP → Services` list restricts each service (`api`, `api-ssl`) by an
+**"Available From"** address list. It accepts the TCP connection from anywhere, then
+silently drops it mid-login if the source isn't on that list — which shows up here as
+"The device closed the connection during login," not a normal refused/timed-out error.
+If a device connects fine over WireGuard (or another VPN) but not from its public IP,
+check that field: either add the reachable range, or leave it restricted and keep using
+the VPN, which is the safer choice for internet-facing management anyway.
 
 **Try All** runs a bulk add across every discovered device as a server-side job. It survives a
 closed browser tab and reports progress and failures per device.
@@ -150,21 +150,21 @@ closed browser tab and reports progress and failures per device.
 3. Replace the example rows with your devices, one per row, and save as CSV.
 4. Choose the file in the same dialog.
 
-| Column | Needed | What to put in it |
-|---|---|---|
-| `ip_address` | Required | The device's IP address or hostname |
-| `name` | Optional | What to call it. Blank uses the address |
-| `type` | Optional | `router`, `switch`, `ap` or `other`. Blank means router |
-| `preset` | Login | The name of a saved [credential preset](#device-credentials) |
-| `username`, `password` | Login | The RouterOS login, if not using a preset |
-| `port` | Optional | The API port. Blank tries API-SSL (8729), then 8728 |
-| `api_ssl` | Optional | `yes` when `port` runs api-ssl on a port other than 8729, `no` for the plain API on 8729 |
-| `ssh_username`, `ssh_password` | Optional | Only if SSH uses a different login. Blank uses the one above |
-| `ssh_only` | Optional | `yes` when the API isn't enabled yet; see [SSH only](#devices-without-the-api-enabled-ssh-only) |
-| `tags` | Optional | Existing tags. Create them under Settings → Tags first |
-| `site` | Optional | The [site](sites.md) it joins, by name. One that doesn't exist yet is made (fleet-wide accounts). Blank joins the site in view |
-| `site_group` | Optional | The [group](sites.md#groups) (customer) a new site goes in, made if it's new. Also read as `customer` or `client` |
-| `notes` | Optional | Anything you like |
+| Column                         | Needed   | What to put in it                                                                                                              |
+| ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `ip_address`                   | Required | The device's IP address or hostname                                                                                            |
+| `name`                         | Optional | What to call it. Blank uses the address                                                                                        |
+| `type`                         | Optional | `router`, `switch`, `ap` or `other`. Blank means router                                                                        |
+| `preset`                       | Login    | The name of a saved [credential preset](#device-credentials)                                                                   |
+| `username`, `password`         | Login    | The RouterOS login, if not using a preset                                                                                      |
+| `port`                         | Optional | The API port. Blank tries API-SSL (8729), then 8728                                                                            |
+| `api_ssl`                      | Optional | `yes` when `port` runs api-ssl on a port other than 8729, `no` for the plain API on 8729                                       |
+| `ssh_username`, `ssh_password` | Optional | Only if SSH uses a different login. Blank uses the one above                                                                   |
+| `ssh_only`                     | Optional | `yes` when the API isn't enabled yet; see [SSH only](#devices-without-the-api-enabled-ssh-only)                                |
+| `tags`                         | Optional | Existing tags. Create them under Settings → Tags first                                                                         |
+| `site`                         | Optional | The [site](sites.md) it joins, by name. One that doesn't exist yet is made (fleet-wide accounts). Blank joins the site in view |
+| `site_group`                   | Optional | The [group](sites.md#groups) (customer) a new site goes in, made if it's new. Also read as `customer` or `client`              |
+| `notes`                        | Optional | Anything you like                                                                                                              |
 
 A `group` column is read as tags, as it always was; the dialog says so. The group of a site
 that already exists is left as it is. The dialog lists the sites an import will make.
@@ -188,8 +188,8 @@ Unknown columns are listed and ignored.
 The import runs as the same server-side job as **Try All**, so the tab can be closed.
 
 !!! note "Credentials are stored encrypted"
-    API passwords are encrypted at rest with the key from `ENCRYPTION_KEY`. Losing that key
-    means re-entering every device password; see [Configuration](configuration.md).
+API passwords are encrypted at rest with the key from `ENCRYPTION_KEY`. Losing that key
+means re-entering every device password; see [Configuration](configuration.md).
 
 ## Device credentials
 
@@ -238,9 +238,9 @@ without `policy`, and the revert it schedules runs with the permissions of the u
 created it. RouterOS 7's built-in **`write`** group has every permission except `policy` and
 `ftp`, so with a `write` user the restore point fails with "not enough permissions" and:
 
-- protected changes are applied without auto-revert, and the result says so: *Applied without
+- protected changes are applied without auto-revert, and the result says so: _Applied without
   auto-revert protection: Could not arm auto-revert on this device (not enough permissions
-  (9))*;
+  (9))_;
 - changes that could cut the manager off are refused rather than applied unprotected.
 
 A user in the `read` group can be monitored but not changed.
@@ -307,12 +307,12 @@ Tags themselves are created under **Settings → Tags**.
 
 ## Status colours
 
-| Colour | Meaning |
-|---|---|
-| Green | Online |
-| Amber | **Degraded**: online, but a power supply or fan reports a failure, or a temperature is at or over the limit |
-| Red | Offline |
-| Grey | Unknown, or offline when the device is marked as expected to drop out |
+| Colour | Meaning                                                                                                     |
+| ------ | ----------------------------------------------------------------------------------------------------------- |
+| Green  | Online                                                                                                      |
+| Amber  | **Degraded**: online, but a power supply or fan reports a failure, or a temperature is at or over the limit |
+| Red    | Offline                                                                                                     |
+| Grey   | Unknown, or offline when the device is marked as expected to drop out                                       |
 
 ### Hardware health
 
@@ -345,8 +345,8 @@ powered devices, or anything else that drops out normally. Such a device:
 
 ### Resetting a device's outage count
 
-The dashboard lists a device that went offline several times in the last week as *had N
-outages this week*. Once you've dealt with the cause, or the drops were expected (an LTE link
+The dashboard lists a device that went offline several times in the last week as _had N
+outages this week_. Once you've dealt with the cause, or the drops were expected (an LTE link
 reconnecting, say), **Reset count** on that item counts the device's outages from now on, so
 the item goes away until it drops again (#85). Only the count is reset: the availability
 history, uptime figures and reports keep every outage. **Snooze** instead hides the item for
@@ -354,23 +354,23 @@ history, uptime figures and reports keep every outage. **Snooze** instead hides 
 
 ## Device tabs
 
-| Tab | What it is for |
-|---|---|
-| **Overview** | Status, uptime, model, firmware, resource graphs, location |
-| **Ports** | The switch faceplate, per-port configuration, bonds, VLAN membership |
-| **Bridges** | Every bridge, its ports, VLAN filtering and spanning tree; create, rename, edit, delete |
-| **VLANs** | The bridge VLAN table, and copying VLANs between switches |
-| **Radios** | Wireless interfaces, SSIDs, channels, connected clients |
-| **Firewall** | Filter, NAT and mangle rules, with reordering and counters |
-| **Routing** | Routes, OSPF, BGP, routing tables and filters |
-| **Queues** | Traffic shaping |
-| **Connections** | The live connection tracking table: the total, and the first 200, 500 or 2,000 connections, filtered by protocol on the router. A busy router isn't asked for its whole table, and refreshing is on request unless you turn on auto-refresh (#300). Every column sorts, ports included (before 0.71.0, RouterOS 7.24's ports were missing) |
-| **Hardware** | Health sensors, PoE, SFP module detail |
-| **LTE** | Signal, carrier, bands and the data cap — see [Cellular](cellular.md) |
-| **Security** | Baseline hardening checks and the posture score |
-| **Config** | System settings, certificates, SSH keys, clock |
-| **Config History** | Snapshots of `/export`, diffs, and rollback ([what rollback can do](backups.md#restoring)) |
-| **Tools** | Ping, traceroute, IP scan, Wake-on-LAN, packet capture, bandwidth test |
+| Tab                | What it is for                                                                                                                                                                                                                                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Overview**       | Status, uptime, model, firmware, resource graphs, location                                                                                                                                                                                                                                                                                 |
+| **Ports**          | The switch faceplate, per-port configuration, bonds, VLAN membership                                                                                                                                                                                                                                                                       |
+| **Bridges**        | Every bridge, its ports, VLAN filtering and spanning tree; create, rename, edit, delete                                                                                                                                                                                                                                                    |
+| **VLANs**          | The bridge VLAN table, and copying VLANs between switches                                                                                                                                                                                                                                                                                  |
+| **Radios**         | Wireless interfaces, SSIDs, channels, connected clients                                                                                                                                                                                                                                                                                    |
+| **Firewall**       | Filter, NAT and mangle rules, with reordering and counters                                                                                                                                                                                                                                                                                 |
+| **Routing**        | Routes, OSPF, BGP, routing tables and filters                                                                                                                                                                                                                                                                                              |
+| **Queues**         | Traffic shaping                                                                                                                                                                                                                                                                                                                            |
+| **Connections**    | The live connection tracking table: the total, and the first 200, 500 or 2,000 connections, filtered by protocol on the router. A busy router isn't asked for its whole table, and refreshing is on request unless you turn on auto-refresh (#300). Every column sorts, ports included (before 0.71.0, RouterOS 7.24's ports were missing) |
+| **Hardware**       | Health sensors, PoE, SFP module detail                                                                                                                                                                                                                                                                                                     |
+| **LTE**            | Signal, carrier, bands and the data cap — see [Cellular](cellular.md)                                                                                                                                                                                                                                                                      |
+| **Security**       | Baseline hardening checks and the posture score                                                                                                                                                                                                                                                                                            |
+| **Config**         | System settings, certificates, SSH keys, clock                                                                                                                                                                                                                                                                                             |
+| **Config History** | Snapshots of `/export`, diffs, and rollback ([what rollback can do](backups.md#restoring))                                                                                                                                                                                                                                                 |
+| **Tools**          | Ping, traceroute, IP scan, Wake-on-LAN, packet capture, bandwidth test                                                                                                                                                                                                                                                                     |
 
 Tabs appear only where they apply: a switch has no Radios tab, a device without a modem has no
 LTE tab.
@@ -467,9 +467,9 @@ that entry is left alone and the editor tells you which VLANs are still tagged. 
 entry on the VLANs tab to remove them.
 
 !!! warning "This is a guarded change"
-    Moving the port that carries management traffic is the most common way to lock a MikroTik
-    out of itself. Every VLAN change runs through [Change Guard](change-guard.md), which
-    predicts lockout before applying and lets the device restore itself if contact is lost.
+Moving the port that carries management traffic is the most common way to lock a MikroTik
+out of itself. Every VLAN change runs through [Change Guard](change-guard.md), which
+predicts lockout before applying and lets the device restore itself if contact is lost.
 
 ### Moving ports between bridges
 
@@ -574,7 +574,7 @@ confirm that nothing relies on them for that traffic. FastTracked connections ca
 offloaded on chips that support it.
 
 When a supported device routes between two or more VLANs with offloading off, Config Health
-reports *Routing between VLANs runs on the CPU*. There's no one-click fix: whether to trade the
+reports _Routing between VLANs runs on the CPU_. There's no one-click fix: whether to trade the
 firewall for speed is your call.
 
 ## Tools
@@ -582,13 +582,13 @@ firewall for speed is your call.
 All of these run **on the device**, not from the manager, so they see the network from where
 the device sits.
 
-| Tool | Notes |
-|---|---|
-| Ping | Reachability with RTT and loss |
-| Traceroute | Hop-by-hop path |
-| IP Scan | ARP sweep of a subnet |
-| Wake-on-LAN | Magic packet sent from the device |
-| Packet capture | 5–60s sniff, downloaded as `.pcap`. Requires SSH |
+| Tool           | Notes                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------- |
+| Ping           | Reachability with RTT and loss                                                        |
+| Traceroute     | Hop-by-hop path                                                                       |
+| IP Scan        | ARP sweep of a subnet                                                                 |
+| Wake-on-LAN    | Magic packet sent from the device                                                     |
+| Packet capture | 5–60s sniff, downloaded as `.pcap`. Requires SSH                                      |
 | Bandwidth test | Between two managed devices; the target's test server is enabled and disabled for you |
 
 ### Terminal

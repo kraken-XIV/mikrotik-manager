@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
-  isValidDeviceAddress, isValidIPv4, isValidIPv6, isValidHostname,
-  isPrivateIp, classifyAddress, splitAddressAndPort, addressFieldValue, stripIPv6Brackets,
+  isValidDeviceAddress,
+  isValidIPv4,
+  isValidIPv6,
+  isValidHostname,
+  isPrivateIp,
+  classifyAddress,
+  splitAddressAndPort,
+  addressFieldValue,
+  stripIPv6Brackets,
 } from './deviceAddress';
 
 describe('isValidDeviceAddress', () => {
@@ -67,11 +74,17 @@ describe('isPrivateIp / classifyAddress', () => {
 
 describe('splitAddressAndPort', () => {
   it('pulls host and port out of a pasted URL', () => {
-    expect(splitAddressAndPort('https://1.2.3.4:8729/')).toEqual({ address: '1.2.3.4', port: 8729 });
+    expect(splitAddressAndPort('https://1.2.3.4:8729/')).toEqual({
+      address: '1.2.3.4',
+      port: 8729,
+    });
   });
 
   it('pulls host and port out of a bracketed IPv6 URL', () => {
-    expect(splitAddressAndPort('[2001:db8::1]:8729')).toEqual({ address: '2001:db8::1', port: 8729 });
+    expect(splitAddressAndPort('[2001:db8::1]:8729')).toEqual({
+      address: '2001:db8::1',
+      port: 8729,
+    });
   });
 
   it('splits a bare host:port', () => {
@@ -105,7 +118,10 @@ describe('addressFieldValue', () => {
 
   it('still splits a pasted host:port or URL', () => {
     expect(addressFieldValue('192.168.88.1:8729')).toEqual({ address: '192.168.88.1', port: 8729 });
-    expect(addressFieldValue('https://router.lan:8729/')).toEqual({ address: 'router.lan', port: 8729 });
+    expect(addressFieldValue('https://router.lan:8729/')).toEqual({
+      address: 'router.lan',
+      port: 8729,
+    });
   });
 
   it('does not rewrite half-typed input', () => {
@@ -142,7 +158,9 @@ describe('sameAddress (#178)', () => {
 describe('hostPort / winboxAddress (#198)', () => {
   it('brackets IPv6 before a port', async () => {
     const { hostPort } = await import('./deviceAddress');
-    expect(hostPort('fdfd:abcd:1235:4f39:eb11:c0a7:b1c5:a65c', 8728)).toBe('[fdfd:abcd:1235:4f39:eb11:c0a7:b1c5:a65c]:8728');
+    expect(hostPort('fdfd:abcd:1235:4f39:eb11:c0a7:b1c5:a65c', 8728)).toBe(
+      '[fdfd:abcd:1235:4f39:eb11:c0a7:b1c5:a65c]:8728',
+    );
     expect(hostPort('[2001:db8::1]', 8729)).toBe('[2001:db8::1]:8729');
     expect(hostPort('192.168.0.51', 8729)).toBe('192.168.0.51:8729');
     expect(hostPort('router.example', 8728)).toBe('router.example:8728');

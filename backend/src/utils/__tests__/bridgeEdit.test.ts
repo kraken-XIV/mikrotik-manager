@@ -2,14 +2,25 @@ import { parseBridgeCreate, parseBridgeUpdate, parsePriority } from '../bridgeEd
 
 describe('bridge edits', () => {
   it('creates with RSTP unless told otherwise', () => {
-    expect(parseBridgeCreate({ name: 'bridge-guest' })).toEqual({ fields: { name: 'bridge-guest', 'protocol-mode': 'rstp' } });
-    expect(parseBridgeCreate({ name: 'br2', protocol_mode: 'none', vlan_filtering: true, comment: 'iot' }))
-      .toEqual({ fields: { name: 'br2', 'protocol-mode': 'none', 'vlan-filtering': 'yes', comment: 'iot' } });
+    expect(parseBridgeCreate({ name: 'bridge-guest' })).toEqual({
+      fields: { name: 'bridge-guest', 'protocol-mode': 'rstp' },
+    });
+    expect(
+      parseBridgeCreate({
+        name: 'br2',
+        protocol_mode: 'none',
+        vlan_filtering: true,
+        comment: 'iot',
+      }),
+    ).toEqual({
+      fields: { name: 'br2', 'protocol-mode': 'none', 'vlan-filtering': 'yes', comment: 'iot' },
+    });
   });
   it('updates only what was sent', () => {
     expect(parseBridgeUpdate({ name: 'bridge-lan' })).toEqual({ fields: { name: 'bridge-lan' } });
-    expect(parseBridgeUpdate({ priority: '0x4000', disabled: false, comment: '' }))
-      .toEqual({ fields: { priority: '0x4000', disabled: 'no', comment: '' } });
+    expect(parseBridgeUpdate({ priority: '0x4000', disabled: false, comment: '' })).toEqual({
+      fields: { priority: '0x4000', disabled: 'no', comment: '' },
+    });
     expect(parseBridgeUpdate({})).toEqual({ error: 'Nothing to change' });
   });
   it('reads STP priority as decimal or hex, in steps of 4096', () => {

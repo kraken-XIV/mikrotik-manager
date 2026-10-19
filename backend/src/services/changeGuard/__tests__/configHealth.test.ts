@@ -19,7 +19,9 @@ const device: GuardDevice = {
  */
 function healthy(over: Partial<DeviceSnapshot> = {}): DeviceSnapshot {
   return {
-    addresses: [{ '.id': '*1', address: '192.168.0.40/24', interface: 'bridge', disabled: 'false' }],
+    addresses: [
+      { '.id': '*1', address: '192.168.0.40/24', interface: 'bridge', disabled: 'false' },
+    ],
     interfaces: [
       { name: 'bridge', type: 'bridge', disabled: 'false', mtu: '1500', l2mtu: '1596' },
       { name: 'sfp28-1', type: 'ether', disabled: 'false', mtu: '1500', l2mtu: '1596' },
@@ -32,15 +34,31 @@ function healthy(over: Partial<DeviceSnapshot> = {}): DeviceSnapshot {
       { interface: 'ether1', bridge: 'bridge', pvid: '1', disabled: 'false', hw: 'true' },
     ],
     bridgeVlans: [
-      { bridge: 'bridge', 'vlan-ids': '1', tagged: '', untagged: 'bridge,sfp28-1,ether1',
-        'current-tagged': '', 'current-untagged': 'bridge,sfp28-1,ether1', dynamic: 'false' },
-      { bridge: 'bridge', 'vlan-ids': '10', tagged: 'sfp28-1,bridge', untagged: '',
-        'current-tagged': 'sfp28-1,bridge', 'current-untagged': '', dynamic: 'false' },
+      {
+        bridge: 'bridge',
+        'vlan-ids': '1',
+        tagged: '',
+        untagged: 'bridge,sfp28-1,ether1',
+        'current-tagged': '',
+        'current-untagged': 'bridge,sfp28-1,ether1',
+        dynamic: 'false',
+      },
+      {
+        bridge: 'bridge',
+        'vlan-ids': '10',
+        tagged: 'sfp28-1,bridge',
+        untagged: '',
+        'current-tagged': 'sfp28-1,bridge',
+        'current-untagged': '',
+        dynamic: 'false',
+      },
     ],
     bonds: [],
     routes: [{ '.id': '*A', 'dst-address': '0.0.0.0/0', gateway: '192.168.0.1', active: 'true' }],
     arp: [{ address: '192.168.0.1', 'mac-address': 'AA:BB:CC:00:00:01', interface: 'bridge' }],
-    bridgeHosts: [{ 'mac-address': 'AA:BB:CC:00:00:01', 'on-interface': 'sfp28-1', local: 'false' }],
+    bridgeHosts: [
+      { 'mac-address': 'AA:BB:CC:00:00:01', 'on-interface': 'sfp28-1', local: 'false' },
+    ],
     services: [{ '.id': '*3', name: 'api', port: '8728', disabled: 'false' }],
     firewallFilter: [],
     mgmtConnections: [],
@@ -75,11 +93,18 @@ describe('auditConfig', () => {
      */
     it('reports a RouterOS-relocated address as informational, not critical', () => {
       const snap = healthy({
-        addresses: [{
-          '.id': '*1', address: '192.168.0.51/24', interface: 'ether1',
-          'actual-interface': 'bridge', slave: 'true', disabled: 'false', invalid: 'false',
-          comment: 'defconf',
-        }],
+        addresses: [
+          {
+            '.id': '*1',
+            address: '192.168.0.51/24',
+            interface: 'ether1',
+            'actual-interface': 'bridge',
+            slave: 'true',
+            disabled: 'false',
+            invalid: 'false',
+            comment: 'defconf',
+          },
+        ],
       });
       const found = auditConfig(snap, device).find((f) => f.rule === 'ip-on-bridge-port');
       expect(found?.severity).toBe('info');
@@ -118,7 +143,9 @@ describe('auditConfig', () => {
   describe('vlan-iface-on-bridge-port', () => {
     it('flags a VLAN interface whose parent is a bridge port', () => {
       const snap = healthy({
-        vlanInterfaces: [{ name: 'mgmt-vlan', interface: 'ether1', 'vlan-id': '99', disabled: 'false' }],
+        vlanInterfaces: [
+          { name: 'mgmt-vlan', interface: 'ether1', 'vlan-id': '99', disabled: 'false' },
+        ],
       });
       const found = auditConfig(snap, device).find((f) => f.rule === 'vlan-iface-on-bridge-port');
       expect(found?.severity).toBe('critical');
@@ -127,7 +154,9 @@ describe('auditConfig', () => {
 
     it('does not flag a VLAN interface built on the bridge itself', () => {
       const snap = healthy({
-        vlanInterfaces: [{ name: 'vlan10', interface: 'bridge', 'vlan-id': '10', disabled: 'false' }],
+        vlanInterfaces: [
+          { name: 'vlan10', interface: 'bridge', 'vlan-id': '10', disabled: 'false' },
+        ],
       });
       expect(rules(snap)).not.toContain('vlan-iface-on-bridge-port');
     });
@@ -136,7 +165,9 @@ describe('auditConfig', () => {
   describe('bridged-vlan-interface', () => {
     it('flags a VLAN interface added as a bridge port', () => {
       const snap = healthy({
-        vlanInterfaces: [{ name: 'vlan10', interface: 'bridge', 'vlan-id': '10', disabled: 'false' }],
+        vlanInterfaces: [
+          { name: 'vlan10', interface: 'bridge', 'vlan-id': '10', disabled: 'false' },
+        ],
         bridgePorts: [
           { interface: 'sfp28-1', bridge: 'bridge', pvid: '1', disabled: 'false', hw: 'true' },
           { interface: 'vlan10', bridge: 'bridge', pvid: '1', disabled: 'false' },
@@ -190,10 +221,24 @@ describe('auditConfig', () => {
     it('flags a multi-VLAN entry that lists untagged ports', () => {
       const snap = healthy({
         bridgeVlans: [
-          { bridge: 'bridge', 'vlan-ids': '1', tagged: '', untagged: 'bridge,sfp28-1,ether1',
-            'current-tagged': '', 'current-untagged': 'bridge,sfp28-1,ether1', dynamic: 'false' },
-          { bridge: 'bridge', 'vlan-ids': '20-25', tagged: 'sfp28-1', untagged: 'ether1',
-            'current-tagged': 'sfp28-1', 'current-untagged': 'ether1', dynamic: 'false' },
+          {
+            bridge: 'bridge',
+            'vlan-ids': '1',
+            tagged: '',
+            untagged: 'bridge,sfp28-1,ether1',
+            'current-tagged': '',
+            'current-untagged': 'bridge,sfp28-1,ether1',
+            dynamic: 'false',
+          },
+          {
+            bridge: 'bridge',
+            'vlan-ids': '20-25',
+            tagged: 'sfp28-1',
+            untagged: 'ether1',
+            'current-tagged': 'sfp28-1',
+            'current-untagged': 'ether1',
+            dynamic: 'false',
+          },
         ],
       });
       const found = auditConfig(snap, device).find((f) => f.rule === 'multi-vid-untagged');
@@ -204,10 +249,24 @@ describe('auditConfig', () => {
     it('does not flag a multi-VLAN entry that is tagged-only', () => {
       const snap = healthy({
         bridgeVlans: [
-          { bridge: 'bridge', 'vlan-ids': '1', tagged: '', untagged: 'bridge,sfp28-1,ether1',
-            'current-tagged': '', 'current-untagged': 'bridge,sfp28-1,ether1', dynamic: 'false' },
-          { bridge: 'bridge', 'vlan-ids': '20-25', tagged: 'sfp28-1', untagged: '',
-            'current-tagged': 'sfp28-1', 'current-untagged': '', dynamic: 'false' },
+          {
+            bridge: 'bridge',
+            'vlan-ids': '1',
+            tagged: '',
+            untagged: 'bridge,sfp28-1,ether1',
+            'current-tagged': '',
+            'current-untagged': 'bridge,sfp28-1,ether1',
+            dynamic: 'false',
+          },
+          {
+            bridge: 'bridge',
+            'vlan-ids': '20-25',
+            tagged: 'sfp28-1',
+            untagged: '',
+            'current-tagged': 'sfp28-1',
+            'current-untagged': '',
+            dynamic: 'false',
+          },
         ],
       });
       expect(rules(snap)).not.toContain('multi-vid-untagged');
@@ -219,11 +278,18 @@ describe('auditConfig', () => {
       const snap = healthy({
         bridgePorts: [
           { interface: 'sfp28-1', bridge: 'bridge', pvid: '1', disabled: 'false', hw: 'true' },
-          { interface: 'ether1', bridge: 'bridge', pvid: '20', disabled: 'false',
-            'frame-types': 'admit-only-vlan-tagged' },
+          {
+            interface: 'ether1',
+            bridge: 'bridge',
+            pvid: '20',
+            disabled: 'false',
+            'frame-types': 'admit-only-vlan-tagged',
+          },
         ],
       });
-      const found = auditConfig(snap, device).find((f) => f.rule === 'pvid-with-tagged-only-frame-type');
+      const found = auditConfig(snap, device).find(
+        (f) => f.rule === 'pvid-with-tagged-only-frame-type',
+      );
       expect(found?.severity).toBe('warning');
       expect(found?.objects).toContain('ether1');
     });
@@ -232,8 +298,13 @@ describe('auditConfig', () => {
       const snap = healthy({
         bridgePorts: [
           { interface: 'sfp28-1', bridge: 'bridge', pvid: '1', disabled: 'false', hw: 'true' },
-          { interface: 'ether1', bridge: 'bridge', pvid: '1', disabled: 'false',
-            'frame-types': 'admit-only-vlan-tagged' },
+          {
+            interface: 'ether1',
+            bridge: 'bridge',
+            pvid: '1',
+            disabled: 'false',
+            'frame-types': 'admit-only-vlan-tagged',
+          },
         ],
       });
       expect(rules(snap)).not.toContain('pvid-with-tagged-only-frame-type');
@@ -260,16 +331,22 @@ describe('auditConfig', () => {
   describe('vlan-iface-not-tagged-on-bridge', () => {
     it('flags a VLAN interface whose VLAN the bridge is not tagged in', () => {
       const snap = healthy({
-        vlanInterfaces: [{ name: 'vlan30', interface: 'bridge', 'vlan-id': '30', disabled: 'false' }],
+        vlanInterfaces: [
+          { name: 'vlan30', interface: 'bridge', 'vlan-id': '30', disabled: 'false' },
+        ],
       });
-      const found = auditConfig(snap, device).find((f) => f.rule === 'vlan-iface-not-tagged-on-bridge');
+      const found = auditConfig(snap, device).find(
+        (f) => f.rule === 'vlan-iface-not-tagged-on-bridge',
+      );
       expect(found?.severity).toBe('critical');
       expect(found?.detail).toContain('no bridge VLAN entry for VLAN 30');
     });
 
     it('does not flag when the bridge is a tagged member', () => {
       const snap = healthy({
-        vlanInterfaces: [{ name: 'vlan10', interface: 'bridge', 'vlan-id': '10', disabled: 'false' }],
+        vlanInterfaces: [
+          { name: 'vlan10', interface: 'bridge', 'vlan-id': '10', disabled: 'false' },
+        ],
       });
       expect(rules(snap)).not.toContain('vlan-iface-not-tagged-on-bridge');
     });
@@ -277,7 +354,9 @@ describe('auditConfig', () => {
     it('does not flag when the bridge has VLAN filtering off', () => {
       const snap = healthy({
         bridges: [{ name: 'bridge', 'vlan-filtering': 'false', pvid: '1' }],
-        vlanInterfaces: [{ name: 'vlan30', interface: 'bridge', 'vlan-id': '30', disabled: 'false' }],
+        vlanInterfaces: [
+          { name: 'vlan30', interface: 'bridge', 'vlan-id': '30', disabled: 'false' },
+        ],
       });
       expect(rules(snap)).not.toContain('vlan-iface-not-tagged-on-bridge');
     });
@@ -289,10 +368,24 @@ describe('auditConfig', () => {
         bridgeVlans: [
           // The PVID-derived row: RouterOS marks it dynamic, and it is the only
           // thing putting the bridge in VLAN 1.
-          { bridge: 'bridge', 'vlan-ids': '1', tagged: '', untagged: '',
-            'current-tagged': '', 'current-untagged': 'bridge,sfp28-1,ether1', dynamic: 'true' },
-          { bridge: 'bridge', 'vlan-ids': '10', tagged: 'sfp28-1,bridge', untagged: '',
-            'current-tagged': 'sfp28-1,bridge', 'current-untagged': '', dynamic: 'false' },
+          {
+            bridge: 'bridge',
+            'vlan-ids': '1',
+            tagged: '',
+            untagged: '',
+            'current-tagged': '',
+            'current-untagged': 'bridge,sfp28-1,ether1',
+            dynamic: 'true',
+          },
+          {
+            bridge: 'bridge',
+            'vlan-ids': '10',
+            tagged: 'sfp28-1,bridge',
+            untagged: '',
+            'current-tagged': 'sfp28-1,bridge',
+            'current-untagged': '',
+            dynamic: 'false',
+          },
         ],
       });
       const found = auditConfig(snap, device).find((f) => f.rule === 'mgmt-vlan-dynamic-only');
@@ -422,8 +515,15 @@ describe('spanning tree', () => {
 describe('device-mode (#230)', () => {
   // As a wAP ax in basic mode reports it (from the test bench).
   const wapBasic = {
-    mode: 'basic', flagged: 'false', scheduler: 'true', fetch: 'true', 'bandwidth-test': 'false',
-    'traffic-gen': 'false', sniffer: 'true', hotspot: 'false', container: 'false',
+    mode: 'basic',
+    flagged: 'false',
+    scheduler: 'true',
+    fetch: 'true',
+    'bandwidth-test': 'false',
+    'traffic-gen': 'false',
+    sniffer: 'true',
+    hotspot: 'false',
+    container: 'false',
   };
   it('flags the features the manager uses that device-mode blocks', () => {
     const f = auditConfig(healthy({ deviceMode: wapBasic }), device);
@@ -437,7 +537,9 @@ describe('device-mode (#230)', () => {
     expect(f.find((x) => x.rule === 'device-mode-no-scheduler')?.severity).toBe('warning');
   });
   it('warns when RouterOS has flagged the device', () => {
-    expect(rules(healthy({ deviceMode: { ...wapBasic, flagged: 'true' } }))).toContain('device-mode-flagged');
+    expect(rules(healthy({ deviceMode: { ...wapBasic, flagged: 'true' } }))).toContain(
+      'device-mode-flagged',
+    );
   });
   it('says nothing for advanced mode, or when device-mode is unreadable', () => {
     const advanced = { ...wapBasic, mode: 'advanced', 'bandwidth-test': 'true', hotspot: 'true' };

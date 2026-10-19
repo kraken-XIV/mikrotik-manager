@@ -28,7 +28,11 @@ export interface ModelLayout {
 }
 
 export const MODEL_LAYOUTS: Record<string, ModelLayout> = {
-  'CRS354-48P-4S+2Q+': { etherEvenOnTop: true, sfp: { rows: 2, evenOnTop: true }, qsfpStacked: true },
+  'CRS354-48P-4S+2Q+': {
+    etherEvenOnTop: true,
+    sfp: { rows: 2, evenOnTop: true },
+    qsfpStacked: true,
+  },
   'CRS510-8XS-2XQ': { sfp: { rows: 2, evenOnTop: true }, qsfpStacked: true },
   'CRS317-1G-16S+': { sfp: { rows: 1 } },
   // SFP28 in stacked pairs, evenly spaced; QSFP28 side by side. Checked
@@ -64,11 +68,14 @@ export function resolveEvenOnTop(stored: string | null, layout: ModelLayout | un
 }
 
 export type SfpArrangement<T> =
-  | { kind: 'rows'; rows: T[][] }
-  | { kind: 'banks'; banks: StaggerBlock<T>[] };
+  { kind: 'rows'; rows: T[][] } | { kind: 'banks'; banks: StaggerBlock<T>[] };
 
 /** Arrange individual SFP ports. Unknown models: plain wrapped rows, as before. */
-export function arrangeSfp<T>(ports: T[], layout: ModelLayout | undefined, columns: number): SfpArrangement<T> {
+export function arrangeSfp<T>(
+  ports: T[],
+  layout: ModelLayout | undefined,
+  columns: number,
+): SfpArrangement<T> {
   const sfp = layout?.sfp;
   if (!sfp) return { kind: 'rows', rows: chunkRows(ports, columns) };
   if (sfp.rows === 1) return { kind: 'rows', rows: ports.length ? [ports] : [] };
@@ -94,7 +101,13 @@ function gbps(rate: string | null | undefined): number | null {
   return m[2].toUpperCase() === 'G' ? n : n / 1000;
 }
 
-interface LaneState { name?: string; running?: boolean; disabled?: boolean; link_rate?: string | null; speed?: string }
+interface LaneState {
+  name?: string;
+  running?: boolean;
+  disabled?: boolean;
+  link_rate?: string | null;
+  speed?: string;
+}
 
 /**
  * The boxes a cage draws: its one real port, or its breakout lanes.
@@ -109,6 +122,7 @@ interface LaneState { name?: string; running?: boolean; disabled?: boolean; link
 export function cageTiles<T extends LaneState>(cage: { lanes: T[]; singlePort?: T }): T[] {
   if (cage.singlePort) return [cage.singlePort];
   const running = cage.lanes.filter((l) => l.running && !l.disabled);
-  if (running.length === 1 && (gbps(running[0].link_rate ?? running[0].speed) ?? 0) >= 40) return [running[0]];
+  if (running.length === 1 && (gbps(running[0].link_rate ?? running[0].speed) ?? 0) >= 40)
+    return [running[0]];
   return cage.lanes;
 }

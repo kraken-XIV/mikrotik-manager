@@ -28,7 +28,7 @@ router.get('/', async (req: Request, res: Response) => {
          ${devFilter ? `AND ${devFilter}` : ''}
        ORDER BY (status = 'online') DESC, name ASC
        LIMIT 6`,
-      [like]
+      [like],
     ),
     query(
       `SELECT c.mac_address, c.hostname, c.ip_address, c.device_id, c.active,
@@ -39,7 +39,7 @@ router.get('/', async (req: Request, res: Response) => {
          ${clientFilter ? `AND ${clientFilter}` : ''}
        ORDER BY c.active DESC, c.last_seen DESC
        LIMIT 6`,
-      [like]
+      [like],
     ),
     query(
       `SELECT e.id, e.message, e.severity, e.event_time, e.topic, e.device_id,
@@ -50,7 +50,7 @@ router.get('/', async (req: Request, res: Response) => {
          ${eventFilter ? `AND ${eventFilter}` : ''}
        ORDER BY e.event_time DESC
        LIMIT 6`,
-      [like]
+      [like],
     ),
   ]);
 

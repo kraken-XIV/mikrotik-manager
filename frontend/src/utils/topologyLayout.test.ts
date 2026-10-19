@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { layoutTree, layoutForest, pack, packInto, DEFAULT_LAYOUT, type LayoutResult } from './topologyLayout';
+import {
+  layoutTree,
+  layoutForest,
+  pack,
+  packInto,
+  DEFAULT_LAYOUT,
+  type LayoutResult,
+} from './topologyLayout';
 
 /** Children map from a plain description, as the page builds it by BFS. */
 function tree(spec: Record<string, string[]>) {
@@ -32,7 +39,11 @@ function overlaps(r: LayoutResult): string[] {
 
 describe('the #115 measurements', () => {
   // Before: 10, 58 and 116 slots wide. Width must stop following breadth.
-  it.each([[0, 24], [1, 24], [2, 24]])('58 switches with %i devices each stay narrow', (per, maxWidth) => {
+  it.each([
+    [0, 24],
+    [1, 24],
+    [2, 24],
+  ])('58 switches with %i devices each stay narrow', (per, maxWidth) => {
     const r = layoutTree('core', coreWith(58, per));
     expect(r.widthSlots).toBeLessThanOrEqual(maxWidth);
     expect(overlaps(r)).toEqual([]);
@@ -111,14 +122,26 @@ describe('packing', () => {
 
   it('deals uneven boxes onto even rows', () => {
     // Six core switches, three 12 wide and three 10 wide, on three rows: 12+10 each.
-    const p = packInto([12, 12, 12, 10, 10, 10].map((w) => ({ w, h: 3 })), 3, 0, 0);
+    const p = packInto(
+      [12, 12, 12, 10, 10, 10].map((w) => ({ w, h: 3 })),
+      3,
+      0,
+      0,
+    );
     expect(p.w).toBe(22);
     expect(p.h).toBe(9);
   });
 
   it('keeps a family together when there is room', () => {
     // A core switch with two access switches of five APs each: side by side.
-    const r = layoutTree('core', tree({ core: ['a', 'b'], a: ['a1', 'a2', 'a3', 'a4', 'a5'], b: ['b1', 'b2', 'b3', 'b4', 'b5'] }));
+    const r = layoutTree(
+      'core',
+      tree({
+        core: ['a', 'b'],
+        a: ['a1', 'a2', 'a3', 'a4', 'a5'],
+        b: ['b1', 'b2', 'b3', 'b4', 'b5'],
+      }),
+    );
     expect(r.positions.get('a')!.y).toBe(r.positions.get('b')!.y);
   });
 });
@@ -146,7 +169,10 @@ describe('wrapping keeps families together', () => {
 
 describe('layoutForest', () => {
   it('packs separate segments and unconnected devices instead of one long row', () => {
-    const trees = Array.from({ length: 12 }, (_, i) => ({ rootId: `r${i}`, children: tree({ [`r${i}`]: [`r${i}a`, `r${i}b`] }) }));
+    const trees = Array.from({ length: 12 }, (_, i) => ({
+      rootId: `r${i}`,
+      children: tree({ [`r${i}`]: [`r${i}a`, `r${i}b`] }),
+    }));
     const loose = Array.from({ length: 20 }, (_, i) => `o${i}`);
     const r = layoutForest(trees, loose);
     expect(r.widthSlots).toBeLessThan(30);

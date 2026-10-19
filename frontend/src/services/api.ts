@@ -57,7 +57,12 @@ export interface PreviewStep {
 }
 export interface ChangePreview {
   steps: PreviewStep[];
-  verdict: { severity: string; headline: string; violations: { id: string; title: string; detail?: string; severity: string }[]; warnings: string[] } | null;
+  verdict: {
+    severity: string;
+    headline: string;
+    violations: { id: string; title: string; detail?: string; severity: string }[];
+    warnings: string[];
+  } | null;
 }
 
 let previewDepth = 0;
@@ -82,10 +87,10 @@ export async function previewChanges(call: () => Promise<unknown>): Promise<Chan
   if (previewStamped === before) {
     // Nothing was sent. A form that refused its own input says why.
     await pending;
-    throw new Error('This form can\'t be previewed');
+    throw new Error("This form can't be previewed");
   }
   const r = (await pending) as { data?: { preview?: ChangePreview } };
-  if (!r?.data?.preview) throw new Error('The server didn\'t return a preview');
+  if (!r?.data?.preview) throw new Error("The server didn't return a preview");
   return r.data.preview;
 }
 
@@ -97,34 +102,44 @@ export async function previewAll(calls: (() => Promise<unknown>)[]): Promise<Cha
   for (const call of calls) {
     const p = await previewChanges(call);
     out.steps.push(...p.steps);
-    if (p.verdict && (!out.verdict || SEVERITY.indexOf(p.verdict.severity) > SEVERITY.indexOf(out.verdict.severity))) {
+    if (
+      p.verdict &&
+      (!out.verdict ||
+        SEVERITY.indexOf(p.verdict.severity) > SEVERITY.indexOf(out.verdict.severity))
+    ) {
       out.verdict = p.verdict;
     }
   }
   return out;
 }
 
-api.interceptors.request.use((config) => {
-  // Synchronous (see the options below), so a preview's header is set while
-  // previewChanges() is still on the stack.
-  if (previewDepth > 0 && (config.method ?? 'get').toLowerCase() !== 'get') {
-    config.headers['X-Preview-Changes'] = '1';
-    previewStamped++;
-  }
-  const token = useAuthStore.getState().token;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  // Active site travels with every request (issue #130). Injecting it here
-  // rather than threading it through ~160 query keys means a new query is
-  // scoped correctly by default and cannot be forgotten. null is the all-sites
-  // view, which sends no header and so behaves exactly as before sites existed.
-  // A request naming its own site keeps it (the device view of the topology
-  // asks for that device's site from the all-sites view, #305).
-  const { currentSiteId: siteId, currentGroupId: groupId } = useSiteStore.getState();
-  if (siteId != null && config.headers['X-Site-Id'] == null) config.headers['X-Site-Id'] = String(siteId);
-  // A group (#306) narrows to its sites; a request naming a site keeps its site.
-  else if (groupId != null && config.headers['X-Site-Id'] == null) config.headers['X-Site-Group'] = String(groupId);
-  return config;
-}, undefined, { synchronous: true });
+api.interceptors.request.use(
+  (config) => {
+    // Synchronous (see the options below), so a preview's header is set while
+    // previewChanges() is still on the stack.
+    if (previewDepth > 0 && (config.method ?? 'get').toLowerCase() !== 'get') {
+      config.headers['X-Preview-Changes'] = '1';
+      previewStamped++;
+    }
+    const token = useAuthStore.getState().token;
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    // Active site travels with every request (issue #130). Injecting it here
+    // rather than threading it through ~160 query keys means a new query is
+    // scoped correctly by default and cannot be forgotten. null is the all-sites
+    // view, which sends no header and so behaves exactly as before sites existed.
+    // A request naming its own site keeps it (the device view of the topology
+    // asks for that device's site from the all-sites view, #305).
+    const { currentSiteId: siteId, currentGroupId: groupId } = useSiteStore.getState();
+    if (siteId != null && config.headers['X-Site-Id'] == null)
+      config.headers['X-Site-Id'] = String(siteId);
+    // A group (#306) narrows to its sites; a request naming a site keeps its site.
+    else if (groupId != null && config.headers['X-Site-Id'] == null)
+      config.headers['X-Site-Group'] = String(groupId);
+    return config;
+  },
+  undefined,
+  { synchronous: true },
+);
 
 api.interceptors.response.use(
   (r) => r,
@@ -135,19 +150,26 @@ api.interceptors.response.use(
     // The account is still on the default password: nothing works until it is
     // changed, so go straight to the page that does it.
     const code = (error.response?.data as { code?: string } | undefined)?.code;
-    if (error.response?.status === 403 && code === 'password_change_required'
-        && window.location.pathname !== '/change-password') {
+    if (
+      error.response?.status === 403 &&
+      code === 'password_change_required' &&
+      window.location.pathname !== '/change-password'
+    ) {
       window.location.assign('/change-password');
     }
     // The selected site isn't one this account has (P1-7), e.g. access was
     // removed. Drop to the all-sites view, which the server narrows to the
     // account's sites; changing the site refetches every query.
-    if (error.response?.status === 403 && code === 'site_forbidden'
-        && (useSiteStore.getState().currentSiteId != null || useSiteStore.getState().currentGroupId != null)) {
+    if (
+      error.response?.status === 403 &&
+      code === 'site_forbidden' &&
+      (useSiteStore.getState().currentSiteId != null ||
+        useSiteStore.getState().currentGroupId != null)
+    ) {
       useSiteStore.getState().setCurrentSite(null);
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -159,35 +181,41 @@ api.interceptors.response.use(
 export async function signOut(): Promise<void> {
   try {
     await api.post('/auth/logout', undefined, { timeout: 5000 });
-  } catch { /* already expired or unreachable: nothing more to revoke */ }
+  } catch {
+    /* already expired or unreachable: nothing more to revoke */
+  }
   useAuthStore.getState().logout();
 }
 
 export const authApi = {
   login: (username: string, password: string) =>
-    api.post<{ token?: string; user?: import('../types').User; requires_totp?: boolean; totp_token?: string }>(
-      '/auth/login',
-      { username, password }
-    ),
+    api.post<{
+      token?: string;
+      user?: import('../types').User;
+      requires_totp?: boolean;
+      totp_token?: string;
+    }>('/auth/login', { username, password }),
   totpVerify: (totp_token: string, code: string) =>
-    api.post<{ token: string; user: import('../types').User }>('/auth/totp/verify', { totp_token, code }),
+    api.post<{ token: string; user: import('../types').User }>('/auth/totp/verify', {
+      totp_token,
+      code,
+    }),
   totpSetup: (password: string) =>
     api.post<{ secret: string; uri: string; qr: string }>('/auth/totp/setup', { password }),
-  totpConfirm: (code: string) =>
-    api.post<{ ok: boolean }>('/auth/totp/confirm', { code }),
-  totpDisable: (password: string) =>
-    api.post<{ ok: boolean }>('/auth/totp/disable', { password }),
-  totpStatus: () =>
-    api.get<{ totp_enabled: boolean }>('/auth/totp/status'),
+  totpConfirm: (code: string) => api.post<{ ok: boolean }>('/auth/totp/confirm', { code }),
+  totpDisable: (password: string) => api.post<{ ok: boolean }>('/auth/totp/disable', { password }),
+  totpStatus: () => api.get<{ totp_enabled: boolean }>('/auth/totp/status'),
   me: () => api.get('/auth/me'),
   changePassword: (currentPassword: string, newPassword: string) =>
-    api.put<{ message: string; token?: string; user?: import('../types').User }>('/auth/password', { currentPassword, newPassword }),
+    api.put<{ message: string; token?: string; user?: import('../types').User }>('/auth/password', {
+      currentPassword,
+      newPassword,
+    }),
   /** Public: whether the login page should still show the default credentials. */
-  loginHints: () => api.get<{ default_credentials: boolean; password_login?: boolean }>('/auth/login-hints'),
-  securityStatus: () =>
-    api.get<{ warnings: string[] }>('/auth/security-status'),
-  oidcStatus: () =>
-    api.get<{ enabled: boolean; button_label: string }>('/auth/oidc/status'),
+  loginHints: () =>
+    api.get<{ default_credentials: boolean; password_login?: boolean }>('/auth/login-hints'),
+  securityStatus: () => api.get<{ warnings: string[] }>('/auth/security-status'),
+  oidcStatus: () => api.get<{ enabled: boolean; button_label: string }>('/auth/oidc/status'),
   /** Exchange the single-use SSO code for a session (outside review S4). */
   oidcExchange: (code: string) =>
     api.post<{ token: string; user: import('../types').User }>('/auth/oidc/exchange', { code }),
@@ -219,7 +247,7 @@ export const oidcApi = {
   test: (issuer_url?: string) =>
     api.post<{ ok: boolean; issuer?: string; claims_supported?: string[]; error?: string }>(
       '/auth/oidc/test',
-      { issuer_url }
+      { issuer_url },
     ),
 };
 
@@ -315,7 +343,10 @@ export interface IdentityPin {
 
 export const identityApi = {
   forDevice: (deviceId: number) => api.get<IdentityPin[]>(`/devices/${deviceId}/identity`),
-  pending: () => api.get<Array<IdentityPin & { device_id: number; device_name: string }>>('/devices/identity/pending'),
+  pending: () =>
+    api.get<Array<IdentityPin & { device_id: number; device_name: string }>>(
+      '/devices/identity/pending',
+    ),
   trust: (deviceId: number, kind: IdentityPin['kind']) =>
     api.post<{ message: string }>(`/devices/${deviceId}/identity/${kind}/trust`),
 };
@@ -375,7 +406,6 @@ export interface ConfigHealthResponse {
   checked_at: string | null;
 }
 
-
 // ─── LTE / cellular ───────────────────────────────────────────────────────────
 
 /** One aggregated carrier as the modem reported it. */
@@ -419,8 +449,10 @@ export interface LteInterface {
    * aggregating — the reason operators lock bands, and invisible in RouterOS.
    */
   uplink_anchor: {
-    primaryMhz: number; primaryBand: number;
-    widestMhz: number; widestBand: number;
+    primaryMhz: number;
+    primaryBand: number;
+    widestMhz: number;
+    widestBand: number;
   } | null;
   network_mode: string | null;
   apn_profiles: string | null;
@@ -453,9 +485,13 @@ export interface LteMetricPoint {
   carriers?: number;
 }
 
-
 export interface LteDwellTotal {
-  key: string; label: string; seconds: number; pct: number; visits: number; lastSeen: string;
+  key: string;
+  label: string;
+  seconds: number;
+  pct: number;
+  visits: number;
+  lastSeen: string;
 }
 
 export interface LteDwell {
@@ -470,24 +506,30 @@ export interface LteDwell {
 }
 
 export const lteApi = {
-  state: (deviceId: number) =>
-    api.get<{ interfaces: LteInterface[] }>(`/devices/${deviceId}/lte`),
+  state: (deviceId: number) => api.get<{ interfaces: LteInterface[] }>(`/devices/${deviceId}/lte`),
   dwell: (deviceId: number, range = '7d', iface?: string) =>
     api.get<LteDwell>(`/devices/${deviceId}/lte/dwell`, { params: { range, iface } }),
   history: (deviceId: number, range = '24h', iface?: string) =>
-    api.get<{ events: LteHistoryEvent[] }>(`/devices/${deviceId}/lte/history`, { params: { range, iface } }),
+    api.get<{ events: LteHistoryEvent[] }>(`/devices/${deviceId}/lte/history`, {
+      params: { range, iface },
+    }),
   metrics: (deviceId: number, range = '6h', iface?: string) =>
     api.get<{ metrics: LteMetricPoint[] }>(`/devices/${deviceId}/lte/metrics`, {
       params: { range, ...(iface ? { iface } : {}) },
     }),
 };
 
-
 // ─── Poller health (#114) ─────────────────────────────────────────────────────
 
 export interface PollerQueue {
-  name: string; waiting?: number; active?: number; delayed?: number;
-  failed?: number; completed?: number; paused?: number; error?: string;
+  name: string;
+  waiting?: number;
+  active?: number;
+  delayed?: number;
+  failed?: number;
+  completed?: number;
+  paused?: number;
+  error?: string;
 }
 
 export interface PollerPhases {
@@ -506,9 +548,16 @@ export interface PollerPhases {
   slowest?: SlowPoll[];
 }
 export interface SlowPoll {
-  id: number; name: string; site: string | null;
-  total_ms: number; connect_ms: number | null; device_ms: number | null; other_ms: number | null;
-  reused: boolean | null; error: string | null; at: string | null;
+  id: number;
+  name: string;
+  site: string | null;
+  total_ms: number;
+  connect_ms: number | null;
+  device_ms: number | null;
+  other_ms: number | null;
+  reused: boolean | null;
+  error: string | null;
+  at: string | null;
 }
 export interface PollerHealth {
   status: 'ok' | 'draining' | 'saturated';
@@ -516,7 +565,10 @@ export interface PollerHealth {
   /** Where fast-poll time goes (#301). */
   phases?: PollerPhases | null;
   workers: {
-    concurrency: number; job_timeout_ms: number; poll_interval_ms: number; fast_interval_sec?: number;
+    concurrency: number;
+    job_timeout_ms: number;
+    poll_interval_ms: number;
+    fast_interval_sec?: number;
     /** Each process running poll workers, when there are worker containers (#301). */
     processes?: { role: string; concurrency: number; sessions: number }[];
   };
@@ -534,69 +586,110 @@ export interface PollerHealth {
   };
   retention: { max_age_sec: number; max_count: number; stale_pending_ms: Record<string, number> };
   stale_devices: {
-    id: number; name: string; status: string; kind: string;
-    last_attempt_at: string | null; last_success_at: string | null;
-    last_duration_ms: number | null; last_error: string | null;
-    attempts: number; failures: number; seconds_since_success: number | null;
+    id: number;
+    name: string;
+    status: string;
+    kind: string;
+    last_attempt_at: string | null;
+    last_success_at: string | null;
+    last_duration_ms: number | null;
+    last_error: string | null;
+    attempts: number;
+    failures: number;
+    seconds_since_success: number | null;
   }[];
 }
 
 export const pollerApi = {
   health: () => api.get<PollerHealth>('/system/poller'),
-  drain: () => api.post<{ drained: Record<string, number>; total: number; message: string }>(
-    '/system/poller/drain'),
+  drain: () =>
+    api.post<{ drained: Record<string, number>; total: number; message: string }>(
+      '/system/poller/drain',
+    ),
 };
 
-
 export interface LteDataCapRule {
-  id: number; interface_name: string; enabled: boolean;
-  phone_number: string; message: string;
-  threshold_bytes: string; margin_pct: number;
-  reset_hour: number; reset_minute: number; timezone: string;
+  id: number;
+  interface_name: string;
+  enabled: boolean;
+  phone_number: string;
+  message: string;
+  threshold_bytes: string;
+  margin_pct: number;
+  reset_hour: number;
+  reset_minute: number;
+  timezone: string;
   cooldown_minutes: number;
-  period_key: string | null; period_bytes: string;
-  last_sent_at: string | null; updated_at: string;
+  period_key: string | null;
+  period_bytes: string;
+  last_sent_at: string | null;
+  updated_at: string;
 }
 
 export interface LteDataCapSend {
-  interface_name: string; at: string; trigger: 'manual' | 'threshold';
-  phone_number: string | null; period_bytes: string | null;
-  ok: boolean; error: string | null;
+  interface_name: string;
+  at: string;
+  trigger: 'manual' | 'threshold';
+  phone_number: string | null;
+  period_bytes: string | null;
+  ok: boolean;
+  error: string | null;
 }
 
 export const dataCapApi = {
   get: (deviceId: number) =>
-    api.get<{ rules: LteDataCapRule[]; sends: LteDataCapSend[] }>(`/devices/${deviceId}/lte/data-cap`),
+    api.get<{ rules: LteDataCapRule[]; sends: LteDataCapSend[] }>(
+      `/devices/${deviceId}/lte/data-cap`,
+    ),
   save: (deviceId: number, iface: string, body: Record<string, unknown>) =>
-    api.put<{ message: string }>(`/devices/${deviceId}/lte/data-cap/${encodeURIComponent(iface)}`, body),
+    api.put<{ message: string }>(
+      `/devices/${deviceId}/lte/data-cap/${encodeURIComponent(iface)}`,
+      body,
+    ),
   sendNow: (deviceId: number, iface: string) =>
-    api.post<{ message: string }>(`/devices/${deviceId}/lte/data-cap/${encodeURIComponent(iface)}/send`),
+    api.post<{ message: string }>(
+      `/devices/${deviceId}/lte/data-cap/${encodeURIComponent(iface)}/send`,
+    ),
 };
 
-
 export interface DeviceSshKey {
-  device_id: number; key_type: string; public_key: string;
-  fingerprint: string | null; ssh_username: string | null;
+  device_id: number;
+  key_type: string;
+  public_key: string;
+  fingerprint: string | null;
+  ssh_username: string | null;
   status: 'pending' | 'deployed' | 'verified' | 'failed';
-  last_error: string | null; last_verified_at: string | null;
-  deployed_at: string | null; created_at: string;
+  last_error: string | null;
+  last_verified_at: string | null;
+  deployed_at: string | null;
+  created_at: string;
 }
 
 export const sshKeyApi = {
   get: (deviceId: number) => api.get<{ key: DeviceSshKey | null }>(`/devices/${deviceId}/ssh-key`),
   deploy: (deviceId: number, rotate = false) =>
     api.post<{ message: string }>(`/devices/${deviceId}/ssh-key`, { rotate }),
-  verify: (deviceId: number) => api.post<{ message: string }>(`/devices/${deviceId}/ssh-key/verify`),
+  verify: (deviceId: number) =>
+    api.post<{ message: string }>(`/devices/${deviceId}/ssh-key/verify`),
   revoke: (deviceId: number) => api.delete<{ message: string }>(`/devices/${deviceId}/ssh-key`),
   /** Requires explicit confirmation: this disables password SSH fleet-wide. */
-  deployAll: () => api.post<{ considered: number; succeeded: number;
-    results: { device_id: number; name: string; ok: boolean; error?: string }[] }>(
-    '/devices/ssh-keys/deploy-all', { confirm: true }, { timeout: 600_000 }),
+  deployAll: () =>
+    api.post<{
+      considered: number;
+      succeeded: number;
+      results: { device_id: number; name: string; ok: boolean; error?: string }[];
+    }>('/devices/ssh-keys/deploy-all', { confirm: true }, { timeout: 600_000 }),
 };
 
 // ─── Fleet SSH key deployment (admin) ────────────────────────────────────────
 export interface FleetKeyPreview {
-  eligible: { id: number; name: string; ip_address: string; username: string; source: 'ssh' | 'api' }[];
+  eligible: {
+    id: number;
+    name: string;
+    ip_address: string;
+    username: string;
+    source: 'ssh' | 'api';
+  }[];
   keyed: { id: number; name: string }[];
   skipped: { id: number; name: string; reason: string }[];
   accounts: { username: string; devices: number; via_api_login: number }[];
@@ -614,33 +707,56 @@ export interface FleetKeyJob {
   current_name?: string | null;
   error?: string;
   results: {
-    device_id: number; name: string; outcome: 'keyed' | 'failed' | 'skipped';
-    username?: string; source?: 'ssh' | 'api'; message: string;
+    device_id: number;
+    name: string;
+    outcome: 'keyed' | 'failed' | 'skipped';
+    username?: string;
+    source?: 'ssh' | 'api';
+    message: string;
   }[];
 }
 
 export const sshFleetApi = {
   preview: (tagIds: number[]) =>
-    api.get<FleetKeyPreview>('/ssh-keys/fleet/preview', { params: tagIds.length ? { tag_ids: tagIds.join(',') } : {} }),
+    api.get<FleetKeyPreview>('/ssh-keys/fleet/preview', {
+      params: tagIds.length ? { tag_ids: tagIds.join(',') } : {},
+    }),
   start: (deviceIds: number[]) =>
-    api.post<{ job_id: string; total: number }>('/ssh-keys/fleet/jobs', { device_ids: deviceIds, confirm: true }),
+    api.post<{ job_id: string; total: number }>('/ssh-keys/fleet/jobs', {
+      device_ids: deviceIds,
+      confirm: true,
+    }),
   status: (jobId: string) => api.get<FleetKeyJob>(`/ssh-keys/fleet/jobs/${jobId}`),
   cancel: (jobId: string) => api.post<{ message: string }>(`/ssh-keys/fleet/jobs/${jobId}/cancel`),
 };
 
-
 // ─── Bulk commands (#118) ─────────────────────────────────────────────────────
 
 export interface CommandRunSummary {
-  id: number; name: string; command: string; status: string;
-  wave_size: number; halt_on_failure: boolean; use_change_guard: boolean;
-  total: number; succeeded: number; failed: number; created_at: string;
+  id: number;
+  name: string;
+  command: string;
+  status: string;
+  wave_size: number;
+  halt_on_failure: boolean;
+  use_change_guard: boolean;
+  total: number;
+  succeeded: number;
+  failed: number;
+  created_at: string;
 }
 
 export interface CommandRunDevice {
-  id: number; device_id: number; device_name: string; ip_address: string;
-  wave: number; status: string; output: string | null; error: string | null;
-  guarded: boolean; auto_reverted: boolean;
+  id: number;
+  device_id: number;
+  device_name: string;
+  ip_address: string;
+  wave: number;
+  status: string;
+  output: string | null;
+  error: string | null;
+  guarded: boolean;
+  auto_reverted: boolean;
 }
 
 export interface CommandRunDetail extends CommandRunSummary {
@@ -660,8 +776,12 @@ export interface CommandTemplate {
 
 /** Secret values for commands (#259): names only ever come back, never values. */
 export const commandSecretsApi = {
-  list: () => api.get<{ id: number; name: string; created_by: string | null; updated_at: string }[]>('/command-secrets'),
-  save: (data: { name: string; value?: string; generate?: boolean }) => api.post('/command-secrets', data),
+  list: () =>
+    api.get<{ id: number; name: string; created_by: string | null; updated_at: string }[]>(
+      '/command-secrets',
+    ),
+  save: (data: { name: string; value?: string; generate?: boolean }) =>
+    api.post('/command-secrets', data),
   remove: (name: string) => api.delete(`/command-secrets/${encodeURIComponent(name)}`),
 };
 
@@ -677,7 +797,11 @@ export const commandTemplatesApi = {
 export const commandsApi = {
   preview: (command: string, device_ids: number[], wave_size: number) =>
     api.post<{
-      command: string; risky: boolean; reasons: string[]; wave_size: number; waves: number;
+      command: string;
+      risky: boolean;
+      reasons: string[];
+      wave_size: number;
+      waves: number;
       devices: { id: number; name: string; wave: number; status: string }[];
       unreachable: { id: number; name: string }[];
     }>('/commands/preview', { command, device_ids, wave_size }),
@@ -689,8 +813,7 @@ export const commandsApi = {
    * Fetched through the authenticated client, not a bare link. Auth is a Bearer
    * header, which an <a download> cannot send — the link would simply 401.
    */
-  exportCsv: (id: number) =>
-    api.get(`/commands/runs/${id}/export`, { responseType: 'blob' }),
+  exportCsv: (id: number) => api.get(`/commands/runs/${id}/export`, { responseType: 'blob' }),
 };
 
 /** Overridable settings (#261): the overrides set here, and what's in force with where it comes from. */
@@ -705,16 +828,25 @@ export interface PollSettings {
 export const devicesApi = {
   /** Settings this device overrides (#261); null in a PUT clears one. */
   getPollSettings: (id: number) => api.get<PollSettings>(`/devices/${id}/poll-settings`),
-  setPollSettings: (id: number, data: Record<string, number | boolean | null>) => api.put<PollSettings>(`/devices/${id}/poll-settings`, data),
+  setPollSettings: (id: number, data: Record<string, number | boolean | null>) =>
+    api.put<PollSettings>(`/devices/${id}/poll-settings`, data),
   /**
    * Change the login the manager uses for several devices (#259). Each is
    * logged in to with the new login first, and only updated if that works.
    */
   bulkCredentials: (data: {
-    device_ids: number[]; credential_preset_id?: number | null;
-    api_username?: string; api_password?: string; ssh_username?: string | null; ssh_password?: string | null;
-  }) => api.post<{ results: { id: number; name: string; ok: boolean; error?: string }[]; updated: number; failed: number }>(
-    '/devices/credentials/bulk', data, { timeout: 240_000 }),
+    device_ids: number[];
+    credential_preset_id?: number | null;
+    api_username?: string;
+    api_password?: string;
+    ssh_username?: string | null;
+    ssh_password?: string | null;
+  }) =>
+    api.post<{
+      results: { id: number; name: string; ok: boolean; error?: string }[];
+      updated: number;
+      failed: number;
+    }>('/devices/credentials/bulk', data, { timeout: 240_000 }),
   list: () => api.get<Device[]>('/devices'),
   discovered: () => api.get<DiscoveredDevice[]>('/devices/discovered'),
   get: (id: number) => api.get<Device>(`/devices/${id}`),
@@ -725,7 +857,7 @@ export const devicesApi = {
   bulkAddCancel: (jobId: string) =>
     api.post<{ message: string }>(`/devices/bulk-add/jobs/${encodeURIComponent(jobId)}/cancel`),
   create: (
-    data: (Partial<Device> & {
+    data: Partial<Device> & {
       api_password?: string;
       ssh_password?: string;
       credential_preset_id?: number;
@@ -733,7 +865,7 @@ export const devicesApi = {
       combine_with_device_id?: number;
       /** Existing tags to apply once added (#161). */
       tag_ids?: number[];
-    })
+    },
   ) => api.post<Device>('/devices', data),
   update: (
     id: number,
@@ -743,132 +875,281 @@ export const devicesApi = {
       credential_preset_id?: number | null;
       /** "Use the router's identity" in Edit Device — sent alone, no other fields. */
       unlock_name?: boolean;
-    }
+    },
   ) => api.put<Device>(`/devices/${id}`, data),
   delete: (id: number) => api.delete(`/devices/${id}`),
   sync: (id: number) => api.post(`/devices/${id}/sync`, undefined, { timeout: 60_000 }),
   /** SSH-only device (#174): does the API answer now? It becomes an ordinary device if so. */
   checkApi: (id: number) =>
-    api.post<{ api: boolean; port?: number; message?: string; reason?: string }>(`/devices/${id}/check-api`, undefined, { timeout: 30_000 }),
-  test: (id: number) => api.post<{ success: boolean; identity?: string; error?: string }>(`/devices/${id}/test`),
+    api.post<{ api: boolean; port?: number; message?: string; reason?: string }>(
+      `/devices/${id}/check-api`,
+      undefined,
+      { timeout: 30_000 },
+    ),
+  test: (id: number) =>
+    api.post<{ success: boolean; identity?: string; error?: string }>(`/devices/${id}/test`),
   getInterfaces: (id: number) => api.get<Interface[]>(`/devices/${id}/interfaces`),
   updateInterface: (id: number, name: string, data: Partial<Interface>) =>
     api.put(`/devices/${id}/interfaces/${encodeURIComponent(name)}`, data, GUARDED),
   getVlans: (id: number) => api.get<Vlan[]>(`/devices/${id}/vlans`),
-  getPorts: (id: number) =>
-    api.get<{ ports: SwitchPort[]; vlans: Vlan[] }>(`/devices/${id}/ports`),
+  getPorts: (id: number) => api.get<{ ports: SwitchPort[]; vlans: Vlan[] }>(`/devices/${id}/ports`),
   getRouting: (id: number) => api.get<Record<string, string>[]>(`/devices/${id}/routing`),
   getFirewall: (id: number) => api.get<Record<string, string>[]>(`/devices/${id}/firewall`),
   addFirewallRule: (id: number, data: Record<string, unknown>) =>
     api.post<Record<string, string>[]>(`/devices/${id}/firewall`, data),
   updateFirewallRule: (id: number, ruleId: string, data: Record<string, unknown>) =>
-    api.put<Record<string, string>[]>(`/devices/${id}/firewall/${encodeURIComponent(ruleId)}`, data),
+    api.put<Record<string, string>[]>(
+      `/devices/${id}/firewall/${encodeURIComponent(ruleId)}`,
+      data,
+    ),
   deleteFirewallRule: (id: number, ruleId: string, confirmLockout = false) =>
-    api.delete(`/devices/${id}/firewall/${encodeURIComponent(ruleId)}`, confirmLockout ? { params: { confirm_lockout: 'true' } } : undefined),
+    api.delete(
+      `/devices/${id}/firewall/${encodeURIComponent(ruleId)}`,
+      confirmLockout ? { params: { confirm_lockout: 'true' } } : undefined,
+    ),
   getResources: (id: number) => api.get<Record<string, string>>(`/devices/${id}/resources`),
-  configurePortVlan: (id: number, name: string, data: PortVlanConfig & { confirm_lockout?: boolean }) =>
-    api.put(`/devices/${id}/ports/${encodeURIComponent(name)}/vlan`, data, GUARDED),
+  configurePortVlan: (
+    id: number,
+    name: string,
+    data: PortVlanConfig & { confirm_lockout?: boolean },
+  ) => api.put(`/devices/${id}/ports/${encodeURIComponent(name)}/vlan`, data, GUARDED),
   getSystemConfig: (id: number) => api.get<SystemConfig>(`/devices/${id}/system-config`),
-  updateSystemConfig: (id: number, data: Partial<{
-    identity: string;
-    ntp_enabled: boolean;
-    ntp_primary: string;
-    ntp_secondary: string;
-    dns_servers: string;
-    dns_allow_remote: boolean;
-  }>) => api.put(`/devices/${id}/system-config`, data),
+  updateSystemConfig: (
+    id: number,
+    data: Partial<{
+      identity: string;
+      ntp_enabled: boolean;
+      ntp_primary: string;
+      ntp_secondary: string;
+      dns_servers: string;
+      dns_allow_remote: boolean;
+    }>,
+  ) => api.put(`/devices/${id}/system-config`, data),
   getIpAddresses: (id: number, opts: { includeIpv6?: boolean } = {}) =>
-    api.get<IpAddress[]>(`/devices/${id}/ip-addresses`, { params: opts.includeIpv6 ? { include: 'ipv6' } : undefined }),
-  addIpAddress: (id: number, data: { address: string; interface: string; confirm_lockout?: boolean }) =>
-    api.post<IpAddress[]>(`/devices/${id}/ip-addresses`, data),
+    api.get<IpAddress[]>(`/devices/${id}/ip-addresses`, {
+      params: opts.includeIpv6 ? { include: 'ipv6' } : undefined,
+    }),
+  addIpAddress: (
+    id: number,
+    data: { address: string; interface: string; confirm_lockout?: boolean },
+  ) => api.post<IpAddress[]>(`/devices/${id}/ip-addresses`, data),
   /** Edit an address in place (#285); only the fields sent change. */
-  updateIpAddress: (id: number, addrId: string,
-    data: { address?: string; interface?: string; comment?: string; disabled?: boolean }, confirmLockout = false) =>
-    api.put(`/devices/${id}/ip-addresses/${encodeURIComponent(addrId)}`, confirmLockout ? { ...data, confirm_lockout: true } : data),
+  updateIpAddress: (
+    id: number,
+    addrId: string,
+    data: { address?: string; interface?: string; comment?: string; disabled?: boolean },
+    confirmLockout = false,
+  ) =>
+    api.put(
+      `/devices/${id}/ip-addresses/${encodeURIComponent(addrId)}`,
+      confirmLockout ? { ...data, confirm_lockout: true } : data,
+    ),
   removeIpAddress: (id: number, addrId: string, confirmLockout = false) =>
-    api.delete(`/devices/${id}/ip-addresses/${encodeURIComponent(addrId)}`,
-      confirmLockout ? { data: { confirm_lockout: true } } : undefined),
-  checkUpdate: (id: number) =>
-    api.post<Record<string, string>>(`/devices/${id}/check-update`),
+    api.delete(
+      `/devices/${id}/ip-addresses/${encodeURIComponent(addrId)}`,
+      confirmLockout ? { data: { confirm_lockout: true } } : undefined,
+    ),
+  checkUpdate: (id: number) => api.post<Record<string, string>>(`/devices/${id}/check-update`),
   checkRouterboard: (id: number) =>
-    api.post<{ currentFirmware: string; upgradeFirmware: string; upgradeAvailable: boolean }>(`/devices/${id}/check-routerboard`),
+    api.post<{ currentFirmware: string; upgradeFirmware: string; upgradeAvailable: boolean }>(
+      `/devices/${id}/check-routerboard`,
+    ),
   installRouterboard: (id: number) =>
     api.post<{
-      started: boolean; current_firmware: string | null;
-      target_firmware?: string; message: string;
+      started: boolean;
+      current_firmware: string | null;
+      target_firmware?: string;
+      message: string;
     }>(`/devices/${id}/install-routerboard`),
   getHardware: (id: number) =>
-    api.get<{ health: Record<string, string>[]; disks: Record<string, string>[] }>(`/devices/${id}/hardware`),
+    api.get<{ health: Record<string, string>[]; disks: Record<string, string>[] }>(
+      `/devices/${id}/hardware`,
+    ),
   /** `started: false` means the device was already current — not a failure. */
   installUpdate: (id: number) =>
     api.post<{
-      started: boolean; installed_version: string | null;
-      target_version?: string; message: string;
+      started: boolean;
+      installed_version: string | null;
+      target_version?: string;
+      message: string;
     }>(`/devices/${id}/install-update`),
-  getClock: (id: number) => api.get<{ date: string; time: string; timezone: string }>(`/devices/${id}/clock`),
+  getClock: (id: number) =>
+    api.get<{ date: string; time: string; timezone: string }>(`/devices/${id}/clock`),
   setClock: (id: number, data: { date?: string; time?: string; timezone?: string }) =>
     api.put(`/devices/${id}/clock`, data),
-  addRoute: (id: number, data: { dst_address: string; gateway: string; distance?: number; comment?: string; confirm_lockout?: boolean }) =>
-    api.post(`/devices/${id}/routing`, data),
+  addRoute: (
+    id: number,
+    data: {
+      dst_address: string;
+      gateway: string;
+      distance?: number;
+      comment?: string;
+      confirm_lockout?: boolean;
+    },
+  ) => api.post(`/devices/${id}/routing`, data),
   deleteRoute: (id: number, routeId: string, confirmLockout = false) =>
-    api.delete(`/devices/${id}/routing/${encodeURIComponent(routeId)}`,
-      confirmLockout ? { data: { confirm_lockout: true } } : undefined),
+    api.delete(
+      `/devices/${id}/routing/${encodeURIComponent(routeId)}`,
+      confirmLockout ? { data: { confirm_lockout: true } } : undefined,
+    ),
   // confirm_lockout overrides a predicted-lockout refusal (HTTP 409) after the user
   // has seen and accepted the verdict.
-  addVlan: (id: number, data: { bridge: string; vlan_id: number; tagged_ports?: string[]; untagged_ports?: string[]; confirm_lockout?: boolean }) =>
-    api.post(`/devices/${id}/vlans`, data),
-  updateVlan: (id: number, vlanDbId: number, data: { tagged_ports: string[]; untagged_ports: string[]; confirm_lockout?: boolean }) =>
-    api.put(`/devices/${id}/vlans/${vlanDbId}`, data),
+  addVlan: (
+    id: number,
+    data: {
+      bridge: string;
+      vlan_id: number;
+      tagged_ports?: string[];
+      untagged_ports?: string[];
+      confirm_lockout?: boolean;
+    },
+  ) => api.post(`/devices/${id}/vlans`, data),
+  updateVlan: (
+    id: number,
+    vlanDbId: number,
+    data: { tagged_ports: string[]; untagged_ports: string[]; confirm_lockout?: boolean },
+  ) => api.put(`/devices/${id}/vlans/${vlanDbId}`, data),
   deleteVlan: (id: number, vlanDbId: number, confirmLockout = false) =>
-    api.delete(`/devices/${id}/vlans/${vlanDbId}`, confirmLockout ? { data: { confirm_lockout: true } } : undefined),
-  copyVlans: (id: number, operations: Array<{ action: 'add' | 'update'; vlan_id: number; bridge: string; tagged_ports: string[]; untagged_ports: string[] }>, confirmLockout = false) =>
-    api.post<{ results?: Array<{ vlan_id: number; action: string; success: boolean; error?: string }>; guard?: { protected: boolean; confirmed: boolean; auto_reverting: boolean; unprotected_reason: string | null; revert_may_fire_at?: string | null }; message?: string }>(
-      `/devices/${id}/vlans/copy`, { operations, ...(confirmLockout ? { confirm_lockout: true } : {}) }),
+    api.delete(
+      `/devices/${id}/vlans/${vlanDbId}`,
+      confirmLockout ? { data: { confirm_lockout: true } } : undefined,
+    ),
+  copyVlans: (
+    id: number,
+    operations: Array<{
+      action: 'add' | 'update';
+      vlan_id: number;
+      bridge: string;
+      tagged_ports: string[];
+      untagged_ports: string[];
+    }>,
+    confirmLockout = false,
+  ) =>
+    api.post<{
+      results?: Array<{ vlan_id: number; action: string; success: boolean; error?: string }>;
+      guard?: {
+        protected: boolean;
+        confirmed: boolean;
+        auto_reverting: boolean;
+        unprotected_reason: string | null;
+        revert_may_fire_at?: string | null;
+      };
+      message?: string;
+    }>(`/devices/${id}/vlans/copy`, {
+      operations,
+      ...(confirmLockout ? { confirm_lockout: true } : {}),
+    }),
   reboot: (id: number) => api.post<{ message: string }>(`/devices/${id}/reboot`),
   /** Ports that can supply PoE, read live (#291). */
-  getPoePorts: (id: number) => api.get<{ ports: { name: string; poeOut: string | null }[] }>(`/devices/${id}/poe`),
+  getPoePorts: (id: number) =>
+    api.get<{ ports: { name: string; poeOut: string | null }[] }>(`/devices/${id}/poe`),
   /** Cut a port's PoE output for a few seconds, then restore it (#291). */
   poePowerCycle: (id: number, port: string, seconds = 5, confirmManagement = false) =>
-    api.post<{ message: string }>(`/devices/${id}/ports/${encodeURIComponent(port)}/poe-power-cycle`,
-      { seconds, ...(confirmManagement ? { confirm_management: true } : {}) }),
-  getInterfaceErrors: (id: number) => api.get<InterfaceErrorsResponse>(`/devices/${id}/interface-errors`),
+    api.post<{ message: string }>(
+      `/devices/${id}/ports/${encodeURIComponent(port)}/poe-power-cycle`,
+      { seconds, ...(confirmManagement ? { confirm_management: true } : {}) },
+    ),
+  getInterfaceErrors: (id: number) =>
+    api.get<InterfaceErrorsResponse>(`/devices/${id}/interface-errors`),
   getOptics: (id: number) => api.get<OpticsResponse>(`/devices/${id}/optics`),
   getOpticHistory: (id: number, port: string, days = 7) =>
-    api.get<OpticHistoryPoint[]>(`/devices/${id}/optics/${encodeURIComponent(port)}/history`, { params: { days } }),
+    api.get<OpticHistoryPoint[]>(`/devices/${id}/optics/${encodeURIComponent(port)}/history`, {
+      params: { days },
+    }),
   getPortMonitor: (id: number, name: string) =>
     api.get<PortMonitorData>(`/devices/${id}/ports/${encodeURIComponent(name)}/monitor`),
   getPortClients: (id: number, name: string, all = false) =>
-    api.get<import('../types').PortClientsResult>(`/devices/${id}/ports/${encodeURIComponent(name)}/clients`, { params: { all: all || undefined } }),
-  createBond: (id: number, data: {
-    name: string; mode: string; slaves: string[];
-    lacp_rate?: string; transmit_hash_policy?: string; mtu?: number; min_links?: number;
-    confirm_lockout?: boolean;
-  }) => api.post(`/devices/${id}/bonds`, data, GUARDED),
-  updateBond: (id: number, bondName: string, data: {
-    mode: string; slaves: string[];
-    lacp_rate?: string; transmit_hash_policy?: string; mtu?: number; min_links?: number; confirm_lockout?: boolean;
-  }) => api.put(`/devices/${id}/bonds/${encodeURIComponent(bondName)}`, data, GUARDED),
+    api.get<import('../types').PortClientsResult>(
+      `/devices/${id}/ports/${encodeURIComponent(name)}/clients`,
+      { params: { all: all || undefined } },
+    ),
+  createBond: (
+    id: number,
+    data: {
+      name: string;
+      mode: string;
+      slaves: string[];
+      lacp_rate?: string;
+      transmit_hash_policy?: string;
+      mtu?: number;
+      min_links?: number;
+      confirm_lockout?: boolean;
+    },
+  ) => api.post(`/devices/${id}/bonds`, data, GUARDED),
+  updateBond: (
+    id: number,
+    bondName: string,
+    data: {
+      mode: string;
+      slaves: string[];
+      lacp_rate?: string;
+      transmit_hash_policy?: string;
+      mtu?: number;
+      min_links?: number;
+      confirm_lockout?: boolean;
+    },
+  ) => api.put(`/devices/${id}/bonds/${encodeURIComponent(bondName)}`, data, GUARDED),
   deleteBond: (id: number, bondName: string, confirmLockout = false) =>
-    api.delete(`/devices/${id}/bonds/${encodeURIComponent(bondName)}`,
-      { ...GUARDED, ...(confirmLockout ? { data: { confirm_lockout: true } } : {}) }),
+    api.delete(`/devices/${id}/bonds/${encodeURIComponent(bondName)}`, {
+      ...GUARDED,
+      ...(confirmLockout ? { data: { confirm_lockout: true } } : {}),
+    }),
   /** Ports into a bridge (created if asked), or out of any bridge with `bridge: null` (#258). */
-  moveBridgePorts: (id: number, data: {
-    ports: string[]; bridge: string | null; create_bridge?: boolean;
-    confirm_addresses?: boolean; confirm_lockout?: boolean;
-  }) => api.post<BridgeMoveResult>(`/devices/${id}/bridge-ports/move`, data, GUARDED),
+  moveBridgePorts: (
+    id: number,
+    data: {
+      ports: string[];
+      bridge: string | null;
+      create_bridge?: boolean;
+      confirm_addresses?: boolean;
+      confirm_lockout?: boolean;
+    },
+  ) => api.post<BridgeMoveResult>(`/devices/${id}/bridge-ports/move`, data, GUARDED),
   deleteBridge: (id: number, bridgeName: string, confirmLockout = false) =>
-    api.delete(`/devices/${id}/bridges/${encodeURIComponent(bridgeName)}`,
-      { ...GUARDED, ...(confirmLockout ? { data: { confirm_lockout: true } } : {}) }),
+    api.delete(`/devices/${id}/bridges/${encodeURIComponent(bridgeName)}`, {
+      ...GUARDED,
+      ...(confirmLockout ? { data: { confirm_lockout: true } } : {}),
+    }),
   /** Bridges tab (#284): every bridge with ports, VLAN entries and addresses. */
   getBridgesDetail: (id: number) => api.get<BridgeView[]>(`/devices/${id}/bridges`),
-  addBridge: (id: number, data: { name: string; protocol_mode?: string; priority?: string; vlan_filtering?: boolean; comment?: string }) =>
-    api.post(`/devices/${id}/bridges`, data, GUARDED),
-  updateBridge: (id: number, bridgeName: string,
-    data: { name?: string; protocol_mode?: string; priority?: string; comment?: string; disabled?: boolean }, confirmLockout = false) =>
-    api.put(`/devices/${id}/bridges/${encodeURIComponent(bridgeName)}`, { ...data, ...(confirmLockout ? { confirm_lockout: true } : {}) }, GUARDED),
-  setBridgeVlanFiltering: (id: number, bridgeName: string, enabled: boolean, confirmLockout = false) =>
-    api.put(`/devices/${id}/bridge/${encodeURIComponent(bridgeName)}/vlan-filtering`,
-      { enabled, ...(confirmLockout ? { confirm_lockout: true } : {}) }, GUARDED),
+  addBridge: (
+    id: number,
+    data: {
+      name: string;
+      protocol_mode?: string;
+      priority?: string;
+      vlan_filtering?: boolean;
+      comment?: string;
+    },
+  ) => api.post(`/devices/${id}/bridges`, data, GUARDED),
+  updateBridge: (
+    id: number,
+    bridgeName: string,
+    data: {
+      name?: string;
+      protocol_mode?: string;
+      priority?: string;
+      comment?: string;
+      disabled?: boolean;
+    },
+    confirmLockout = false,
+  ) =>
+    api.put(
+      `/devices/${id}/bridges/${encodeURIComponent(bridgeName)}`,
+      { ...data, ...(confirmLockout ? { confirm_lockout: true } : {}) },
+      GUARDED,
+    ),
+  setBridgeVlanFiltering: (
+    id: number,
+    bridgeName: string,
+    enabled: boolean,
+    confirmLockout = false,
+  ) =>
+    api.put(
+      `/devices/${id}/bridge/${encodeURIComponent(bridgeName)}/vlan-filtering`,
+      { enabled, ...(confirmLockout ? { confirm_lockout: true } : {}) },
+      GUARDED,
+    ),
   getNat: (id: number) => api.get<Record<string, string>[]>(`/devices/${id}/nat`),
   addNatRule: (id: number, data: Record<string, unknown>) =>
     api.post<Record<string, string>[]>(`/devices/${id}/nat`, data),
@@ -878,43 +1159,86 @@ export const devicesApi = {
     api.delete(`/devices/${id}/nat/${encodeURIComponent(ruleId)}`),
   // Firewall: reorder + counters (order is decisive in RouterOS)
   moveFirewallRule: (id: number, ruleId: string, destination?: string, confirmLockout = false) =>
-    api.post(`/devices/${id}/firewall/move`, { id: ruleId, destination, ...(confirmLockout ? { confirm_lockout: true } : {}) }),
+    api.post(`/devices/${id}/firewall/move`, {
+      id: ruleId,
+      destination,
+      ...(confirmLockout ? { confirm_lockout: true } : {}),
+    }),
   /** Count "outages this week" from now on (#85); history is kept. */
-  resetOutages: (id: number) => api.post<{ message: string; outages_reset_at: string }>(`/devices/${id}/outages/reset`),
+  resetOutages: (id: number) =>
+    api.post<{ message: string; outages_reset_at: string }>(`/devices/${id}/outages/reset`),
   resetFirewallCounters: (id: number) =>
     api.post<Record<string, string>[]>(`/devices/${id}/firewall/reset-counters`),
   moveNatRule: (id: number, ruleId: string, destination?: string) =>
     api.post<Record<string, string>[]>(`/devices/${id}/nat/move`, { id: ruleId, destination }),
   // Firewall address lists (reusable address objects)
-  getAddressLists: (id: number) => api.get<Record<string, string>[]>(`/devices/${id}/address-lists`),
+  getAddressLists: (id: number) =>
+    api.get<Record<string, string>[]>(`/devices/${id}/address-lists`),
   /** The switch chip's own VLAN table, on older chips (#278). Read-only. */
   getSwitchVlans: (id: number) => api.get<SwitchVlanView>(`/devices/${id}/switch-vlans`),
   /** Switch chip VLAN edits (#278); each requires Change Guard's auto-revert. */
-  addSwitchVlan: (id: number, data: { switch: string; vlan_id: number; ports: string[]; disabled?: boolean }) =>
-    api.post(`/devices/${id}/switch-vlans`, data, { timeout: 120_000 }),
-  updateSwitchVlan: (id: number, entryId: string, data: { vlan_id?: number; ports?: string[]; disabled?: boolean }) =>
-    api.put(`/devices/${id}/switch-vlans/${encodeURIComponent(entryId)}`, data, { timeout: 120_000 }),
+  addSwitchVlan: (
+    id: number,
+    data: { switch: string; vlan_id: number; ports: string[]; disabled?: boolean },
+  ) => api.post(`/devices/${id}/switch-vlans`, data, { timeout: 120_000 }),
+  updateSwitchVlan: (
+    id: number,
+    entryId: string,
+    data: { vlan_id?: number; ports?: string[]; disabled?: boolean },
+  ) =>
+    api.put(`/devices/${id}/switch-vlans/${encodeURIComponent(entryId)}`, data, {
+      timeout: 120_000,
+    }),
   removeSwitchVlan: (id: number, entryId: string) =>
     api.delete(`/devices/${id}/switch-vlans/${encodeURIComponent(entryId)}`, { timeout: 120_000 }),
-  setSwitchPortVlan: (id: number, port: string, data: { vlan_mode?: string; vlan_header?: string; default_vlan_id?: string }) =>
-    api.put(`/devices/${id}/switch-ports/${encodeURIComponent(port)}/vlan`, data, { timeout: 120_000 }),
+  setSwitchPortVlan: (
+    id: number,
+    port: string,
+    data: { vlan_mode?: string; vlan_header?: string; default_vlan_id?: string },
+  ) =>
+    api.put(`/devices/${id}/switch-ports/${encodeURIComponent(port)}/vlan`, data, {
+      timeout: 120_000,
+    }),
   /** L3 hardware offloading on the switch chip (#254). */
   getL3Hw: (id: number) => api.get<L3HwView>(`/devices/${id}/l3hw`),
   setL3Hw: (id: number, enabled: boolean, acknowledgeFirewall = false) =>
-    api.put<{ message: string; already?: boolean }>(`/devices/${id}/l3hw`, { enabled, ...(acknowledgeFirewall ? { acknowledge_firewall: true } : {}) }, { timeout: 120_000 }),
+    api.put<{ message: string; already?: boolean }>(
+      `/devices/${id}/l3hw`,
+      { enabled, ...(acknowledgeFirewall ? { acknowledge_firewall: true } : {}) },
+      { timeout: 120_000 },
+    ),
   /** One client's view of this router's address lists (#145). */
   clientAddressLists: (id: number, address: string) =>
     api.get<ClientAddressListView>(`/devices/${id}/address-lists/client`, { params: { address } }),
-  addAddressListEntry: (id: number, data: { list: string; address: string; comment?: string; timeout?: string; confirm_lockout?: boolean }) =>
-    api.post(`/devices/${id}/address-lists`, data),
+  addAddressListEntry: (
+    id: number,
+    data: {
+      list: string;
+      address: string;
+      comment?: string;
+      timeout?: string;
+      confirm_lockout?: boolean;
+    },
+  ) => api.post(`/devices/${id}/address-lists`, data),
   updateAddressListEntry: (id: number, entryId: string, data: Record<string, unknown>) =>
-    api.put<Record<string, string>[]>(`/devices/${id}/address-lists/${encodeURIComponent(entryId)}`, data),
+    api.put<Record<string, string>[]>(
+      `/devices/${id}/address-lists/${encodeURIComponent(entryId)}`,
+      data,
+    ),
   removeAddressListEntry: (id: number, entryId: string, confirmLockout = false) =>
-    api.delete(`/devices/${id}/address-lists/${encodeURIComponent(entryId)}`, confirmLockout ? { params: { confirm_lockout: 'true' } } : undefined),
+    api.delete(
+      `/devices/${id}/address-lists/${encodeURIComponent(entryId)}`,
+      confirmLockout ? { params: { confirm_lockout: 'true' } } : undefined,
+    ),
   // Active connections (read-only)
   getConnections: (id: number, limit = 200, protocol = '') =>
-    api.get<{ total: number | null; connections: Record<string, string>[]; limit: number; truncated: boolean; tracking: Record<string, string> }>(
-      `/devices/${id}/connections`, { params: { limit, ...(protocol ? { protocol } : {}) } }),
+    api.get<{
+      total: number | null;
+      connections: Record<string, string>[];
+      limit: number;
+      truncated: boolean;
+      tracking: Record<string, string>;
+    }>(`/devices/${id}/connections`, { params: { limit, ...(protocol ? { protocol } : {}) } }),
   // Simple queues (bandwidth control)
   getQueues: (id: number) => api.get<Record<string, string>[]>(`/devices/${id}/queues`),
   addQueue: (id: number, data: Record<string, unknown>) =>
@@ -926,18 +1250,25 @@ export const devicesApi = {
   // IP services + security posture
   getServices: (id: number) => api.get<Record<string, string>[]>(`/devices/${id}/services`),
   setServiceDisabled: (id: number, serviceId: string, disabled: boolean, confirmLockout = false) =>
-    api.put<Record<string, string>[]>(`/devices/${id}/services/${encodeURIComponent(serviceId)}`,
-      { disabled, ...(confirmLockout ? { confirm_lockout: true } : {}) }),
+    api.put<Record<string, string>[]>(`/devices/${id}/services/${encodeURIComponent(serviceId)}`, {
+      disabled,
+      ...(confirmLockout ? { confirm_lockout: true } : {}),
+    }),
   // Which addresses a service accepts connections from; empty = any (#192).
-  setServiceAllowedFrom: (id: number, serviceId: string, allowedFrom: string, confirmLockout = false) =>
-    api.put<{ services: Record<string, string>[] }>(`/devices/${id}/services/${encodeURIComponent(serviceId)}`,
-      { allowed_from: allowedFrom, ...(confirmLockout ? { confirm_lockout: true } : {}) }),
-  listSecuritySuppressions: () =>
-    api.get<SecuritySuppression[]>('/devices/security/suppressions'),
+  setServiceAllowedFrom: (
+    id: number,
+    serviceId: string,
+    allowedFrom: string,
+    confirmLockout = false,
+  ) =>
+    api.put<{ services: Record<string, string>[] }>(
+      `/devices/${id}/services/${encodeURIComponent(serviceId)}`,
+      { allowed_from: allowedFrom, ...(confirmLockout ? { confirm_lockout: true } : {}) },
+    ),
+  listSecuritySuppressions: () => api.get<SecuritySuppression[]>('/devices/security/suppressions'),
   suppressSecurityCheck: (check_id: string, device_id: number | null, reason?: string) =>
     api.post('/devices/security/suppressions', { check_id, device_id, reason }),
-  unsuppressSecurityCheck: (id: number) =>
-    api.delete(`/devices/security/suppressions/${id}`),
+  unsuppressSecurityCheck: (id: number) => api.delete(`/devices/security/suppressions/${id}`),
   /** Enable API-SSL on the device and move the manager's connection to it. Signing a certificate can take a minute. */
   enableApiSsl: (id: number) =>
     api.post<ApiSslResult>(`/devices/${id}/api-ssl`, undefined, { timeout: 240_000 }),
@@ -947,37 +1278,54 @@ export const devicesApi = {
    * under Change Guard (409 with a verdict asks to confirm).
    */
   disablePlainApi: (id: number, confirmLockout = false) =>
-    api.post<{ message: string; already?: boolean }>(`/devices/${id}/plain-api/off`, confirmLockout ? { confirm_lockout: true } : {}, { timeout: 120_000 }),
+    api.post<{ message: string; already?: boolean }>(
+      `/devices/${id}/plain-api/off`,
+      confirmLockout ? { confirm_lockout: true } : {},
+      { timeout: 120_000 },
+    ),
   /** WebFig over HTTPS (#234); plain www goes off only once HTTPS answers. Same result shape. */
   enableWwwSsl: (id: number) =>
-    api.post<ApiSslResult & { url?: string }>(`/devices/${id}/www-ssl`, undefined, { timeout: 240_000 }),
+    api.post<ApiSslResult & { url?: string }>(`/devices/${id}/www-ssl`, undefined, {
+      timeout: 240_000,
+    }),
   getSecurityPosture: (id: number) =>
     api.get<{ score: number; checks: SecurityCheck[] }>(`/devices/${id}/security-posture`),
   // Config Health — cached findings load instantly; the scan re-reads the device.
-  getConfigHealth: (id: number) =>
-    api.get<ConfigHealthResponse>(`/devices/${id}/config-health`),
+  getConfigHealth: (id: number) => api.get<ConfigHealthResponse>(`/devices/${id}/config-health`),
   scanConfigHealth: (id: number) =>
     api.post<ConfigHealthResponse>(`/devices/${id}/config-health/scan`),
   /** Apply a finding's one-click fix under Change Guard (#239). */
   fixConfigHealth: (id: number, rule: string, objects: string[], confirmLockout = false) =>
-    api.post<{ message?: string; guard?: unknown }>(`/devices/${id}/config-health/fix`, { rule, objects, ...(confirmLockout ? { confirm_lockout: true } : {}) }, { timeout: 180_000 }),
+    api.post<{ message?: string; guard?: unknown }>(
+      `/devices/${id}/config-health/fix`,
+      { rule, objects, ...(confirmLockout ? { confirm_lockout: true } : {}) },
+      { timeout: 180_000 },
+    ),
   /** Can this device arm Change Guard's auto-revert right now? Saves and removes a throwaway restore point. */
   changeGuardCheck: (id: number) =>
-    api.post<{ ready: boolean; mode: 'binary' | 'script'; reason: string | null }>(`/devices/${id}/change-guard/check`),
-  patchLocation: (id: number, data: {
-    location_address?: string | null;
-    location_lat?: number | null;
-    location_lng?: number | null;
-    rack_name?: string | null;
-    rack_slot?: string | null;
-    notes?: string | null;
-  }) => api.patch<Device>(`/devices/${id}/location`, data),
+    api.post<{ ready: boolean; mode: 'binary' | 'script'; reason: string | null }>(
+      `/devices/${id}/change-guard/check`,
+    ),
+  patchLocation: (
+    id: number,
+    data: {
+      location_address?: string | null;
+      location_lat?: number | null;
+      location_lng?: number | null;
+      rack_name?: string | null;
+      rack_slot?: string | null;
+      notes?: string | null;
+    },
+  ) => api.patch<Device>(`/devices/${id}/location`, data),
   /** Health and intermittent settings (#168). */
-  patchMonitoring: (id: number, data: {
-    intermittent?: boolean;
-    intermittent_alert_after_min?: number;
-    health_ignored?: string[];
-  }) => api.patch(`/devices/${id}/monitoring`, data),
+  patchMonitoring: (
+    id: number,
+    data: {
+      intermittent?: boolean;
+      intermittent_alert_after_min?: number;
+      health_ignored?: string[];
+    },
+  ) => api.patch(`/devices/${id}/monitoring`, data),
 };
 
 // ─── Credential Presets ──────────────────────────────────────────────────────
@@ -1018,8 +1366,7 @@ export interface CredentialPresetInput {
 
 export const credentialPresetsApi = {
   list: () => api.get<CredentialPreset[]>('/credential-presets'),
-  create: (data: CredentialPresetInput) =>
-    api.post<CredentialPreset>('/credential-presets', data),
+  create: (data: CredentialPresetInput) => api.post<CredentialPreset>('/credential-presets', data),
   update: (id: number, data: CredentialPresetInput) =>
     api.put<CredentialPreset>(`/credential-presets/${id}`, data),
   delete: (id: number) => api.delete(`/credential-presets/${id}`),
@@ -1038,9 +1385,19 @@ export interface ClientDetail extends Client {
   comment?: string;
 }
 
-export interface PresencePoint { time: string; online: number; }
-export interface TrafficPoint2 { time: string; tx_bytes: number; rx_bytes: number; }
-export interface SignalPoint { time: string; signal_strength: number; }
+export interface PresencePoint {
+  time: string;
+  online: number;
+}
+export interface TrafficPoint2 {
+  time: string;
+  tx_bytes: number;
+  rx_bytes: number;
+}
+export interface SignalPoint {
+  time: string;
+  signal_strength: number;
+}
 
 export interface RoamEvent {
   kind: 'connected' | 'roamed' | 'disconnected' | 'dhcp-assigned' | 'dhcp-released';
@@ -1058,8 +1415,11 @@ export interface RoamEvent {
 }
 
 export interface RoamHop {
-  at: string; from: string | null; to: string;
-  signalBefore: number | null; signalAfter: number | null;
+  at: string;
+  from: string | null;
+  to: string;
+  signalBefore: number | null;
+  signalAfter: number | null;
 }
 
 export interface RoamSession {
@@ -1101,8 +1461,7 @@ export const clientsApi = {
     offset?: number;
     sort?: string;
     dir?: 'asc' | 'desc';
-  }) =>
-    api.get<{ clients: Client[]; total: number; vlans?: number[] }>('/clients', { params }),
+  }) => api.get<{ clients: Client[]; total: number; vlans?: number[] }>('/clients', { params }),
   get: (mac: string) => api.get<ClientDetail>(`/clients/${encodeURIComponent(mac)}`),
   getRoaming: (mac: string, range = '24h') =>
     api.get<RoamingHistory>(`/clients/${encodeURIComponent(mac)}/roaming`, { params: { range } }),
@@ -1112,7 +1471,8 @@ export const clientsApi = {
     api.get<TrafficPoint2[]>(`/clients/${encodeURIComponent(mac)}/traffic`, { params: { range } }),
   getSignal: (mac: string, range = '24h') =>
     api.get<SignalPoint[]>(`/clients/${encodeURIComponent(mac)}/signal`, { params: { range } }),
-  wol: (mac: string) => api.post<{ success: boolean; message: string }>(`/clients/${encodeURIComponent(mac)}/wol`),
+  wol: (mac: string) =>
+    api.post<{ success: boolean; message: string }>(`/clients/${encodeURIComponent(mac)}/wol`),
   updateNotes: (mac: string, notes: string) =>
     api.put<Client>(`/clients/${encodeURIComponent(mac)}/notes`, { notes }),
   updateHostname: (mac: string, hostname: string) =>
@@ -1127,27 +1487,54 @@ export const clientsApi = {
 const TOOL_TIMEOUT = 120_000;
 export const deviceToolsApi = {
   ping: (id: number, body: { address: string; count?: number; interface?: string }) =>
-    api.post<Record<string, string>[]>(`/devices/${id}/tools/ping`, body, { timeout: TOOL_TIMEOUT }),
+    api.post<Record<string, string>[]>(`/devices/${id}/tools/ping`, body, {
+      timeout: TOOL_TIMEOUT,
+    }),
   traceroute: (id: number, body: { address: string }) =>
-    api.post<Record<string, string>[]>(`/devices/${id}/tools/traceroute`, body, { timeout: TOOL_TIMEOUT }),
+    api.post<Record<string, string>[]>(`/devices/${id}/tools/traceroute`, body, {
+      timeout: TOOL_TIMEOUT,
+    }),
   ipScan: (id: number, body: { addressRange: string; interface: string; rdns?: boolean }) =>
-    api.post<Record<string, string>[]>(`/devices/${id}/tools/ip-scan`, body, { timeout: TOOL_TIMEOUT }),
+    api.post<Record<string, string>[]>(`/devices/${id}/tools/ip-scan`, body, {
+      timeout: TOOL_TIMEOUT,
+    }),
   wol: (id: number, body: { mac: string; interface: string }) =>
-    api.post<{ success: boolean; message: string }>(`/devices/${id}/tools/wol`, body, { timeout: TOOL_TIMEOUT }),
+    api.post<{ success: boolean; message: string }>(`/devices/${id}/tools/wol`, body, {
+      timeout: TOOL_TIMEOUT,
+    }),
   capture: (id: number, body: { interface?: string; filter_ip?: string; duration?: number }) =>
     api.post(`/devices/${id}/tools/capture`, body, { timeout: 120_000, responseType: 'blob' }),
-  btest: (id: number, body: { target_device_id?: number; address?: string; direction?: string; duration?: number; protocol?: string }) =>
-    api.post<{ tx_mbps: number; rx_mbps: number; direction: string; protocol: string; duration: number; target_ip: string; raw: Record<string, string> | null }>(
-      `/devices/${id}/tools/btest`, body, { timeout: 75_000 }
-    ),
+  btest: (
+    id: number,
+    body: {
+      target_device_id?: number;
+      address?: string;
+      direction?: string;
+      duration?: number;
+      protocol?: string;
+    },
+  ) =>
+    api.post<{
+      tx_mbps: number;
+      rx_mbps: number;
+      direction: string;
+      protocol: string;
+      duration: number;
+      target_ip: string;
+      raw: Record<string, string> | null;
+    }>(`/devices/${id}/tools/btest`, body, { timeout: 75_000 }),
 };
 
 // ─── System ───────────────────────────────────────────────────────────────────
 export const systemApi = {
   versionCheck: () =>
-    api.get<{ current: string; latest: string | null; update_available: boolean; disabled?: boolean }>('/system/version-check'),
-  darkSite: () =>
-    api.get<{ features: DarkSiteFeature[] }>('/system/dark-site'),
+    api.get<{
+      current: string;
+      latest: string | null;
+      update_available: boolean;
+      disabled?: boolean;
+    }>('/system/version-check'),
+  darkSite: () => api.get<{ features: DarkSiteFeature[] }>('/system/dark-site'),
 };
 
 // ─── Events ───────────────────────────────────────────────────────────────────
@@ -1164,7 +1551,10 @@ export const eventsApi = {
     /** 1 includes NTP/cloud clock adjustments, hidden by default (#213). */
     clock?: 1;
   }) =>
-    api.get<{ events: DeviceEvent[]; total: number; totalCapped: boolean; criticalCount: number }>('/events', { params }),
+    api.get<{ events: DeviceEvent[]; total: number; totalCapped: boolean; criticalCount: number }>(
+      '/events',
+      { params },
+    ),
   /** The newest events only, without the totals the list endpoint also computes. */
   recent: (params: { severity?: string; limit: number }) =>
     api.get<{ events: DeviceEvent[] }>('/events', { params: { ...params, counts: 0 } }),
@@ -1186,23 +1576,47 @@ export interface GuestWifiOverview {
 export const guestWifiApi = {
   overview: (deviceId: number) =>
     api.get<GuestWifiOverview>('/guest-wifi/overview', { params: { deviceId }, timeout: 60_000 }),
-  setup: (deviceId: number, data: {
-    name: string; gatewayCidr: string; poolRange: string; dnsName?: string; rateLimit?: string;
-    interfaceName?: string; ssid?: { ssid: string; passphrase?: string }; vlanId?: number; masquerade?: boolean;
-  }) =>
+  setup: (
+    deviceId: number,
+    data: {
+      name: string;
+      gatewayCidr: string;
+      poolRange: string;
+      dnsName?: string;
+      rateLimit?: string;
+      interfaceName?: string;
+      ssid?: { ssid: string; passphrase?: string };
+      vlanId?: number;
+      masquerade?: boolean;
+    },
+  ) =>
     api.post<{
-      server: string; profile: string; userProfile: string; pool: string;
-      targetInterface: string; ssidInterfaces: string[]; vlanInterface?: string; warnings: string[];
+      server: string;
+      profile: string;
+      userProfile: string;
+      pool: string;
+      targetInterface: string;
+      ssidInterfaces: string[];
+      vlanInterface?: string;
+      warnings: string[];
     }>('/guest-wifi/setup', { deviceId, ...data }, { timeout: 120_000 }),
   users: (deviceId: number) => api.get<HS[]>('/guest-wifi/users', { params: { deviceId } }),
-  createVouchers: (deviceId: number, data: { count: number; durationHours?: number; dataCapMB?: number; userProfile?: string }) =>
-    api.post<{ created: number; codes: string[] }>('/guest-wifi/vouchers', { deviceId, ...data }, { timeout: 120_000 }),
+  createVouchers: (
+    deviceId: number,
+    data: { count: number; durationHours?: number; dataCapMB?: number; userProfile?: string },
+  ) =>
+    api.post<{ created: number; codes: string[] }>(
+      '/guest-wifi/vouchers',
+      { deviceId, ...data },
+      { timeout: 120_000 },
+    ),
   deleteUser: (deviceId: number, id: string) =>
     api.delete(`/guest-wifi/users/${encodeURIComponent(id)}`, { params: { deviceId } }),
   active: (deviceId: number) => api.get<HS[]>('/guest-wifi/active', { params: { deviceId } }),
   disconnect: (deviceId: number, id: string) =>
     api.delete(`/guest-wifi/active/${encodeURIComponent(id)}`, { params: { deviceId } }),
-  walledGarden: (deviceId: number) => api.get<HS[]>('/guest-wifi/walled-garden', { params: { deviceId } }),
+  walledGarden: (deviceId: number) =>
+    api.get<HS[]>('/guest-wifi/walled-garden', { params: { deviceId } }),
   addWalledGarden: (deviceId: number, dstHost: string, comment?: string) =>
     api.post('/guest-wifi/walled-garden', { deviceId, dstHost, comment }),
   removeWalledGarden: (deviceId: number, id: string) =>
@@ -1215,16 +1629,35 @@ export const guestWifiApi = {
 
 // ─── Platform & automation ──────────────────────────────────────────────────────
 export interface ApiToken {
-  id: number; name: string; prefix: string; scope: 'read' | 'write';
-  created_by: string | null; last_used_at: string | null; expires_at: string | null; created_at: string;
+  id: number;
+  name: string;
+  prefix: string;
+  scope: 'read' | 'write';
+  created_by: string | null;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
 }
 export interface Webhook {
-  id: number; name: string; url: string; has_secret: boolean;
-  events: string[]; enabled: boolean; last_status: number | null; last_fired_at: string | null; created_at: string;
+  id: number;
+  name: string;
+  url: string;
+  has_secret: boolean;
+  events: string[];
+  enabled: boolean;
+  last_status: number | null;
+  last_fired_at: string | null;
+  created_at: string;
 }
 export interface ReportSchedule {
-  id: number; name: string; frequency: 'daily' | 'weekly' | 'monthly';
-  recipients: string; enabled: boolean; last_sent_at: string | null; next_run_at: string; created_at: string;
+  id: number;
+  name: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  recipients: string;
+  enabled: boolean;
+  last_sent_at: string | null;
+  next_run_at: string;
+  created_at: string;
 }
 
 export const automationApi = {
@@ -1234,20 +1667,32 @@ export const automationApi = {
     api.post<{ id: number; token: string }>('/automation/tokens', data),
   deleteToken: (id: number) => api.delete(`/automation/tokens/${id}`),
   // webhooks
-  listWebhooks: () => api.get<{ webhooks: Webhook[]; availableEvents: string[] }>('/automation/webhooks'),
+  listWebhooks: () =>
+    api.get<{ webhooks: Webhook[]; availableEvents: string[] }>('/automation/webhooks'),
   createWebhook: (data: { name: string; url: string; secret?: string; events: string[] }) =>
     api.post<{ id: number }>('/automation/webhooks', data),
-  updateWebhook: (id: number, data: Partial<{ name: string; url: string; secret: string; events: string[]; enabled: boolean }>) =>
-    api.put(`/automation/webhooks/${id}`, data),
+  updateWebhook: (
+    id: number,
+    data: Partial<{
+      name: string;
+      url: string;
+      secret: string;
+      events: string[];
+      enabled: boolean;
+    }>,
+  ) => api.put(`/automation/webhooks/${id}`, data),
   deleteWebhook: (id: number) => api.delete(`/automation/webhooks/${id}`),
-  testWebhook: (id: number) => api.post<{ ok: boolean; status: number }>(`/automation/webhooks/${id}/test`),
+  testWebhook: (id: number) =>
+    api.post<{ ok: boolean; status: number }>(`/automation/webhooks/${id}/test`),
   // reports
   listReports: () => api.get<ReportSchedule[]>('/automation/reports'),
   createReport: (data: { name: string; frequency: string; recipients: string }) =>
     api.post<{ id: number }>('/automation/reports', data),
-  updateReport: (id: number, data: { enabled?: boolean }) => api.put(`/automation/reports/${id}`, data),
+  updateReport: (id: number, data: { enabled?: boolean }) =>
+    api.put(`/automation/reports/${id}`, data),
   deleteReport: (id: number) => api.delete(`/automation/reports/${id}`),
-  sendReportNow: (id: number) => api.post(`/automation/reports/${id}/send-now`, undefined, { timeout: 60_000 }),
+  sendReportNow: (id: number) =>
+    api.post(`/automation/reports/${id}/send-now`, undefined, { timeout: 60_000 }),
 };
 
 // ─── Firmware orchestration ─────────────────────────────────────────────────────
@@ -1258,10 +1703,16 @@ export interface FirmwareDeviceRow {
   reported_update_channel?: string | null;
   /** Same chips as the device list, so a tagged group is recognisable here. */
   tags?: { id: number; name: string; color: string }[];
-  id: number; name: string; device_type: string; status: string; model: string | null;
-  ros_version: string | null; latest_ros_version: string | null;
+  id: number;
+  name: string;
+  device_type: string;
+  status: string;
+  model: string | null;
+  ros_version: string | null;
+  latest_ros_version: string | null;
   firmware_update_available: boolean;
-  firmware_version: string | null; upgrade_firmware_version: string | null;
+  firmware_version: string | null;
+  upgrade_firmware_version: string | null;
   routerboard_upgrade_available: boolean;
   /** Set when the device pulls from a local mirror (#193). */
   mirror?: { mirror_id: number; status: string } | null;
@@ -1271,7 +1722,12 @@ export interface FirmwareDeviceRow {
 }
 
 // ─── Local firmware mirror (#193) ─────────────────────────────────────────────
-export interface MirrorFile { package: string; architecture: string; filename: string; size_bytes: number }
+export interface MirrorFile {
+  package: string;
+  architecture: string;
+  filename: string;
+  size_bytes: number;
+}
 export interface FirmwareMirror {
   id: number;
   server: { id: number; name: string; ip_address: string; ros_version: string | null } | null;
@@ -1298,72 +1754,173 @@ export interface FirmwareMirror {
   can_manage: boolean;
 }
 export interface MirrorDevice {
-  id: number; name: string; ros_version: string | null; architecture: string | null; packages: string[];
-  is_server: boolean; supported: boolean;
+  id: number;
+  name: string;
+  ros_version: string | null;
+  architecture: string | null;
+  packages: string[];
+  is_server: boolean;
+  supported: boolean;
   client: { mirror_id: number; this_mirror: boolean; status: string; error: string | null } | null;
 }
-export interface MirrorClientResult { device_id: number; name: string; ok: boolean; message: string }
+export interface MirrorClientResult {
+  device_id: number;
+  name: string;
+  ok: boolean;
+  message: string;
+}
 /** A place a mirror can keep packages (Discussion #85). */
-export interface MirrorDisk { mount_point: string | null; label: string; free_bytes: number; size_bytes: number; ram: boolean }
+export interface MirrorDisk {
+  mount_point: string | null;
+  label: string;
+  free_bytes: number;
+  size_bytes: number;
+  ram: boolean;
+}
 
 export const mirrorApi = {
-  list: () => api.get<{ mirrors: FirmwareMirror[]; can_create_fleet: boolean; admin_sites: number[] | null }>('/firmware/mirrors'),
+  list: () =>
+    api.get<{ mirrors: FirmwareMirror[]; can_create_fleet: boolean; admin_sites: number[] | null }>(
+      '/firmware/mirrors',
+    ),
   devices: (id: number) => api.get<MirrorDevice[]>(`/firmware/mirrors/${id}/devices`),
   plan: (id: number, version?: string) =>
-    api.get<{ version: string; files: { package: string; architecture: string; filename: string }[]; skipped: { id: number; name: string; reason: string }[] }>(
-      `/firmware/mirrors/${id}/plan`, { params: version ? { version } : {}, timeout: 30_000 }),
+    api.get<{
+      version: string;
+      files: { package: string; architecture: string; filename: string }[];
+      skipped: { id: number; name: string; reason: string }[];
+    }>(`/firmware/mirrors/${id}/plan`, { params: version ? { version } : {}, timeout: 30_000 }),
   disks: (deviceId: number) =>
-    api.get<{ disks: MirrorDisk[]; suggested: string | null }>('/firmware/mirrors/disks', { params: { device_id: deviceId }, timeout: 30_000 }),
-  create: (data: { device_id: number; site_id: number | null; folder?: string; disk?: string | null; serve_address?: string | null; keep_versions?: number; auto_sync?: boolean; channel?: string }) =>
-    api.post<FirmwareMirror>('/firmware/mirrors', data, { timeout: 60_000 }),
-  update: (id: number, data: { serve_address?: string | null; keep_versions?: number; auto_sync?: boolean; channel?: string; disk?: string | null }) =>
-    api.put<{ mirror: FirmwareMirror; clients: MirrorClientResult[] | null }>(`/firmware/mirrors/${id}`, data, { timeout: 180_000 }),
+    api.get<{ disks: MirrorDisk[]; suggested: string | null }>('/firmware/mirrors/disks', {
+      params: { device_id: deviceId },
+      timeout: 30_000,
+    }),
+  create: (data: {
+    device_id: number;
+    site_id: number | null;
+    folder?: string;
+    disk?: string | null;
+    serve_address?: string | null;
+    keep_versions?: number;
+    auto_sync?: boolean;
+    channel?: string;
+  }) => api.post<FirmwareMirror>('/firmware/mirrors', data, { timeout: 60_000 }),
+  update: (
+    id: number,
+    data: {
+      serve_address?: string | null;
+      keep_versions?: number;
+      auto_sync?: boolean;
+      channel?: string;
+      disk?: string | null;
+    },
+  ) =>
+    api.put<{ mirror: FirmwareMirror; clients: MirrorClientResult[] | null }>(
+      `/firmware/mirrors/${id}`,
+      data,
+      { timeout: 180_000 },
+    ),
   deploy: (id: number) =>
-    api.post<{ user: string; clients: MirrorClientResult[]; mirror: FirmwareMirror }>(`/firmware/mirrors/${id}/deploy`, undefined, { timeout: 180_000 }),
-  sync: (id: number, version?: string) => api.post<{ started: boolean }>(`/firmware/mirrors/${id}/sync`, version ? { version } : {}),
+    api.post<{ user: string; clients: MirrorClientResult[]; mirror: FirmwareMirror }>(
+      `/firmware/mirrors/${id}/deploy`,
+      undefined,
+      { timeout: 180_000 },
+    ),
+  sync: (id: number, version?: string) =>
+    api.post<{ started: boolean }>(`/firmware/mirrors/${id}/sync`, version ? { version } : {}),
   setClients: (id: number, device_ids: number[], enable: boolean) =>
-    api.post<{ results: MirrorClientResult[] }>(`/firmware/mirrors/${id}/clients`, { device_ids, enable }, { timeout: 300_000 }),
-  remove: (id: number) => api.delete<{ notes: string[] }>(`/firmware/mirrors/${id}`, { timeout: 180_000 }),
+    api.post<{ results: MirrorClientResult[] }>(
+      `/firmware/mirrors/${id}/clients`,
+      { device_ids, enable },
+      { timeout: 300_000 },
+    ),
+  remove: (id: number) =>
+    api.delete<{ notes: string[] }>(`/firmware/mirrors/${id}`, { timeout: 180_000 }),
 };
 
 export interface FirmwareRollout {
-  id: number; name: string; status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'missed';
-  halt_on_failure: boolean; pre_backup: boolean; routerboot_after: boolean;
+  id: number;
+  name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'missed';
+  halt_on_failure: boolean;
+  pre_backup: boolean;
+  routerboot_after: boolean;
   kind?: 'routeros' | 'routerboot';
   /** Devices per wave allowed to upgrade at once; 1 is sequential (#135). */
   wave_concurrency?: number;
   /** Where devices got their packages (#193). */
   package_source?: 'mirror' | 'mikrotik';
-  scheduled_at: string | null; started_at: string | null; finished_at: string | null; created_at: string;
+  scheduled_at: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
   /** Latest time a scheduled rollout may start; null means within an hour of scheduled_at. */
   scheduled_until?: string | null;
   /** Command template run after each upgrade (#163), copied in at creation. */
-  post_command?: string | null; post_template_name?: string | null;
-  device_count?: number; success_count?: number; failed_count?: number;
+  post_command?: string | null;
+  post_template_name?: string | null;
+  device_count?: number;
+  success_count?: number;
+  failed_count?: number;
 }
 export interface FirmwareRolloutDevice {
-  id: number; rollout_id: number; device_id: number; wave: number;
-  status: 'pending' | 'backing_up' | 'upgrading' | 'rebooting' | 'verifying' | 'post_commands' | 'success' | 'failed' | 'skipped';
-  from_version: string | null; to_version: string | null; error: string | null;
+  id: number;
+  rollout_id: number;
+  device_id: number;
+  wave: number;
+  status:
+    | 'pending'
+    | 'backing_up'
+    | 'upgrading'
+    | 'rebooting'
+    | 'verifying'
+    | 'post_commands'
+    | 'success'
+    | 'failed'
+    | 'skipped';
+  from_version: string | null;
+  to_version: string | null;
+  error: string | null;
   /** Post-upgrade commands (#163): 'ok' or 'failed', with what they printed. */
-  post_status?: 'ok' | 'failed' | null; post_output?: string | null; post_error?: string | null;
-  started_at: string | null; finished_at: string | null;
-  device_name: string; device_type: string; model: string | null;
+  post_status?: 'ok' | 'failed' | null;
+  post_output?: string | null;
+  post_error?: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  device_name: string;
+  device_type: string;
+  model: string | null;
 }
 
 export const firmwareApi = {
   setChannel: (deviceIds: number[], channel: string | null) =>
     api.put<{ updated: number }>('/firmware/channel', { deviceIds, channel }),
   overview: () =>
-    api.get<{ devices: FirmwareDeviceRow[]; latestRolloutId: number | null; runningRolloutId: number | null }>('/firmware/overview'),
+    api.get<{
+      devices: FirmwareDeviceRow[];
+      latestRolloutId: number | null;
+      runningRolloutId: number | null;
+    }>('/firmware/overview'),
   checkAll: () =>
-    api.post<{ results: { name: string; ok: boolean; installed?: string; latest?: string; available?: boolean; error?: string }[] }>(
-      '/firmware/check-all', undefined, { timeout: 180_000 }),
+    api.post<{
+      results: {
+        name: string;
+        ok: boolean;
+        installed?: string;
+        latest?: string;
+        available?: boolean;
+        error?: string;
+      }[];
+    }>('/firmware/check-all', undefined, { timeout: 180_000 }),
   createRollout: (data: {
-    name: string; halt_on_failure: boolean; pre_backup: boolean; routerboot_after?: boolean;
+    name: string;
+    halt_on_failure: boolean;
+    pre_backup: boolean;
+    routerboot_after?: boolean;
     /** 'routerboot': upgrade the bootloader alone (#262). */
     kind?: 'routeros' | 'routerboot';
-    scheduled_at?: string | null; start?: boolean;
+    scheduled_at?: string | null;
+    start?: boolean;
     /** Don't start after this time (a missed window is recorded, not caught up). */
     scheduled_until?: string | null;
     /** Devices per wave allowed to upgrade at once; 1 is sequential (#135). */
@@ -1377,12 +1934,14 @@ export const firmwareApi = {
   /** Advisory: selected devices that other selected devices depend on. */
   upstreamCheck: (ids: number[]) =>
     api.get<{ upstream: { id: number; name: string }[]; maxConcurrency: number }>(
-      '/firmware/rollouts/upstream-check', { params: { ids: ids.join(',') } }
+      '/firmware/rollouts/upstream-check',
+      { params: { ids: ids.join(',') } },
     ),
   listRollouts: () => api.get<FirmwareRollout[]>('/firmware/rollouts'),
   // One page of rollout history, newest first, with the total (#202).
   listRolloutsPage: (limit: number, offset: number) =>
-    api.get<FirmwareRollout[]>('/firmware/rollouts', { params: { limit, offset } })
+    api
+      .get<FirmwareRollout[]>('/firmware/rollouts', { params: { limit, offset } })
       .then((r) => ({ rows: r.data, total: Number(r.headers['x-total-count'] ?? r.data.length) })),
   getRollout: (id: number) =>
     api.get<FirmwareRollout & { devices: FirmwareRolloutDevice[] }>(`/firmware/rollouts/${id}`),
@@ -1390,7 +1949,9 @@ export const firmwareApi = {
   cancelRollout: (id: number) =>
     api.post<{ ok: boolean; note?: string }>(`/firmware/rollouts/${id}/cancel`),
   changelog: (version: string) =>
-    api.get<{ version: string; url: string; text: string }>(`/firmware/changelog/${encodeURIComponent(version)}`),
+    api.get<{ version: string; url: string; text: string }>(
+      `/firmware/changelog/${encodeURIComponent(version)}`,
+    ),
 };
 
 // ─── Operations ────────────────────────────────────────────────────────────────
@@ -1406,7 +1967,12 @@ export interface OpsAttentionItem {
   /** Stable identity used to dismiss an item that is otherwise recomputed. */
   fingerprint?: string;
 }
-export interface OpsCapacityRow { id: number; name: string; cpu: number; mem_pct: number }
+export interface OpsCapacityRow {
+  id: number;
+  name: string;
+  cpu: number;
+  mem_pct: number;
+}
 export interface OpsActivityItem {
   at: string;
   kind: 'config' | 'audit' | 'alert';
@@ -1421,23 +1987,38 @@ export interface OpsInsights {
   capacity: OpsCapacityRow[];
   activity: OpsActivityItem[];
 }
-export interface OpsActionResult { total: number; results: { name: string; ok: boolean; error?: string }[] }
+export interface OpsActionResult {
+  total: number;
+  results: { name: string; ok: boolean; error?: string }[];
+}
 
 export const operationsApi = {
   insights: () => api.get<OpsInsights>('/operations/insights'),
   /** Every online device's hardening score, cached and refreshed a few at a time (#302). */
-  securityPosture: (refresh = false) => api.get<{
-    devices: { id: number; name: string; score: number; checks: SecurityCheck[]; fetched_at: string | null }[];
-    refreshing: number;
-  }>('/operations/security-posture', { params: refresh ? { refresh: '1' } : undefined, timeout: 60_000 }),
+  securityPosture: (refresh = false) =>
+    api.get<{
+      devices: {
+        id: number;
+        name: string;
+        score: number;
+        checks: SecurityCheck[];
+        fetched_at: string | null;
+      }[];
+      refreshing: number;
+    }>('/operations/security-posture', {
+      params: refresh ? { refresh: '1' } : undefined,
+      timeout: 60_000,
+    }),
   dismissInsight: (fingerprint: string, hours: number, category?: string, title?: string) =>
     api.post('/operations/insights/dismiss', { fingerprint, hours, category, title }),
   listDismissed: () =>
-    api.get<{ fingerprint: string; category: string | null; title: string | null; expires_at: string }[]>(
-      '/operations/insights/dismissed'),
+    api.get<
+      { fingerprint: string; category: string | null; title: string | null; expires_at: string }[]
+    >('/operations/insights/dismissed'),
   undismissInsight: (fingerprint: string) =>
     api.delete(`/operations/insights/dismiss/${encodeURIComponent(fingerprint)}`),
-  backupAll: () => api.post<OpsActionResult>('/operations/backup-all', undefined, { timeout: 180_000 }),
+  backupAll: () =>
+    api.post<OpsActionResult>('/operations/backup-all', undefined, { timeout: 180_000 }),
   syncAll: () => api.post<OpsActionResult>('/operations/sync-all', undefined, { timeout: 180_000 }),
 };
 
@@ -1473,16 +2054,17 @@ export const backupsApi = {
   list: (filters: BackupFilters = {}) => {
     // Drop empty values so an unset filter doesn't become `?type=`.
     const params = Object.fromEntries(
-      Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
+      Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
     );
     return api.get<Backup[]>('/backups', { params });
   },
   /** One page, newest first, with the total for the filters (#221). */
   listPage: (filters: BackupFilters, limit: number, offset: number) => {
     const params = Object.fromEntries(
-      Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
+      Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
     );
-    return api.get<Backup[]>('/backups', { params: { ...params, limit, offset } })
+    return api
+      .get<Backup[]>('/backups', { params: { ...params, limit, offset } })
       .then((r) => ({ rows: r.data, total: Number(r.headers['x-total-count'] ?? r.data.length) }));
   },
   types: () => api.get<{ type: string; count: number }[]>('/backups/types'),
@@ -1490,27 +2072,30 @@ export const backupsApi = {
   // gave up first and showed a bare "Backup failed" (Discussion #85).
   create: (deviceId: number, notes?: string) =>
     api.post<Backup>('/backups', { deviceId, notes }, { timeout: LONG_DEVICE_OP_MS }),
-  download: (id: number) =>
-    api.get(`/backups/${id}/download`, { responseType: 'blob' }),
+  download: (id: number) => api.get(`/backups/${id}/download`, { responseType: 'blob' }),
   content: (id: number) => api.get<BackupContent>(`/backups/${id}/content`),
   diff: (fromId: number, toId: number) =>
     api.get<{ from: BackupDiffSide; to: BackupDiffSide }>(`/backups/${fromId}/diff/${toId}`),
-  restore: (id: number) => api.post<{ status: string; message: string }>(`/backups/${id}/restore`, undefined, { timeout: LONG_DEVICE_OP_MS }),
+  restore: (id: number) =>
+    api.post<{ status: string; message: string }>(`/backups/${id}/restore`, undefined, {
+      timeout: LONG_DEVICE_OP_MS,
+    }),
   delete: (id: number) => api.delete(`/backups/${id}`),
   bulkDeletePreview: (ids: number[]) =>
     api.get<{ backups: number; snapshots: number; devices: { name: string; count: number }[] }>(
-      '/backups/bulk-delete/preview', { params: { ids: ids.join(',') } }
+      '/backups/bulk-delete/preview',
+      { params: { ids: ids.join(',') } },
     ),
   bulkDelete: (ids: number[]) =>
     api.post<{ deleted: number; requested: number; failures: { id: number; error: string }[] }>(
-      '/backups/bulk-delete', { ids }
+      '/backups/bulk-delete',
+      { ids },
     ),
 };
 
 // ─── Config History ────────────────────────────────────────────────────────────
 export const configHistoryApi = {
-  list: (deviceId: number) =>
-    api.get<ConfigSnapshotMeta[]>(`/config-history/${deviceId}`),
+  list: (deviceId: number) => api.get<ConfigSnapshotMeta[]>(`/config-history/${deviceId}`),
   get: (deviceId: number, id: number) =>
     api.get<ConfigSnapshotFull>(`/config-history/${deviceId}/${id}`),
   diff: (deviceId: number, fromId: number, toId: number) =>
@@ -1519,14 +2104,16 @@ export const configHistoryApi = {
     api.post<ConfigCaptureResult>(`/config-history/${deviceId}/capture`),
   rollback: (deviceId: number, id: number) =>
     api.post<{ message: string }>(`/config-history/${deviceId}/${id}/rollback`),
-  delete: (deviceId: number, id: number) =>
-    api.delete(`/config-history/${deviceId}/${id}`),
+  delete: (deviceId: number, id: number) => api.delete(`/config-history/${deviceId}/${id}`),
 };
 
 // ─── Metrics ─────────────────────────────────────────────────────────────────
 export const metricsApi = {
   /** Every device's CPU series in one request, for list sparklines (#302). */
-  cpuHistory: (range = '1h') => api.get<{ devices: Record<string, number[]> }>('/metrics/resources/cpu-history', { params: { range } }),
+  cpuHistory: (range = '1h') =>
+    api.get<{ devices: Record<string, number[]> }>('/metrics/resources/cpu-history', {
+      params: { range },
+    }),
   summary: () => api.get<MetricsSummary>('/metrics/summary'),
   clientsOverTime: (range = '24h') =>
     api.get<TimeSeriesPoint[]>('/metrics/clients-over-time', { params: { range } }),
@@ -1545,7 +2132,11 @@ export const metricsApi = {
   deviceAvailability: (deviceId: number, range = '30d') =>
     api.get<DeviceAvailability>(`/metrics/device/${deviceId}/availability`, { params: { range } }),
   devicePoe: (deviceId: number) =>
-    api.get<{ ports: { port: string; watts: number; current_ma: number; voltage_v: number }[]; totalWatts: number; history: { time: string; port: string; watts: number }[] }>(`/metrics/device/${deviceId}/poe`),
+    api.get<{
+      ports: { port: string; watts: number; current_ma: number; voltage_v: number }[];
+      totalWatts: number;
+      history: { time: string; port: string; watts: number }[];
+    }>(`/metrics/device/${deviceId}/poe`),
 };
 
 // ─── Topology ────────────────────────────────────────────────────────────────
@@ -1568,7 +2159,10 @@ export const topologyApi = {
       /** How the map has been arranged by hand: node positions and link sides. */
       layout: {
         positions: Record<string, { x: number; y: number }>;
-        anchors: Record<string, { sourceHandle: 't' | 'b' | 'l' | 'r' | null; targetHandle: 't' | 'b' | 'l' | 'r' | null }>;
+        anchors: Record<
+          string,
+          { sourceHandle: 't' | 'b' | 'l' | 'r' | null; targetHandle: 't' | 'b' | 'l' | 'r' | null }
+        >;
         /** A colour per link, #rrggbb (#260). */
         colors?: Record<string, string>;
       };
@@ -1577,14 +2171,22 @@ export const topologyApi = {
       /** Only with withClients: client devices and where they connect. */
       clients?: import('../types').TopologyClient[];
       /** Discovered links hidden by hand (discussion #85). */
-      hiddenLinks?: { key: string; label: string | null; hiddenAt: string; hiddenBy: string | null }[];
+      hiddenLinks?: {
+        key: string;
+        label: string | null;
+        hiddenAt: string;
+        hiddenBy: string | null;
+      }[];
     }>('/topology', {
       params: withClients ? { clients: 1 } : undefined,
       headers: siteId != null ? { 'X-Site-Id': String(siteId) } : undefined,
     }),
   discover: () => api.post('/topology/discover'),
-  createHandLink: (a: import('../types').HandLinkEnd, b: import('../types').HandLinkEnd, label?: string) =>
-    api.post<import('../types').HandLink>('/topology/hand-links', { a, b, label }),
+  createHandLink: (
+    a: import('../types').HandLinkEnd,
+    b: import('../types').HandLinkEnd,
+    label?: string,
+  ) => api.post<import('../types').HandLink>('/topology/hand-links', { a, b, label }),
   deleteHandLink: (id: number) => api.delete(`/topology/hand-links/${id}`),
   /** Hide a discovered link (discussion #85); `label` is what the list of hidden links shows. */
   hideLink: (key: string, label: string) => api.post('/topology/hidden-links', { key, label }),
@@ -1596,17 +2198,26 @@ export const topologyApi = {
     colors?: Record<string, string | null>;
   }) => api.put('/topology/layout', data),
   /** Ports at each end and the label of a link drawn by hand (#260); null clears. */
-  updateHandLink: (id: number, data: { label?: string | null; a_port?: string | null; b_port?: string | null }) =>
-    api.put<import('../types').HandLink>(`/topology/hand-links/${id}`, data),
+  updateHandLink: (
+    id: number,
+    data: { label?: string | null; a_port?: string | null; b_port?: string | null },
+  ) => api.put<import('../types').HandLink>(`/topology/hand-links/${id}`, data),
   /** A name and type for a neighbour discovery found (#260); both null go back to discovery's. */
   setNeighbour: (extId: string, data: { name: string | null; kind: string | null }) =>
     api.put(`/topology/neighbours/${encodeURIComponent(extId)}`, data),
   /** Forget the arrangement of these nodes and links, so they're laid out automatically again. */
-  resetLayout: (keys: string[], edges: string[]) => api.post('/topology/layout/reset', { keys, edges }),
-  createNode: (data: { name: string; kind: string; address?: string | null; notes?: string | null }) =>
-    api.post<import('../types').TopologyNode>('/topology/nodes', data),
-  updateNode: (id: number, data: { name?: string; kind?: string; address?: string | null; notes?: string | null }) =>
-    api.put<import('../types').TopologyNode>(`/topology/nodes/${id}`, data),
+  resetLayout: (keys: string[], edges: string[]) =>
+    api.post('/topology/layout/reset', { keys, edges }),
+  createNode: (data: {
+    name: string;
+    kind: string;
+    address?: string | null;
+    notes?: string | null;
+  }) => api.post<import('../types').TopologyNode>('/topology/nodes', data),
+  updateNode: (
+    id: number,
+    data: { name?: string; kind?: string; address?: string | null; notes?: string | null },
+  ) => api.put<import('../types').TopologyNode>(`/topology/nodes/${id}`, data),
   deleteNode: (id: number) => api.delete(`/topology/nodes/${id}`),
 };
 
@@ -1615,16 +2226,28 @@ export const searchApi = {
   search: (q: string) =>
     api.get<{
       devices: {
-        id: number; name: string; ip_address: string;
-        model?: string; device_type: string; status: string;
+        id: number;
+        name: string;
+        ip_address: string;
+        model?: string;
+        device_type: string;
+        status: string;
       }[];
       clients: {
-        mac_address: string; hostname?: string; ip_address?: string;
-        device_id: number; device_name?: string; active: boolean;
+        mac_address: string;
+        hostname?: string;
+        ip_address?: string;
+        device_id: number;
+        device_name?: string;
+        active: boolean;
       }[];
       events: {
-        id: number; message: string; severity: string;
-        event_time: string; topic?: string; device_name?: string;
+        id: number;
+        message: string;
+        severity: string;
+        event_time: string;
+        topic?: string;
+        device_name?: string;
       }[];
     }>('/search', { params: { q } }),
 };
@@ -1632,23 +2255,41 @@ export const searchApi = {
 // ─── Routers ──────────────────────────────────────────────────────────────────
 export const routersApi = {
   overview: () => api.get<Record<string, unknown>[]>('/devices/routers/overview'),
-  getSnmpStatus: () => api.get<{
-    id: number; name: string; ip_address: string;
-    enabled: boolean | null; community_name?: string; version?: string;
-    auth_protocol?: string; priv_protocol?: string;
-    contact?: string; location?: string; trap_target?: string;
-    error?: string;
-  }[]>('/routers/snmp'),
+  getSnmpStatus: () =>
+    api.get<
+      {
+        id: number;
+        name: string;
+        ip_address: string;
+        enabled: boolean | null;
+        community_name?: string;
+        version?: string;
+        auth_protocol?: string;
+        priv_protocol?: string;
+        contact?: string;
+        location?: string;
+        trap_target?: string;
+        error?: string;
+      }[]
+    >('/routers/snmp'),
   /** Only the fields present are changed on each device. */
   setSnmp: (config: {
-    enabled?: boolean; community_name?: string; version?: 'v1' | 'v2c' | 'v3';
-    contact?: string; location?: string; trap_target?: string;
-    auth_protocol?: string; auth_password?: string;
-    priv_protocol?: string; priv_password?: string;
-  }) => api.put<{
-    applied: number; total: number;
-    results: { id: number; name: string; success: boolean; error?: string }[];
-  }>('/routers/snmp', config),
+    enabled?: boolean;
+    community_name?: string;
+    version?: 'v1' | 'v2c' | 'v3';
+    contact?: string;
+    location?: string;
+    trap_target?: string;
+    auth_protocol?: string;
+    auth_password?: string;
+    priv_protocol?: string;
+    priv_password?: string;
+  }) =>
+    api.put<{
+      applied: number;
+      total: number;
+      results: { id: number; name: string; success: boolean; error?: string }[];
+    }>('/routers/snmp', config),
 };
 
 // ─── Routing Protocols (per-device) ───────────────────────────────────────────
@@ -1688,23 +2329,41 @@ Object.assign(devicesApi, {
 // ─── Switches ─────────────────────────────────────────────────────────────────
 export const switchesApi = {
   list: () => api.get<Record<string, unknown>[]>('/switches'),
-  getSnmpStatus: () => api.get<{
-    id: number; name: string; ip_address: string;
-    enabled: boolean | null; community_name?: string; version?: string;
-    auth_protocol?: string; priv_protocol?: string;
-    contact?: string; location?: string; trap_target?: string;
-    error?: string;
-  }[]>('/switches/snmp'),
+  getSnmpStatus: () =>
+    api.get<
+      {
+        id: number;
+        name: string;
+        ip_address: string;
+        enabled: boolean | null;
+        community_name?: string;
+        version?: string;
+        auth_protocol?: string;
+        priv_protocol?: string;
+        contact?: string;
+        location?: string;
+        trap_target?: string;
+        error?: string;
+      }[]
+    >('/switches/snmp'),
   /** Only the fields present are changed on each device. */
   setSnmp: (config: {
-    enabled?: boolean; community_name?: string; version?: 'v1' | 'v2c' | 'v3';
-    contact?: string; location?: string; trap_target?: string;
-    auth_protocol?: string; auth_password?: string;
-    priv_protocol?: string; priv_password?: string;
-  }) => api.put<{
-    applied: number; total: number;
-    results: { id: number; name: string; success: boolean; error?: string }[];
-  }>('/switches/snmp', config),
+    enabled?: boolean;
+    community_name?: string;
+    version?: 'v1' | 'v2c' | 'v3';
+    contact?: string;
+    location?: string;
+    trap_target?: string;
+    auth_protocol?: string;
+    auth_password?: string;
+    priv_protocol?: string;
+    priv_password?: string;
+  }) =>
+    api.put<{
+      applied: number;
+      total: number;
+      results: { id: number; name: string; success: boolean; error?: string }[];
+    }>('/switches/snmp', config),
 };
 
 // ─── Alerts ──────────────────────────────────────────────────────────────────
@@ -1738,16 +2397,23 @@ export interface AlertHistoryEntry {
 
 export const alertsApi = {
   getRules: () => api.get<AlertRule[]>('/alerts/rules'),
-  updateRule: (type: string, data: Partial<Pick<AlertRule, 'enabled' | 'threshold' | 'cooldown_min'>>) =>
-    api.put<AlertRule>(`/alerts/rules/${encodeURIComponent(type)}`, data),
+  updateRule: (
+    type: string,
+    data: Partial<Pick<AlertRule, 'enabled' | 'threshold' | 'cooldown_min'>>,
+  ) => api.put<AlertRule>(`/alerts/rules/${encodeURIComponent(type)}`, data),
   getChannels: () => api.get<AlertChannel[]>('/alerts/channels'),
-  createChannel: (data: { name: string; type: AlertChannel['type']; enabled?: boolean; config?: Record<string, unknown> }) =>
-    api.post<AlertChannel>('/alerts/channels', data),
+  createChannel: (data: {
+    name: string;
+    type: AlertChannel['type'];
+    enabled?: boolean;
+    config?: Record<string, unknown>;
+  }) => api.post<AlertChannel>('/alerts/channels', data),
   updateChannel: (id: number, data: Partial<Pick<AlertChannel, 'name' | 'enabled' | 'config'>>) =>
     api.put<AlertChannel>(`/alerts/channels/${id}`, data),
   deleteChannel: (id: number) => api.delete(`/alerts/channels/${id}`),
   testChannel: (id: number) => api.post<{ message: string }>(`/alerts/channels/${id}/test`),
-  getHistory: (limit = 50) => api.get<AlertHistoryEntry[]>('/alerts/history', { params: { limit } }),
+  getHistory: (limit = 50) =>
+    api.get<AlertHistoryEntry[]>('/alerts/history', { params: { limit } }),
 };
 
 // ─── Settings ────────────────────────────────────────────────────────────────
@@ -1766,8 +2432,16 @@ export interface EncryptionOverview {
 
 export const encryptionApi = {
   overview: () => api.get<EncryptionOverview>('/settings/encryption'),
-  rotate: () => api.post<EncryptionOverview & { message: string }>('/settings/encryption/rotate', undefined, { timeout: 300_000 }),
-  reencrypt: () => api.post<EncryptionOverview & { message: string }>('/settings/encryption/reencrypt', undefined, { timeout: 300_000 }),
+  rotate: () =>
+    api.post<EncryptionOverview & { message: string }>('/settings/encryption/rotate', undefined, {
+      timeout: 300_000,
+    }),
+  reencrypt: () =>
+    api.post<EncryptionOverview & { message: string }>(
+      '/settings/encryption/reencrypt',
+      undefined,
+      { timeout: 300_000 },
+    ),
   retire: () => api.post<EncryptionOverview & { message: string }>('/settings/encryption/retire'),
 };
 
@@ -1781,8 +2455,15 @@ export const settingsApi = {
    * `site_roles` and `group_roles` (#306): both empty makes the account
    * fleet-wide; any entry limits it to those sites and groups' sites (P1-7).
    */
-  updateUser: (id: number, data: { role?: string; password?: string; site_roles?: Array<{ site_id: number; role: string }>; group_roles?: Array<{ group_id: number; role: string }> }) =>
-    api.put(`/settings/users/${id}`, data),
+  updateUser: (
+    id: number,
+    data: {
+      role?: string;
+      password?: string;
+      site_roles?: Array<{ site_id: number; role: string }>;
+      group_roles?: Array<{ group_id: number; role: string }>;
+    },
+  ) => api.put(`/settings/users/${id}`, data),
   deleteUser: (id: number) => api.delete(`/settings/users/${id}`),
 };
 
@@ -1900,21 +2581,24 @@ export const wirelessApi = {
     api.post('/wireless/ssid/bulk', data),
 
   // Per-AP: wireless interfaces (SSIDs)
-  getInterfaces:    (apId: number) => api.get(`/wireless/${apId}/interfaces`),
-  createInterface:  (apId: number, data: Record<string, unknown>) =>
+  getInterfaces: (apId: number) => api.get(`/wireless/${apId}/interfaces`),
+  createInterface: (apId: number, data: Record<string, unknown>) =>
     api.post(`/wireless/${apId}/interfaces`, data),
-  updateInterface:  (apId: number, name: string, data: Record<string, unknown>) =>
+  updateInterface: (apId: number, name: string, data: Record<string, unknown>) =>
     api.put(`/wireless/${apId}/interfaces/${encodeURIComponent(name)}`, data),
-  deleteInterface:  (apId: number, name: string, confirmLockout = false) =>
-    api.delete(`/wireless/${apId}/interfaces/${encodeURIComponent(name)}`, confirmLockout ? { params: { confirm_lockout: 'true' } } : undefined),
+  deleteInterface: (apId: number, name: string, confirmLockout = false) =>
+    api.delete(
+      `/wireless/${apId}/interfaces/${encodeURIComponent(name)}`,
+      confirmLockout ? { params: { confirm_lockout: 'true' } } : undefined,
+    ),
 
   // Per-AP: security profiles
-  getSecurityProfiles:    (apId: number) => api.get(`/wireless/${apId}/security-profiles`),
-  createSecurityProfile:  (apId: number, data: Record<string, unknown>) =>
+  getSecurityProfiles: (apId: number) => api.get(`/wireless/${apId}/security-profiles`),
+  createSecurityProfile: (apId: number, data: Record<string, unknown>) =>
     api.post(`/wireless/${apId}/security-profiles`, data),
-  updateSecurityProfile:  (apId: number, name: string, data: Record<string, unknown>) =>
+  updateSecurityProfile: (apId: number, name: string, data: Record<string, unknown>) =>
     api.put(`/wireless/${apId}/security-profiles/${encodeURIComponent(name)}`, data),
-  deleteSecurityProfile:  (apId: number, name: string) =>
+  deleteSecurityProfile: (apId: number, name: string) =>
     api.delete(`/wireless/${apId}/security-profiles/${encodeURIComponent(name)}`),
 
   // Hardware radio capabilities (wifi package)
@@ -1925,42 +2609,48 @@ export const wirelessApi = {
 
   // Radio monitoring
   getRegistrationTable: (apId: number) => api.get(`/wireless/${apId}/registration-table`),
-  getMonitor:           (apId: number, iface: string) =>
+  getMonitor: (apId: number, iface: string) =>
     api.get(`/wireless/${apId}/monitor/${encodeURIComponent(iface)}`),
   // POST: a scan disturbs the radio, so a link or a page load can't start one (U13).
-  scan:                 (apId: number, iface: string) =>
+  scan: (apId: number, iface: string) =>
     api.post(`/wireless/${apId}/scan/${encodeURIComponent(iface)}`, undefined, { timeout: 60_000 }),
 
   // Cached wireless data (for device detail Radios tab)
   getCachedInterfaces: (deviceId: number) => api.get(`/devices/${deviceId}/wireless`),
-  getMetrics:          (deviceId: number, iface?: string, range?: string) =>
+  getMetrics: (deviceId: number, iface?: string, range?: string) =>
     api.get(`/devices/${deviceId}/wireless/metrics`, { params: { iface, range } }),
 
   // Spectral scan
-  runSpectralScan:    (apId: number, iface: string) =>
+  runSpectralScan: (apId: number, iface: string) =>
     api.post(`/wireless/${apId}/spectral-scan/${encodeURIComponent(iface)}`),
   getSpectralHistory: (apId: number, iface: string, limit = 5) =>
-    api.get(`/wireless/${apId}/spectral-history/${encodeURIComponent(iface)}`, { params: { limit } }),
+    api.get(`/wireless/${apId}/spectral-history/${encodeURIComponent(iface)}`, {
+      params: { limit },
+    }),
 
   // AP scan
-  runAPScan:         (apId: number) => api.post(`/wireless/${apId}/ap-scan`),
-  getAPScanHistory:  (apId: number, limit = 5) =>
+  runAPScan: (apId: number) => api.post(`/wireless/${apId}/ap-scan`),
+  getAPScanHistory: (apId: number, limit = 5) =>
     api.get(`/wireless/${apId}/ap-scan-history`, { params: { limit } }),
 
   // Rogue / neighbor AP detection (classified from stored AP scans)
-  getRogueAps: () =>
-    api.get<import('../types').RogueApReport>('/wireless/rf/rogue'),
+  getRogueAps: () => api.get<import('../types').RogueApReport>('/wireless/rf/rogue'),
 
   // RF Health (fleet-wide, or scoped to one AP via deviceId)
   getChannelUsage: (deviceId?: number) =>
     api.get<import('../types').RfChannelUsage>('/wireless/rf/channels', { params: { deviceId } }),
   getRfCapabilities: () =>
-    api.get<{ packages: Record<string, number>; legacyRadios: number; txRetriesAvailable: boolean }>(
-      '/wireless/rf/capabilities'),
+    api.get<{
+      packages: Record<string, number>;
+      legacyRadios: number;
+      txRetriesAvailable: boolean;
+    }>('/wireless/rf/capabilities'),
   getClientSignals: (deviceId?: number) =>
     api.get<import('../types').RfSignalRow[]>('/wireless/rf/signals', { params: { deviceId } }),
   getTxQuality: (deviceId?: number, range = '6h') =>
-    api.get<import('../types').RfTxQualityRow[]>('/wireless/rf/tx-quality', { params: { deviceId, range } }),
+    api.get<import('../types').RfTxQualityRow[]>('/wireless/rf/tx-quality', {
+      params: { deviceId, range },
+    }),
 };
 
 // ─── Network Services ─────────────────────────────────────────────────────────
@@ -1969,8 +2659,14 @@ type NS = Record<string, string>;
 
 /** How full one address pool is (#156); state 'warn' from 80%, 'full' from 95%. */
 export interface DhcpPoolUsageRow {
-  device_id: number; device_name: string; name: string; ranges: string | null;
-  size: number | null; used: number; updated_at: string; state: 'warn' | 'full' | null;
+  device_id: number;
+  device_name: string;
+  name: string;
+  ranges: string | null;
+  size: number | null;
+  used: number;
+  updated_at: string;
+  state: 'warn' | 'full' | null;
 }
 
 export const networkServicesApi = {
@@ -1978,88 +2674,161 @@ export const networkServicesApi = {
   // Overview
   // Cached per device and refreshed a few at a time (#302); refresh=true re-reads every device.
   overview: (refresh = false) =>
-    api.get<Record<string, unknown>[]>('/network-services/overview', { timeout: 60_000, params: refresh ? { refresh: '1' } : undefined }),
+    api.get<Record<string, unknown>[]>('/network-services/overview', {
+      timeout: 60_000,
+      params: refresh ? { refresh: '1' } : undefined,
+    }),
 
   // ── LLDP, every device type ───────────────────────────────────────────────
   /** SNMP settings of every online device in the site, of any type. */
-  getSnmp: () => api.get<{
-    id: number; name: string; ip_address: string; device_type: string;
-    enabled: boolean | null; community_name?: string; version?: string;
-    auth_protocol?: string; priv_protocol?: string;
-    contact?: string; location?: string; trap_target?: string;
-    error?: string;
-  }[]>('/network-services/snmp'),
+  getSnmp: () =>
+    api.get<
+      {
+        id: number;
+        name: string;
+        ip_address: string;
+        device_type: string;
+        enabled: boolean | null;
+        community_name?: string;
+        version?: string;
+        auth_protocol?: string;
+        priv_protocol?: string;
+        contact?: string;
+        location?: string;
+        trap_target?: string;
+        error?: string;
+      }[]
+    >('/network-services/snmp'),
   /** Contact / location / trap destination as last applied, variables and all (#164). */
-  getSnmpTemplates: () => api.get<{ contact?: string; location?: string; trap_target?: string }>('/network-services/snmp/templates'),
+  getSnmpTemplates: () =>
+    api.get<{ contact?: string; location?: string; trap_target?: string }>(
+      '/network-services/snmp/templates',
+    ),
   /** Change SNMP on the given devices (or "all" in the site). Only the fields present are changed. */
-  setSnmp: (deviceIds: number[] | 'all', config: {
-    enabled?: boolean; community_name?: string; version?: 'v1' | 'v2c' | 'v3';
-    contact?: string; location?: string; trap_target?: string;
-    auth_protocol?: string; auth_password?: string;
-    priv_protocol?: string; priv_password?: string;
-  }) => api.put<{
-    applied: number; total: number; skipped: number[];
-    results: { id: number; name: string; success: boolean; error?: string }[];
-  }>('/network-services/snmp', { device_ids: deviceIds, ...config }),
-  getLldp: () => api.get<{
-    id: number; name: string; ip_address: string; device_type: string;
-    enabled: boolean | null; protocol: string | null; error?: string;
-  }[]>('/network-services/lldp', { timeout: 60_000 }),
+  setSnmp: (
+    deviceIds: number[] | 'all',
+    config: {
+      enabled?: boolean;
+      community_name?: string;
+      version?: 'v1' | 'v2c' | 'v3';
+      contact?: string;
+      location?: string;
+      trap_target?: string;
+      auth_protocol?: string;
+      auth_password?: string;
+      priv_protocol?: string;
+      priv_password?: string;
+    },
+  ) =>
+    api.put<{
+      applied: number;
+      total: number;
+      skipped: number[];
+      results: { id: number; name: string; success: boolean; error?: string }[];
+    }>('/network-services/snmp', { device_ids: deviceIds, ...config }),
+  getLldp: () =>
+    api.get<
+      {
+        id: number;
+        name: string;
+        ip_address: string;
+        device_type: string;
+        enabled: boolean | null;
+        protocol: string | null;
+        error?: string;
+      }[]
+    >('/network-services/lldp', { timeout: 60_000 }),
   /** device_types omitted = every type. */
-  setLldp: (enabled: boolean, device_types?: string[]) => api.put<{
-    applied: number; total: number;
-    results: { id: number; name: string; success: boolean; error?: string }[];
-  }>('/network-services/lldp', { enabled, device_types }, { timeout: 60_000 }),
+  setLldp: (enabled: boolean, device_types?: string[]) =>
+    api.put<{
+      applied: number;
+      total: number;
+      results: { id: number; name: string; success: boolean; error?: string }[];
+    }>('/network-services/lldp', { enabled, device_types }, { timeout: 60_000 }),
 
   // ── DHCP ──────────────────────────────────────────────────────────────────
   getDhcp: (deviceId: number) =>
     api.get<{ ipv4: NS[]; ipv6: NS[]; pools_v4: NS[]; pools_v6: NS[]; interfaces: NS[] }>(
-      '/network-services/dhcp', { params: { deviceId } }
+      '/network-services/dhcp',
+      { params: { deviceId } },
     ),
   addDhcpServer: (deviceId: number, body: NS & { protocol: 'ipv4' | 'ipv6' }) =>
     api.post<NS[]>('/network-services/dhcp/server', body, { params: { deviceId } }),
   updateDhcpServer: (deviceId: number, id: string, body: NS & { protocol: 'ipv4' | 'ipv6' }) =>
-    api.put<NS[]>(`/network-services/dhcp/server/${encodeURIComponent(id)}`, body, { params: { deviceId } }),
+    api.put<NS[]>(`/network-services/dhcp/server/${encodeURIComponent(id)}`, body, {
+      params: { deviceId },
+    }),
   deleteDhcpServer: (deviceId: number, id: string, protocol: 'ipv4' | 'ipv6') =>
-    api.delete(`/network-services/dhcp/server/${encodeURIComponent(id)}`, { params: { deviceId, protocol } }),
-  toggleDhcpServer: (deviceId: number, serverId: string, disabled: boolean, protocol: 'ipv4' | 'ipv6') =>
-    api.put('/network-services/dhcp/server', { serverId, disabled, protocol }, { params: { deviceId } }),
+    api.delete(`/network-services/dhcp/server/${encodeURIComponent(id)}`, {
+      params: { deviceId, protocol },
+    }),
+  toggleDhcpServer: (
+    deviceId: number,
+    serverId: string,
+    disabled: boolean,
+    protocol: 'ipv4' | 'ipv6',
+  ) =>
+    api.put(
+      '/network-services/dhcp/server',
+      { serverId, disabled, protocol },
+      { params: { deviceId } },
+    ),
   addDhcpPool: (deviceId: number, body: NS & { protocol: 'ipv4' | 'ipv6' }) =>
     api.post<NS[]>('/network-services/dhcp/pool', body, { params: { deviceId } }),
   deleteDhcpPool: (deviceId: number, id: string, protocol: 'ipv4' | 'ipv6') =>
-    api.delete(`/network-services/dhcp/pool/${encodeURIComponent(id)}`, { params: { deviceId, protocol } }),
+    api.delete(`/network-services/dhcp/pool/${encodeURIComponent(id)}`, {
+      params: { deviceId, protocol },
+    }),
   getLeases: (deviceId: number, protocol: 'ipv4' | 'ipv6') =>
     api.get<NS[]>('/network-services/dhcp/leases', { params: { deviceId, protocol } }),
   addStaticLease: (deviceId: number, body: NS & { protocol: 'ipv4' | 'ipv6' }) =>
     api.post('/network-services/dhcp/static-lease', body, { params: { deviceId } }),
   deleteStaticLease: (deviceId: number, id: string, protocol: 'ipv4' | 'ipv6') =>
-    api.delete(`/network-services/dhcp/static-lease/${encodeURIComponent(id)}`, { params: { deviceId, protocol } }),
+    api.delete(`/network-services/dhcp/static-lease/${encodeURIComponent(id)}`, {
+      params: { deviceId, protocol },
+    }),
 
   // ── DNS ───────────────────────────────────────────────────────────────────
   getDns: (deviceId: number) =>
     api.get<{ settings: NS; statics: NS[] }>('/network-services/dns', { params: { deviceId } }),
-  setDns: (deviceId: number, settings: {
-    servers?: string; allow_remote_requests?: boolean;
-    max_udp_packet_size?: string; cache_size?: string; cache_max_ttl?: string;
-  }) =>
-    api.put<NS>('/network-services/dns', settings, { params: { deviceId } }),
+  setDns: (
+    deviceId: number,
+    settings: {
+      servers?: string;
+      allow_remote_requests?: boolean;
+      max_udp_packet_size?: string;
+      cache_size?: string;
+      cache_max_ttl?: string;
+    },
+  ) => api.put<NS>('/network-services/dns', settings, { params: { deviceId } }),
   flushDns: (deviceId: number) =>
     api.post('/network-services/dns/flush', {}, { params: { deviceId } }),
   addDnsStatic: (deviceId: number, body: NS) =>
     api.post<NS[]>('/network-services/dns/static', body, { params: { deviceId } }),
   updateDnsStatic: (deviceId: number, id: string, body: NS) =>
-    api.put<NS[]>(`/network-services/dns/static/${encodeURIComponent(id)}`, body, { params: { deviceId } }),
+    api.put<NS[]>(`/network-services/dns/static/${encodeURIComponent(id)}`, body, {
+      params: { deviceId },
+    }),
   deleteDnsStatic: (deviceId: number, id: string) =>
     api.delete(`/network-services/dns/static/${encodeURIComponent(id)}`, { params: { deviceId } }),
 
   // ── NTP ───────────────────────────────────────────────────────────────────
   getNtp: (deviceId: number) =>
     api.get<{ server: NS; client: NS }>('/network-services/ntp', { params: { deviceId } }),
-  setNtp: (deviceId: number, settings: {
-    server_enabled?: boolean; server_broadcast?: boolean; server_manycast?: boolean;
-    client_enabled?: boolean; client_mode?: string; client_servers?: string;
-  }) =>
-    api.put<{ server: NS; client: NS }>('/network-services/ntp', settings, { params: { deviceId } }),
+  setNtp: (
+    deviceId: number,
+    settings: {
+      server_enabled?: boolean;
+      server_broadcast?: boolean;
+      server_manycast?: boolean;
+      client_enabled?: boolean;
+      client_mode?: string;
+      client_servers?: string;
+    },
+  ) =>
+    api.put<{ server: NS; client: NS }>('/network-services/ntp', settings, {
+      params: { deviceId },
+    }),
 
   // ── Syslog ────────────────────────────────────────────────────────────────
   getSyslog: (deviceId: number) =>
@@ -2067,13 +2836,19 @@ export const networkServicesApi = {
   addSyslogAction: (deviceId: number, body: NS) =>
     api.post<NS[]>('/network-services/syslog/action', body, { params: { deviceId } }),
   updateSyslogAction: (deviceId: number, id: string, body: NS) =>
-    api.put<NS[]>(`/network-services/syslog/action/${encodeURIComponent(id)}`, body, { params: { deviceId } }),
+    api.put<NS[]>(`/network-services/syslog/action/${encodeURIComponent(id)}`, body, {
+      params: { deviceId },
+    }),
   deleteSyslogAction: (deviceId: number, id: string) =>
-    api.delete(`/network-services/syslog/action/${encodeURIComponent(id)}`, { params: { deviceId } }),
+    api.delete(`/network-services/syslog/action/${encodeURIComponent(id)}`, {
+      params: { deviceId },
+    }),
   addSyslogRule: (deviceId: number, body: NS) =>
     api.post<NS[]>('/network-services/syslog/rule', body, { params: { deviceId } }),
   updateSyslogRule: (deviceId: number, id: string, body: NS) =>
-    api.put<NS[]>(`/network-services/syslog/rule/${encodeURIComponent(id)}`, body, { params: { deviceId } }),
+    api.put<NS[]>(`/network-services/syslog/rule/${encodeURIComponent(id)}`, body, {
+      params: { deviceId },
+    }),
   deleteSyslogRule: (deviceId: number, id: string) =>
     api.delete(`/network-services/syslog/rule/${encodeURIComponent(id)}`, { params: { deviceId } }),
   toggleSyslogRule: (deviceId: number, ruleId: string, disabled: boolean) =>
@@ -2082,38 +2857,69 @@ export const networkServicesApi = {
   // ── WireGuard ─────────────────────────────────────────────────────────────
   getWireGuard: (deviceId: number) =>
     api.get<{
-      interfaces: NS[]; peers: NS[];
+      interfaces: NS[];
+      peers: NS[];
       /** The tunnel the manager reaches this device through, if it does (#205). */
-      management: { interface: string; interface_id: string | null; peer_ids: string[]; peer_certain: boolean; manager_ip: string | null; reason: string } | null;
+      management: {
+        interface: string;
+        interface_id: string | null;
+        peer_ids: string[];
+        peer_certain: boolean;
+        manager_ip: string | null;
+        reason: string;
+      } | null;
     }>('/network-services/wireguard', { params: { deviceId } }),
   addWireGuardInterface: (deviceId: number, body: NS) =>
     api.post<NS[]>('/network-services/wireguard', body, { params: { deviceId } }),
   updateWireGuardInterface: (deviceId: number, id: string, body: NS) =>
-    api.put<NS[]>(`/network-services/wireguard/${encodeURIComponent(id)}`, body, { params: { deviceId } }),
+    api.put<NS[]>(`/network-services/wireguard/${encodeURIComponent(id)}`, body, {
+      params: { deviceId },
+    }),
   deleteWireGuardInterface: (deviceId: number, id: string, confirmLockout = false) =>
-    api.delete(`/network-services/wireguard/${encodeURIComponent(id)}`, { params: { deviceId, ...(confirmLockout ? { confirm_lockout: 'true' } : {}) } }),
-  toggleWireGuard: (deviceId: number, interfaceId: string, disabled: boolean, confirmLockout = false) =>
-    api.put('/network-services/wireguard/toggle', { interfaceId, disabled, ...(confirmLockout ? { confirm_lockout: true } : {}) }, { params: { deviceId } }),
+    api.delete(`/network-services/wireguard/${encodeURIComponent(id)}`, {
+      params: { deviceId, ...(confirmLockout ? { confirm_lockout: 'true' } : {}) },
+    }),
+  toggleWireGuard: (
+    deviceId: number,
+    interfaceId: string,
+    disabled: boolean,
+    confirmLockout = false,
+  ) =>
+    api.put(
+      '/network-services/wireguard/toggle',
+      { interfaceId, disabled, ...(confirmLockout ? { confirm_lockout: true } : {}) },
+      { params: { deviceId } },
+    ),
   addWireGuardPeer: (deviceId: number, body: NS) =>
     api.post<NS[]>('/network-services/wireguard/peer', body, { params: { deviceId } }),
   updateWireGuardPeer: (deviceId: number, id: string, body: NS) =>
-    api.put<NS[]>(`/network-services/wireguard/peer/${encodeURIComponent(id)}`, body, { params: { deviceId } }),
+    api.put<NS[]>(`/network-services/wireguard/peer/${encodeURIComponent(id)}`, body, {
+      params: { deviceId },
+    }),
   deleteWireGuardPeer: (deviceId: number, id: string) =>
-    api.delete(`/network-services/wireguard/peer/${encodeURIComponent(id)}`, { params: { deviceId } }),
+    api.delete(`/network-services/wireguard/peer/${encodeURIComponent(id)}`, {
+      params: { deviceId },
+    }),
 
   // ── NetFlow ───────────────────────────────────────────────────────────────
   netflowFleet: (refresh = false) =>
     api.get<{
       collector: { address: string; port: number; version: string; listening: boolean };
       devices: NetflowDeviceState[];
-    }>('/network-services/netflow/fleet', { timeout: 60_000, params: refresh ? { refresh: '1' } : undefined }),
+    }>('/network-services/netflow/fleet', {
+      timeout: 60_000,
+      params: refresh ? { refresh: '1' } : undefined,
+    }),
   getNetflow: (deviceId: number) =>
     api.get<{ settings: NS | null; targets: NS[]; target_matches_collector: boolean }>(
-      '/network-services/netflow', { params: { deviceId } }
+      '/network-services/netflow',
+      { params: { deviceId } },
     ),
   setNetflow: (deviceId: number, enabled: boolean) =>
     api.put<{ settings: NS | null; targets: NS[]; target_matches_collector: boolean }>(
-      '/network-services/netflow', { enabled }, { params: { deviceId } }
+      '/network-services/netflow',
+      { enabled },
+      { params: { deviceId } },
     ),
 };
 
@@ -2132,7 +2938,13 @@ export interface NetflowDeviceState {
 
 // ─── Traffic Analytics (NetFlow) ──────────────────────────────────────────────
 
-export interface ClientTrafficPoint { time: string; upload: number; download: number; uploadPackets?: number; downloadPackets?: number }
+export interface ClientTrafficPoint {
+  time: string;
+  upload: number;
+  download: number;
+  uploadPackets?: number;
+  downloadPackets?: number;
+}
 export interface TrafficTopClient {
   mac: string;
   upload_bytes: number;
@@ -2143,7 +2955,11 @@ export interface TrafficTopClient {
   vendor: string | null;
   ip_address: string | null;
 }
-export interface TrafficApp { app: string; bytes: number; packets?: number }
+export interface TrafficApp {
+  app: string;
+  bytes: number;
+  packets?: number;
+}
 export interface TrafficCollectorStats {
   listening: boolean;
   port: number;
@@ -2152,11 +2968,22 @@ export interface TrafficCollectorStats {
   flowsAttributed: number;
   packetsFromUnknownExporter: number;
   recordsWithoutTemplate: number;
-  exporters: { deviceId: number; deviceName: string; packets: number; flows: number; lastSeen: string | null }[];
+  exporters: {
+    deviceId: number;
+    deviceName: string;
+    packets: number;
+    flows: number;
+    lastSeen: string | null;
+  }[];
   /** Whether flows from sources that aren't managed devices are taken (outside review P2-23). */
   acceptUnknown?: boolean;
   /** Sources whose flows are being refused, and why. Empty when viewing one site. */
-  rejectedSources?: { address: string; reason: 'unknown_exporter' | 'public_address'; packets: number; lastSeen: string }[];
+  rejectedSources?: {
+    address: string;
+    reason: 'unknown_exporter' | 'public_address';
+    packets: number;
+    lastSeen: string;
+  }[];
   /** True when `exporters` is limited to the selected site; the counters stay collector-wide (#236). */
   site_filtered?: boolean;
 }
@@ -2171,7 +2998,8 @@ export const trafficApi = {
     api.get<TrafficApp[]>('/traffic/apps', { params: { range, mac } }),
   client: (mac: string, range = '24h') =>
     api.get<{ series: ClientTrafficPoint[]; apps: TrafficApp[] }>(
-      `/traffic/client/${encodeURIComponent(mac)}`, { params: { range } }
+      `/traffic/client/${encodeURIComponent(mac)}`,
+      { params: { range } },
     ),
 };
 
@@ -2198,31 +3026,48 @@ export const maintenanceApi = {
 // ─── Tags ────────────────────────────────────────────────────────────────────
 export const tagsApi = {
   list: () => api.get<import('../types').Tag[]>('/tags'),
-  create: (name: string, color: string) => api.post<import('../types').Tag>('/tags', { name, color }),
-  update: (id: number, data: { name?: string; color?: string }) => api.put<import('../types').Tag>(`/tags/${id}`, data),
+  create: (name: string, color: string) =>
+    api.post<import('../types').Tag>('/tags', { name, color }),
+  update: (id: number, data: { name?: string; color?: string }) =>
+    api.put<import('../types').Tag>(`/tags/${id}`, data),
   delete: (id: number) => api.delete(`/tags/${id}`),
   assignDevices: (tagId: number, deviceIds: number[], action: 'add' | 'remove') =>
     api.post(`/tags/${tagId}/devices`, { deviceIds, action }),
   /** Tags on one device. The single-device payload does not carry them. */
-  forDevice: (deviceId: number) =>
-    api.get<import('../types').Tag[]>(`/tags/device/${deviceId}`),
+  forDevice: (deviceId: number) => api.get<import('../types').Tag[]>(`/tags/device/${deviceId}`),
   deviceTags: (deviceId: number) => api.get<import('../types').Tag[]>(`/tags/device/${deviceId}`),
 };
 
 // ─── Audit Log ───────────────────────────────────────────────────────────────
 export const auditLogApi = {
-  list: (params: {
-    page?: number; limit?: number; userId?: number; entityType?: string;
-    search?: string; from?: string; to?: string;
-  } = {}) =>
+  list: (
+    params: {
+      page?: number;
+      limit?: number;
+      userId?: number;
+      entityType?: string;
+      search?: string;
+      from?: string;
+      to?: string;
+    } = {},
+  ) =>
     api.get<{
       rows: {
-        id: number; user_id: number | null; username: string | null;
-        method: string; path: string; entity_type: string | null;
-        entity_id: number | null; summary: string; ip_address: string | null;
-        status_code: number | null; created_at: string;
+        id: number;
+        user_id: number | null;
+        username: string | null;
+        method: string;
+        path: string;
+        entity_type: string | null;
+        entity_id: number | null;
+        summary: string;
+        ip_address: string | null;
+        status_code: number | null;
+        created_at: string;
       }[];
-      total: number; page: number; limit: number;
+      total: number;
+      page: number;
+      limit: number;
     }>('/audit-log', { params }),
 };
 
@@ -2251,8 +3096,7 @@ export const siteGroupsApi = {
 
 export const sitesApi = {
   list: () => api.get<import('../store/siteStore').Site[]>('/sites'),
-  create: (payload: SitePayload) =>
-    api.post<import('../store/siteStore').Site>('/sites', payload),
+  create: (payload: SitePayload) => api.post<import('../store/siteStore').Site>('/sites', payload),
   update: (id: number, payload: SitePayload) =>
     api.put<import('../store/siteStore').Site>(`/sites/${id}`, payload),
   remove: (id: number) => api.delete<{ ok: boolean }>(`/sites/${id}`),
@@ -2261,7 +3105,8 @@ export const sitesApi = {
     api.post<{ ok: boolean; moved: number }>(`/sites/${id}/devices`, { deviceIds }),
   /** Settings this site overrides (#261); null in a PUT clears one. */
   getPollSettings: (id: number) => api.get<PollSettings>(`/sites/${id}/poll-settings`),
-  setPollSettings: (id: number, data: Record<string, number | boolean | null>) => api.put<PollSettings>(`/sites/${id}/poll-settings`, data),
+  setPollSettings: (id: number, data: Record<string, number | boolean | null>) =>
+    api.put<PollSettings>(`/sites/${id}/poll-settings`, data),
   assignDevices: (id: number, deviceIds: number[]) =>
     api.post<{ ok: boolean; moved: number }>(`/sites/${id}/devices`, { deviceIds }),
 };
@@ -2305,8 +3150,14 @@ export interface CertificatesResponse {
 
 // ─── RouterOS vulnerabilities (#175) ──────────────────────────────────────────
 export interface FleetCve {
-  id: string; severity: string | null; score: number | null; known_exploited: boolean;
-  published: string | null; summary: string; fixed_in: string | null; hardware_specific: boolean;
+  id: string;
+  severity: string | null;
+  score: number | null;
+  known_exploited: boolean;
+  published: string | null;
+  summary: string;
+  fixed_in: string | null;
+  hardware_specific: boolean;
   /** Why the match may not really apply (an open-ended "before 7.x" entry on v6); null when sure. */
   uncertain: string | null;
   /** NVD's affected versions, or MikroTik's release notes (discussion #85). */
@@ -2321,14 +3172,17 @@ export interface FleetCveReport {
   total_cves: number;
   unranged: number;
   versions: {
-    version: string; devices: { id: number; name: string }[]; cves: FleetCve[];
+    version: string;
+    devices: { id: number; name: string }[];
+    cves: FleetCve[];
     /** Matches a known correction to NVD removed, with the reason. */
     corrected: { id: string; reason: string }[];
   }[];
 }
 export const cvesApi = {
   report: () => api.get<FleetCveReport>('/security/cves'),
-  refresh: () => api.post<FleetCveReport>('/security/cves/refresh', undefined, { timeout: 120_000 }),
+  refresh: () =>
+    api.post<FleetCveReport>('/security/cves/refresh', undefined, { timeout: 120_000 }),
 };
 
 export const certificatesApi = {
@@ -2402,7 +3256,10 @@ export interface AdoptRequest {
 export const adoptionApi = {
   candidates: () => api.get<{ candidates: AdoptionCandidate[] }>('/adoption/candidates'),
   checkAddress: (jumpHostId: number, address: string) =>
-    api.post<{ free: boolean; reason?: string }>('/adoption/check-address', { jumpHostId, address }),
+    api.post<{ free: boolean; reason?: string }>('/adoption/check-address', {
+      jumpHostId,
+      address,
+    }),
   adopt: (body: AdoptRequest) => api.post<AdoptionResult>('/adoption/adopt', body),
   cleanup: () => api.post<{ removed: number }>('/adoption/cleanup'),
 };
@@ -2424,11 +3281,20 @@ export interface ProxyTopRow {
   distinct_peers: number;
   last_seen: string;
 }
-export interface ProxySource { source: string; proxy_type: string; proxy_port: number | null }
+export interface ProxySource {
+  source: string;
+  proxy_type: string;
+  proxy_port: number | null;
+}
 
 export const proxyApi = {
-  top: (params: { by: 'client' | 'user' | 'destination' | 'denied'; range: string; limit?: number; source?: string; port?: number }) =>
-    api.get<ProxyTopRow[]>('/proxy/top', { params }),
+  top: (params: {
+    by: 'client' | 'user' | 'destination' | 'denied';
+    range: string;
+    limit?: number;
+    source?: string;
+    port?: number;
+  }) => api.get<ProxyTopRow[]>('/proxy/top', { params }),
   sources: () => api.get<ProxySource[]>('/proxy/sources'),
 };
 
@@ -2483,7 +3349,13 @@ export interface OpticHistoryPoint {
 // ─── User Manager (#251) ─────────────────────────────────────────────────────
 
 export type UmRow = Record<string, string>;
-export interface UserManagerServer { id: number; name: string; ip_address: string; status: string; model: string | null }
+export interface UserManagerServer {
+  id: number;
+  name: string;
+  ip_address: string;
+  status: string;
+  model: string | null;
+}
 export interface UserManagerView {
   device: { id: number; name: string; ip_address: string };
   settings: UmRow;
@@ -2493,9 +3365,13 @@ export interface UserManagerView {
   sessions: { active: UmRow[]; recent: UmRow[] };
 }
 export const userManagerApi = {
-  servers: () => api.get<{ servers: UserManagerServer[]; unchecked: number; oldest_check: string | null }>('/user-manager'),
+  servers: () =>
+    api.get<{ servers: UserManagerServer[]; unchecked: number; oldest_check: string | null }>(
+      '/user-manager',
+    ),
   get: (id: number) => api.get<UserManagerView>(`/user-manager/${id}`, { timeout: 45_000 }),
-  removeSession: (id: number, sid: string) => api.post<{ ok: boolean }>(`/user-manager/${id}/sessions/${encodeURIComponent(sid)}/remove`),
+  removeSession: (id: number, sid: string) =>
+    api.post<{ ok: boolean }>(`/user-manager/${id}/sessions/${encodeURIComponent(sid)}/remove`),
   recheck: () => api.post<{ ok: boolean }>('/user-manager/recheck'),
 };
 
@@ -2503,7 +3379,14 @@ export const userManagerApi = {
 export interface ClientAddressListView {
   address: string;
   lists: string[];
-  member: { list: string; id: string; dynamic: boolean; disabled: boolean; comment: string | null; timeout: string | null }[];
+  member: {
+    list: string;
+    id: string;
+    dynamic: boolean;
+    disabled: boolean;
+    comment: string | null;
+    timeout: string | null;
+  }[];
   /** Lists a firewall rule matches on. */
   referenced: string[];
   lease: { static: boolean; host: string | null } | null;
@@ -2512,73 +3395,169 @@ export interface ClientAddressListView {
 /** L3 hardware offloading on a device's switch chip (#254). */
 // ─── Platform backup (MikroTik Manager itself) ────────────────────────────────
 export type PlatformBackupContents = 'config' | 'config+database';
-export interface PlatformBackupHeader { format: number; app_version: string; created_at: string; contents: PlatformBackupContents }
+export interface PlatformBackupHeader {
+  format: number;
+  app_version: string;
+  created_at: string;
+  contents: PlatformBackupContents;
+}
 export interface PlatformBackupRow {
-  id: number; file_name: string; contents: PlatformBackupContents; trigger: 'manual' | 'scheduled' | 'pre-restore';
-  status: 'running' | 'success' | 'failed'; size_bytes: number | null; app_version: string | null; error: string | null;
-  destinations: { id: number; name: string; type: string; ok: boolean; error?: string; pruned?: number }[];
-  created_at: string; finished_at: string | null; created_by: string | null;
+  id: number;
+  file_name: string;
+  contents: PlatformBackupContents;
+  trigger: 'manual' | 'scheduled' | 'pre-restore';
+  status: 'running' | 'success' | 'failed';
+  size_bytes: number | null;
+  app_version: string | null;
+  error: string | null;
+  destinations: {
+    id: number;
+    name: string;
+    type: string;
+    ok: boolean;
+    error?: string;
+    pruned?: number;
+  }[];
+  created_at: string;
+  finished_at: string | null;
+  created_by: string | null;
 }
 export interface PlatformBackupDestination {
-  id: number; type: 's3' | 'sftp' | 'email'; name: string; enabled: boolean; keep: number;
-  config: Record<string, unknown>; secrets_set: string[];
+  id: number;
+  type: 's3' | 'sftp' | 'email';
+  name: string;
+  enabled: boolean;
+  keep: number;
+  config: Record<string, unknown>;
+  secrets_set: string[];
 }
 export interface PlatformBackupSchedule {
-  enabled: boolean; frequency: 'daily' | 'weekly' | 'monthly'; time_of_day: string; weekday: number; monthday: number;
-  contents: PlatformBackupContents; keep: number; destination_ids: number[]; has_passphrase: boolean; last_run_at: string | null;
+  enabled: boolean;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  time_of_day: string;
+  weekday: number;
+  monthday: number;
+  contents: PlatformBackupContents;
+  keep: number;
+  destination_ids: number[];
+  has_passphrase: boolean;
+  last_run_at: string | null;
 }
 export interface PlatformRestoreState {
-  phase: 'idle' | 'pre-backup' | 'restoring' | 'restarting' | 'failed'; message: string; startedAt?: string | null;
-  error?: string; result?: { mode: string; tables: number; rows: number; reencrypted: number; unreadable: number };
+  phase: 'idle' | 'pre-backup' | 'restoring' | 'restarting' | 'failed';
+  message: string;
+  startedAt?: string | null;
+  error?: string;
+  result?: { mode: string; tables: number; rows: number; reencrypted: number; unreadable: number };
 }
 export interface PlatformBackupTableDiff {
-  table: string; label: string; added: number; removed: number; changed: number;
+  table: string;
+  label: string;
+  added: number;
+  removed: number;
+  changed: number;
   samples: { added: string[]; removed: string[]; changed: { row: string; fields: string[] }[] };
 }
 export interface PlatformBackupCompare {
-  contents: PlatformBackupContents; appVersion: string; createdAt: string;
+  contents: PlatformBackupContents;
+  appVersion: string;
+  createdAt: string;
   tables: PlatformBackupTableDiff[];
   history: { table: string; current: number; backup: number }[];
   skippedTables: string[];
   identical: boolean;
 }
 export interface PlatformBackupOverview {
-  app_version: string; min_passphrase: number; schedule: PlatformBackupSchedule;
-  destinations: PlatformBackupDestination[]; backups: PlatformBackupRow[]; restore: PlatformRestoreState;
+  app_version: string;
+  min_passphrase: number;
+  schedule: PlatformBackupSchedule;
+  destinations: PlatformBackupDestination[];
+  backups: PlatformBackupRow[];
+  restore: PlatformRestoreState;
 }
 const LONG = { timeout: 0 };
 export const platformBackupApi = {
   overview: () => api.get<PlatformBackupOverview>('/platform-backup'),
-  saveSchedule: (data: Partial<PlatformBackupSchedule> & { passphrase?: string }) => api.put<PlatformBackupSchedule>('/platform-backup/schedule', data),
-  backupNow: (data: { contents: PlatformBackupContents; passphrase?: string; use_saved_passphrase?: boolean; destination_ids?: number[] }) =>
-    api.post('/platform-backup/backups', data),
+  saveSchedule: (data: Partial<PlatformBackupSchedule> & { passphrase?: string }) =>
+    api.put<PlatformBackupSchedule>('/platform-backup/schedule', data),
+  backupNow: (data: {
+    contents: PlatformBackupContents;
+    passphrase?: string;
+    use_saved_passphrase?: boolean;
+    destination_ids?: number[];
+  }) => api.post('/platform-backup/backups', data),
   remove: (id: number) => api.delete(`/platform-backup/backups/${id}`),
-  downloadLink: (id: number) => api.post<{ url: string }>(`/platform-backup/backups/${id}/download-link`),
+  downloadLink: (id: number) =>
+    api.post<{ url: string }>(`/platform-backup/backups/${id}/download-link`),
   upload: (file: File, onProgress: (pct: number) => void) =>
-    api.post<{ upload_id: string; header: PlatformBackupHeader; size: number }>('/platform-backup/upload', file, {
-      ...LONG, headers: { 'Content-Type': 'application/octet-stream' },
-      onUploadProgress: (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)); },
-    }),
+    api.post<{ upload_id: string; header: PlatformBackupHeader; size: number }>(
+      '/platform-backup/upload',
+      file,
+      {
+        ...LONG,
+        headers: { 'Content-Type': 'application/octet-stream' },
+        onUploadProgress: (e) => {
+          if (e.total) onProgress(Math.round((e.loaded / e.total) * 100));
+        },
+      },
+    ),
   check: (src: { backup_id?: number; upload_id?: string }, passphrase: string) =>
-    api.post<{ ok: boolean; header: PlatformBackupHeader; restorable: boolean }>('/platform-backup/check', { ...src, passphrase }),
+    api.post<{ ok: boolean; header: PlatformBackupHeader; restorable: boolean }>(
+      '/platform-backup/check',
+      { ...src, passphrase },
+    ),
   // What a restore would change, read-only. Reads the whole file, so allow time.
   compare: (src: { backup_id?: number; upload_id?: string }, passphrase: string) =>
-    api.post<PlatformBackupCompare>('/platform-backup/compare', { ...src, passphrase }, { timeout: 600_000 }),
-  restore: (src: { backup_id?: number; upload_id?: string }, passphrase: string, mode: 'config' | 'full') =>
-    api.post('/platform-backup/restore', { ...src, passphrase, mode, confirm: 'RESTORE' }),
-  restoreProgress: () => api.get<{ phase: PlatformRestoreState['phase']; message: string }>('/platform-backup/restore/progress'),
+    api.post<PlatformBackupCompare>(
+      '/platform-backup/compare',
+      { ...src, passphrase },
+      { timeout: 600_000 },
+    ),
+  restore: (
+    src: { backup_id?: number; upload_id?: string },
+    passphrase: string,
+    mode: 'config' | 'full',
+  ) => api.post('/platform-backup/restore', { ...src, passphrase, mode, confirm: 'RESTORE' }),
+  restoreProgress: () =>
+    api.get<{ phase: PlatformRestoreState['phase']; message: string }>(
+      '/platform-backup/restore/progress',
+    ),
   clearRestore: () => api.post('/platform-backup/restore/clear'),
-  addDestination: (data: Record<string, unknown>) => api.post<{ id: number }>('/platform-backup/destinations', data),
-  updateDestination: (id: number, data: Record<string, unknown>) => api.put(`/platform-backup/destinations/${id}`, data),
+  addDestination: (data: Record<string, unknown>) =>
+    api.post<{ id: number }>('/platform-backup/destinations', data),
+  updateDestination: (id: number, data: Record<string, unknown>) =>
+    api.put(`/platform-backup/destinations/${id}`, data),
   removeDestination: (id: number) => api.delete(`/platform-backup/destinations/${id}`),
-  testDestination: (id: number) => api.post<{ ok: boolean; message: string; host_key: string | null }>(`/platform-backup/destinations/${id}/test`, {}, { timeout: 120_000 }),
+  testDestination: (id: number) =>
+    api.post<{ ok: boolean; message: string; host_key: string | null }>(
+      `/platform-backup/destinations/${id}/test`,
+      {},
+      { timeout: 120_000 },
+    ),
 };
 
 /** One bridge as the Bridges tab shows it (#284). */
 export interface BridgeView {
-  id: string; name: string; protocolMode: string; priority: string | null; vlanFiltering: boolean;
-  running: boolean; disabled: boolean; dynamic: boolean; comment: string | null; mtu: string | null; macAddress: string | null;
-  ports: { name: string; hw: boolean; pvid: string | null; disabled: boolean; inactive: boolean; dynamic: boolean; role: string | null }[];
+  id: string;
+  name: string;
+  protocolMode: string;
+  priority: string | null;
+  vlanFiltering: boolean;
+  running: boolean;
+  disabled: boolean;
+  dynamic: boolean;
+  comment: string | null;
+  mtu: string | null;
+  macAddress: string | null;
+  ports: {
+    name: string;
+    hw: boolean;
+    pvid: string | null;
+    disabled: boolean;
+    inactive: boolean;
+    dynamic: boolean;
+    role: string | null;
+  }[];
   vlans: string[];
   dynamicVlans?: string[];
   addresses: string[];
@@ -2609,15 +3588,29 @@ export interface RoutingPeerRow {
 }
 
 export const routingApi = {
-  peers: (deviceId?: number) => api.get<RoutingPeerRow[]>('/routing/peers', { params: deviceId ? { deviceId } : undefined }),
+  peers: (deviceId?: number) =>
+    api.get<RoutingPeerRow[]>('/routing/peers', { params: deviceId ? { deviceId } : undefined }),
 };
 
 /** The switch chip's own VLAN table and port VLAN settings (#278). */
 export interface SwitchVlanView {
   supported: boolean;
   switches: { name: string; type: string }[];
-  vlans: { id: string; switch: string; vlanId: number; ports: string[]; independentLearning: boolean; disabled: boolean }[];
-  ports: { name: string; switch: string; vlanMode: string; vlanHeader: string; defaultVlanId: string }[];
+  vlans: {
+    id: string;
+    switch: string;
+    vlanId: number;
+    ports: string[];
+    independentLearning: boolean;
+    disabled: boolean;
+  }[];
+  ports: {
+    name: string;
+    switch: string;
+    vlanMode: string;
+    vlanHeader: string;
+    defaultVlanId: string;
+  }[];
   inUse: boolean;
   filteringBridges: string[];
 }
@@ -2652,17 +3645,45 @@ export interface BridgeMoveResult {
 }
 
 // ─── Device certificates from the manager's CA (#200) ────────────────────────
-export type DeviceCertStatus = 'not_issued' | 'valid' | 'renewal_due' | 'expired' | 'renewal_failed';
+export type DeviceCertStatus =
+  'not_issued' | 'valid' | 'renewal_due' | 'expired' | 'renewal_failed';
 export interface DeviceCaInfo {
-  subject: string; commonName: string; fingerprint: string; notBefore: string; notAfter: string; keyType: string;
-  imported: boolean; created_by: string | null; created_at: string;
+  subject: string;
+  commonName: string;
+  fingerprint: string;
+  notBefore: string;
+  notAfter: string;
+  keyType: string;
+  imported: boolean;
+  created_by: string | null;
+  created_at: string;
 }
-export interface DeviceCaSettings { default_days: number; renew_before_days: number; auto_renew: boolean; default_www: boolean }
+export interface DeviceCaSettings {
+  default_days: number;
+  renew_before_days: number;
+  auto_renew: boolean;
+  default_www: boolean;
+}
 export interface DeviceCertRow {
-  id: number; name: string; ip_address: string; site_name: string | null; ros_version: string | null; status: string;
-  api_ssl: boolean; cert_name: string | null; fingerprint: string | null; sans: string[] | null; extra_names: string[] | null;
-  days: number | null; apply_www: boolean | null; not_before: string | null; not_after: string | null;
-  last_error: string | null; last_attempt_at: string | null; issued_at: string | null; renewed_at: string | null;
+  id: number;
+  name: string;
+  ip_address: string;
+  site_name: string | null;
+  ros_version: string | null;
+  status: string;
+  api_ssl: boolean;
+  cert_name: string | null;
+  fingerprint: string | null;
+  sans: string[] | null;
+  extra_names: string[] | null;
+  days: number | null;
+  apply_www: boolean | null;
+  not_before: string | null;
+  not_after: string | null;
+  last_error: string | null;
+  last_attempt_at: string | null;
+  issued_at: string | null;
+  renewed_at: string | null;
   cert_status: DeviceCertStatus;
 }
 export interface DeviceCertsOverview {
@@ -2671,20 +3692,30 @@ export interface DeviceCertsOverview {
   limits: { min_days: number; max_days: number; ca_day_choices: number[] };
   devices: DeviceCertRow[];
 }
-export interface DeviceCertResult { ok: boolean; steps: string[]; message: string }
+export interface DeviceCertResult {
+  ok: boolean;
+  steps: string[];
+  message: string;
+}
 
 export const deviceCertsApi = {
   overview: () => api.get<DeviceCertsOverview>('/device-certs'),
-  createCa: (data: { common_name: string; organization?: string; days: number }) => api.post('/device-certs/ca', data),
+  createCa: (data: { common_name: string; organization?: string; days: number }) =>
+    api.post('/device-certs/ca', data),
   importCa: (data: { cert_pem: string; key_pem: string; passphrase?: string }) =>
     api.post<{ message: string; warnings: string[] }>('/device-certs/ca/import', data),
   deleteCa: () => api.delete('/device-certs/ca'),
-  caCertificate: () => api.get<string>('/device-certs/ca/certificate', { responseType: 'text' as const }),
+  caCertificate: () =>
+    api.get<string>('/device-certs/ca/certificate', { responseType: 'text' as const }),
   saveSettings: (data: Partial<DeviceCaSettings>) => api.put('/device-certs/settings', data),
   // Issuing talks to the device (key upload, import, a fresh TLS login): allow time.
   issue: (id: number, data: { days?: number; extra_names?: string[]; apply_www?: boolean }) =>
     api.post<DeviceCertResult>(`/device-certs/devices/${id}/issue`, data, { timeout: 180_000 }),
-  renew: (id: number) => api.post<DeviceCertResult>(`/device-certs/devices/${id}/renew`, {}, { timeout: 180_000 }),
+  renew: (id: number) =>
+    api.post<DeviceCertResult>(`/device-certs/devices/${id}/renew`, {}, { timeout: 180_000 }),
   remove: (id: number, forget = false) =>
-    api.delete<DeviceCertResult>(`/device-certs/devices/${id}`, { params: forget ? { forget: '1' } : undefined, timeout: 180_000 }),
+    api.delete<DeviceCertResult>(`/device-certs/devices/${id}`, {
+      params: forget ? { forget: '1' } : undefined,
+      timeout: 180_000,
+    }),
 };

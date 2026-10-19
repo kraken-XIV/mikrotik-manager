@@ -51,7 +51,11 @@ let worker: Worker | null = null;
 async function readJson<T>(key: string, fallback: T): Promise<T> {
   const raw = await redis.get(key);
   if (!raw) return fallback;
-  try { return JSON.parse(raw) as T; } catch { return fallback; }
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
 }
 
 async function writeMeta(jobId: string, patch: Record<string, unknown>): Promise<void> {
@@ -64,11 +68,26 @@ async function appendResult(jobId: string, row: FleetKeyResult): Promise<void> {
   await redis.set(k(jobId, 'results'), JSON.stringify([...cur, row]), 'EX', TTL_SEC);
 }
 
-export async function initFleetKeyJob(jobId: string, total: number, ownerUserId: number): Promise<void> {
-  await redis.set(k(jobId, 'meta'), JSON.stringify({
-    status: 'queued', total, processed: 0, keyed: 0, failed: 0, skipped: 0,
-    owner_user_id: ownerUserId, created_at: new Date().toISOString(),
-  }), 'EX', TTL_SEC);
+export async function initFleetKeyJob(
+  jobId: string,
+  total: number,
+  ownerUserId: number,
+): Promise<void> {
+  await redis.set(
+    k(jobId, 'meta'),
+    JSON.stringify({
+      status: 'queued',
+      total,
+      processed: 0,
+      keyed: 0,
+      failed: 0,
+      skipped: 0,
+      owner_user_id: ownerUserId,
+      created_at: new Date().toISOString(),
+    }),
+    'EX',
+    TTL_SEC,
+  );
   await redis.set(k(jobId, 'results'), '[]', 'EX', TTL_SEC);
 }
 
@@ -76,7 +95,14 @@ async function audit(p: Payload, deviceId: number, summary: string, ok: boolean)
   await query(
     `INSERT INTO audit_log (user_id, username, method, path, entity_type, entity_id, summary, ip_address, status_code)
      VALUES ($1,$2,'JOB',$3,'device',$4,$5,NULL,$6)`,
-    [p.userId, p.username, `/api/ssh-keys/fleet/jobs/${p.jobId}`, deviceId, summary.slice(0, 500), ok ? 200 : 502]
+    [
+      p.userId,
+      p.username,
+      `/api/ssh-keys/fleet/jobs/${p.jobId}`,
+      deviceId,
+      summary.slice(0, 500),
+      ok ? 200 : 502,
+    ],
   ).catch(() => {});
 }
 
@@ -89,7 +115,12 @@ async function processJob(job: Job<Payload>): Promise<void> {
 
   for (let i = 0; i < deviceIds.length; i++) {
     if (await redis.get(k(jobId, 'cancel'))) {
-      await writeMeta(jobId, { status: 'cancelled', processed: i, current_name: null, finished_at: new Date().toISOString() });
+      await writeMeta(jobId, {
+        status: 'cancelled',
+        processed: i,
+        current_name: null,
+        finished_at: new Date().toISOString(),
+      });
       return;
     }
 
@@ -98,57 +129,101 @@ async function processJob(job: Job<Payload>): Promise<void> {
               EXISTS (SELECT 1 FROM device_ssh_keys k WHERE k.device_id = devices.id AND k.status = 'verified')
                 AS has_verified_key
          FROM devices WHERE id = $1`,
-      [deviceIds[i]]
+      [deviceIds[i]],
     );
     await writeMeta(jobId, { processed: i, current_name: row?.name ?? null });
 
     let result: FleetKeyResult;
     if (!row) {
-      result = { device_id: deviceIds[i], name: `#${deviceIds[i]}`, outcome: 'skipped', message: 'Device no longer exists.' };
+      result = {
+        device_id: deviceIds[i],
+        name: `#${deviceIds[i]}`,
+        outcome: 'skipped',
+        message: 'Device no longer exists.',
+      };
     } else {
       const c = classifyKeyTarget(row);
       if (c.kind === 'keyed') {
-        result = { device_id: row.id, name: row.name, outcome: 'skipped', message: 'Already has a verified key.' };
+        result = {
+          device_id: row.id,
+          name: row.name,
+          outcome: 'skipped',
+          message: 'Already has a verified key.',
+        };
       } else if (c.kind === 'skip') {
         result = { device_id: row.id, name: row.name, outcome: 'skipped', message: c.reason };
       } else {
         try {
           await sshKeyService.deploy(row);
-          result = { device_id: row.id, name: row.name, outcome: 'keyed', username: c.username, source: c.source,
-            message: `Key installed and verified for "${c.username}".` };
+          result = {
+            device_id: row.id,
+            name: row.name,
+            outcome: 'keyed',
+            username: c.username,
+            source: c.source,
+            message: `Key installed and verified for "${c.username}".`,
+          };
         } catch (e) {
-          result = { device_id: row.id, name: row.name, outcome: 'failed', username: c.username, source: c.source,
-            message: (e as Error).message };
+          result = {
+            device_id: row.id,
+            name: row.name,
+            outcome: 'failed',
+            username: c.username,
+            source: c.source,
+            message: (e as Error).message,
+          };
         }
-        await audit(p, row.id,
+        await audit(
+          p,
+          row.id,
           result.outcome === 'keyed'
             ? `Fleet SSH key job: key installed for user ${c.username} (${c.source === 'api' ? 'API login' : 'SSH login'})`
             : `Fleet SSH key job: failed for user ${c.username}: ${result.message}`,
-          result.outcome === 'keyed');
+          result.outcome === 'keyed',
+        );
       }
     }
 
-    counts[result.outcome === 'keyed' ? 'keyed' : result.outcome === 'failed' ? 'failed' : 'skipped']++;
+    counts[
+      result.outcome === 'keyed' ? 'keyed' : result.outcome === 'failed' ? 'failed' : 'skipped'
+    ]++;
     await appendResult(jobId, result);
     await writeMeta(jobId, { processed: i + 1, ...counts });
 
-    consecutiveFailures = result.outcome === 'failed' ? consecutiveFailures + 1 : result.outcome === 'keyed' ? 0 : consecutiveFailures;
+    consecutiveFailures =
+      result.outcome === 'failed'
+        ? consecutiveFailures + 1
+        : result.outcome === 'keyed'
+          ? 0
+          : consecutiveFailures;
     if (consecutiveFailures >= HALT_AFTER) {
       await writeMeta(jobId, {
-        status: 'halted', current_name: null, finished_at: new Date().toISOString(),
-        error: `Stopped after ${HALT_AFTER} failures in a row. That usually means something fleet-wide ` +
-               '(SSH turned off, a firewall, a wrong password). The remaining devices were not touched.',
+        status: 'halted',
+        current_name: null,
+        finished_at: new Date().toISOString(),
+        error:
+          `Stopped after ${HALT_AFTER} failures in a row. That usually means something fleet-wide ` +
+          '(SSH turned off, a firewall, a wrong password). The remaining devices were not touched.',
       });
       return;
     }
   }
 
-  await writeMeta(jobId, { status: 'completed', processed: deviceIds.length, current_name: null, finished_at: new Date().toISOString() });
+  await writeMeta(jobId, {
+    status: 'completed',
+    processed: deviceIds.length,
+    current_name: null,
+    finished_at: new Date().toISOString(),
+  });
 }
 
 export async function enqueueFleetKeyJob(payload: Payload): Promise<void> {
   if (!queue) queue = new Queue(QUEUE_NAME, { connection: createRedisConnection() });
-  await queue.add('run', payload, { attempts: 1, removeOnComplete: { age: 3600, count: 50 }, removeOnFail: { age: 86400 } });
+  await queue.add('run', payload, {
+    attempts: 1,
+    removeOnComplete: { age: 3600, count: 50 },
+    removeOnFail: { age: 86400 },
+  });
 }
 
 export async function getFleetKeyJob(jobId: string) {
@@ -163,15 +238,22 @@ export async function cancelFleetKeyJob(jobId: string): Promise<void> {
 
 export async function startSshKeyFleetWorker(): Promise<void> {
   if (worker) return;
-  worker = new Worker<Payload>(QUEUE_NAME, async (job) => {
-    try {
-      await processJob(job);
-    } catch (err) {
-      console.error('[SshKeyFleet] job failed:', job.id, err);
-      await writeMeta(job.data.jobId, { status: 'failed', error: 'The job stopped unexpectedly. Check the server logs.' });
-      throw err;
-    }
-  }, { connection: createRedisConnection(), concurrency: 1 });
+  worker = new Worker<Payload>(
+    QUEUE_NAME,
+    async (job) => {
+      try {
+        await processJob(job);
+      } catch (err) {
+        console.error('[SshKeyFleet] job failed:', job.id, err);
+        await writeMeta(job.data.jobId, {
+          status: 'failed',
+          error: 'The job stopped unexpectedly. Check the server logs.',
+        });
+        throw err;
+      }
+    },
+    { connection: createRedisConnection(), concurrency: 1 },
+  );
 }
 
 export async function stopSshKeyFleetWorker(): Promise<void> {

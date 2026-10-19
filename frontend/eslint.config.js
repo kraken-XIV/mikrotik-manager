@@ -20,7 +20,7 @@ export default tseslint.config(
       ...reactPlugin.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off', // Not needed with React 17+ JSX transform
-      'react/prop-types': 'off',         // TypeScript handles this
+      'react/prop-types': 'off', // TypeScript handles this
 
       // TypeScript rules
       '@typescript-eslint/no-explicit-any': 'warn',
@@ -33,5 +33,5 @@ export default tseslint.config(
     settings: {
       react: { version: 'detect' },
     },
-  }
+  },
 );

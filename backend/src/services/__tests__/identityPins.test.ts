@@ -1,5 +1,10 @@
 import {
-  verifyDeviceIdentity, verifyDeviceSerial, IdentityMismatchError, normalizeFingerprint, sshFingerprintDisplay, trustNewIdentity,
+  verifyDeviceIdentity,
+  verifyDeviceSerial,
+  IdentityMismatchError,
+  normalizeFingerprint,
+  sshFingerprintDisplay,
+  trustNewIdentity,
 } from '../identityPins';
 import { query } from '../../config/database';
 import { alertService } from '../AlertService';
@@ -45,15 +50,23 @@ describe('verifyDeviceIdentity', () => {
 
   it('refuses a different identity, records it, and alerts once', async () => {
     lookupReturns([{ device_id: 7, name: 'sw', fingerprint: FP_A, seen_fingerprint: null }]);
-    await expect(verifyDeviceIdentity('api-tls', '10.0.0.1', 8729, FP_B)).rejects.toBeInstanceOf(IdentityMismatchError);
+    await expect(verifyDeviceIdentity('api-tls', '10.0.0.1', 8729, FP_B)).rejects.toBeInstanceOf(
+      IdentityMismatchError,
+    );
     expect(sqlCalls().some((q) => /SET seen_fingerprint = \$3/.test(q))).toBe(true);
     expect(sqlCalls().some((q) => /INSERT INTO events/.test(q))).toBe(true);
-    expect(mockDispatch).toHaveBeenCalledWith('device_identity_changed', expect.stringMatching(/certificate has changed/), expect.anything());
+    expect(mockDispatch).toHaveBeenCalledWith(
+      'device_identity_changed',
+      expect.stringMatching(/certificate has changed/),
+      expect.anything(),
+    );
 
     // The same changed identity again: still refused, not alerted again.
     mockDispatch.mockClear();
     lookupReturns([{ device_id: 7, name: 'sw', fingerprint: FP_A, seen_fingerprint: FP_B }]);
-    await expect(verifyDeviceIdentity('api-tls', '10.0.0.1', 8729, FP_B)).rejects.toBeInstanceOf(IdentityMismatchError);
+    await expect(verifyDeviceIdentity('api-tls', '10.0.0.1', 8729, FP_B)).rejects.toBeInstanceOf(
+      IdentityMismatchError,
+    );
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
@@ -72,7 +85,9 @@ describe('verifyDeviceIdentity', () => {
 
   it('names the device and what to do in the refusal', async () => {
     lookupReturns([{ device_id: 7, name: 'core-sw', fingerprint: FP_A, seen_fingerprint: null }]);
-    await expect(verifyDeviceIdentity('ssh-host', '10.0.0.1', 22, FP_B)).rejects.toThrow(/core-sw.*SSH host key.*Trust new host key/s);
+    await expect(verifyDeviceIdentity('ssh-host', '10.0.0.1', 22, FP_B)).rejects.toThrow(
+      /core-sw.*SSH host key.*Trust new host key/s,
+    );
   });
 });
 
@@ -83,7 +98,9 @@ describe('fingerprints', () => {
   });
 
   it('shows SSH host keys the way ssh-keygen does', () => {
-    expect(sshFingerprintDisplay('00'.repeat(32))).toBe('SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+    expect(sshFingerprintDisplay('00'.repeat(32))).toBe(
+      'SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+    );
   });
 });
 
@@ -104,11 +121,17 @@ describe('trustNewIdentity', () => {
 describe('verifyDeviceSerial', () => {
   it('pins the serial already on record, so a swap from before the check is still caught', async () => {
     lookupReturns([{ serial_number: 'HFE0912ABCD', fingerprint: null, seen_fingerprint: null }]);
-    await expect(verifyDeviceSerial(7, 'sw', 'HG10XYZ9876')).rejects.toBeInstanceOf(IdentityMismatchError);
+    await expect(verifyDeviceSerial(7, 'sw', 'HG10XYZ9876')).rejects.toBeInstanceOf(
+      IdentityMismatchError,
+    );
     expect(mockQuery.mock.calls[1][1]).toEqual([7, 'serial', 'HFE0912ABCD']); // the pin
     expect(sqlCalls()[2]).toMatch(/^UPDATE device_identity_pins SET seen_fingerprint/);
     expect(mockQuery.mock.calls[2][1]).toEqual([7, 'serial', 'HG10XYZ9876']);
-    expect(mockDispatch).toHaveBeenCalledWith('device_identity_changed', expect.stringMatching(/different serial number/), expect.anything());
+    expect(mockDispatch).toHaveBeenCalledWith(
+      'device_identity_changed',
+      expect.stringMatching(/different serial number/),
+      expect.anything(),
+    );
   });
 
   it('pins the first serial seen when none is on record', async () => {
@@ -118,7 +141,9 @@ describe('verifyDeviceSerial', () => {
   });
 
   it('accepts the pinned serial, ignoring case and spaces, and clears a stale mismatch', async () => {
-    lookupReturns([{ serial_number: 'HFE0912ABCD', fingerprint: 'HFE0912ABCD', seen_fingerprint: 'OTHER' }]);
+    lookupReturns([
+      { serial_number: 'HFE0912ABCD', fingerprint: 'HFE0912ABCD', seen_fingerprint: 'OTHER' },
+    ]);
     await expect(verifyDeviceSerial(7, 'sw', ' hfe0912abcd')).resolves.toBeUndefined();
     expect(sqlCalls()[1]).toMatch(/SET seen_fingerprint = NULL/);
     expect(mockDispatch).not.toHaveBeenCalled();
@@ -126,6 +151,8 @@ describe('verifyDeviceSerial', () => {
 
   it('keeps the serial as reported, letters and all', async () => {
     lookupReturns([{ serial_number: null, fingerprint: 'HFE0912ABCD', seen_fingerprint: null }]);
-    await expect(verifyDeviceSerial(7, 'sw', 'HFE0912ABCE')).rejects.toThrow(/different serial number/);
+    await expect(verifyDeviceSerial(7, 'sw', 'HFE0912ABCE')).rejects.toThrow(
+      /different serial number/,
+    );
   });
 });

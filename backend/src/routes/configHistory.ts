@@ -13,11 +13,17 @@ router.use(deviceSiteAccess(deviceIdParam));
 // The :id a handler acts on must be the plain number the site check read
 // (GHSA-6xq3-q9m5-7hxp); anything else is answered as not found.
 router.param('deviceId', (_req, res, next, id) => {
-  if (!/^\d{1,10}$/.test(String(id))) { res.status(404).json({ error: 'Device not found' }); return; }
+  if (!/^\d{1,10}$/.test(String(id))) {
+    res.status(404).json({ error: 'Device not found' });
+    return;
+  }
   next();
 });
 router.param('id', (_req, res, next, id) => {
-  if (!/^\d{1,10}$/.test(String(id))) { res.status(404).json({ error: 'Device not found' }); return; }
+  if (!/^\d{1,10}$/.test(String(id))) {
+    res.status(404).json({ error: 'Device not found' });
+    return;
+  }
   next();
 });
 
@@ -53,7 +59,10 @@ function mayRead(req: Request, row: { contains_secrets: boolean | null }): boole
  * snapshots (captured before the export-based rewrite) only have the old
  * section JSON, which we render to a readable form so old↔new diffs still work.
  */
-function snapshotText(row: { config_text: string | null; config_json: Record<string, unknown[]> | null }): string {
+function snapshotText(row: {
+  config_text: string | null;
+  config_json: Record<string, unknown[]> | null;
+}): string {
   if (row.config_text) return row.config_text;
   const cfg = row.config_json || {};
   const parts: string[] = ['# (legacy snapshot — reconstructed from collected data)'];
@@ -71,7 +80,7 @@ router.get('/:deviceId', async (req: Request, res: Response) => {
      FROM device_configs
      WHERE device_id = $1
      ORDER BY collected_at DESC`,
-    [req.params.deviceId]
+    [req.params.deviceId],
   );
   res.json(rows);
 });
@@ -81,7 +90,7 @@ router.get('/:deviceId/:id', async (req: Request, res: Response) => {
   const row = await queryOne<SnapshotRow>(
     `SELECT id, device_id, config_json, config_text, config_hash, change_summary, backup_id, collected_at, contains_secrets
      FROM device_configs WHERE id = $1 AND device_id = $2`,
-    [req.params.id, req.params.deviceId]
+    [req.params.id, req.params.deviceId],
   );
   if (!row) return res.status(404).json({ error: 'Snapshot not found' });
   if (!mayRead(req, row)) return res.status(403).json({ error: SECRET_SNAPSHOT_MESSAGE });
@@ -93,15 +102,16 @@ router.get('/:deviceId/:fromId/diff/:toId', async (req: Request, res: Response) 
   const [from, to] = await Promise.all([
     queryOne<SnapshotRow>(
       `SELECT id, config_text, config_json, change_summary, collected_at, contains_secrets FROM device_configs WHERE id = $1 AND device_id = $2`,
-      [req.params.fromId, req.params.deviceId]
+      [req.params.fromId, req.params.deviceId],
     ),
     queryOne<SnapshotRow>(
       `SELECT id, config_text, config_json, change_summary, collected_at, contains_secrets FROM device_configs WHERE id = $1 AND device_id = $2`,
-      [req.params.toId, req.params.deviceId]
+      [req.params.toId, req.params.deviceId],
     ),
   ]);
   if (!from || !to) return res.status(404).json({ error: 'Snapshot not found' });
-  if (!mayRead(req, from) || !mayRead(req, to)) return res.status(403).json({ error: SECRET_SNAPSHOT_MESSAGE });
+  if (!mayRead(req, from) || !mayRead(req, to))
+    return res.status(403).json({ error: SECRET_SNAPSHOT_MESSAGE });
 
   return res.json({
     from: { id: from.id, text: snapshotText(from), collected_at: from.collected_at },
@@ -111,7 +121,9 @@ router.get('/:deviceId/:fromId/diff/:toId', async (req: Request, res: Response) 
 
 // POST /api/config-history/:deviceId/capture — capture a fresh snapshot on demand
 router.post('/:deviceId/capture', requireWrite, async (req: Request, res: Response) => {
-  const device = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [req.params.deviceId]);
+  const device = await queryOne<DeviceRow>(`SELECT * FROM devices WHERE id = $1`, [
+    req.params.deviceId,
+  ]);
   if (!device) return res.status(404).json({ error: 'Device not found' });
 
   const collector = new DeviceCollector(device);
@@ -127,7 +139,7 @@ router.post('/:deviceId/capture', requireWrite, async (req: Request, res: Respon
       `SELECT id, config_hash, change_summary, backup_id, collected_at,
               (backup_id IS NOT NULL) AS has_backup
        FROM device_configs WHERE device_id = $1 ORDER BY collected_at DESC LIMIT 1`,
-      [device.id]
+      [device.id],
     );
     return res.json({
       created,
@@ -149,7 +161,7 @@ router.post('/:deviceId/capture', requireWrite, async (req: Request, res: Respon
 router.post('/:deviceId/:id/rollback', requireWrite, async (req: Request, res: Response) => {
   const snap = await queryOne<{ backup_id: number | null }>(
     `SELECT backup_id FROM device_configs WHERE id = $1 AND device_id = $2`,
-    [req.params.id, req.params.deviceId]
+    [req.params.id, req.params.deviceId],
   );
   if (!snap) return res.status(404).json({ error: 'Snapshot not found' });
   if (!snap.backup_id) {
@@ -157,12 +169,16 @@ router.post('/:deviceId/:id/rollback', requireWrite, async (req: Request, res: R
   }
 
   try {
-    const outcome = await backupService.restoreBackup(snap.backup_id, { userId: req.user?.userId ?? null });
+    const outcome = await backupService.restoreBackup(snap.backup_id, {
+      userId: req.user?.userId ?? null,
+    });
     const message = describeRestore(outcome);
     // Only a complete (or self-reverting) restore is a success; the UI shows the
     // message either way, and a partial one says exactly where it stopped.
     const ok = outcome.status === 'applied' || outcome.status === 'reverting';
-    return res.status(ok ? 200 : 422).json({ ...outcome, message, ...(ok ? {} : { error: message }) });
+    return res
+      .status(ok ? 200 : 422)
+      .json({ ...outcome, message, ...(ok ? {} : { error: message }) });
   } catch (err) {
     return res.status(500).json({ error: `Rollback failed: ${(err as Error).message}` });
   }
@@ -172,12 +188,14 @@ router.post('/:deviceId/:id/rollback', requireWrite, async (req: Request, res: R
 router.delete('/:deviceId/:id', requireWrite, async (req: Request, res: Response) => {
   const snap = await queryOne<{ id: number; backup_id: number | null }>(
     `SELECT id, backup_id FROM device_configs WHERE id = $1 AND device_id = $2`,
-    [req.params.id, req.params.deviceId]
+    [req.params.id, req.params.deviceId],
   );
   if (!snap) return res.status(404).json({ error: 'Snapshot not found' });
 
   if (snap.backup_id) {
-    await backupService.deleteBackup(snap.backup_id).catch(() => { /* best-effort */ });
+    await backupService.deleteBackup(snap.backup_id).catch(() => {
+      /* best-effort */
+    });
   }
   await query(`DELETE FROM device_configs WHERE id = $1`, [snap.id]);
   return res.json({ message: 'Snapshot deleted' });

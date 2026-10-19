@@ -20,10 +20,19 @@ export function formatBytes(bytes: number): string {
 }
 
 const ACTION_VERB: Record<string, string> = {
-  accept: 'Allow', drop: 'Drop', reject: 'Reject', tarpit: 'Tarpit',
-  log: 'Log', jump: 'Jump to', return: 'Return', passthrough: 'Pass through',
-  masquerade: 'Masquerade', 'src-nat': 'Source-NAT', 'dst-nat': 'Forward',
-  netmap: '1:1 NAT', redirect: 'Redirect',
+  accept: 'Allow',
+  drop: 'Drop',
+  reject: 'Reject',
+  tarpit: 'Tarpit',
+  log: 'Log',
+  jump: 'Jump to',
+  return: 'Return',
+  passthrough: 'Pass through',
+  masquerade: 'Masquerade',
+  'src-nat': 'Source-NAT',
+  'dst-nat': 'Forward',
+  netmap: '1:1 NAT',
+  redirect: 'Redirect',
 };
 
 type Ruleish = Record<string, string | undefined>;

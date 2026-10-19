@@ -37,14 +37,25 @@ export default function TagRow({ tag, canEdit, onDelete }: Props) {
     },
   });
 
-  const start = () => { setName(tag.name); setColor(tag.color); setEditing(true); };
-  const cancel = () => { setName(tag.name); setColor(tag.color); setEditing(false); };
+  const start = () => {
+    setName(tag.name);
+    setColor(tag.color);
+    setEditing(true);
+  };
+  const cancel = () => {
+    setName(tag.name);
+    setColor(tag.color);
+    setEditing(false);
+  };
   const count = tag.device_count ?? 0;
   const valid = name.trim().length > 0;
 
   if (editing) {
     return (
-      <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+      <div
+        className="flex items-center gap-2 p-3 rounded-lg"
+        style={{ background: 'var(--surface-2)' }}
+      >
         <input
           type="color"
           value={color}
@@ -70,9 +81,17 @@ export default function TagRow({ tag, canEdit, onDelete }: Props) {
           className="p-1.5 rounded text-green-600 hover:bg-green-500/10 disabled:opacity-40"
           title="Save"
         >
-          {save.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          {save.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Check className="w-4 h-4" />
+          )}
         </button>
-        <button onClick={cancel} className="p-1.5 rounded text-gray-400 hover:text-gray-600" title="Cancel">
+        <button
+          onClick={cancel}
+          className="p-1.5 rounded text-gray-400 hover:text-gray-600"
+          title="Cancel"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -80,10 +99,15 @@ export default function TagRow({ tag, canEdit, onDelete }: Props) {
   }
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+    <div
+      className="flex items-center justify-between p-3 rounded-lg"
+      style={{ background: 'var(--surface-2)' }}
+    >
       <div className="flex items-center gap-3 min-w-0">
         <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: tag.color }} />
-        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{tag.name}</span>
+        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+          {tag.name}
+        </span>
         <span className="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
           {count} device{count !== 1 ? 's' : ''}
         </span>

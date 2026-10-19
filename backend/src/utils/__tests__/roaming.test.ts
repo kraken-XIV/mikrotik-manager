@@ -5,7 +5,10 @@ const T = (s: number) => new Date(Date.UTC(2026, 7, 22, 12, 0, s)).toISOString()
 describe('parseRoamLine', () => {
   // Verbatim from a live wAP ax.
   it('parses a connect', () => {
-    const e = parseRoamLine('0C:DC:7E:E4:14:80@wifi3(popoladuper) connected, signal strength -52', T(0))!;
+    const e = parseRoamLine(
+      '0C:DC:7E:E4:14:80@wifi3(popoladuper) connected, signal strength -52',
+      T(0),
+    )!;
     expect(e.kind).toBe('connected');
     expect(e.mac).toBe('0C:DC:7E:E4:14:80');
     expect(e.interfaceName).toBe('wifi3');
@@ -14,7 +17,10 @@ describe('parseRoamLine', () => {
   });
 
   it('parses a disconnect and keeps the stated reason', () => {
-    const e = parseRoamLine('B0:BE:76:BC:B3:D7@wifi3(popoladuper) disconnected, connection lost, signal strength -69', T(0))!;
+    const e = parseRoamLine(
+      'B0:BE:76:BC:B3:D7@wifi3(popoladuper) disconnected, connection lost, signal strength -69',
+      T(0),
+    )!;
     expect(e.kind).toBe('disconnected');
     expect(e.reason).toBe('connection lost');
     expect(e.signal).toBe(-69);
@@ -24,7 +30,8 @@ describe('parseRoamLine', () => {
   it('parses a roam, capturing both ends', () => {
     const e = parseRoamLine(
       'D6:E0:17:43:FF:14@wifi-legacy-left-ap-001-main-5g(MySSIDName) roamed to D6:E0:17:43:FF:14@wifi-legacy-left-ap-001-main-2g(MySSIDName), signal strength -60',
-      T(0))!;
+      T(0),
+    )!;
     expect(e.kind).toBe('roamed');
     expect(e.interfaceName).toBe('wifi-legacy-left-ap-001-main-5g');
     expect(e.toInterface).toBe('wifi-legacy-left-ap-001-main-2g');
@@ -32,12 +39,18 @@ describe('parseRoamLine', () => {
   });
 
   it('parses DHCP assignment and release', () => {
-    const a = parseRoamLine('public_wifi_dhcp assigned 10.120.205.125 for D6:E0:17:43:FF:14 Redmi-Note-11-Pro', T(0))!;
+    const a = parseRoamLine(
+      'public_wifi_dhcp assigned 10.120.205.125 for D6:E0:17:43:FF:14 Redmi-Note-11-Pro',
+      T(0),
+    )!;
     expect(a.kind).toBe('dhcp-assigned');
     expect(a.ip).toBe('10.120.205.125');
     expect(a.hostname).toBe('Redmi-Note-11-Pro');
 
-    const d = parseRoamLine('public_wifi_dhcp deassigned 10.120.205.125 for D6:E0:17:43:FF:14 Redmi-Note-11-Pro', T(0))!;
+    const d = parseRoamLine(
+      'public_wifi_dhcp deassigned 10.120.205.125 for D6:E0:17:43:FF:14 Redmi-Note-11-Pro',
+      T(0),
+    )!;
     expect(d.kind).toBe('dhcp-released');
   });
 
@@ -47,13 +60,19 @@ describe('parseRoamLine', () => {
    * an impossibly perfect signal.
    */
   it('rejects an implausible positive signal rather than trusting it', () => {
-    const e = parseRoamLine('D6:FC:E1:03:CD:F5@wifi4(popoladuper) disconnected, connection lost, signal strength 91', T(0))!;
+    const e = parseRoamLine(
+      'D6:FC:E1:03:CD:F5@wifi4(popoladuper) disconnected, connection lost, signal strength 91',
+      T(0),
+    )!;
     expect(e.kind).toBe('disconnected');
     expect(e.signal).toBeNull();
   });
 
   it('copes with an SSID containing brackets', () => {
-    const e = parseRoamLine('AA:BB:CC:DD:EE:FF@wifi1(Guest (2.4)) connected, signal strength -40', T(0))!;
+    const e = parseRoamLine(
+      'AA:BB:CC:DD:EE:FF@wifi1(Guest (2.4)) connected, signal strength -40',
+      T(0),
+    )!;
     expect(e.ssid).toBe('Guest (2.4)');
     expect(e.signal).toBe(-40);
   });
@@ -85,7 +104,13 @@ describe('buildSessions', () => {
   it('reconstructs one session with the full path', () => {
     const [s] = buildSessions(reported());
     expect(s.path).toEqual([
-      'left-5g', 'left-2g', 'left-5g', 'left-2g', 'left-5g', 'left-2g', 'left-5g',
+      'left-5g',
+      'left-2g',
+      'left-5g',
+      'left-2g',
+      'left-5g',
+      'left-2g',
+      'left-5g',
     ]);
     expect(s.hops).toHaveLength(6);
     expect(s.durationSec).toBe(420);
@@ -173,20 +198,21 @@ describe('buildSessions — same-instant disconnect and reconnect', () => {
   const MAC = '28:37:2F:C8:31:DC';
   const at = (m: number) => new Date(Date.UTC(2026, 7, 18, 19, m, 0)).toISOString();
   const conn = (t: string) => parseRoamLine(`${MAC}@wifi5(IoT) connected, signal strength -60`, t)!;
-  const disc = (t: string) => parseRoamLine(`${MAC}@wifi5(IoT) disconnected, connection lost, signal strength -61`, t)!;
+  const disc = (t: string) =>
+    parseRoamLine(`${MAC}@wifi5(IoT) disconnected, connection lost, signal strength -61`, t)!;
 
   it('closes the old session rather than opening a zero-length one', () => {
     const sessions = buildSessions([conn(at(0)), conn(at(15)), disc(at(15))]);
     expect(sessions).toHaveLength(2);
-    expect(sessions[0].durationSec).toBe(900);       // the real 15-minute session
+    expect(sessions[0].durationSec).toBe(900); // the real 15-minute session
     expect(sessions[0].disconnectReason).toBe('connection lost');
-    expect(sessions[1].endedAt).toBeNull();          // the reconnect is still open
+    expect(sessions[1].endedAt).toBeNull(); // the reconnect is still open
   });
 
   it('gives the same answer whichever order the pair arrives in', () => {
     const a = buildSessions([conn(at(0)), disc(at(15)), conn(at(15))]);
     const b = buildSessions([conn(at(0)), conn(at(15)), disc(at(15))]);
-    expect(a.map(s => s.durationSec)).toEqual(b.map(s => s.durationSec));
+    expect(a.map((s) => s.durationSec)).toEqual(b.map((s) => s.durationSec));
   });
 });
 
@@ -199,17 +225,18 @@ describe('buildSessions — same-instant disconnect and reconnect', () => {
 describe('buildSessions — sub-second jitter within one logged second', () => {
   const MAC = '28:37:2F:C8:31:DC';
   const conn = (t: string) => parseRoamLine(`${MAC}@wifi5(IoT) connected, signal strength -60`, t)!;
-  const disc = (t: string) => parseRoamLine(`${MAC}@wifi5(IoT) disconnected, connection lost, signal strength -61`, t)!;
+  const disc = (t: string) =>
+    parseRoamLine(`${MAC}@wifi5(IoT) disconnected, connection lost, signal strength -61`, t)!;
 
   it('attributes the disconnect to the earlier session despite arriving later', () => {
     const sessions = buildSessions([
       conn('2026-08-18T19:51:16.849Z'),
-      conn('2026-08-18T20:06:17.096Z'),   // 1 ms before its own disconnect
+      conn('2026-08-18T20:06:17.096Z'), // 1 ms before its own disconnect
       disc('2026-08-18T20:06:17.097Z'),
     ]);
     expect(sessions).toHaveLength(2);
-    expect(sessions[0].durationSec).toBe(900);   // the real ~15-minute session
-    expect(sessions[1].durationSec).toBeNull();  // reconnect still open
+    expect(sessions[0].durationSec).toBe(900); // the real ~15-minute session
+    expect(sessions[1].durationSec).toBeNull(); // reconnect still open
   });
 
   it('produces no zero-length session from a reassociation', () => {
@@ -220,7 +247,7 @@ describe('buildSessions — sub-second jitter within one logged second', () => {
       conn('2026-08-18T19:30:00.300Z'),
       disc('2026-08-18T19:30:00.100Z'),
     ]);
-    expect(sessions.filter(s => s.durationSec === 0)).toHaveLength(0);
+    expect(sessions.filter((s) => s.durationSec === 0)).toHaveLength(0);
   });
 });
 
@@ -228,7 +255,8 @@ describe('buildSessions — sub-second jitter within one logged second', () => {
 describe('buildSessions across access points', () => {
   const MAC = 'D6:E0:17:43:FF:14';
   const T0 = Date.parse('2026-10-01T10:00:00Z');
-  const ev = (m: string, s: number, ap: string) => parseRoamLine(m, new Date(T0 + s * 1000).toISOString(), ap)!;
+  const ev = (m: string, s: number, ap: string) =>
+    parseRoamLine(m, new Date(T0 + s * 1000).toISOString(), ap)!;
 
   it("doesn't let the old AP's late disconnect end the session on the new AP", () => {
     const sessions = buildSessions([

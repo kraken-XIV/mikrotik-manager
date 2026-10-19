@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  History, Camera, RotateCcw, Trash2, AlertCircle, CheckCircle, Loader2, GitCompare,
+  History,
+  Camera,
+  RotateCcw,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  GitCompare,
 } from 'lucide-react';
 import { configHistoryApi } from '../../services/api';
 import { useCanWrite } from '../../hooks/useCanWrite';
@@ -37,8 +44,10 @@ export default function ConfigHistoryTab({ deviceId }: Props) {
 
   const { data: diff } = useQuery({
     queryKey: ['config-diff', deviceId, effectiveFromId, effectiveToId],
-    queryFn: () => configHistoryApi.diff(deviceId, effectiveFromId!, effectiveToId!).then((r) => r.data),
-    enabled: effectiveFromId !== null && effectiveToId !== null && effectiveFromId !== effectiveToId,
+    queryFn: () =>
+      configHistoryApi.diff(deviceId, effectiveFromId!, effectiveToId!).then((r) => r.data),
+    enabled:
+      effectiveFromId !== null && effectiveToId !== null && effectiveFromId !== effectiveToId,
   });
 
   const flash = (msg: string) => {
@@ -94,7 +103,9 @@ export default function ConfigHistoryTab({ deviceId }: Props) {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <History className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Configuration History</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Configuration History
+          </h2>
         </div>
         {canWrite && (
           <button
@@ -102,15 +113,19 @@ export default function ConfigHistoryTab({ deviceId }: Props) {
             disabled={captureMutation.isPending}
             className="btn-primary flex items-center gap-2"
           >
-            {captureMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+            {captureMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Camera className="w-4 h-4" />
+            )}
             Capture snapshot
           </button>
         )}
       </div>
 
       <p className="text-sm text-gray-500 dark:text-slate-400">
-        Snapshots are captured automatically when the device configuration changes. Each one links a restorable
-        backup so you can roll back to it.
+        Snapshots are captured automatically when the device configuration changes. Each one links a
+        restorable backup so you can roll back to it.
       </p>
 
       {error && (
@@ -135,7 +150,9 @@ export default function ConfigHistoryTab({ deviceId }: Props) {
         <div className="card p-12 flex flex-col items-center gap-4 text-center">
           <History className="w-14 h-14 text-gray-300 dark:text-slate-600" />
           <div>
-            <p className="font-medium text-gray-700 dark:text-slate-300">No configuration snapshots yet</p>
+            <p className="font-medium text-gray-700 dark:text-slate-300">
+              No configuration snapshots yet
+            </p>
             <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">
               One will appear after the next config change, or capture one now.
             </p>
@@ -174,47 +191,63 @@ export default function ConfigHistoryTab({ deviceId }: Props) {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1">
-                      {canWrite && (rollbackConfirm === s.id ? (
-                        <span className="flex items-center gap-1 text-xs">
+                      {canWrite &&
+                        (rollbackConfirm === s.id ? (
+                          <span className="flex items-center gap-1 text-xs">
+                            <button
+                              onClick={() => rollbackMutation.mutate(s.id)}
+                              disabled={rollbackMutation.isPending}
+                              className="text-orange-600 hover:text-orange-700 font-medium"
+                            >
+                              {rollbackMutation.isPending ? 'Rolling back…' : 'Confirm rollback'}
+                            </button>
+                            <button
+                              onClick={() => setRollbackConfirm(null)}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ) : (
                           <button
-                            onClick={() => rollbackMutation.mutate(s.id)}
-                            disabled={rollbackMutation.isPending}
-                            className="text-orange-600 hover:text-orange-700 font-medium"
+                            onClick={() => setRollbackConfirm(s.id)}
+                            disabled={!s.has_backup}
+                            title={
+                              s.has_backup
+                                ? 'Roll back to this configuration'
+                                : 'No backup linked to this snapshot'
+                            }
+                            className="p-1.5 rounded text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:cursor-not-allowed"
                           >
-                            {rollbackMutation.isPending ? 'Rolling back…' : 'Confirm rollback'}
+                            <RotateCcw className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setRollbackConfirm(null)} className="text-gray-400 hover:text-gray-600">✕</button>
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => setRollbackConfirm(s.id)}
-                          disabled={!s.has_backup}
-                          title={s.has_backup ? 'Roll back to this configuration' : 'No backup linked to this snapshot'}
-                          className="p-1.5 rounded text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:cursor-not-allowed"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                        </button>
-                      ))}
-                      {canWrite && (deleteConfirm === s.id ? (
-                        <span className="flex items-center gap-1 text-xs">
+                        ))}
+                      {canWrite &&
+                        (deleteConfirm === s.id ? (
+                          <span className="flex items-center gap-1 text-xs">
+                            <button
+                              onClick={() => deleteMutation.mutate(s.id)}
+                              disabled={deleteMutation.isPending}
+                              className="text-red-600 hover:text-red-700 font-medium"
+                            >
+                              {deleteMutation.isPending ? '…' : 'Delete?'}
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(null)}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ) : (
                           <button
-                            onClick={() => deleteMutation.mutate(s.id)}
-                            disabled={deleteMutation.isPending}
-                            className="text-red-600 hover:text-red-700 font-medium"
+                            onClick={() => setDeleteConfirm(s.id)}
+                            title="Delete this snapshot"
+                            className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                           >
-                            {deleteMutation.isPending ? '…' : 'Delete?'}
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setDeleteConfirm(null)} className="text-gray-400 hover:text-gray-600">✕</button>
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => setDeleteConfirm(s.id)}
-                          title="Delete this snapshot"
-                          className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      ))}
+                        ))}
                     </div>
                   </td>
                 </tr>
@@ -229,7 +262,9 @@ export default function ConfigHistoryTab({ deviceId }: Props) {
         <div className="card p-4 space-y-3">
           <div className="flex items-center gap-2">
             <GitCompare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Compare snapshots</h3>
+            <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
+              Compare snapshots
+            </h3>
           </div>
           <div className="flex items-center gap-2 flex-wrap text-sm">
             <select
@@ -239,7 +274,9 @@ export default function ConfigHistoryTab({ deviceId }: Props) {
             >
               <option value="">Base (older)…</option>
               {history.map((s) => (
-                <option key={s.id} value={s.id}>{format(new Date(s.collected_at), 'MMM d HH:mm:ss')}</option>
+                <option key={s.id} value={s.id}>
+                  {format(new Date(s.collected_at), 'MMM d HH:mm:ss')}
+                </option>
               ))}
             </select>
             <span className="text-gray-400">→</span>
@@ -250,7 +287,9 @@ export default function ConfigHistoryTab({ deviceId }: Props) {
             >
               <option value="">Compare (newer)…</option>
               {history.map((s) => (
-                <option key={s.id} value={s.id}>{format(new Date(s.collected_at), 'MMM d HH:mm:ss')}</option>
+                <option key={s.id} value={s.id}>
+                  {format(new Date(s.collected_at), 'MMM d HH:mm:ss')}
+                </option>
               ))}
             </select>
             {diff && (
@@ -273,9 +312,11 @@ export default function ConfigHistoryTab({ deviceId }: Props) {
                     key={idx}
                     className={clsx(
                       'whitespace-pre-wrap',
-                      row.type === 'add' && 'bg-green-100/70 dark:bg-green-900/30 text-green-800 dark:text-green-300',
-                      row.type === 'del' && 'bg-red-100/70 dark:bg-red-900/30 text-red-800 dark:text-red-300',
-                      row.type === 'ctx' && 'text-gray-500 dark:text-slate-500'
+                      row.type === 'add' &&
+                        'bg-green-100/70 dark:bg-green-900/30 text-green-800 dark:text-green-300',
+                      row.type === 'del' &&
+                        'bg-red-100/70 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+                      row.type === 'ctx' && 'text-gray-500 dark:text-slate-500',
                     )}
                   >
                     {row.type === 'add' ? '+ ' : row.type === 'del' ? '- ' : '  '}

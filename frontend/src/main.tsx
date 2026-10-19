@@ -69,7 +69,7 @@ function SiteScopedQueryProvider({ children }: { children: React.ReactNode }) {
   // The signed-in user is part of the key too (outside review U1): logging
   // out, or someone else signing in on the same tab, starts an empty cache, so
   // nothing the previous user loaded (users, secret-bearing backups) can show.
-  const userId = useAuthStore((s) => (s.isAuthenticated ? s.user?.id ?? 'session' : 'anon'));
+  const userId = useAuthStore((s) => (s.isAuthenticated ? (s.user?.id ?? 'session') : 'anon'));
   const key = `${userId}:${siteId != null ? String(siteId) : groupId != null ? `g${groupId}` : 'all'}`;
   // A new cache per site; `key` is the dependency on purpose.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,5 +86,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <SiteScopedQueryProvider>
       <App />
     </SiteScopedQueryProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

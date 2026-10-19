@@ -2,8 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { activeChecks, countFindings, mutedCount } from './securityFindings';
 import type { SecurityCheck } from '../services/api';
 
-const c = (id: string, severity: SecurityCheck['severity'], suppressed = false): SecurityCheck =>
-  ({ id, severity, title: id, detail: '', ...(suppressed ? { suppressed: true } : {}) });
+const c = (id: string, severity: SecurityCheck['severity'], suppressed = false): SecurityCheck => ({
+  id,
+  severity,
+  title: id,
+  detail: '',
+  ...(suppressed ? { suppressed: true } : {}),
+});
 
 describe('countFindings', () => {
   it('excludes muted findings — the reported bug', () => {

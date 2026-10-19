@@ -1,8 +1,21 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
-  HardDrive, Plus, Download, RotateCcw, Trash2, AlertCircle, AlertTriangle,
-  Loader2, X, GitCompare, FileText, FilterX, Lock, ChevronLeft, ChevronRight,
+  HardDrive,
+  Plus,
+  Download,
+  RotateCcw,
+  Trash2,
+  AlertCircle,
+  AlertTriangle,
+  Loader2,
+  X,
+  GitCompare,
+  FileText,
+  FilterX,
+  Lock,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { backupsApi, devicesApi } from '../services/api';
 import { useCanWrite } from '../hooks/useCanWrite';
@@ -14,7 +27,12 @@ import { format } from 'date-fns';
 import clsx from 'clsx';
 import DeviceTypePill from '../components/devices/DeviceTypePill';
 import TagChips from '../components/devices/TagChips';
-import { FilterBar, FilterSearch, FilterSelect, FilterDivider } from '../components/common/FilterBar';
+import {
+  FilterBar,
+  FilterSearch,
+  FilterSelect,
+  FilterDivider,
+} from '../components/common/FilterBar';
 import DevicePicker from '../components/common/DevicePicker';
 
 /** One home for backup-type wording, used by the filter and the table badge. */
@@ -61,7 +79,10 @@ export default function BackupsPage() {
   const [page, setPage] = useState(0);
   const filterKey = JSON.stringify(filters);
   const [pagedFor, setPagedFor] = useState(filterKey);
-  if (pagedFor !== filterKey) { setPagedFor(filterKey); setPage(0); }
+  if (pagedFor !== filterKey) {
+    setPagedFor(filterKey);
+    setPage(0);
+  }
   const { data: pageData, isLoading } = useQuery({
     queryKey: ['backups', filters, page],
     queryFn: () => backupsApi.listPage(filters, PAGE, page * PAGE),
@@ -106,8 +127,7 @@ export default function BackupsPage() {
   const toggle = (id: number) =>
     setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   const allShownSelected = backups.length > 0 && backups.every((b) => selected.includes(b.id));
-  const toggleAll = () =>
-    setSelected(allShownSelected ? [] : backups.map((b) => b.id));
+  const toggleAll = () => setSelected(allShownSelected ? [] : backups.map((b) => b.id));
 
   // Exactly two, oldest first, so the diff reads forwards in time (tested in
   // utils/backupCompare — a reversed diff shows additions as deletions and
@@ -130,10 +150,13 @@ export default function BackupsPage() {
     },
     onError: (err: unknown) => {
       const e = err as { response?: { status?: number; data?: { error?: string } }; code?: string };
-      const msg = e?.response?.data?.error
-        ?? (e?.code === 'ECONNABORTED' ? 'Backup failed: no answer from the manager in time. A very large configuration may still be exporting; check the list in a few minutes.'
-          : e?.response?.status === 504 ? 'Backup failed: the request timed out on the way to the manager.'
-          : undefined);
+      const msg =
+        e?.response?.data?.error ??
+        (e?.code === 'ECONNABORTED'
+          ? 'Backup failed: no answer from the manager in time. A very large configuration may still be exporting; check the list in a few minutes.'
+          : e?.response?.status === 504
+            ? 'Backup failed: the request timed out on the way to the manager.'
+            : undefined);
       setError(msg || 'Backup failed');
     },
   });
@@ -198,14 +221,21 @@ export default function BackupsPage() {
       </div>
 
       {restoreResult && (
-        <div className={clsx(
-          'rounded-lg border p-3 text-sm flex items-start justify-between gap-3',
-          restoreResult.ok
-            ? 'border-green-300 bg-green-50 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300'
-            : 'border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-200'
-        )}>
+        <div
+          className={clsx(
+            'rounded-lg border p-3 text-sm flex items-start justify-between gap-3',
+            restoreResult.ok
+              ? 'border-green-300 bg-green-50 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300'
+              : 'border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-200',
+          )}
+        >
           <span>{restoreResult.text}</span>
-          <button onClick={() => setRestoreResult(null)} className="text-xs opacity-70 hover:opacity-100">Dismiss</button>
+          <button
+            onClick={() => setRestoreResult(null)}
+            className="text-xs opacity-70 hover:opacity-100"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -244,7 +274,10 @@ export default function BackupsPage() {
 
           <div className="flex items-center gap-3 mt-4">
             <button
-              onClick={() => { setShowCreateForm(false); setError(''); }}
+              onClick={() => {
+                setShowCreateForm(false);
+                setError('');
+              }}
               className="btn-secondary"
             >
               Cancel
@@ -270,33 +303,72 @@ export default function BackupsPage() {
 
       {/* Filters (#134), in the same bar as Devices and Clients (#217). */}
       <FilterBar>
-        <FilterSearch value={filters.search} onChange={(v) => setFilters((f) => ({ ...f, search: v }))} placeholder="Device, filename or note…" />
+        <FilterSearch
+          value={filters.search}
+          onChange={(v) => setFilters((f) => ({ ...f, search: v }))}
+          placeholder="Device, filename or note…"
+        />
         <DevicePicker
-          variant="filter" title="Device" emptyLabel="All devices" devices={devices}
+          variant="filter"
+          title="Device"
+          emptyLabel="All devices"
+          devices={devices}
           value={filters.deviceId ? Number(filters.deviceId) : null}
           onChange={(id) => setFilters((f) => ({ ...f, deviceId: id == null ? '' : String(id) }))}
         />
-        <FilterSelect value={filters.type} onChange={(v) => setFilters((f) => ({ ...f, type: v }))} title="Type">
+        <FilterSelect
+          value={filters.type}
+          onChange={(v) => setFilters((f) => ({ ...f, type: v }))}
+          title="Type"
+        >
           <option value="">All types</option>
           {types.map((t) => (
-            <option key={t.type} value={t.type}>{TYPE_LABEL[t.type] ?? t.type} ({t.count})</option>
+            <option key={t.type} value={t.type}>
+              {TYPE_LABEL[t.type] ?? t.type} ({t.count})
+            </option>
           ))}
         </FilterSelect>
         <FilterDivider />
-        <label className="mono text-[11.5px] flex items-center gap-1" style={{ color: 'var(--ink-3)' }}>
+        <label
+          className="mono text-[11.5px] flex items-center gap-1"
+          style={{ color: 'var(--ink-3)' }}
+        >
           from
-          <input type="date" aria-label="From date" className="bg-transparent outline-none px-[6px] py-[3px] rounded-[5px]"
-            style={{ color: filters.from ? 'var(--ink)' : 'var(--ink-3)', border: '1px solid var(--line)' }}
-            value={filters.from} onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))} />
+          <input
+            type="date"
+            aria-label="From date"
+            className="bg-transparent outline-none px-[6px] py-[3px] rounded-[5px]"
+            style={{
+              color: filters.from ? 'var(--ink)' : 'var(--ink-3)',
+              border: '1px solid var(--line)',
+            }}
+            value={filters.from}
+            onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
+          />
         </label>
-        <label className="mono text-[11.5px] flex items-center gap-1" style={{ color: 'var(--ink-3)' }}>
+        <label
+          className="mono text-[11.5px] flex items-center gap-1"
+          style={{ color: 'var(--ink-3)' }}
+        >
           to
-          <input type="date" aria-label="To date" className="bg-transparent outline-none px-[6px] py-[3px] rounded-[5px]"
-            style={{ color: filters.to ? 'var(--ink)' : 'var(--ink-3)', border: '1px solid var(--line)' }}
-            value={filters.to} onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))} />
+          <input
+            type="date"
+            aria-label="To date"
+            className="bg-transparent outline-none px-[6px] py-[3px] rounded-[5px]"
+            style={{
+              color: filters.to ? 'var(--ink)' : 'var(--ink-3)',
+              border: '1px solid var(--line)',
+            }}
+            value={filters.to}
+            onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
+          />
         </label>
         {activeFilterCount > 0 && (
-          <button onClick={clearFilters} className="mono text-[11.5px] px-[8px] py-[4px] rounded-[5px] flex items-center gap-1" style={{ color: 'var(--ink-3)' }}>
+          <button
+            onClick={clearFilters}
+            className="mono text-[11.5px] px-[8px] py-[4px] rounded-[5px] flex items-center gap-1"
+            style={{ color: 'var(--ink-3)' }}
+          >
             <FilterX className="w-3.5 h-3.5" /> clear
           </button>
         )}
@@ -308,14 +380,21 @@ export default function BackupsPage() {
           <span className="text-sm font-medium text-gray-900 dark:text-white">
             {selected.length} selected
           </span>
-          <button onClick={() => setSelected([])} className="text-xs text-gray-400 hover:text-gray-600">
+          <button
+            onClick={() => setSelected([])}
+            className="text-xs text-gray-400 hover:text-gray-600"
+          >
             Clear
           </button>
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => comparePair && setViewing(comparePair)}
               disabled={!comparePair}
-              title={comparePair ? 'Compare the two selected backups' : 'Select exactly two backups to compare'}
+              title={
+                comparePair
+                  ? 'Compare the two selected backups'
+                  : 'Select exactly two backups to compare'
+              }
               className="btn-secondary flex items-center gap-1.5 text-xs disabled:opacity-40"
             >
               <GitCompare className="w-3.5 h-3.5" /> Compare
@@ -347,170 +426,205 @@ export default function BackupsPage() {
                 : 'Create a backup to save your device configurations'}
             </p>
             {activeFilterCount > 0 && (
-              <button onClick={clearFilters} className="btn-secondary mt-3 text-xs">Clear filters</button>
+              <button onClick={clearFilters} className="btn-secondary mt-3 text-xs">
+                Clear filters
+              </button>
             )}
           </div>
         </div>
       ) : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700">
-                <th className="table-header px-3 py-2.5 w-9">
-                  <input
-                    type="checkbox"
-                    aria-label="Select all shown"
-                    checked={allShownSelected}
-                    onChange={toggleAll}
-                    className="cursor-pointer"
-                  />
-                </th>
-                <th className="table-header px-1 py-2.5 w-6" aria-label="Contains secrets" />
-                <th className="table-header px-4 py-2.5 text-left">Device</th>
-                <th className="table-header px-4 py-2.5 text-left">Type</th>
-                <th className="table-header px-4 py-2.5 text-left">Size</th>
-                <th className="table-header px-4 py-2.5 text-left">Created</th>
-                <th className="table-header px-4 py-2.5 text-left">Notes</th>
-                <th className="table-header px-4 py-2.5 text-left w-36">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
-              {backups.map((backup) => (
-                <tr
-                  key={backup.id}
-                  onClick={() => setViewing([backup.id])}
-                  title="Click to preview"
-                  className={clsx(
-                    'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/30',
-                    selected.includes(backup.id) && 'bg-blue-50/60 dark:bg-blue-900/10'
-                  )}
-                >
-                  <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-slate-700">
+                  <th className="table-header px-3 py-2.5 w-9">
                     <input
                       type="checkbox"
-                      aria-label={`Select ${backup.filename}`}
-                      checked={selected.includes(backup.id)}
-                      onChange={() => toggle(backup.id)}
+                      aria-label="Select all shown"
+                      checked={allShownSelected}
+                      onChange={toggleAll}
                       className="cursor-pointer"
                     />
-                  </td>
-                  {/* Secrets as a small lock, not a badge in Type: it isn't a type (#219). */}
-                  <td className="px-1 py-2.5">
-                    {backup.contains_secrets && (
-                      <span title="Includes passwords and keys. Encrypted on disk; only admins can view or download it."
-                        aria-label="Contains secrets" className="inline-flex text-green-600 dark:text-green-400">
-                        <Lock className="w-3.5 h-3.5" />
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {backup.device_type && <DeviceTypePill type={backup.device_type} />}
-                      <span className="cell-primary">{backup.device_name || '—'}</span>
-                      <TagChips tags={backup.device_tags} />
-                    </div>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span
-                      className={clsx(
-                        'inline-flex text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap',
-                        backup.backup_type === 'config-snapshot' &&
-                          'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
-                        backup.backup_type === 'scheduled' &&
-                          'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-                        backup.backup_type === 'manual' &&
-                          'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
-                      )}
-                      title={
-                        backup.backup_type === 'config-snapshot'
-                          ? 'Auto-created by Config History — tied to a config snapshot'
-                          : undefined
-                      }
-                    >
-                      {TYPE_LABEL[backup.backup_type ?? ''] ?? backup.backup_type ?? 'Manual'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
-                    {formatBytes(backup.size_bytes)}
-                  </td>
-                  <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
-                    {format(new Date(backup.created_at), 'MMM d, yyyy HH:mm')}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500 italic">
-                    {backup.notes || ''}
-                  </td>
-                  <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setViewing([backup.id])}
-                        disabled={backup.contains_secrets && !isAdmin}
-                        className="p-1.5 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-40 disabled:hover:text-gray-400 disabled:hover:bg-transparent"
-                        title={backup.contains_secrets && !isAdmin ? 'Contains passwords and keys: admins only' : 'Preview'}
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => downloadBackup(backup.id, backup.filename)}
-                        disabled={backup.contains_secrets && !isAdmin}
-                        className="p-1.5 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-40 disabled:hover:text-gray-400 disabled:hover:bg-transparent"
-                        title={backup.contains_secrets && !isAdmin ? 'Contains passwords and keys: admins only' : 'Download'}
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                      </button>
-
-                      {canWrite && (
-                        <button
-                          onClick={() => { setRestoreTyped(''); setRestoreConfirm(backup); }}
-                          className="p-1.5 rounded text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
-                          title="Restore"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-
-                      {canWrite && (deleteConfirm === backup.id ? (
-                        <div className="flex gap-1 text-xs">
-                          <button
-                            onClick={() => deleteMutation.mutate(backup.id)}
-                            className="text-red-500 hover:text-red-600 font-medium"
-                          >
-                            Delete?
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirm(null)}
-                            className="text-gray-400 hover:text-gray-600"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() =>
-                            backup.backup_type === 'config-snapshot'
-                              ? setSnapshotDeleteTarget(backup)
-                              : setDeleteConfirm(backup.id)
-                          }
-                          className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      ))}
-                    </div>
-                  </td>
+                  </th>
+                  <th className="table-header px-1 py-2.5 w-6" aria-label="Contains secrets" />
+                  <th className="table-header px-4 py-2.5 text-left">Device</th>
+                  <th className="table-header px-4 py-2.5 text-left">Type</th>
+                  <th className="table-header px-4 py-2.5 text-left">Size</th>
+                  <th className="table-header px-4 py-2.5 text-left">Created</th>
+                  <th className="table-header px-4 py-2.5 text-left">Notes</th>
+                  <th className="table-header px-4 py-2.5 text-left w-36">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+                {backups.map((backup) => (
+                  <tr
+                    key={backup.id}
+                    onClick={() => setViewing([backup.id])}
+                    title="Click to preview"
+                    className={clsx(
+                      'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/30',
+                      selected.includes(backup.id) && 'bg-blue-50/60 dark:bg-blue-900/10',
+                    )}
+                  >
+                    <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${backup.filename}`}
+                        checked={selected.includes(backup.id)}
+                        onChange={() => toggle(backup.id)}
+                        className="cursor-pointer"
+                      />
+                    </td>
+                    {/* Secrets as a small lock, not a badge in Type: it isn't a type (#219). */}
+                    <td className="px-1 py-2.5">
+                      {backup.contains_secrets && (
+                        <span
+                          title="Includes passwords and keys. Encrypted on disk; only admins can view or download it."
+                          aria-label="Contains secrets"
+                          className="inline-flex text-green-600 dark:text-green-400"
+                        >
+                          <Lock className="w-3.5 h-3.5" />
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {backup.device_type && <DeviceTypePill type={backup.device_type} />}
+                        <span className="cell-primary">{backup.device_name || '—'}</span>
+                        <TagChips tags={backup.device_tags} />
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span
+                        className={clsx(
+                          'inline-flex text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap',
+                          backup.backup_type === 'config-snapshot' &&
+                            'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+                          backup.backup_type === 'scheduled' &&
+                            'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+                          backup.backup_type === 'manual' &&
+                            'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300',
+                        )}
+                        title={
+                          backup.backup_type === 'config-snapshot'
+                            ? 'Auto-created by Config History — tied to a config snapshot'
+                            : undefined
+                        }
+                      >
+                        {TYPE_LABEL[backup.backup_type ?? ''] ?? backup.backup_type ?? 'Manual'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
+                      {formatBytes(backup.size_bytes)}
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
+                      {format(new Date(backup.created_at), 'MMM d, yyyy HH:mm')}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500 italic">
+                      {backup.notes || ''}
+                    </td>
+                    <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setViewing([backup.id])}
+                          disabled={backup.contains_secrets && !isAdmin}
+                          className="p-1.5 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-40 disabled:hover:text-gray-400 disabled:hover:bg-transparent"
+                          title={
+                            backup.contains_secrets && !isAdmin
+                              ? 'Contains passwords and keys: admins only'
+                              : 'Preview'
+                          }
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => downloadBackup(backup.id, backup.filename)}
+                          disabled={backup.contains_secrets && !isAdmin}
+                          className="p-1.5 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-40 disabled:hover:text-gray-400 disabled:hover:bg-transparent"
+                          title={
+                            backup.contains_secrets && !isAdmin
+                              ? 'Contains passwords and keys: admins only'
+                              : 'Download'
+                          }
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+
+                        {canWrite && (
+                          <button
+                            onClick={() => {
+                              setRestoreTyped('');
+                              setRestoreConfirm(backup);
+                            }}
+                            className="p-1.5 rounded text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                            title="Restore"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {canWrite &&
+                          (deleteConfirm === backup.id ? (
+                            <div className="flex gap-1 text-xs">
+                              <button
+                                onClick={() => deleteMutation.mutate(backup.id)}
+                                className="text-red-500 hover:text-red-600 font-medium"
+                              >
+                                Delete?
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="text-gray-400 hover:text-gray-600"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                backup.backup_type === 'config-snapshot'
+                                  ? setSnapshotDeleteTarget(backup)
+                                  : setDeleteConfirm(backup.id)
+                              }
+                              className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
           {pages > 1 && (
             <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-200 dark:border-slate-700 text-xs text-gray-500 dark:text-slate-400">
-              <span>{page * PAGE + 1}–{Math.min((page + 1) * PAGE, totalBackups)} of {totalBackups}</span>
+              <span>
+                {page * PAGE + 1}–{Math.min((page + 1) * PAGE, totalBackups)} of {totalBackups}
+              </span>
               <div className="flex items-center gap-1">
-                <button className="p-1 rounded disabled:opacity-40" disabled={page === 0} onClick={() => setPage((p) => p - 1)} aria-label="Previous page"><ChevronLeft className="w-4 h-4" /></button>
-                <span>Page {page + 1} of {pages}</span>
-                <button className="p-1 rounded disabled:opacity-40" disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)} aria-label="Next page"><ChevronRight className="w-4 h-4" /></button>
+                <button
+                  className="p-1 rounded disabled:opacity-40"
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => p - 1)}
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span>
+                  Page {page + 1} of {pages}
+                </span>
+                <button
+                  className="p-1 rounded disabled:opacity-40"
+                  disabled={page + 1 >= pages}
+                  onClick={() => setPage((p) => p + 1)}
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           )}
@@ -558,7 +672,9 @@ export default function BackupsPage() {
                       {bulkPreview.devices.map((d) => (
                         <li key={d.name} className="flex justify-between gap-4">
                           <span className="text-gray-900 dark:text-white">{d.name}</span>
-                          <span className="text-gray-400">{d.count} backup{d.count === 1 ? '' : 's'}</span>
+                          <span className="text-gray-400">
+                            {d.count} backup{d.count === 1 ? '' : 's'}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -571,8 +687,8 @@ export default function BackupsPage() {
                         {bulkPreview.snapshots === 1 ? ' is' : ' are'} tied to a{' '}
                         <span className="font-medium">Config History snapshot</span>. Deleting
                         {bulkPreview.snapshots === 1 ? ' it' : ' them'} also removes
-                        {bulkPreview.snapshots === 1 ? ' that snapshot' : ' those snapshots'} and the
-                        ability to roll back to {bulkPreview.snapshots === 1 ? 'it' : 'them'}.
+                        {bulkPreview.snapshots === 1 ? ' that snapshot' : ' those snapshots'} and
+                        the ability to roll back to {bulkPreview.snapshots === 1 ? 'it' : 'them'}.
                       </p>
                     </div>
                   )}
@@ -596,9 +712,11 @@ export default function BackupsPage() {
                   disabled={bulkDeleteMutation.isPending || !bulkPreview}
                   className="btn-danger inline-flex items-center gap-2 disabled:opacity-50"
                 >
-                  {bulkDeleteMutation.isPending
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : <Trash2 className="w-4 h-4" />}
+                  {bulkDeleteMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                   Delete {bulkPreview?.backups ?? selected.length}
                   {bulkPreview && bulkPreview.snapshots > 0 ? ' + snapshots' : ''}
                 </button>
@@ -609,78 +727,93 @@ export default function BackupsPage() {
       )}
 
       {/* Restore confirmation: runs the backup's commands on the device's running configuration */}
-      {restoreConfirm && (() => {
-        const target = (restoreConfirm.device_name ?? '').trim() || 'RESTORE';
-        const ok = restoreTyped.trim() === target;
-        return (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="card w-full max-w-lg mx-4 border-2 border-red-500">
-              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
-                  <AlertTriangle className="w-6 h-6" />
-                  Restore this backup?
-                </h3>
-                <button
-                  onClick={() => setRestoreConfirm(null)}
-                  disabled={restoreMutation.isPending}
-                  className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-5 space-y-4">
-                <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300 space-y-1">
-                  <p className="font-semibold">
-                    Restore runs this backup&apos;s commands on the device&apos;s running configuration.
-                  </p>
-                  <p>
-                    Settings in the backup are applied over the current ones; the device may drop your connection
-                    while it runs.
-                  </p>
-                </div>
-                <dl className="text-sm grid grid-cols-[auto,1fr] gap-x-3 gap-y-1">
-                  <dt className="text-gray-500 dark:text-slate-400">Device</dt>
-                  <dd className="font-medium text-gray-900 dark:text-white">{restoreConfirm.device_name || '—'}</dd>
-                  <dt className="text-gray-500 dark:text-slate-400">Backup</dt>
-                  <dd className="font-mono text-xs break-all text-gray-700 dark:text-slate-300">{restoreConfirm.filename}</dd>
-                  <dt className="text-gray-500 dark:text-slate-400">Taken</dt>
-                  <dd className="text-gray-700 dark:text-slate-300">{format(new Date(restoreConfirm.created_at), 'MMM d, yyyy HH:mm')}</dd>
-                </dl>
-                <label className="block text-sm text-gray-700 dark:text-slate-300">
-                  Type <span className="font-mono font-semibold">{target}</span> to confirm
-                  <input
-                    autoFocus
-                    value={restoreTyped}
-                    onChange={(e) => setRestoreTyped(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && ok && !restoreMutation.isPending) restoreMutation.mutate(restoreConfirm.id); }}
-                    className="input mt-1 w-full font-mono"
-                    placeholder={target}
-                  />
-                </label>
-                <div className="flex items-center justify-end gap-2 pt-1">
+      {restoreConfirm &&
+        (() => {
+          const target = (restoreConfirm.device_name ?? '').trim() || 'RESTORE';
+          const ok = restoreTyped.trim() === target;
+          return (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+              <div className="card w-full max-w-lg mx-4 border-2 border-red-500">
+                <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
+                  <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
+                    <AlertTriangle className="w-6 h-6" />
+                    Restore this backup?
+                  </h3>
                   <button
-                    type="button"
                     onClick={() => setRestoreConfirm(null)}
                     disabled={restoreMutation.isPending}
-                    className="btn-secondary"
+                    className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
                   >
-                    Cancel
+                    <X className="w-5 h-5" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => restoreMutation.mutate(restoreConfirm.id)}
-                    disabled={!ok || restoreMutation.isPending}
-                    className="btn-danger inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {restoreMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                    Run restore
-                  </button>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300 space-y-1">
+                    <p className="font-semibold">
+                      Restore runs this backup&apos;s commands on the device&apos;s running
+                      configuration.
+                    </p>
+                    <p>
+                      Settings in the backup are applied over the current ones; the device may drop
+                      your connection while it runs.
+                    </p>
+                  </div>
+                  <dl className="text-sm grid grid-cols-[auto,1fr] gap-x-3 gap-y-1">
+                    <dt className="text-gray-500 dark:text-slate-400">Device</dt>
+                    <dd className="font-medium text-gray-900 dark:text-white">
+                      {restoreConfirm.device_name || '—'}
+                    </dd>
+                    <dt className="text-gray-500 dark:text-slate-400">Backup</dt>
+                    <dd className="font-mono text-xs break-all text-gray-700 dark:text-slate-300">
+                      {restoreConfirm.filename}
+                    </dd>
+                    <dt className="text-gray-500 dark:text-slate-400">Taken</dt>
+                    <dd className="text-gray-700 dark:text-slate-300">
+                      {format(new Date(restoreConfirm.created_at), 'MMM d, yyyy HH:mm')}
+                    </dd>
+                  </dl>
+                  <label className="block text-sm text-gray-700 dark:text-slate-300">
+                    Type <span className="font-mono font-semibold">{target}</span> to confirm
+                    <input
+                      autoFocus
+                      value={restoreTyped}
+                      onChange={(e) => setRestoreTyped(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && ok && !restoreMutation.isPending)
+                          restoreMutation.mutate(restoreConfirm.id);
+                      }}
+                      className="input mt-1 w-full font-mono"
+                      placeholder={target}
+                    />
+                  </label>
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setRestoreConfirm(null)}
+                      disabled={restoreMutation.isPending}
+                      className="btn-secondary"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => restoreMutation.mutate(restoreConfirm.id)}
+                      disabled={!ok || restoreMutation.isPending}
+                      className="btn-danger inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {restoreMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="w-4 h-4" />
+                      )}
+                      Run restore
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Confirm deletion of a snapshot-linked backup (removes the config snapshot too) */}
       {snapshotDeleteTarget && (
@@ -701,13 +834,20 @@ export default function BackupsPage() {
             </div>
             <div className="p-5 space-y-4">
               <p className="text-sm text-gray-600 dark:text-slate-300">
-                This backup is tied to a <span className="font-medium">Config History snapshot</span> for{' '}
-                <span className="font-medium text-gray-900 dark:text-white">{snapshotDeleteTarget.device_name || 'this device'}</span>.
+                This backup is tied to a{' '}
+                <span className="font-medium">Config History snapshot</span> for{' '}
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {snapshotDeleteTarget.device_name || 'this device'}
+                </span>
+                .
               </p>
               <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-3">
                 <p className="text-sm text-amber-800 dark:text-amber-300">
-                  Deleting it will also <span className="font-semibold">permanently remove that snapshot from the
-                  device&apos;s Config History</span>, and you will no longer be able to roll back to it.
+                  Deleting it will also{' '}
+                  <span className="font-semibold">
+                    permanently remove that snapshot from the device&apos;s Config History
+                  </span>
+                  , and you will no longer be able to roll back to it.
                 </p>
               </div>
               <p className="text-xs text-gray-500 dark:text-slate-400 font-mono break-all">
@@ -728,7 +868,11 @@ export default function BackupsPage() {
                   disabled={deleteMutation.isPending}
                   className="btn-danger inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  {deleteMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                   Delete backup &amp; snapshot
                 </button>
               </div>

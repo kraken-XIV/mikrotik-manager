@@ -8,7 +8,9 @@ describe('API-SSL notice mutes (#194)', () => {
     expect(unmutedForApiSslNotice(devices, [])).toEqual({ mutedFleetWide: false, devices });
   });
   it('hides the notice when the check is muted fleet-wide', () => {
-    expect(unmutedForApiSslNotice(devices, [{ check_id: PLAIN_API_CHECK, device_id: null }])).toEqual({ mutedFleetWide: true, devices: [] });
+    expect(
+      unmutedForApiSslNotice(devices, [{ check_id: PLAIN_API_CHECK, device_id: null }]),
+    ).toEqual({ mutedFleetWide: true, devices: [] });
   });
   it('leaves out devices muted on their own, and ignores other checks', () => {
     const r = unmutedForApiSslNotice(devices, [

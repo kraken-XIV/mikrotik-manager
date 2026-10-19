@@ -1,5 +1,8 @@
 import {
-  parseUpdateStatus, describeUpdateStatus, latestFromStream, peakPercent,
+  parseUpdateStatus,
+  describeUpdateStatus,
+  latestFromStream,
+  peakPercent,
 } from '../updateStatus';
 
 /**
@@ -73,13 +76,15 @@ describe('parseUpdateStatus — the other real statuses', () => {
 
 describe('describeUpdateStatus', () => {
   it('gives a stuck download something to be stuck at', () => {
-    expect(describeUpdateStatus(parseUpdateStatus('Downloaded 86% (11.6MiB)')))
-      .toBe('downloading 86% (11.6 MiB)');
+    expect(describeUpdateStatus(parseUpdateStatus('Downloaded 86% (11.6MiB)'))).toBe(
+      'downloading 86% (11.6 MiB)',
+    );
   });
 
   it('quotes the device when it reports an error', () => {
-    expect(describeUpdateStatus(parseUpdateStatus('ERROR: connection error')))
-      .toContain('ERROR: connection error');
+    expect(describeUpdateStatus(parseUpdateStatus('ERROR: connection error'))).toContain(
+      'ERROR: connection error',
+    );
   });
 });
 
@@ -99,7 +104,10 @@ describe('latestFromStream', () => {
   });
 
   it('surfaces a failure that ended the stream', () => {
-    const rows = stream('Downloaded 12% (1.6MiB)', 'ERROR: connection error - Connection reset by peer');
+    const rows = stream(
+      'Downloaded 12% (1.6MiB)',
+      'ERROR: connection error - Connection reset by peer',
+    );
     const s = latestFromStream(rows);
     expect(s.state).toBe('error');
     expect(s.message).toContain('Connection reset');
@@ -123,7 +131,9 @@ describe('latestFromStream', () => {
 
 describe('peakPercent', () => {
   it('reports how far a partial download got', () => {
-    expect(peakPercent(stream('Downloaded 3% (0.4MiB)', 'Downloaded 66% (8.9MiB)', 'ERROR: x'))).toBe(66);
+    expect(
+      peakPercent(stream('Downloaded 3% (0.4MiB)', 'Downloaded 66% (8.9MiB)', 'ERROR: x')),
+    ).toBe(66);
   });
 
   it('is null when nothing reported a percentage', () => {

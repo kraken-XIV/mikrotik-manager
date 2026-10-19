@@ -10,11 +10,12 @@ export default function InterfacesTab({ deviceId }: { deviceId: number }) {
   });
 
   if (isLoading) return <div className="text-center py-8 text-gray-400">Loading...</div>;
-  if (!interfaces.length) return (
-    <div className="text-center py-8 text-gray-400 dark:text-slate-500">
-      No interfaces found. Sync the device to collect data.
-    </div>
-  );
+  if (!interfaces.length)
+    return (
+      <div className="text-center py-8 text-gray-400 dark:text-slate-500">
+        No interfaces found. Sync the device to collect data.
+      </div>
+    );
 
   return (
     <div className="card overflow-hidden">
@@ -46,14 +47,18 @@ export default function InterfacesTab({ deviceId }: { deviceId: number }) {
                     iface.disabled
                       ? 'text-gray-400'
                       : iface.running
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-500 dark:text-red-400'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-500 dark:text-red-400',
                   )}
                 >
                   <span
                     className={clsx(
                       'w-1.5 h-1.5 rounded-full',
-                      iface.disabled ? 'bg-gray-400' : iface.running ? 'bg-green-500' : 'bg-red-500'
+                      iface.disabled
+                        ? 'bg-gray-400'
+                        : iface.running
+                          ? 'bg-green-500'
+                          : 'bg-red-500',
                     )}
                   />
                   {iface.disabled ? 'Disabled' : iface.running ? 'Running' : 'Down'}
@@ -62,9 +67,7 @@ export default function InterfacesTab({ deviceId }: { deviceId: number }) {
               <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">
                 {iface.mac_address || '—'}
               </td>
-              <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
-                {iface.mtu || '—'}
-              </td>
+              <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{iface.mtu || '—'}</td>
               <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
                 {iface.speed || '—'}
               </td>

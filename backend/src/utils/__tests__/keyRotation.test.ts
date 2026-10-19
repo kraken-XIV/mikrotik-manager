@@ -10,7 +10,11 @@ describe('encryption key rotation', () => {
   const OLD_ENV = process.env;
   let tmpDir: string;
   const secretsFile = () => path.join(tmpDir, 'secrets.json');
-  const saved = () => JSON.parse(fs.readFileSync(secretsFile(), 'utf8')) as { encryptionKey?: string; prevEncryptionKeys?: string[] };
+  const saved = () =>
+    JSON.parse(fs.readFileSync(secretsFile(), 'utf8')) as {
+      encryptionKey?: string;
+      prevEncryptionKeys?: string[];
+    };
 
   beforeEach(() => {
     jest.resetModules();
@@ -25,7 +29,10 @@ describe('encryption key rotation', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  const load = async () => ({ secrets: await import('../secrets'), crypto: await import('../crypto') });
+  const load = async () => ({
+    secrets: await import('../secrets'),
+    crypto: await import('../crypto'),
+  });
 
   it('saves a generated key only once startup confirms nothing needs another key', async () => {
     const { secrets } = await load();

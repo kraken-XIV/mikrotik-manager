@@ -14,7 +14,14 @@
  * (which is why effective `current-*` membership is what we test).
  */
 import { evaluateInputChain } from './firewallPath';
-import { vlanMembership, routeFor, routeActive, routeDiscards, type DeviceSnapshot, type ManagementPath } from './pathModel';
+import {
+  vlanMembership,
+  routeFor,
+  routeActive,
+  routeDiscards,
+  type DeviceSnapshot,
+  type ManagementPath,
+} from './pathModel';
 import type { GuardDevice } from './ChangeGuard';
 import { managementService } from '../../utils/apiTls';
 
@@ -62,11 +69,17 @@ export const INVARIANTS: Invariant[] = [
     title: 'The management address still exists on the device',
     check(snap, path) {
       const found = snap.addresses.some(
-        (a) => !isTrue(a['disabled']) && !isTrue(a['invalid']) && stripCidr(a['address']) === path.mgmtIp
+        (a) =>
+          !isTrue(a['disabled']) &&
+          !isTrue(a['invalid']) &&
+          stripCidr(a['address']) === path.mgmtIp,
       );
       return found
         ? ok()
-        : { ok: false, detail: `No enabled IP address ${path.mgmtIp} would remain on the device — the manager connects to exactly that address.` };
+        : {
+            ok: false,
+            detail: `No enabled IP address ${path.mgmtIp} would remain on the device — the manager connects to exactly that address.`,
+          };
     },
   },
 
@@ -79,10 +92,14 @@ export const INVARIANTS: Invariant[] = [
     check(snap, path) {
       if (!path.mgmtInterface) return ok();
       const rows = snap.addresses.filter(
-        (a) => !isTrue(a['disabled']) && !isTrue(a['invalid']) && stripCidr(a['address']) === path.mgmtIp
+        (a) =>
+          !isTrue(a['disabled']) &&
+          !isTrue(a['invalid']) &&
+          stripCidr(a['address']) === path.mgmtIp,
       );
       if (rows.length === 0) return ok(); // mgmt-ip-present reports that
-      if (rows.some((a) => (a['actual-interface'] || a['interface']) === path.mgmtInterface)) return ok();
+      if (rows.some((a) => (a['actual-interface'] || a['interface']) === path.mgmtInterface))
+        return ok();
       const now = rows[0]['actual-interface'] || rows[0]['interface'];
       return {
         ok: false,
@@ -98,10 +115,16 @@ export const INVARIANTS: Invariant[] = [
       if (!path.mgmtInterface) return ok();
       const row = snap.interfaces.find((i) => i['name'] === path.mgmtInterface);
       if (!row) {
-        return { ok: false, detail: `Interface ${path.mgmtInterface}, which holds the management address, would no longer exist.` };
+        return {
+          ok: false,
+          detail: `Interface ${path.mgmtInterface}, which holds the management address, would no longer exist.`,
+        };
       }
       return isTrue(row['disabled'])
-        ? { ok: false, detail: `Interface ${path.mgmtInterface} holds the management address and would be disabled.` }
+        ? {
+            ok: false,
+            detail: `Interface ${path.mgmtInterface} holds the management address and would be disabled.`,
+          }
         : ok();
     },
   },
@@ -115,10 +138,16 @@ export const INVARIANTS: Invariant[] = [
       if (!path.mgmtParent) return ok();
       const row = snap.interfaces.find((i) => i['name'] === path.mgmtParent);
       if (!row) {
-        return { ok: false, detail: `${path.mgmtParent}, the port under the management VLAN interface ${path.mgmtInterface}, would no longer exist.` };
+        return {
+          ok: false,
+          detail: `${path.mgmtParent}, the port under the management VLAN interface ${path.mgmtInterface}, would no longer exist.`,
+        };
       }
       return isTrue(row['disabled'])
-        ? { ok: false, detail: `${path.mgmtParent} carries the management VLAN interface ${path.mgmtInterface} and would be disabled.` }
+        ? {
+            ok: false,
+            detail: `${path.mgmtParent} carries the management VLAN interface ${path.mgmtInterface} and would be disabled.`,
+          }
         : ok();
     },
   },
@@ -134,7 +163,13 @@ export const INVARIANTS: Invariant[] = [
       const port = path.mgmtParent ?? path.mgmtInterface;
       if (!port || port === path.bridge) return ok();
       const row = snap.interfaces.find((i) => i['name'] === port);
-      if (row && !['ether', 'bond', 'sfp', 'wlan', 'wifi'].some((t) => (row['type'] || 'ether').startsWith(t))) return ok();
+      if (
+        row &&
+        !['ether', 'bond', 'sfp', 'wlan', 'wifi'].some((t) =>
+          (row['type'] || 'ether').startsWith(t),
+        )
+      )
+        return ok();
       const slave = snap.bridgePorts.find((p) => p['interface'] === port && !isTrue(p['disabled']));
       return slave
         ? {
@@ -152,7 +187,12 @@ export const INVARIANTS: Invariant[] = [
     check(snap, path) {
       // Only applies when management rides a tagged VLAN sub-interface on a
       // VLAN-filtering bridge.
-      if (!path.taggedManagement || !path.bridge || !filteringOn(snap, path.bridge) || path.mgmtVlanId == null) {
+      if (
+        !path.taggedManagement ||
+        !path.bridge ||
+        !filteringOn(snap, path.bridge) ||
+        path.mgmtVlanId == null
+      ) {
         return ok();
       }
       const m = vlanMembership(snap, path.bridge, path.mgmtVlanId);
@@ -175,7 +215,12 @@ export const INVARIANTS: Invariant[] = [
     id: 'bridge-untagged-member',
     title: 'The bridge and ingress port are untagged members of the management VLAN',
     check(snap, path) {
-      if (path.taggedManagement || !path.bridge || !filteringOn(snap, path.bridge) || path.mgmtVlanId == null) {
+      if (
+        path.taggedManagement ||
+        !path.bridge ||
+        !filteringOn(snap, path.bridge) ||
+        path.mgmtVlanId == null
+      ) {
         return ok();
       }
       const vid = path.mgmtVlanId;
@@ -207,7 +252,11 @@ export const INVARIANTS: Invariant[] = [
       // false positive on real hardware — and because a violation that is already
       // present before a change is (rightly) not reported as a new one, that false
       // positive silently suppressed genuine detections.
-      if (path.ingressPort && !m.untagged.includes(path.ingressPort) && !m.tagged.includes(path.ingressPort)) {
+      if (
+        path.ingressPort &&
+        !m.untagged.includes(path.ingressPort) &&
+        !m.tagged.includes(path.ingressPort)
+      ) {
         return {
           ok: false,
           severity: 'critical',
@@ -238,7 +287,7 @@ export const INVARIANTS: Invariant[] = [
       if (path.ingressTagged || !path.bridge || !filteringOn(snap, path.bridge)) return ok();
       if (!path.ingressPort || path.mgmtVlanId == null) return ok();
       const port = snap.bridgePorts.find(
-        (p) => p['interface'] === path.ingressPort && p['bridge'] === path.bridge
+        (p) => p['interface'] === path.ingressPort && p['bridge'] === path.bridge,
       );
       if (!port) return ok(); // covered by ingress-port-member
       const pvid = parseInt(port['pvid'] || '', 10);
@@ -299,7 +348,7 @@ export const INVARIANTS: Invariant[] = [
     check(snap, path) {
       if (!path.ingressPort || !path.bridge || !filteringOn(snap, path.bridge)) return ok();
       const port = snap.bridgePorts.find(
-        (p) => p['interface'] === path.ingressPort && p['bridge'] === path.bridge
+        (p) => p['interface'] === path.ingressPort && p['bridge'] === path.bridge,
       );
       if (!port) return ok(); // covered by ingress-port-member
       const frames = (port['frame-types'] || '').trim();
@@ -329,7 +378,10 @@ export const INVARIANTS: Invariant[] = [
     check(snap, path) {
       if (!path.ingressPort || !path.bridge) return ok();
       const member = snap.bridgePorts.some(
-        (p) => p['interface'] === path.ingressPort && p['bridge'] === path.bridge && !isTrue(p['disabled'])
+        (p) =>
+          p['interface'] === path.ingressPort &&
+          p['bridge'] === path.bridge &&
+          !isTrue(p['disabled']),
       );
       if (!member) {
         return {
@@ -339,7 +391,10 @@ export const INVARIANTS: Invariant[] = [
       }
       const iface = snap.interfaces.find((i) => i['name'] === path.ingressPort);
       return iface && isTrue(iface['disabled'])
-        ? { ok: false, detail: `${path.ingressPort} would be disabled, and that is the port management traffic arrives on.` }
+        ? {
+            ok: false,
+            detail: `${path.ingressPort} would be disabled, and that is the port management traffic arrives on.`,
+          }
         : ok();
     },
   },
@@ -351,12 +406,21 @@ export const INVARIANTS: Invariant[] = [
       if (!path.ingressBond) return ok();
       const bond = snap.interfaces.find((i) => i['name'] === path.ingressBond);
       if (!bond) {
-        return { ok: false, detail: `Bond ${path.ingressBond} carries management traffic and would no longer exist.` };
+        return {
+          ok: false,
+          detail: `Bond ${path.ingressBond} carries management traffic and would no longer exist.`,
+        };
       }
-      const slaves = (bond['slaves'] || '').split(',').map((s) => s.trim()).filter(Boolean);
+      const slaves = (bond['slaves'] || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       return slaves.length > 0
         ? ok()
-        : { ok: false, detail: `Bond ${path.ingressBond} carries management traffic and would be left with no member ports.` };
+        : {
+            ok: false,
+            detail: `Bond ${path.ingressBond} carries management traffic and would be left with no member ports.`,
+          };
     },
   },
 
@@ -368,11 +432,17 @@ export const INVARIANTS: Invariant[] = [
       const svc = snap.services.find((s) => s['name'] === wanted);
       if (!svc) return ok();
       if (isTrue(svc['disabled'])) {
-        return { ok: false, detail: `The ${wanted} service would be disabled — that is the service the manager connects through.` };
+        return {
+          ok: false,
+          detail: `The ${wanted} service would be disabled — that is the service the manager connects through.`,
+        };
       }
       const port = parseInt(svc['port'] || '', 10);
       return !isNaN(port) && port !== device.api_port
-        ? { ok: false, detail: `The ${wanted} service would move to port ${port}, but the manager connects on ${device.api_port}.` }
+        ? {
+            ok: false,
+            detail: `The ${wanted} service would move to port ${port}, but the manager connects on ${device.api_port}.`,
+          }
         : ok();
     },
   },
@@ -388,7 +458,8 @@ export const INVARIANTS: Invariant[] = [
         inInterface: path.mgmtInterface,
       });
       if (verdict.outcome === 'dropped') return { ok: false, detail: verdict.reason };
-      if (verdict.outcome === 'unknown') return { ok: true, uncertain: true, detail: verdict.reason };
+      if (verdict.outcome === 'unknown')
+        return { ok: true, uncertain: true, detail: verdict.reason };
       return ok(verdict.reason);
     },
   },
@@ -408,13 +479,24 @@ export const INVARIANTS: Invariant[] = [
       const target = path.managerIp ?? '0.0.0.0';
       const best = path.managerIp
         ? routeFor(snap, path.managerIp)
-        : snap.routes
-          .filter((r) => (r['dst-address'] || '') === '0.0.0.0/0' && routeActive(r))
-          .sort((x, y) => (parseInt(x['distance'] || '255', 10) || 255) - (parseInt(y['distance'] || '255', 10) || 255))[0] ?? null;
+        : (snap.routes
+            .filter((r) => (r['dst-address'] || '') === '0.0.0.0/0' && routeActive(r))
+            .sort(
+              (x, y) =>
+                (parseInt(x['distance'] || '255', 10) || 255) -
+                (parseInt(y['distance'] || '255', 10) || 255),
+            )[0] ?? null);
       if (!best) {
         return path.managerIp
-          ? { ok: false, detail: `No route toward the manager (${target}) would remain; it is reached through ${path.managerGateway}.` }
-          : { ok: false, detail: 'The default route would be removed, and the manager reaches this device through the default gateway.' };
+          ? {
+              ok: false,
+              detail: `No route toward the manager (${target}) would remain; it is reached through ${path.managerGateway}.`,
+            }
+          : {
+              ok: false,
+              detail:
+                'The default route would be removed, and the manager reaches this device through the default gateway.',
+            };
       }
       if (routeDiscards(best)) {
         return {
@@ -449,7 +531,7 @@ export interface InvariantStatus {
 export function evaluate(
   snap: DeviceSnapshot,
   path: ManagementPath,
-  device: GuardDevice
+  device: GuardDevice,
 ): Map<string, InvariantResult> {
   const out = new Map<string, InvariantResult>();
   for (const inv of INVARIANTS) {
@@ -459,7 +541,12 @@ export function evaluate(
       // A broken check must not block a legitimate change, but it must not
       // vouch for it either: report it uncertain so protection is mandatory.
       console.warn(`[ChangeGuard] invariant ${inv.id} threw: ${(err as Error).message}`);
-      out.set(inv.id, { ok: true, uncertain: true, failed: true, detail: `${inv.title}: this check could not be evaluated (${(err as Error).message}).` });
+      out.set(inv.id, {
+        ok: true,
+        uncertain: true,
+        failed: true,
+        detail: `${inv.title}: this check could not be evaluated (${(err as Error).message}).`,
+      });
     }
   }
   return out;

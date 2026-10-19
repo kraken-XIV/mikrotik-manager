@@ -27,9 +27,12 @@ async function siteFilter(req: Request): Promise<string> {
   try {
     const rows = await query<{ outside: number }>(
       `SELECT COUNT(*)::int AS outside FROM devices WHERE site_id IS NULL OR NOT (site_id = ANY($1::int[]))`,
-      [sites]);
+      [sites],
+    );
     if (rows[0]?.outside === 0) return '';
-  } catch { /* can't tell: filter, which is the safe side */ }
+  } catch {
+    /* can't tell: filter, which is the safe side */
+  }
   // Site ids are integers, safe to inline as strings. Written as `==` joined by
   // `or`, not contains(): InfluxDB pushes the former down to storage, while
   // contains() is evaluated in Flux after reading every point in the range, and
@@ -46,8 +49,14 @@ function rangeToFlux(range: string): string {
 // written every 60s by the collector flush).
 function windowForRange(range: string): string {
   const map: Record<string, string> = {
-    '1h': '1m', '2h': '2m', '3h': '5m', '6h': '5m', '12h': '10m',
-    '24h': '15m', '7d': '1h', '30d': '6h',
+    '1h': '1m',
+    '2h': '2m',
+    '3h': '5m',
+    '6h': '5m',
+    '12h': '10m',
+    '24h': '15m',
+    '7d': '1h',
+    '30d': '6h',
   };
   return map[range] || '15m';
 }
@@ -67,9 +76,15 @@ router.get('/status', async (req: Request, res: Response) => {
   // site-scoped account's selection is always within its own sites (P1-7).
   // Collector totals stay collector-wide; the response says so.
   const sites = siteList(activeSite(req));
-  if (!sites) { res.json({ ...stats, site_filtered: false }); return; }
-  const own = new Set((await query<{ id: number }>(
-    `SELECT id FROM devices WHERE site_id = ANY($1::int[])`, [sites])).map((d) => d.id));
+  if (!sites) {
+    res.json({ ...stats, site_filtered: false });
+    return;
+  }
+  const own = new Set(
+    (
+      await query<{ id: number }>(`SELECT id FROM devices WHERE site_id = ANY($1::int[])`, [sites])
+    ).map((d) => d.id),
+  );
   res.json({
     ...stats,
     // Only this site's devices: unidentified exporters and refused sources
@@ -97,7 +112,13 @@ router.get('/timeseries', async (req: Request, res: Response) => {
       |> aggregateWindow(every: ${every}, fn: sum, createEmpty: false)
   `;
 
-  type Point = { time: string; upload: number; download: number; uploadPackets: number; downloadPackets: number };
+  type Point = {
+    time: string;
+    upload: number;
+    download: number;
+    uploadPackets: number;
+    downloadPackets: number;
+  };
   const pivoted: Record<string, Point> = {};
   try {
     await queryApi.collectRows(fluxQuery, (row, tableMeta) => {
@@ -105,7 +126,8 @@ router.get('/timeseries', async (req: Request, res: Response) => {
       const direction = tableMeta.get(row, 'direction') as string;
       const field = tableMeta.get(row, '_field') as string;
       const value = Number(tableMeta.get(row, '_value')) || 0;
-      if (!pivoted[time]) pivoted[time] = { time, upload: 0, download: 0, uploadPackets: 0, downloadPackets: 0 };
+      if (!pivoted[time])
+        pivoted[time] = { time, upload: 0, download: 0, uploadPackets: 0, downloadPackets: 0 };
       if (field === 'packets') {
         if (direction === 'upload') pivoted[time].uploadPackets += value;
         else if (direction === 'download') pivoted[time].downloadPackets += value;
@@ -116,7 +138,9 @@ router.get('/timeseries', async (req: Request, res: Response) => {
     });
   } catch {
     // An Influx failure is not "no traffic" (outside review J3).
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
 
   res.json(Object.values(pivoted).sort((a, b) => a.time.localeCompare(b.time)));
@@ -155,27 +179,48 @@ router.get('/top-clients', async (req: Request, res: Response) => {
     });
   } catch {
     // An Influx failure is not "no traffic" (outside review J3).
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
 
   const ranked = Array.from(perMac.entries())
-    .map(([mac, e]) => ({ mac, upload_bytes: e.upload, download_bytes: e.download, total_bytes: e.upload + e.download }))
+    .map(([mac, e]) => ({
+      mac,
+      upload_bytes: e.upload,
+      download_bytes: e.download,
+      total_bytes: e.upload + e.download,
+    }))
     .sort((a, b) => b.total_bytes - a.total_bytes)
     .slice(0, limit);
 
   // Enrich real MACs with client identity from Postgres
   const realMacs = ranked.map((r) => r.mac).filter((m) => m !== 'unknown' && m !== 'other');
-  const names = new Map<string, { hostname: string | null; custom_name: string | null; vendor: string | null; ip_address: string | null }>();
+  const names = new Map<
+    string,
+    {
+      hostname: string | null;
+      custom_name: string | null;
+      vendor: string | null;
+      ip_address: string | null;
+    }
+  >();
   if (realMacs.length > 0) {
     // Names come from the clients in view, never another site's record of a MAC.
     const sites = siteList(activeSite(req));
-    const rows = await query<{ mac_address: string; hostname: string | null; custom_name: string | null; vendor: string | null; ip_address: string | null }>(
+    const rows = await query<{
+      mac_address: string;
+      hostname: string | null;
+      custom_name: string | null;
+      vendor: string | null;
+      ip_address: string | null;
+    }>(
       `SELECT DISTINCT ON (LOWER(c.mac_address)) c.mac_address, c.hostname, c.custom_name, c.vendor, c.ip_address
        FROM clients c
        ${sites ? 'JOIN devices d ON d.id = c.device_id AND d.site_id = ANY($2::int[])' : ''}
        WHERE LOWER(c.mac_address) = ANY($1)
        ORDER BY LOWER(c.mac_address), c.last_seen DESC NULLS LAST`,
-      sites ? [realMacs, sites] : [realMacs]
+      sites ? [realMacs, sites] : [realMacs],
     );
     for (const row of rows) names.set(row.mac_address.toLowerCase(), row);
   }
@@ -190,7 +235,7 @@ router.get('/top-clients', async (req: Request, res: Response) => {
         vendor: info?.vendor || null,
         ip_address: info?.ip_address || null,
       };
-    })
+    }),
   );
 });
 
@@ -235,10 +280,16 @@ router.get('/apps', async (req: Request, res: Response) => {
     });
   } catch {
     // An Influx failure is not "no traffic" (outside review J3).
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
 
-  const apps = Array.from(byApp.entries()).map(([app, e]) => ({ app, bytes: e.bytes, packets: e.packets }));
+  const apps = Array.from(byApp.entries()).map(([app, e]) => ({
+    app,
+    bytes: e.bytes,
+    packets: e.packets,
+  }));
   res.json(apps.sort((a, b) => b.bytes - a.bytes));
 });
 
@@ -274,7 +325,9 @@ router.get('/client/:mac', async (req: Request, res: Response) => {
     });
   } catch {
     // An Influx failure is not "no traffic" (outside review J3).
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
 
   const appsFlux = `
@@ -304,9 +357,15 @@ router.get('/client/:mac', async (req: Request, res: Response) => {
     });
   } catch {
     // An Influx failure is not "no traffic" (outside review J3).
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
-  const apps = Array.from(byApp.entries()).map(([app, e]) => ({ app, bytes: e.bytes, packets: e.packets }));
+  const apps = Array.from(byApp.entries()).map(([app, e]) => ({
+    app,
+    bytes: e.bytes,
+    packets: e.packets,
+  }));
 
   res.json({
     series: Object.values(pivoted).sort((a, b) => a.time.localeCompare(b.time)),

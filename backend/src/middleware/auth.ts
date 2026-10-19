@@ -33,7 +33,10 @@ export interface AuthPayload {
 
 /** All a must-change-password session may call. */
 const PASSWORD_CHANGE_PATHS = new Set([
-  '/api/auth/me', '/api/auth/password', '/api/auth/logout', '/api/auth/security-status',
+  '/api/auth/me',
+  '/api/auth/password',
+  '/api/auth/logout',
+  '/api/auth/security-status',
 ]);
 
 declare global {
@@ -68,10 +71,14 @@ const SESSION_ROLES = new Set(['admin', 'operator', 'viewer']);
 function isSessionPayload(p: unknown): p is AuthPayload {
   if (!p || typeof p !== 'object') return false;
   const o = p as Record<string, unknown>;
-  return o['partial'] === undefined
-    && typeof o['userId'] === 'number'
-    && typeof o['username'] === 'string' && o['username'] !== ''
-    && typeof o['role'] === 'string' && SESSION_ROLES.has(o['role']);
+  return (
+    o['partial'] === undefined &&
+    typeof o['userId'] === 'number' &&
+    typeof o['username'] === 'string' &&
+    o['username'] !== '' &&
+    typeof o['role'] === 'string' &&
+    SESSION_ROLES.has(o['role'])
+  );
 }
 
 export function verifyToken(token: string): AuthPayload {
@@ -118,7 +125,8 @@ export function verifyRawToken<T>(token: string): T {
 async function authenticateApiToken(token: string): Promise<AuthPayload | null> {
   const hash = createHash('sha256').update(token).digest('hex');
   const rows = await query<{ id: number; name: string; scope: string; expires_at: string | null }>(
-    `SELECT id, name, scope, expires_at FROM api_tokens WHERE token_hash = $1`, [hash]
+    `SELECT id, name, scope, expires_at FROM api_tokens WHERE token_hash = $1`,
+    [hash],
   ).catch(() => []);
   const t = rows[0];
   if (!t) return null;
@@ -145,7 +153,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   if (token.startsWith('mtm_')) {
     authenticateApiToken(token)
       .then((payload) => {
-        if (!payload) { res.status(401).json({ error: 'Invalid or expired API token' }); return; }
+        if (!payload) {
+          res.status(401).json({ error: 'Invalid or expired API token' });
+          return;
+        }
         req.user = payload;
         next();
       })
@@ -165,13 +176,18 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   validateSession(signed)
     .then((user) => {
       if (!user) {
-        res.status(401).json({ error: 'This session has ended. Please sign in again.', code: 'session_ended' });
+        res
+          .status(401)
+          .json({ error: 'This session has ended. Please sign in again.', code: 'session_ended' });
         return;
       }
       if (user.mustChangePassword) {
         const path = (req.originalUrl || req.url || '').split('?')[0];
         if (!PASSWORD_CHANGE_PATHS.has(path)) {
-          res.status(403).json({ error: 'Change the default password before continuing.', code: 'password_change_required' });
+          res.status(403).json({
+            error: 'Change the default password before continuing.',
+            code: 'password_change_required',
+          });
           return;
         }
       }
@@ -179,14 +195,23 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
       req.user = user;
       next();
     })
-    .catch(() => res.status(503).json({ error: 'Could not check the session. Try again in a moment.' }));
+    .catch(() =>
+      res.status(503).json({ error: 'Could not check the session. Try again in a moment.' }),
+    );
 }
 
-const ROLE_RANK = new Map<string, number>([['viewer', 0], ['operator', 1], ['admin', 2]]);
+const ROLE_RANK = new Map<string, number>([
+  ['viewer', 0],
+  ['operator', 1],
+  ['admin', 2],
+]);
 
 /** The highest of a set of roles. */
 export function highestRole(roles: string[]): string {
-  return roles.reduce((a, b) => ((ROLE_RANK.get(b) ?? -1) > (ROLE_RANK.get(a) ?? -1) ? b : a), 'viewer');
+  return roles.reduce(
+    (a, b) => ((ROLE_RANK.get(b) ?? -1) > (ROLE_RANK.get(a) ?? -1) ? b : a),
+    'viewer',
+  );
 }
 
 /**
@@ -210,7 +235,9 @@ function applySiteAccess(req: Request, res: Response, user: AuthPayload): boolea
   if (typeof requested === 'number') {
     const role = new Map(Object.entries(user.siteRoles)).get(String(requested));
     if (!role) {
-      res.status(403).json({ error: 'You do not have access to that site.', code: 'site_forbidden' });
+      res
+        .status(403)
+        .json({ error: 'You do not have access to that site.', code: 'site_forbidden' });
       return false;
     }
     user.role = role;
@@ -220,7 +247,9 @@ function applySiteAccess(req: Request, res: Response, user: AuthPayload): boolea
     const roles = new Map(Object.entries(user.siteRoles));
     const mine = requested.filter((id) => roles.has(String(id)));
     if (mine.length === 0) {
-      res.status(403).json({ error: 'You do not have access to that group.', code: 'site_forbidden' });
+      res
+        .status(403)
+        .json({ error: 'You do not have access to that group.', code: 'site_forbidden' });
       return false;
     }
     req.siteId = mine;
@@ -278,7 +307,10 @@ export function requireWrite(req: Request, res: Response, next: NextFunction): v
  */
 export function fleetOnly(req: Request, res: Response, next: NextFunction): void {
   if (isSiteScoped(req.user)) {
-    res.status(403).json({ code: 'fleet_only', error: 'This is fleet-wide, so it is not available to accounts limited to particular sites.' });
+    res.status(403).json({
+      code: 'fleet_only',
+      error: 'This is fleet-wide, so it is not available to accounts limited to particular sites.',
+    });
     return;
   }
   next();

@@ -11,7 +11,7 @@ import { encrypt, decrypt } from './crypto';
  */
 
 const FIELDS = ['api_password', 'ssh_password'] as const;
-type Field = typeof FIELDS[number];
+type Field = (typeof FIELDS)[number];
 
 type Item = Partial<Record<Field, string | null>>;
 

@@ -10,7 +10,13 @@ import { query } from '../config/database';
 import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 import { RouterOSTrapError } from './mikrotik/RouterOSClient';
 import {
-  pickSettings, pickUsers, pickGroups, pickRouters, pickSessions, matchNasToDevices, SESSION_FIELDS,
+  pickSettings,
+  pickUsers,
+  pickGroups,
+  pickRouters,
+  pickSessions,
+  matchNasToDevices,
+  SESSION_FIELDS,
 } from '../utils/userManager';
 import { canonicalIp } from './netflow/attribution';
 
@@ -20,7 +26,9 @@ export const USER_MANAGER_RECHECK_MS = 86_400_000;
  * Is User Manager running on this device? True or false, or null when the
  * device couldn't be asked (a timeout says nothing).
  */
-export async function probeUserManager(execute: (cmd: string) => Promise<Record<string, string>[]>): Promise<boolean | null> {
+export async function probeUserManager(
+  execute: (cmd: string) => Promise<Record<string, string>[]>,
+): Promise<boolean | null> {
   try {
     const rows = await execute('/user-manager/print');
     return rows.some((r) => r['enabled'] === 'true' || r['enabled'] === 'yes');
@@ -30,7 +38,10 @@ export async function probeUserManager(execute: (cmd: string) => Promise<Record<
   }
 }
 
-async function withCollector<T>(device: DeviceRow, fn: (c: DeviceCollector) => Promise<T>): Promise<T> {
+async function withCollector<T>(
+  device: DeviceRow,
+  fn: (c: DeviceCollector) => Promise<T>,
+): Promise<T> {
   const c = new DeviceCollector(device);
   try {
     await c.connect();
@@ -58,18 +69,28 @@ export async function readUserManager(device: DeviceRow): Promise<UserManagerVie
       run.execute('/user-manager/user/group/print', { detail: '' }),
       run.execute('/user-manager/router/print', { detail: '' }),
       // Only the fields shown, so a long history stays small on the wire.
-      run.execute('/user-manager/session/print', { '.proplist': SESSION_FIELDS.join(',') }, [], { timeoutMs: 30_000 }),
+      run.execute('/user-manager/session/print', { '.proplist': SESSION_FIELDS.join(',') }, [], {
+        timeoutMs: 30_000,
+      }),
     ]);
     return { settings, users, groups, routers, sessions };
   });
 
-  const managed = await query<{ id: number; name: string; ip_address: string; ip_addresses_jsonb: { address?: string }[] | null }>(
-    `SELECT id, name, ip_address, ip_addresses_jsonb FROM devices`);
+  const managed = await query<{
+    id: number;
+    name: string;
+    ip_address: string;
+    ip_addresses_jsonb: { address?: string }[] | null;
+  }>(`SELECT id, name, ip_address, ip_addresses_jsonb FROM devices`);
   const addresses = managed.map((d) => ({
     id: d.id,
     name: d.name.trim(),
-    addresses: [d.ip_address, ...(d.ip_addresses_jsonb ?? []).map((a) => (a.address || '').split('/')[0])]
-      .filter(Boolean).map((a) => canonicalIp(a)),
+    addresses: [
+      d.ip_address,
+      ...(d.ip_addresses_jsonb ?? []).map((a) => (a.address || '').split('/')[0]),
+    ]
+      .filter(Boolean)
+      .map((a) => canonicalIp(a)),
   }));
   const routers = pickRouters(raw.routers);
   const nas = matchNasToDevices(routers, addresses);
