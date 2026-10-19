@@ -18,11 +18,25 @@ export interface PreferredConnection {
 }
 
 export async function connectPreferringSsl(
-  address: string, username: string, password: string,
+  address: string,
+  username: string,
+  password: string,
   opts: { sslTimeoutMs?: number; plainTimeoutMs?: number } = {},
 ): Promise<PreferredConnection> {
-  const ssl = new RouterOSClient(address, API_SSL_PORT, username, password, opts.sslTimeoutMs ?? 6_000);
-  const plain = new RouterOSClient(address, API_PORT, username, password, opts.plainTimeoutMs ?? 10_000);
+  const ssl = new RouterOSClient(
+    address,
+    API_SSL_PORT,
+    username,
+    password,
+    opts.sslTimeoutMs ?? 6_000,
+  );
+  const plain = new RouterOSClient(
+    address,
+    API_PORT,
+    username,
+    password,
+    opts.plainTimeoutMs ?? 10_000,
+  );
   const sslAttempt = ssl.connect().then(() => ssl);
   const plainAttempt = plain.connect().then(() => plain);
   // Whichever isn't used must not surface later as an unhandled rejection.
@@ -30,7 +44,10 @@ export async function connectPreferringSsl(
 
   try {
     const client = await sslAttempt;
-    void plainAttempt.then((c) => c.disconnect(), () => {});
+    void plainAttempt.then(
+      (c) => c.disconnect(),
+      () => {},
+    );
     return { client, port: API_SSL_PORT };
   } catch (sslErr) {
     ssl.disconnect();
@@ -48,7 +65,8 @@ export function describeSslFailure(err: unknown): string {
     return 'api-ssl is enabled but has no certificate, so it refuses TLS connections.';
   }
   if (code === 'ECONNREFUSED') return 'api-ssl is turned off, or not on port 8729.';
-  if (/timeout/i.test(msg)) return 'Nothing answered on port 8729; api-ssl may be off or a firewall may block it.';
+  if (/timeout/i.test(msg))
+    return 'Nothing answered on port 8729; api-ssl may be off or a firewall may block it.';
   if (/invalid user name or password/i.test(msg)) return 'The login was refused over api-ssl.';
   return msg.split('\n')[0].slice(0, 200);
 }

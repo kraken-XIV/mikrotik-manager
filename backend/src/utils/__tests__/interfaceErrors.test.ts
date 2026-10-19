@@ -1,8 +1,23 @@
-import { readCounters, counterDelta, isEmpty, summarise, describeErrors, type ErrorEvent } from '../interfaceErrors';
+import {
+  counterDelta,
+  describeErrors,
+  type ErrorEvent,
+  isEmpty,
+  readCounters,
+  summarise,
+} from '../interfaceErrors';
 
 // Field names and shapes as a CRS518 and a wAP ax (RouterOS 7.24.5) report them.
-const crs = (fcs: string, align = '0', extra: Record<string, string> = {}) =>
-  ({ name: 'qsfp28-1-1', 'rx-fcs-error': fcs, 'rx-align-error': align, 'rx-overflow': '0', 'rx-fragment': '0', 'rx-jabber': '0', 'rx-too-long': '9', ...extra });
+const crs = (fcs: string, align = '0', extra: Record<string, string> = {}) => ({
+  name: 'qsfp28-1-1',
+  'rx-fcs-error': fcs,
+  'rx-align-error': align,
+  'rx-overflow': '0',
+  'rx-fragment': '0',
+  'rx-jabber': '0',
+  'rx-too-long': '9',
+  ...extra,
+});
 
 describe('readCounters / counterDelta', () => {
   it('groups counters by kind and ignores oversized frames', () => {
@@ -27,18 +42,37 @@ describe('readCounters / counterDelta', () => {
   });
 
   it('sees a quiet interval as empty', () => {
-    expect(isEmpty(counterDelta(readCounters(crs('5'), '1'), readCounters(crs('5'), '1'))!)).toBe(true);
+    expect(isEmpty(counterDelta(readCounters(crs('5'), '1'), readCounters(crs('5'), '1'))!)).toBe(
+      true,
+    );
   });
 });
 
 describe('summarise', () => {
-  const ev = (iface: string, ago: number, fcs: number, link_downs = 0): ErrorEvent =>
-    ({ interface: iface, ago_sec: ago, fcs, align: 0, overflow: 0, other: 0, link_downs });
+  const ev = (iface: string, ago: number, fcs: number, link_downs = 0): ErrorEvent => ({
+    interface: iface,
+    ago_sec: ago,
+    fcs,
+    align: 0,
+    overflow: 0,
+    other: 0,
+    link_downs,
+  });
 
   it('is red when the 5-minute rate reaches the threshold', () => {
     // 60 errors in the last 5 minutes = 12/min.
-    const [p] = summarise([ev('sfp28-1', 30, 20), ev('sfp28-1', 90, 20), ev('sfp28-1', 250, 20)], 10, 3);
-    expect(p).toMatchObject({ interface: 'sfp28-1', rate_per_min: 12, state: 'alert', flapping: false, last_error_ago_sec: 30 });
+    const [p] = summarise(
+      [ev('sfp28-1', 30, 20), ev('sfp28-1', 90, 20), ev('sfp28-1', 250, 20)],
+      10,
+      3,
+    );
+    expect(p).toMatchObject({
+      interface: 'sfp28-1',
+      rate_per_min: 12,
+      state: 'alert',
+      flapping: false,
+      last_error_ago_sec: 30,
+    });
     expect(p.hour.fcs).toBe(60);
   });
 
@@ -54,9 +88,16 @@ describe('summarise', () => {
   });
 
   it('flags flapping on link drops alone', () => {
-    const [p] = summarise([ev('ether3', 100, 0, 1), ev('ether3', 900, 0, 1), ev('ether3', 2000, 0, 1)], 10, 3);
+    const [p] = summarise(
+      [ev('ether3', 100, 0, 1), ev('ether3', 900, 0, 1), ev('ether3', 2000, 0, 1)],
+      10,
+      3,
+    );
     expect(p).toMatchObject({ flapping: true, state: 'alert', rate_per_min: 0 });
-    expect(summarise([ev('ether3', 100, 0, 2)], 10, 3)[0]).toMatchObject({ flapping: false, state: null });
+    expect(summarise([ev('ether3', 100, 0, 2)], 10, 3)[0]).toMatchObject({
+      flapping: false,
+      state: null,
+    });
   });
 
   it('ignores anything older than an hour and sorts ports naturally', () => {
@@ -65,13 +106,23 @@ describe('summarise', () => {
   });
 
   it('adds counts that arrive as strings (pg returns BIGINT as text)', () => {
-    const e = { interface: 'sfp28-1', ago_sec: 30, fcs: '76', align: '4', overflow: '0', other: '0', link_downs: 0 } as unknown as ErrorEvent;
+    const e = {
+      interface: 'sfp28-1',
+      ago_sec: 30,
+      fcs: '76',
+      align: '4',
+      overflow: '0',
+      other: '0',
+      link_downs: 0,
+    } as unknown as ErrorEvent;
     const [p] = summarise([e], 10, 3);
     expect(p.hour).toMatchObject({ fcs: 76, align: 4 });
     expect(p.rate_per_min).toBe(16);
   });
 
   it('describes only the kinds that grew', () => {
-    expect(describeErrors({ fcs: 40, align: 2, overflow: 0, other: 0 })).toBe('FCS 40, alignment 2');
+    expect(describeErrors({ fcs: 40, align: 2, overflow: 0, other: 0 })).toBe(
+      'FCS 40, alignment 2',
+    );
   });
 });

@@ -35,7 +35,9 @@ export function rosQuote(v: string): string {
 const clean = (list: unknown): string[] =>
   Array.isArray(list) ? list.map((s) => String(s).trim()).filter(Boolean) : [];
 
-export function configTemplateToCommand(t: OldConfigTemplate): { command: string; description: string } | null {
+export function configTemplateToCommand(
+  t: OldConfigTemplate,
+): { command: string; description: string } | null {
   const tj = t.template_json ?? {};
   const lines: string[] = [];
   const dns = clean(tj.dns_servers);
@@ -43,11 +45,12 @@ export function configTemplateToCommand(t: OldConfigTemplate): { command: string
   const syslog = String(tj.syslog_host ?? '').trim();
 
   if (dns.length) lines.push(`/ip dns set servers=${rosQuote(dns.join(','))}`);
-  if (ntp.length) lines.push(`/system ntp client set enabled=yes servers=${rosQuote(ntp.join(','))}`);
+  if (ntp.length)
+    lines.push(`/system ntp client set enabled=yes servers=${rosQuote(ntp.join(','))}`);
   if (syslog) {
     lines.push(
       `:local a [/system logging action find target=remote]; ` +
-      `:if ([:len $a] > 0) do={ /system logging action set ($a->0) remote=${rosQuote(syslog)} }`
+        `:if ([:len $a] > 0) do={ /system logging action set ($a->0) remote=${rosQuote(syslog)} }`,
     );
   }
   if (!lines.length) return null;

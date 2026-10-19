@@ -63,7 +63,7 @@ function generate(source) {
     if (!out.includes(swap.build)) {
       throw new Error(
         `Could not find the build block for "${swap.service}" in docker-compose.yml. ` +
-        `The generator needs updating to match how that service is now defined.`
+          `The generator needs updating to match how that service is now defined.`,
       );
     }
     // Every service built from it: the backend and its poll workers (#301).
@@ -78,21 +78,31 @@ function generate(source) {
 
 const generated = generate(readFileSync(SOURCE, 'utf8'));
 const check = process.argv.includes('--check');
-const current = (() => { try { return readFileSync(TARGET, 'utf8'); } catch { return null; } })();
+const current = (() => {
+  try {
+    return readFileSync(TARGET, 'utf8');
+  } catch {
+    return null;
+  }
+})();
 
 if (check) {
   if (current !== generated) {
     console.error(
       'docker-compose.ghcr.yml is out of date.\n' +
-      'Run `npm run compose:generate` and commit the result.\n\n' +
-      'This guard exists because the published deployment silently lost the NetFlow\n' +
-      'port, the poller tunables and the Redis memory ceiling when they were added\n' +
-      'to docker-compose.yml alone (#121).'
+        'Run `npm run compose:generate` and commit the result.\n\n' +
+        'This guard exists because the published deployment silently lost the NetFlow\n' +
+        'port, the poller tunables and the Redis memory ceiling when they were added\n' +
+        'to docker-compose.yml alone (#121).',
     );
     process.exit(1);
   }
   console.log('docker-compose.ghcr.yml is up to date');
 } else {
   writeFileSync(TARGET, generated);
-  console.log(current === generated ? 'docker-compose.ghcr.yml unchanged' : 'docker-compose.ghcr.yml regenerated');
+  console.log(
+    current === generated
+      ? 'docker-compose.ghcr.yml unchanged'
+      : 'docker-compose.ghcr.yml regenerated',
+  );
 }

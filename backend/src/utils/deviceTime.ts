@@ -19,22 +19,43 @@
  */
 
 const MONTHS: Record<string, number> = {
-  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
-  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+  jan: 1,
+  feb: 2,
+  mar: 3,
+  apr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  aug: 8,
+  sep: 9,
+  oct: 10,
+  nov: 11,
+  dec: 12,
 };
 
 /** Offset of a zone, in milliseconds, at a given instant. */
 function offsetMsAt(utcMs: number, timeZone: string): number {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat('en-US', {
-      timeZone, hour12: false,
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    }).formatToParts(new Date(utcMs)).map((p) => [p.type, p.value])
+      timeZone,
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+      .formatToParts(new Date(utcMs))
+      .map((p) => [p.type, p.value]),
   );
   const asIfUtc = Date.UTC(
-    Number(parts.year), Number(parts.month) - 1, Number(parts.day),
-    Number(parts.hour) % 24, Number(parts.minute), Number(parts.second),
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour) % 24,
+    Number(parts.minute),
+    Number(parts.second),
   );
   return asIfUtc - utcMs;
 }
@@ -47,7 +68,13 @@ function offsetMsAt(utcMs: number, timeZone: string): number {
  * first guess can land on the wrong side of a transition.
  */
 export function wallClockToUtc(
-  y: number, mo: number, d: number, h: number, mi: number, s: number, timeZone: string,
+  y: number,
+  mo: number,
+  d: number,
+  h: number,
+  mi: number,
+  s: number,
+  timeZone: string,
 ): Date {
   const guess = Date.UTC(y, mo - 1, d, h, mi, s);
   let offset = offsetMsAt(guess, timeZone);
@@ -56,7 +83,14 @@ export function wallClockToUtc(
 }
 
 /** Wall-clock fields pulled out of a log timestamp, before any zone is applied. */
-interface WallClock { y: number; mo: number; d: number; h: number; mi: number; s: number }
+interface WallClock {
+  y: number;
+  mo: number;
+  d: number;
+  h: number;
+  mi: number;
+  s: number;
+}
 
 /**
  * The device's own current wall-clock time, from its zone or offset (outside
@@ -70,31 +104,63 @@ export function deviceWallClockNow(clock: DeviceClock, now = new Date()): WallCl
     try {
       const parts = Object.fromEntries(
         new Intl.DateTimeFormat('en-US', {
-          timeZone: clock.timeZoneName, hour12: false,
-          year: 'numeric', month: '2-digit', day: '2-digit',
-          hour: '2-digit', minute: '2-digit', second: '2-digit',
-        }).formatToParts(now).map((p) => [p.type, p.value])
+          timeZone: clock.timeZoneName,
+          hour12: false,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+          .formatToParts(now)
+          .map((p) => [p.type, p.value]),
       );
-      return { y: +parts.year, mo: +parts.month, d: +parts.day, h: +parts.hour % 24, mi: +parts.minute, s: +parts.second };
-    } catch { /* unusable zone name: try the offset */ }
+      return {
+        y: +parts.year,
+        mo: +parts.month,
+        d: +parts.day,
+        h: +parts.hour % 24,
+        mi: +parts.minute,
+        s: +parts.second,
+      };
+    } catch {
+      /* unusable zone name: try the offset */
+    }
   }
   const offsetMs = parseGmtOffsetMs(clock.gmtOffset);
   if (offsetMs == null) return null;
   const t = new Date(now.getTime() + offsetMs);
-  return { y: t.getUTCFullYear(), mo: t.getUTCMonth() + 1, d: t.getUTCDate(), h: t.getUTCHours(), mi: t.getUTCMinutes(), s: t.getUTCSeconds() };
+  return {
+    y: t.getUTCFullYear(),
+    mo: t.getUTCMonth() + 1,
+    d: t.getUTCDate(),
+    h: t.getUTCHours(),
+    mi: t.getUTCMinutes(),
+    s: t.getUTCSeconds(),
+  };
 }
 
 /** Five minutes of clock skew allowed before a stamp counts as "in the future". */
 const FUTURE_SLACK_S = 5 * 60;
 
-const secondsOfDay = (w: { h: number; mi: number; s: number }): number => w.h * 3600 + w.mi * 60 + w.s;
+const secondsOfDay = (w: { h: number; mi: number; s: number }): number =>
+  w.h * 3600 + w.mi * 60 + w.s;
 
 /** Split a RouterOS timestamp into wall-clock fields. Null when unrecognised. */
-export function parseWallClock(timeStr: string, now: Date, deviceNow?: WallClock | null): WallClock | null {
+export function parseWallClock(
+  timeStr: string,
+  now: Date,
+  deviceNow?: WallClock | null,
+): WallClock | null {
   // The device's date when it is known; the manager's UTC date otherwise.
   const today = deviceNow ?? {
-    y: now.getUTCFullYear(), mo: now.getUTCMonth() + 1, d: now.getUTCDate(),
-    h: now.getUTCHours(), mi: now.getUTCMinutes(), s: now.getUTCSeconds(),
+    y: now.getUTCFullYear(),
+    mo: now.getUTCMonth() + 1,
+    d: now.getUTCDate(),
+    h: now.getUTCHours(),
+    mi: now.getUTCMinutes(),
+    s: now.getUTCSeconds(),
   };
   const t = (timeStr || '').trim();
   if (!t) return null;
@@ -125,7 +191,12 @@ export function parseWallClock(timeStr: string, now: Date, deviceNow?: WallClock
     // 23:59 and read just after midnight.
     if (secondsOfDay(wall) > secondsOfDay(today) + FUTURE_SLACK_S) {
       const prev = new Date(Date.UTC(today.y, today.mo - 1, today.d - 1));
-      return { y: prev.getUTCFullYear(), mo: prev.getUTCMonth() + 1, d: prev.getUTCDate(), ...wall };
+      return {
+        y: prev.getUTCFullYear(),
+        mo: prev.getUTCMonth() + 1,
+        d: prev.getUTCDate(),
+        ...wall,
+      };
     }
     return { y: today.y, mo: today.mo, d: today.d, ...wall };
   }
@@ -161,7 +232,9 @@ export function parseGmtOffsetMs(raw: string | null | undefined): number | null 
  * authoritative.
  */
 export function parseDeviceLogTime(
-  timeStr: string, clock: DeviceClock, now = new Date(),
+  timeStr: string,
+  clock: DeviceClock,
+  now = new Date(),
 ): Date | null {
   const wall = parseWallClock(timeStr, now, deviceWallClockNow(clock, now));
   if (!wall) return null;

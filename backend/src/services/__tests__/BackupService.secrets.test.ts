@@ -7,13 +7,23 @@ process.env.BACKUPS_DIR = dir;
 
 const inserted: unknown[][] = [];
 jest.mock('../../config/database', () => ({
-  query: jest.fn((_sql: string, params: unknown[]) => { inserted.push(params); return Promise.resolve([{ id: 1 }]); }),
+  query: jest.fn((_sql: string, params: unknown[]) => {
+    inserted.push(params);
+    return Promise.resolve([{ id: 1 }]);
+  }),
   queryOne: jest.fn(() => Promise.resolve(null)),
 }));
 
 import { BackupService } from '../BackupService';
 
-const device = { id: 7, name: 'wAP ax', ip_address: '10.0.0.2', ssh_port: 22, api_username: 'admin', api_password_encrypted: 'x' };
+const device = {
+  id: 7,
+  name: 'wAP ax',
+  ip_address: '10.0.0.2',
+  ssh_port: 22,
+  api_username: 'admin',
+  api_password_encrypted: 'x',
+};
 const rsc = '/interface wifi security\nadd name=home passphrase="hunter2-wifi-key"\n';
 
 afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
@@ -34,7 +44,13 @@ describe('BackupService storage (#172)', () => {
 
   it('keeps an ordinary backup as plain RouterOS script', async () => {
     const svc = new BackupService();
-    await svc.createBackupFromContent(device, '/system identity set name=x\n', 'plain', 'manual', false);
+    await svc.createBackupFromContent(
+      device,
+      '/system identity set name=x\n',
+      'plain',
+      'manual',
+      false,
+    );
     const filePath = inserted.at(-1)![2] as string;
     expect(fs.readFileSync(filePath, 'utf8')).toBe('/system identity set name=x\n');
     expect(inserted.at(-1)![6]).toBe(false);

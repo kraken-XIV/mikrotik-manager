@@ -9,11 +9,18 @@
  */
 
 export interface APBandEntry {
-  bssid: string; vendor: string; signal: number;
-  freq: number; band: string; channel_width: string;
+  bssid: string;
+  vendor: string;
+  signal: number;
+  freq: number;
+  band: string;
+  channel_width: string;
 }
 export interface APNetworkEntry {
-  ssid: string; security: string; hidden: boolean; entries: APBandEntry[];
+  ssid: string;
+  security: string;
+  hidden: boolean;
+  entries: APBandEntry[];
 }
 
 const NO_SIGNAL = -100;
@@ -61,11 +68,21 @@ export function scanSecurity(row: Record<string, string>): string {
 export function mergeScanRows(rows: Record<string, string>[]): Record<string, string>[] {
   const byKey = new Map<string, Record<string, string>>();
   for (const row of rows) {
-    const key = row['.id'] ? `id:${row['.id']}` : row['address'] ? `mac:${row['address'].toLowerCase()}` : null;
+    const key = row['.id']
+      ? `id:${row['.id']}`
+      : row['address']
+        ? `mac:${row['address'].toLowerCase()}`
+        : null;
     if (!key) continue;
-    if (row['.dead'] === 'true' || row['.dead'] === 'yes') { byKey.delete(key); continue; }
+    if (row['.dead'] === 'true' || row['.dead'] === 'yes') {
+      byKey.delete(key);
+      continue;
+    }
     const prev = byKey.get(key);
-    const merged: Record<string, string> = Object.assign(Object.create(null) as Record<string, string>, prev ?? {});
+    const merged: Record<string, string> = Object.assign(
+      Object.create(null) as Record<string, string>,
+      prev ?? {},
+    );
     for (const [k, v] of Object.entries(row)) if (v !== undefined && v !== '') merged[k] = v;
     byKey.set(key, merged);
   }
@@ -93,16 +110,30 @@ export function aggregateAPScanRows(
       if (!byKey.has(key)) byKey.set(key, { ssid, security, hidden: !ssid, entries: [] });
       const net = byKey.get(key)!;
       // A streaming scan repeats rows; an early one may lack fields a later one has.
-      if ((net.security === 'open' || net.security === 'unknown') && security !== 'open' && security !== 'unknown') net.security = security;
+      if (
+        (net.security === 'open' || net.security === 'unknown') &&
+        security !== 'open' &&
+        security !== 'unknown'
+      )
+        net.security = security;
       const existing = net.entries.find((e) => e.bssid === bssid && e.freq === freq);
       if (existing) {
         if (signal > existing.signal) existing.signal = signal;
       } else {
-        net.entries.push({ bssid, vendor: lookupVendor(bssid), signal, freq, band, channel_width: channelWidth });
+        net.entries.push({
+          bssid,
+          vendor: lookupVendor(bssid),
+          signal,
+          freq,
+          band,
+          channel_width: channelWidth,
+        });
       }
     }
   }
 
-  return Array.from(byKey.values()).sort((a, b) =>
-    Math.max(...b.entries.map((e) => e.signal)) - Math.max(...a.entries.map((e) => e.signal)));
+  return Array.from(byKey.values()).sort(
+    (a, b) =>
+      Math.max(...b.entries.map((e) => e.signal)) - Math.max(...a.entries.map((e) => e.signal)),
+  );
 }

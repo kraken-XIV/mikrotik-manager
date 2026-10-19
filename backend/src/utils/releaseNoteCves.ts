@@ -1,4 +1,4 @@
-import { parseRosVersion, compareRosVersions } from './rosVersion';
+import { compareRosVersions, parseRosVersion } from './rosVersion';
 
 /**
  * CVEs named in MikroTik's own release notes (discussion #85).
@@ -29,7 +29,11 @@ export function parseReleaseNoteCves(text: string): NoteCve[] {
   for (const raw of text.split('\n')) {
     const ids = raw.match(CVE_ID);
     if (!ids) continue;
-    const line = raw.replace(/^\s*\*\)\s*/, '').replace(/[;\s]+$/, '').trim().slice(0, 300);
+    const line = raw
+      .replace(/^\s*\*\)\s*/, '')
+      .replace(/[;\s]+$/, '')
+      .trim()
+      .slice(0, 300);
     for (const id of ids) {
       const key = id.toUpperCase();
       if (!seen.has(key)) seen.set(key, line);
@@ -48,7 +52,12 @@ export function releaseName(major: number, minor: number, patch: number): string
  * `toPatch` null means "until one doesn't exist": patch releases are numbered
  * in order, so the first missing one ends that line. Final releases only.
  */
-export interface ProbeRun { major: number; minor: number; fromPatch: number; toPatch: number | null }
+export interface ProbeRun {
+  major: number;
+  minor: number;
+  fromPatch: number;
+  toPatch: number | null;
+}
 
 const MAX_MINORS = 15;
 
@@ -75,7 +84,10 @@ export function releasePlan(current: string, latest: string): ProbeRun[] {
  * Fixed in the earliest release that names it, so a fix in 7.24.6 and 7.25
  * counts as fixed from 7.24.6 on.
  */
-export function releaseNoteFixes(version: string, notes: ReleaseNote[]): Map<string, { fixedIn: string; line: string }> {
+export function releaseNoteFixes(
+  version: string,
+  notes: ReleaseNote[],
+): Map<string, { fixedIn: string; line: string }> {
   const out = new Map<string, { fixedIn: string; line: string }>();
   const major = parseRosVersion(version)?.parts[0];
   if (major === undefined) return out;
@@ -84,7 +96,8 @@ export function releaseNoteFixes(version: string, notes: ReleaseNote[]): Map<str
     if (parseRosVersion(n.version)?.parts[0] !== major) continue;
     for (const c of n.cves) {
       const prev = earliest.get(c.id);
-      if (!prev || compareRosVersions(n.version, prev.fixedIn) < 0) earliest.set(c.id, { fixedIn: n.version, line: c.line });
+      if (!prev || compareRosVersions(n.version, prev.fixedIn) < 0)
+        earliest.set(c.id, { fixedIn: n.version, line: c.line });
     }
   }
   for (const [id, fix] of earliest) {

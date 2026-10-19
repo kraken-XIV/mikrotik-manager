@@ -5,9 +5,13 @@
  */
 
 export type OverrideKey =
-  | 'polling_fast_interval' | 'polling_slow_interval' | 'polling_logs_interval'
-  | 'mac_scan_enabled' | 'mac_scan_interval'
-  | 'config_snapshot_enabled' | 'config_snapshot_interval_min'
+  | 'polling_fast_interval'
+  | 'polling_slow_interval'
+  | 'polling_logs_interval'
+  | 'mac_scan_enabled'
+  | 'mac_scan_interval'
+  | 'config_snapshot_enabled'
+  | 'config_snapshot_interval_min'
   | 'backup_include_secrets';
 
 interface Def {
@@ -19,14 +23,14 @@ interface Def {
 }
 
 export const OVERRIDABLE: Record<OverrideKey, Def> = {
-  polling_fast_interval:        { type: 'seconds', fallback: 30,  min: 10,  max: 3600 },
-  polling_slow_interval:        { type: 'seconds', fallback: 300, min: 60,  max: 86400 },
-  polling_logs_interval:        { type: 'seconds', fallback: 60,  min: 10,  max: 86400 },
-  mac_scan_enabled:             { type: 'boolean', fallback: true },
-  mac_scan_interval:            { type: 'seconds', fallback: 300, min: 60,  max: 86400 },
-  config_snapshot_enabled:      { type: 'boolean', fallback: true },
-  config_snapshot_interval_min: { type: 'minutes', fallback: 60,  min: 5,   max: 10080 },
-  backup_include_secrets:       { type: 'boolean', fallback: false },
+  polling_fast_interval: { type: 'seconds', fallback: 30, min: 10, max: 3600 },
+  polling_slow_interval: { type: 'seconds', fallback: 300, min: 60, max: 86400 },
+  polling_logs_interval: { type: 'seconds', fallback: 60, min: 10, max: 86400 },
+  mac_scan_enabled: { type: 'boolean', fallback: true },
+  mac_scan_interval: { type: 'seconds', fallback: 300, min: 60, max: 86400 },
+  config_snapshot_enabled: { type: 'boolean', fallback: true },
+  config_snapshot_interval_min: { type: 'minutes', fallback: 60, min: 5, max: 10080 },
+  backup_include_secrets: { type: 'boolean', fallback: false },
 };
 
 export const OVERRIDE_KEYS = Object.keys(OVERRIDABLE) as OverrideKey[];
@@ -59,13 +63,20 @@ export function cleanOverrides(raw: unknown): Overrides {
  * Check overrides from a request: each key known and its value in range; null
  * removes an override. Returns the full set to store.
  */
-export function validateOverrides(current: Overrides, body: unknown): { ok: true; value: Overrides } | { ok: false; error: string } {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return { ok: false, error: 'Send an object of settings.' };
+export function validateOverrides(
+  current: Overrides,
+  body: unknown,
+): { ok: true; value: Overrides } | { ok: false; error: string } {
+  if (!body || typeof body !== 'object' || Array.isArray(body))
+    return { ok: false, error: 'Send an object of settings.' };
   const next: Overrides = { ...current };
   for (const [key, v] of Object.entries(body as Record<string, unknown>)) {
     if (!(key in OVERRIDABLE)) return { ok: false, error: `${key} can't be overridden.` };
     const k = key as OverrideKey;
-    if (v === null) { delete next[k]; continue; }
+    if (v === null) {
+      delete next[k];
+      continue;
+    }
     const def = OVERRIDABLE[k];
     if (def.type === 'boolean') {
       if (typeof v !== 'boolean') return { ok: false, error: `${key} must be true or false.` };
@@ -82,18 +93,27 @@ export function validateOverrides(current: Overrides, body: unknown): { ok: true
 }
 
 /** The value in force for each setting, and where it comes from. */
-export function resolveEffective(global: Record<string, unknown>, site: Overrides | null, device: Overrides | null): Effective {
+export function resolveEffective(
+  global: Record<string, unknown>,
+  site: Overrides | null,
+  device: Overrides | null,
+): Effective {
   const out = {} as Effective;
   for (const key of OVERRIDE_KEYS) {
     if (device && device[key] !== undefined) out[key] = { value: device[key]!, source: 'device' };
     else if (site && site[key] !== undefined) out[key] = { value: site[key]!, source: 'site' };
-    else out[key] = { value: coerce(key, global[key]) ?? OVERRIDABLE[key].fallback, source: 'global' };
+    else
+      out[key] = { value: coerce(key, global[key]) ?? OVERRIDABLE[key].fallback, source: 'global' };
   }
   return out;
 }
 
 /** Just the values, for the poller. */
-export function effectiveValues(global: Record<string, unknown>, site: Overrides | null, device: Overrides | null) {
+export function effectiveValues(
+  global: Record<string, unknown>,
+  site: Overrides | null,
+  device: Overrides | null,
+) {
   const e = resolveEffective(global, site, device);
   return {
     fastSec: e.polling_fast_interval.value as number,

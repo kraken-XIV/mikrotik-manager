@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+
 import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
@@ -14,18 +15,26 @@ export function useAccessRefresh(): void {
     if (!isAuthenticated) return;
     let cancelled = false;
     const refresh = () => {
-      authApi.me()
+      authApi
+        .me()
         .then((r) => {
           if (cancelled) return;
-          const me = (r.data as { user?: { role?: string; siteRoles?: Record<string, string> } }).user ?? {};
+          const me =
+            (r.data as { user?: { role?: string; siteRoles?: Record<string, string> } }).user ?? {};
           // Also drops a site selection the account can no longer use.
           useAuthStore.getState().applyAccess(me);
         })
-        .catch(() => { /* a 401 is handled by the API client */ });
+        .catch(() => {
+          /* a 401 is handled by the API client */
+        });
     };
     refresh();
     const timer = window.setInterval(refresh, 5 * 60_000);
     window.addEventListener('focus', refresh);
-    return () => { cancelled = true; window.clearInterval(timer); window.removeEventListener('focus', refresh); };
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+    };
   }, [isAuthenticated]);
 }

@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Moon, Loader2 } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { systemApi, settingsApi } from '../../services/api';
+import { Loader2, Moon } from 'lucide-react';
+
+import { settingsApi, systemApi } from '../../services/api';
 
 /**
  * Dark Site Mode: every feature that reaches the internet, in one place.
@@ -39,8 +40,7 @@ export default function DarkSiteCard({ isAdmin }: Props) {
 
   const features = data?.features ?? [];
   const offCount = features.filter((f) => !f.enabled).length;
-  const setAll = (on: boolean) =>
-    save.mutate(Object.fromEntries(features.map((f) => [f.key, on])));
+  const setAll = (on: boolean) => save.mutate(Object.fromEntries(features.map((f) => [f.key, on])));
 
   return (
     <div className="card p-5">
@@ -54,10 +54,10 @@ export default function DarkSiteCard({ isAdmin }: Props) {
         )}
       </div>
       <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
-        Every feature that makes a request to the internet on its own. Turn off what an isolated
-        or restricted network should not reach; everything else keeps working. Alert channels
-        such as Slack, Telegram, ntfy and webhooks are not listed here because they only send
-        when you configure a destination.
+        Every feature that makes a request to the internet on its own. Turn off what an isolated or
+        restricted network should not reach; everything else keeps working. Alert channels such as
+        Slack, Telegram, ntfy and webhooks are not listed here because they only send when you
+        configure a destination.
       </p>
 
       {isLoading ? (
@@ -67,10 +67,16 @@ export default function DarkSiteCard({ isAdmin }: Props) {
           {features.map((f) => (
             <div key={f.key} className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="text-sm font-medium text-gray-700 dark:text-slate-300">{f.label}</div>
-                <div className="text-[11px] font-mono text-gray-400 dark:text-slate-500 break-words">{f.destination}</div>
+                <div className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                  {f.label}
+                </div>
+                <div className="text-[11px] font-mono text-gray-400 dark:text-slate-500 break-words">
+                  {f.destination}
+                </div>
                 {!f.enabled && (
-                  <div className="text-[11.5px] text-amber-600 dark:text-amber-400 mt-0.5">{f.cost}</div>
+                  <div className="text-[11.5px] text-amber-600 dark:text-amber-400 mt-0.5">
+                    {f.cost}
+                  </div>
                 )}
               </div>
               <button
@@ -80,13 +86,15 @@ export default function DarkSiteCard({ isAdmin }: Props) {
                 className={clsx(
                   'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                   isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                  f.enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
+                  f.enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
                 )}
               >
-                <span className={clsx(
-                  'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
-                  f.enabled ? 'translate-x-5' : 'translate-x-0'
-                )} />
+                <span
+                  className={clsx(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
+                    f.enabled ? 'translate-x-5' : 'translate-x-0',
+                  )}
+                />
               </button>
             </div>
           ))}

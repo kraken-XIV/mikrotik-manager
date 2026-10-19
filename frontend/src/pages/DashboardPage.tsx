@@ -1,78 +1,120 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts';
-import {
-  AlertTriangle, Wifi, MapPin, ArrowUpCircle, Cpu, X,
-  RefreshCw, Terminal, HardDrive, GitBranch, Activity,
-  Shield, Clock, FileText, Bell, ChevronRight, } from 'lucide-react';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { metricsApi, eventsApi, devicesApi, clientsApi, trafficApi, operationsApi, topologyApi, systemApi, settingsApi} from '../services/api';
-import type { OpsAttentionItem, OpsCapacityRow, OpsActivityItem } from '../services/api';
-import TerminalModal from '../components/TerminalModal';
-import ProxyUsageCard from '../components/ProxyUsageCard';
-import { useSocket } from '../hooks/useSocket';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+
+import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, formatDistanceToNow } from 'date-fns';
-import type { Device, DeviceEvent } from '../types';
-import { fleetStatus } from '../utils/fleetStatus';
-import { escapeHtml } from '../utils/escapeHtml';
+import L from 'leaflet';
+import {
+  Activity,
+  AlertTriangle,
+  ArrowUpCircle,
+  Bell,
+  ChevronRight,
+  Clock,
+  Cpu,
+  FileText,
+  GitBranch,
+  HardDrive,
+  MapPin,
+  RefreshCw,
+  Shield,
+  Terminal,
+  Wifi,
+  X,
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
 import DeviceTypePill from '../components/devices/DeviceTypePill';
+import ProxyUsageCard from '../components/ProxyUsageCard';
+import TerminalModal from '../components/TerminalModal';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { useSocket } from '../hooks/useSocket';
+import type { OpsActivityItem, OpsAttentionItem, OpsCapacityRow } from '../services/api';
+import {
+  clientsApi,
+  devicesApi,
+  eventsApi,
+  metricsApi,
+  operationsApi,
+  settingsApi,
+  systemApi,
+  topologyApi,
+  trafficApi,
+} from '../services/api';
+import type { Device, DeviceEvent } from '../types';
 import { byAttention, CARD_ROWS } from '../utils/deviceCards';
 import { filterDevices } from '../utils/devicePicker';
+import { escapeHtml } from '../utils/escapeHtml';
+import { fleetStatus } from '../utils/fleetStatus';
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
 
-function StatusDot({ color = 'var(--good)', glow = false, size = 6 }: {
-  color?: string; glow?: boolean; size?: number;
+function StatusDot({
+  color = 'var(--good)',
+  glow = false,
+  size = 6,
+}: {
+  color?: string;
+  glow?: boolean;
+  size?: number;
 }) {
   return (
     <span
       style={{
-        width: size, height: size, borderRadius: 999, display: 'inline-block',
-        background: color, flexShrink: 0,
+        width: size,
+        height: size,
+        borderRadius: 999,
+        display: 'inline-block',
+        background: color,
+        flexShrink: 0,
         boxShadow: glow ? `0 0 0 2px ${color}33, 0 0 8px ${color}88` : 'none',
       }}
     />
   );
 }
 
-function Sparkline({ data, w = 120, h = 24, color = 'var(--accent)', area = true }: {
-  data: number[]; w?: number; h?: number; color?: string; area?: boolean;
+function Sparkline({
+  data,
+  w = 120,
+  h = 24,
+  color = 'var(--accent)',
+  area = true,
+}: {
+  data: number[];
+  w?: number;
+  h?: number;
+  color?: string;
+  area?: boolean;
 }) {
   if (data.length < 2) return null;
-  const max = Math.max(...data), min = Math.min(...data);
+  const max = Math.max(...data),
+    min = Math.min(...data);
   const range = max - min || 1;
   const pts = data.map((v, i) => [
     (i / (data.length - 1)) * w,
     h - ((v - min) / range) * (h - 2) - 1,
   ]);
-  const d = 'M' + pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L');
+  const d = 'M' + pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L');
   const areaD = d + ` L ${w},${h} L 0,${h} Z`;
   return (
     <svg width={w} height={h} style={{ display: 'block', overflow: 'visible' }}>
-      {area && (
-        <path d={areaD} fill={color} fillOpacity="0.12" stroke="none" />
-      )}
+      {area && <path d={areaD} fill={color} fillOpacity="0.12" stroke="none" />}
       <path d={d} fill="none" stroke={color} strokeWidth="1.4" />
     </svg>
   );
 }
 
-
 // ─── Device Locations Map ─────────────────────────────────────────────────────
-
 
 function DeviceLocationsMap({ devices }: { devices: Device[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Devices without their own location sit at their site's (#167).
-  const mapped = useMemo(() =>
-    devices.filter(d => d.effective_location?.lat != null && d.effective_location?.lng != null),
-    [devices]
+  const mapped = useMemo(
+    () =>
+      devices.filter((d) => d.effective_location?.lat != null && d.effective_location?.lng != null),
+    [devices],
   );
 
   useEffect(() => {
@@ -94,51 +136,71 @@ function DeviceLocationsMap({ devices }: { devices: Device[] }) {
       const lat = Number(groupDevices[0].effective_location!.lat);
       const lng = Number(groupDevices[0].effective_location!.lng);
       const count = groupDevices.length;
-      const hasOffline = groupDevices.some(d => d.status === 'offline');
+      const hasOffline = groupDevices.some((d) => d.status === 'offline');
       const colorHex = hasOffline ? '#f08a8a' : '#c1f17e';
 
-      const deviceRows = groupDevices.map(d => {
-        const c = d.status === 'online' ? '#8de08a' : '#f08a8a';
-        return `<b>${escapeHtml(d.name)}</b>&nbsp;<span style="color:${c};font-size:11px">● ${escapeHtml(d.status)}</span>`;
-      }).join('<br/>');
+      const deviceRows = groupDevices
+        .map((d) => {
+          const c = d.status === 'online' ? '#8de08a' : '#f08a8a';
+          return `<b>${escapeHtml(d.name)}</b>&nbsp;<span style="color:${c};font-size:11px">● ${escapeHtml(d.status)}</span>`;
+        })
+        .join('<br/>');
       const addr = groupDevices[0].effective_location?.address;
       const address = addr
         ? `<br/><span style="color:#8a877e;font-size:11px">${escapeHtml(addr)}</span>`
         : '';
-      const tooltipHtml = groupDevices.map(d =>
-        `${d.status === 'online' ? '●' : '○'} ${escapeHtml(d.name)}`
-      ).join('<br/>');
+      const tooltipHtml = groupDevices
+        .map((d) => `${d.status === 'online' ? '●' : '○'} ${escapeHtml(d.name)}`)
+        .join('<br/>');
 
       let marker: L.Layer;
       if (count === 1) {
         marker = L.circleMarker([lat, lng], {
-          radius: 9, color: '#fff', weight: 2, fillColor: colorHex, fillOpacity: 0.9,
-        }).bindPopup(deviceRows + address).bindTooltip(tooltipHtml, { direction: 'top', offset: [0, -10] });
+          radius: 9,
+          color: '#fff',
+          weight: 2,
+          fillColor: colorHex,
+          fillOpacity: 0.9,
+        })
+          .bindPopup(deviceRows + address)
+          .bindTooltip(tooltipHtml, { direction: 'top', offset: [0, -10] });
       } else {
-        const size = count > 9 ? 32 : 28, half = size / 2;
+        const size = count > 9 ? 32 : 28,
+          half = size / 2;
         const icon = L.divIcon({
           className: '',
           html: `<div style="background:${colorHex};color:#0e0f12;border:2px solid #fff;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;box-shadow:0 0 0 4px ${colorHex}33,0 0 12px ${colorHex}88;cursor:pointer">${count}</div>`,
-          iconSize: [size, size], iconAnchor: [half, half], popupAnchor: [0, -half],
+          iconSize: [size, size],
+          iconAnchor: [half, half],
+          popupAnchor: [0, -half],
         });
         marker = L.marker([lat, lng], { icon })
-          .bindPopup(deviceRows + address).bindTooltip(tooltipHtml, { direction: 'top' });
+          .bindPopup(deviceRows + address)
+          .bindTooltip(tooltipHtml, { direction: 'top' });
       }
       marker.addTo(map);
       markers.push(marker);
     });
 
     if (markers.length === 1) {
-      map.setView([Number(mapped[0].effective_location!.lat), Number(mapped[0].effective_location!.lng)], 13);
+      map.setView(
+        [Number(mapped[0].effective_location!.lat), Number(mapped[0].effective_location!.lng)],
+        13,
+      );
     } else {
       map.fitBounds(L.featureGroup(markers).getBounds(), { padding: [40, 40] });
     }
-    return () => { map.remove(); };
+    return () => {
+      map.remove();
+    };
   }, [mapped]);
 
   if (mapped.length === 0) {
     return (
-      <div className="flex items-center justify-center text-sm" style={{ height: 220, color: 'var(--ink-4)' }}>
+      <div
+        className="flex items-center justify-center text-sm"
+        style={{ height: 220, color: 'var(--ink-4)' }}
+      >
         No locations yet. Add an address to a site, or to a device under Overview › Physical Details
       </div>
     );
@@ -149,16 +211,23 @@ function DeviceLocationsMap({ devices }: { devices: Device[] }) {
 // ─── Health Bar ───────────────────────────────────────────────────────────────
 
 function HealthBar({
-  summary, wirelessCount, clientSparkline,
+  summary,
+  wirelessCount,
+  clientSparkline,
 }: {
-  summary: { devices: { total: number; online: number; offline: number }; clients: { active: number; total: number }; alerts: { critical: number; warning: number }; availability?: { fleetUptimePct30d: number; reboots30d?: number } } | undefined;
+  summary:
+    | {
+        devices: { total: number; online: number; offline: number };
+        clients: { active: number; total: number };
+        alerts: { critical: number; warning: number };
+        availability?: { fleetUptimePct30d: number; reboots30d?: number };
+      }
+    | undefined;
   wirelessCount: number;
   clientSparkline: number[];
 }) {
   const status = fleetStatus(summary?.devices);
-  const reachFraction = summary?.devices.total
-    ? (summary.devices.online / summary.devices.total)
-    : 1;
+  const reachFraction = summary?.devices.total ? summary.devices.online / summary.devices.total : 1;
 
   return (
     <div className="card" style={{ padding: '18px 22px' }}>
@@ -170,9 +239,15 @@ function HealthBar({
             style={{ background: 'var(--accent-soft)' }}
           >
             <StatusDot
-              color={status.tone === 'good' ? 'var(--accent)'
-                   : status.tone === 'warn' ? 'var(--warn)' : 'var(--ink-4)'}
-              glow size={10}
+              color={
+                status.tone === 'good'
+                  ? 'var(--accent)'
+                  : status.tone === 'warn'
+                    ? 'var(--warn)'
+                    : 'var(--ink-4)'
+              }
+              glow
+              size={10}
             />
           </div>
           <div>
@@ -181,23 +256,40 @@ function HealthBar({
             </div>
             <div className="text-[12px]" style={{ color: 'var(--ink-3)' }}>
               {summary?.devices.online ?? 0} of {summary?.devices.total ?? 0} reachable
-              {(summary?.alerts.critical ?? 0) > 0 && ` · ${summary!.alerts.critical} critical alert`}
+              {(summary?.alerts.critical ?? 0) > 0 &&
+                ` · ${summary!.alerts.critical} critical alert`}
             </div>
           </div>
         </div>
 
         {/* Reachability bar */}
-        <div className="flex-1 min-w-[120px]" style={{ paddingLeft: 20, borderLeft: '1px solid var(--line)' }}>
-          <div className="flex justify-between text-[11px] mb-[6px]" style={{ color: 'var(--ink-3)' }}>
+        <div
+          className="flex-1 min-w-[120px]"
+          style={{ paddingLeft: 20, borderLeft: '1px solid var(--line)' }}
+        >
+          <div
+            className="flex justify-between text-[11px] mb-[6px]"
+            style={{ color: 'var(--ink-3)' }}
+          >
             <span>Reachability</span>
-            <span className="mono">{summary?.devices.online ?? 0}/{summary?.devices.total ?? 0} online</span>
+            <span className="mono">
+              {summary?.devices.online ?? 0}/{summary?.devices.total ?? 0} online
+            </span>
           </div>
-          <div className="rounded-full overflow-hidden" style={{ height: 8, background: 'var(--surface-3)' }}>
+          <div
+            className="rounded-full overflow-hidden"
+            style={{ height: 8, background: 'var(--surface-3)' }}
+          >
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{
                 width: `${reachFraction * 100}%`,
-                background: reachFraction === 1 ? 'var(--accent)' : reachFraction > 0.5 ? 'var(--warn)' : 'var(--bad)',
+                background:
+                  reachFraction === 1
+                    ? 'var(--accent)'
+                    : reachFraction > 0.5
+                      ? 'var(--warn)'
+                      : 'var(--bad)',
               }}
             />
           </div>
@@ -219,11 +311,12 @@ function HealthBar({
           },
           {
             label: 'Alerts 24h',
-            value: (summary?.alerts.critical ?? 0) > 0
-              ? `${summary!.alerts.critical} critical`
-              : (summary?.alerts.warning ?? 0) > 0
-              ? `${summary!.alerts.warning} warn`
-              : 'none',
+            value:
+              (summary?.alerts.critical ?? 0) > 0
+                ? `${summary!.alerts.critical} critical`
+                : (summary?.alerts.warning ?? 0) > 0
+                  ? `${summary!.alerts.warning} warn`
+                  : 'none',
             spark: [] as number[],
             color: (summary?.alerts.critical ?? 0) > 0 ? 'var(--bad)' : 'var(--ink-3)',
           },
@@ -231,24 +324,63 @@ function HealthBar({
             // Availability, not time since boot (#326), with the reboots the
             // polls were too slow to see as outages.
             label: 'Availability 30d',
-            title: 'Share of the last 30 days the manager could reach your devices. A device’s Uptime is time since it last booted.',
-            value: summary?.availability != null
-              ? `${summary.availability.fleetUptimePct30d.toFixed(1)}%`
-              : '—',
-            sub: (summary?.availability?.reboots30d ?? 0) > 0
-              ? `${summary!.availability!.reboots30d} reboot${summary!.availability!.reboots30d === 1 ? '' : 's'}`
-              : undefined,
+            title:
+              'Share of the last 30 days the manager could reach your devices. A device’s Uptime is time since it last booted.',
+            value:
+              summary?.availability != null
+                ? `${summary.availability.fleetUptimePct30d.toFixed(1)}%`
+                : '—',
+            sub:
+              (summary?.availability?.reboots30d ?? 0) > 0
+                ? `${summary!.availability!.reboots30d} reboot${summary!.availability!.reboots30d === 1 ? '' : 's'}`
+                : undefined,
             spark: [] as number[],
-            color: (summary?.availability?.fleetUptimePct30d ?? 100) >= 99 ? 'var(--accent)' : (summary?.availability?.fleetUptimePct30d ?? 100) >= 95 ? 'var(--warn)' : 'var(--bad)',
+            color:
+              (summary?.availability?.fleetUptimePct30d ?? 100) >= 99
+                ? 'var(--accent)'
+                : (summary?.availability?.fleetUptimePct30d ?? 100) >= 95
+                  ? 'var(--warn)'
+                  : 'var(--bad)',
           },
-        ].map(({ label, value, spark, color, title, sub }: { label: string; value: string; spark: number[]; color: string; title?: string; sub?: string }) => (
-          <div key={label} style={{ minWidth: 110, paddingLeft: 20, borderLeft: '1px solid var(--line)' }} title={title}>
-            <div className="text-[11px] mb-[2px]" style={{ color: 'var(--ink-3)' }}>{label}</div>
-            <div className="text-[18px] font-semibold num-tab mb-[4px]" style={{ color: 'var(--ink)' }}>{value}</div>
-            {sub && <div className="text-[11px] -mt-[2px] mb-[2px]" style={{ color: 'var(--ink-3)' }}>{sub}</div>}
-            {spark.length >= 2 && <Sparkline data={spark} w={100} h={18} color={color} />}
-          </div>
-        ))}
+        ].map(
+          ({
+            label,
+            value,
+            spark,
+            color,
+            title,
+            sub,
+          }: {
+            label: string;
+            value: string;
+            spark: number[];
+            color: string;
+            title?: string;
+            sub?: string;
+          }) => (
+            <div
+              key={label}
+              style={{ minWidth: 110, paddingLeft: 20, borderLeft: '1px solid var(--line)' }}
+              title={title}
+            >
+              <div className="text-[11px] mb-[2px]" style={{ color: 'var(--ink-3)' }}>
+                {label}
+              </div>
+              <div
+                className="text-[18px] font-semibold num-tab mb-[4px]"
+                style={{ color: 'var(--ink)' }}
+              >
+                {value}
+              </div>
+              {sub && (
+                <div className="text-[11px] -mt-[2px] mb-[2px]" style={{ color: 'var(--ink-3)' }}>
+                  {sub}
+                </div>
+              )}
+              {spark.length >= 2 && <Sparkline data={spark} w={100} h={18} color={color} />}
+            </div>
+          ),
+        )}
       </div>
     </div>
   );
@@ -276,15 +408,29 @@ function SummaryView(props: Record<string, any>) {
   // has navigated to a location panel.
   const { data: appSettings } = useQuery({
     queryKey: ['app-settings'],
-    queryFn: () => settingsApi.get().then(r => r.data),
+    queryFn: () => settingsApi.get().then((r) => r.data),
     staleTime: 300_000,
   });
   // Off until settings have loaded (outside review U6): unknown used to count as on,
   // so a Dark Site install fetched map tiles and geocoding before, or without, the setting.
   const mapsEnabled = appSettings !== undefined && appSettings['maps_enabled'] !== false;
 
-  const { summary, devices, wirelessCount, clientSparkline, clientsOverTime,
-    chartRange, setChartRange, topClients, topClientsError, usingNetflowTop, recentEvents, severities, toggleSeverity, navigate } = props;
+  const {
+    summary,
+    devices,
+    wirelessCount,
+    clientSparkline,
+    clientsOverTime,
+    chartRange,
+    setChartRange,
+    topClients,
+    topClientsError,
+    usingNetflowTop,
+    recentEvents,
+    severities,
+    toggleSeverity,
+    navigate,
+  } = props;
   const formatBytes = (bytes: number) => {
     if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
     if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
@@ -302,9 +448,9 @@ function SummaryView(props: Record<string, any>) {
   }, [devices]);
 
   const typeConfig: Record<string, { label: string; color: string }> = {
-    switch:      { label: 'Switches',    color: 'var(--accent)' },
+    switch: { label: 'Switches', color: 'var(--accent)' },
     wireless_ap: { label: 'Wireless APs', color: 'var(--info)' },
-    router:      { label: 'Routers',     color: 'var(--violet)' },
+    router: { label: 'Routers', color: 'var(--violet)' },
   };
 
   // Bars over a category axis fill their slots (thick, minimal gaps) rather than
@@ -327,8 +473,12 @@ function SummaryView(props: Record<string, any>) {
         <div className="card" style={{ padding: '16px 18px' }}>
           <div className="flex items-baseline justify-between mb-3">
             <div>
-              <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Connected clients</div>
-              <div className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>last {chartRange} · 5min buckets</div>
+              <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+                Connected clients
+              </div>
+              <div className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
+                last {chartRange} · 5min buckets
+              </div>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-[22px] font-semibold num-tab" style={{ color: 'var(--ink)' }}>
@@ -357,14 +507,20 @@ function SummaryView(props: Record<string, any>) {
           </div>
           {clientsOverTime.length > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }} barCategoryGap="12%">
+              <BarChart
+                data={chartData}
+                margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+                barCategoryGap="12%"
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--line-soft)" vertical={false} />
                 <XAxis
                   dataKey="ts"
                   tick={{ fontSize: 10, fill: 'var(--ink-4)', fontFamily: 'Geist Mono' }}
                   interval={tickEvery}
                   minTickGap={20}
-                  tickFormatter={(t) => format(new Date(t as number), chartRange === '7d' ? 'MMM d' : 'HH:mm')}
+                  tickFormatter={(t) =>
+                    format(new Date(t as number), chartRange === '7d' ? 'MMM d' : 'HH:mm')
+                  }
                 />
                 <YAxis tick={{ fontSize: 10, fill: 'var(--ink-4)' }} allowDecimals={false} />
                 <Tooltip
@@ -383,7 +539,10 @@ function SummaryView(props: Record<string, any>) {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center text-[13px]" style={{ height: 180, color: 'var(--ink-4)' }}>
+            <div
+              className="flex items-center justify-center text-[13px]"
+              style={{ height: 180, color: 'var(--ink-4)' }}
+            >
               No data yet — metrics appear after devices are polled
             </div>
           )}
@@ -392,7 +551,9 @@ function SummaryView(props: Record<string, any>) {
         {/* Compact devices list */}
         <div className="card" style={{ padding: '16px 18px' }}>
           <div className="flex items-baseline justify-between mb-3">
-            <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Devices</div>
+            <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+              Devices
+            </div>
             <button
               onClick={() => navigate('/devices')}
               className="text-[11px] transition-colors"
@@ -404,31 +565,44 @@ function SummaryView(props: Record<string, any>) {
           {/* A large fleet gets the devices needing attention, not a page of
               names (#303). */}
           <div className="space-y-[1px]">
-            {byAttention(devices as Device[]).slice(0, CARD_ROWS).map((d) => (
-              <div
-                key={d.id}
-                className="flex items-center gap-[10px] px-[6px] py-[7px] rounded-[5px] cursor-pointer transition-colors"
-                style={{ color: 'var(--ink)' }}
-                onClick={() => navigate(`/devices/${d.id}`)}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                <StatusDot
-                  color={d.status === 'online' ? 'var(--good)' : d.status === 'offline' ? 'var(--bad)' : 'var(--ink-4)'}
-                  glow={d.status === 'online'}
-                  size={6}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium truncate">{d.name}</div>
-                  <div className="mono text-[10.5px] truncate" style={{ color: 'var(--ink-3)' }}>{d.model}</div>
+            {byAttention(devices as Device[])
+              .slice(0, CARD_ROWS)
+              .map((d) => (
+                <div
+                  key={d.id}
+                  className="flex items-center gap-[10px] px-[6px] py-[7px] rounded-[5px] cursor-pointer transition-colors"
+                  style={{ color: 'var(--ink)' }}
+                  onClick={() => navigate(`/devices/${d.id}`)}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <StatusDot
+                    color={
+                      d.status === 'online'
+                        ? 'var(--good)'
+                        : d.status === 'offline'
+                          ? 'var(--bad)'
+                          : 'var(--ink-4)'
+                    }
+                    glow={d.status === 'online'}
+                    size={6}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium truncate">{d.name}</div>
+                    <div className="mono text-[10.5px] truncate" style={{ color: 'var(--ink-3)' }}>
+                      {d.model}
+                    </div>
+                  </div>
+                  <div
+                    className="mono text-[11px] flex items-center gap-1"
+                    style={{ color: d.firmware_update_available ? 'var(--warn)' : 'var(--ink-3)' }}
+                  >
+                    {d.firmware_update_available && <span>↑</span>}
+                    {d.ros_version}
+                  </div>
+                  <DeviceTypePill type={d.device_type} />
                 </div>
-                <div className="mono text-[11px] flex items-center gap-1" style={{ color: d.firmware_update_available ? 'var(--warn)' : 'var(--ink-3)' }}>
-                  {d.firmware_update_available && <span>↑</span>}
-                  {d.ros_version}
-                </div>
-                <DeviceTypePill type={d.device_type} />
-              </div>
-            ))}
+              ))}
           </div>
           {(devices as Device[]).length > CARD_ROWS && (
             <button
@@ -436,7 +610,8 @@ function SummaryView(props: Record<string, any>) {
               className="mt-2 w-full text-left px-[6px] text-[11.5px]"
               style={{ color: 'var(--ink-3)' }}
             >
-              {CARD_ROWS} of {(devices as Device[]).length}, offline and updates first · <span style={{ color: 'var(--accent)' }}>View all →</span>
+              {CARD_ROWS} of {(devices as Device[]).length}, offline and updates first ·{' '}
+              <span style={{ color: 'var(--accent)' }}>View all →</span>
             </button>
           )}
         </div>
@@ -449,7 +624,9 @@ function SummaryView(props: Record<string, any>) {
       <div className="grid gap-4" style={{ gridTemplateColumns: '1fr 1.2fr 1fr' }}>
         {/* Device mix */}
         <div className="card" style={{ padding: '16px 18px' }}>
-          <div className="text-[13px] font-semibold mb-3" style={{ color: 'var(--ink)' }}>Mix</div>
+          <div className="text-[13px] font-semibold mb-3" style={{ color: 'var(--ink)' }}>
+            Mix
+          </div>
           <div className="space-y-[10px]">
             {Object.entries(typeConfig).map(([type, { label, color }]) => {
               const count = deviceTypeCounts[type] ?? 0;
@@ -458,10 +635,18 @@ function SummaryView(props: Record<string, any>) {
                 <div key={type}>
                   <div className="flex justify-between text-[12px] mb-[5px]">
                     <span style={{ color: 'var(--ink-2)' }}>{label}</span>
-                    <span className="mono num-tab" style={{ color: 'var(--ink-3)' }}>{count}</span>
+                    <span className="mono num-tab" style={{ color: 'var(--ink-3)' }}>
+                      {count}
+                    </span>
                   </div>
-                  <div className="rounded-full overflow-hidden" style={{ height: 4, background: 'var(--surface-3)' }}>
-                    <div className="h-full rounded-full" style={{ width: `${frac * 100}%`, background: color }} />
+                  <div
+                    className="rounded-full overflow-hidden"
+                    style={{ height: 4, background: 'var(--surface-3)' }}
+                  >
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${frac * 100}%`, background: color }}
+                    />
                   </div>
                 </div>
               );
@@ -473,51 +658,88 @@ function SummaryView(props: Record<string, any>) {
             the collector has data; otherwise device-reported connection counters. */}
         <div className="card" style={{ padding: '16px 18px' }}>
           <div className="flex items-baseline justify-between mb-3">
-            <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Top talkers</div>
+            <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+              Top talkers
+            </div>
             <span
               className="mono text-[11px]"
               style={{ color: 'var(--ink-3)' }}
-              title={usingNetflowTop
-                ? 'Measured by the NetFlow collector over the last 24 hours'
-                : 'Device-reported counters since each client connected (enable NetFlow for time-windowed data)'}
+              title={
+                usingNetflowTop
+                  ? 'Measured by the NetFlow collector over the last 24 hours'
+                  : 'Device-reported counters since each client connected (enable NetFlow for time-windowed data)'
+              }
             >
               {usingNetflowTop ? 'by bytes · 24h' : 'since connection'}
             </span>
           </div>
-          {(topClients as { mac_address: string; hostname?: string; total_bytes: number }[]).length > 0 ? (
+          {(topClients as { mac_address: string; hostname?: string; total_bytes: number }[])
+            .length > 0 ? (
             <div className="space-y-[1px]">
-              {(topClients as { mac_address: string; hostname?: string; total_bytes: number }[]).slice(0, 5).map((c, i) => {
-                const maxB = (topClients as { total_bytes: number }[])[0]?.total_bytes ?? 1;
-                const label = c.hostname || c.mac_address;
-                const isRealMac = c.mac_address !== 'unknown' && c.mac_address !== 'other';
-                return (
-                  <div
-                    key={c.mac_address}
-                    className="grid items-center gap-[10px]"
-                    style={{ gridTemplateColumns: '16px 1fr 70px', padding: '5px 0', cursor: isRealMac ? 'pointer' : 'default' }}
-                    onClick={() => isRealMac && navigate(`/clients/${encodeURIComponent(c.mac_address)}`)}
-                    title={isRealMac ? `${c.mac_address} — open client` : undefined}
-                  >
-                    <span className="mono text-[10px] num-tab text-right" style={{ color: 'var(--ink-4)' }}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="mono text-[11.5px] truncate mb-[3px]" style={{ color: 'var(--ink)' }}>
-                        {label.length > 20 ? label.slice(0, 20) + '…' : label}
+              {(topClients as { mac_address: string; hostname?: string; total_bytes: number }[])
+                .slice(0, 5)
+                .map((c, i) => {
+                  const maxB = (topClients as { total_bytes: number }[])[0]?.total_bytes ?? 1;
+                  const label = c.hostname || c.mac_address;
+                  const isRealMac = c.mac_address !== 'unknown' && c.mac_address !== 'other';
+                  return (
+                    <div
+                      key={c.mac_address}
+                      className="grid items-center gap-[10px]"
+                      style={{
+                        gridTemplateColumns: '16px 1fr 70px',
+                        padding: '5px 0',
+                        cursor: isRealMac ? 'pointer' : 'default',
+                      }}
+                      onClick={() =>
+                        isRealMac && navigate(`/clients/${encodeURIComponent(c.mac_address)}`)
+                      }
+                      title={isRealMac ? `${c.mac_address} — open client` : undefined}
+                    >
+                      <span
+                        className="mono text-[10px] num-tab text-right"
+                        style={{ color: 'var(--ink-4)' }}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <div className="min-w-0">
+                        <div
+                          className="mono text-[11.5px] truncate mb-[3px]"
+                          style={{ color: 'var(--ink)' }}
+                        >
+                          {label.length > 20 ? label.slice(0, 20) + '…' : label}
+                        </div>
+                        <div
+                          className="rounded-full overflow-hidden"
+                          style={{ height: 3, background: 'var(--surface-3)' }}
+                        >
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${(c.total_bytes / maxB) * 100}%`,
+                              background: 'var(--accent)',
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="rounded-full overflow-hidden" style={{ height: 3, background: 'var(--surface-3)' }}>
-                        <div className="h-full rounded-full" style={{ width: `${(c.total_bytes / maxB) * 100}%`, background: 'var(--accent)' }} />
-                      </div>
+                      <span
+                        className="mono num-tab text-right text-[11px]"
+                        style={{ color: 'var(--ink-2)' }}
+                      >
+                        {formatBytes(c.total_bytes)}
+                      </span>
                     </div>
-                    <span className="mono num-tab text-right text-[11px]" style={{ color: 'var(--ink-2)' }}>
-                      {formatBytes(c.total_bytes)}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           ) : (
-            <div className="flex items-center justify-center text-[12px]" style={{ height: 80, color: topClientsError ? 'var(--warn, #d97706)' : 'var(--ink-4)' }}>
+            <div
+              className="flex items-center justify-center text-[12px]"
+              style={{
+                height: 80,
+                color: topClientsError ? 'var(--warn, #d97706)' : 'var(--ink-4)',
+              }}
+            >
               {/* An unreadable list isn't an empty one (U5). */}
               {topClientsError ? 'Couldn’t load clients' : 'No active clients'}
             </div>
@@ -527,7 +749,9 @@ function SummaryView(props: Record<string, any>) {
         {/* Activity */}
         <div className="card" style={{ padding: '16px 18px' }}>
           <div className="flex items-baseline justify-between mb-3">
-            <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Activity</div>
+            <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+              Activity
+            </div>
             <div className="flex items-center gap-2">
               {(['error', 'warning', 'info'] as const).map((sev) => (
                 <label key={sev} className="flex items-center gap-1 cursor-pointer select-none">
@@ -537,9 +761,17 @@ function SummaryView(props: Record<string, any>) {
                     onChange={() => toggleSeverity(sev)}
                     className="w-3 h-3 rounded cursor-pointer"
                   />
-                  <span className="text-[10px]" style={{
-                    color: sev === 'error' ? 'var(--bad)' : sev === 'warning' ? 'var(--warn)' : 'var(--info)',
-                  }}>
+                  <span
+                    className="text-[10px]"
+                    style={{
+                      color:
+                        sev === 'error'
+                          ? 'var(--bad)'
+                          : sev === 'warning'
+                            ? 'var(--warn)'
+                            : 'var(--info)',
+                    }}
+                  >
                     {sev[0].toUpperCase()}
                   </span>
                 </label>
@@ -564,19 +796,33 @@ function SummaryView(props: Record<string, any>) {
                   <div className="min-w-0">
                     <div className="flex items-center gap-[6px] mb-[2px]">
                       <StatusDot
-                        color={ev.severity === 'error' || ev.severity === 'critical' ? 'var(--bad)' : ev.severity === 'warning' ? 'var(--warn)' : 'var(--ink-3)'}
+                        color={
+                          ev.severity === 'error' || ev.severity === 'critical'
+                            ? 'var(--bad)'
+                            : ev.severity === 'warning'
+                              ? 'var(--warn)'
+                              : 'var(--ink-3)'
+                        }
                         size={5}
                       />
-                      <span className="mono text-[10.5px] truncate" style={{ color: 'var(--ink-2)' }}>
+                      <span
+                        className="mono text-[10.5px] truncate"
+                        style={{ color: 'var(--ink-2)' }}
+                      >
                         {ev.device_name}
                       </span>
                     </div>
-                    <span className="truncate block" style={{ color: 'var(--ink-2)' }}>{ev.message}</span>
+                    <span className="truncate block" style={{ color: 'var(--ink-2)' }}>
+                      {ev.message}
+                    </span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="flex items-center justify-center text-[12px]" style={{ height: 80, color: 'var(--ink-4)' }}>
+              <div
+                className="flex items-center justify-center text-[12px]"
+                style={{ height: 80, color: 'var(--ink-4)' }}
+              >
                 No recent events
               </div>
             )}
@@ -590,23 +836,26 @@ function SummaryView(props: Record<string, any>) {
           sites view but not this card, so the map stayed visible here — the one
           place it is shown without being asked for (#159). */}
       {mapsEnabled && (
-      <div className="card" style={{ overflow: 'hidden' }}>
-        <div
-          className="flex items-center justify-between px-[18px] py-[14px]"
-          style={{ borderBottom: '1px solid var(--line)' }}
-        >
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-            <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Locations</span>
+        <div className="card" style={{ overflow: 'hidden' }}>
+          <div
+            className="flex items-center justify-between px-[18px] py-[14px]"
+            style={{ borderBottom: '1px solid var(--line)' }}
+          >
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+              <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+                Locations
+              </span>
+            </div>
+            <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
+              {(devices as Device[]).filter((d) => d.effective_location?.lat != null).length} of{' '}
+              {(devices as Device[]).length} mapped
+            </span>
           </div>
-          <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
-            {(devices as Device[]).filter(d => d.effective_location?.lat != null).length} of {(devices as Device[]).length} mapped
-          </span>
+          <div style={{ padding: '0 0' }}>
+            <DeviceLocationsMap devices={devices as Device[]} />
+          </div>
         </div>
-        <div style={{ padding: '0 0' }}>
-          <DeviceLocationsMap devices={devices as Device[]} />
-        </div>
-      </div>
       )}
     </div>
   );
@@ -615,7 +864,9 @@ function SummaryView(props: Record<string, any>) {
 // ─── Operations View ──────────────────────────────────────────────────────────
 
 function OperationsView({
-  summary, devices, navigate,
+  summary,
+  devices,
+  navigate,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
@@ -624,16 +875,20 @@ function OperationsView({
   const canWrite = useCanWrite();
   const status = fleetStatus(summary?.devices);
   const statusText = status.sentence;
-  const statusColor = status.tone === 'good' ? 'var(--accent)'
-                    : status.tone === 'warn' ? 'var(--warn)' : 'var(--ink-4)';
+  const statusColor =
+    status.tone === 'good'
+      ? 'var(--accent)'
+      : status.tone === 'warn'
+        ? 'var(--warn)'
+        : 'var(--ink-4)';
 
   const deviceList = devices as Device[];
-  const onlineDevices = deviceList.filter(d => d.status === 'online');
+  const onlineDevices = deviceList.filter((d) => d.status === 'online');
 
   // Server-aggregated operational insights (attention, capacity, activity)
   const { data: insights } = useQuery({
     queryKey: ['ops-insights'],
-    queryFn: () => operationsApi.insights().then(r => r.data),
+    queryFn: () => operationsApi.insights().then((r) => r.data),
     refetchInterval: 60_000,
   });
   const thingsToHandle: OpsAttentionItem[] = insights?.attention ?? [];
@@ -652,14 +907,23 @@ function OperationsView({
   // The app's own write requests are audit-log noise from an operations point of
   // view (issue #103). Remembered per browser, since it is a viewing preference.
   const [showRequests, setShowRequests] = useState<boolean>(() => {
-    try { return localStorage.getItem('dash.showRequests') === '1'; } catch { return false; }
+    try {
+      return localStorage.getItem('dash.showRequests') === '1';
+    } catch {
+      return false;
+    }
   });
-  const toggleRequests = () => setShowRequests((v) => {
-    const next = !v;
-    try { localStorage.setItem('dash.showRequests', next ? '1' : '0'); } catch { /* private mode */ }
-    return next;
-  });
-  const activity = showRequests ? activityAll : activityAll.filter(a => a.kind !== 'audit');
+  const toggleRequests = () =>
+    setShowRequests((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem('dash.showRequests', next ? '1' : '0');
+      } catch {
+        /* private mode */
+      }
+      return next;
+    });
+  const activity = showRequests ? activityAll : activityAll.filter((a) => a.kind !== 'audit');
   const hiddenRequests = activityAll.length - activity.length;
 
   // Platform update availability (checked against GitHub, cached server-side)
@@ -668,13 +932,13 @@ function OperationsView({
   // happened.
   const { data: dashSettings } = useQuery({
     queryKey: ['app-settings'],
-    queryFn: () => settingsApi.get().then(r => r.data),
+    queryFn: () => settingsApi.get().then((r) => r.data),
     staleTime: 300_000,
   });
   const updateCheckOn = dashSettings?.['update_check_enabled'] !== false;
   const { data: versionInfo } = useQuery({
     queryKey: ['version-check'],
-    queryFn: () => systemApi.versionCheck().then(r => r.data),
+    queryFn: () => systemApi.versionCheck().then((r) => r.data),
     staleTime: 60 * 60_000,
     refetchOnWindowFocus: false,
     enabled: updateCheckOn,
@@ -688,7 +952,7 @@ function OperationsView({
     enabled: onlineDevices.length > 0,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
-    queryFn: () => operationsApi.securityPosture().then(r => r.data),
+    queryFn: () => operationsApi.securityPosture().then((r) => r.data),
     refetchInterval: (q) => ((q.state.data?.refreshing ?? 0) > 0 ? 5_000 : false),
   });
   const posture = postureAll?.devices;
@@ -704,65 +968,134 @@ function OperationsView({
   const [terminalDevice, setTerminalDevice] = useState<{ id: number; name: string } | null>(null);
 
   async function runAction(key: string, fn: () => Promise<string>) {
-    setBusy(key); setActionMsg(null);
-    try { setActionMsg({ text: await fn(), ok: true }); }
-    catch (e) {
-      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error || (e as Error).message || 'Action failed';
+    setBusy(key);
+    setActionMsg(null);
+    try {
+      setActionMsg({ text: await fn(), ok: true });
+    } catch (e) {
+      const msg =
+        (e as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        (e as Error).message ||
+        'Action failed';
       setActionMsg({ text: msg, ok: false });
-    } finally { setBusy(null); }
+    } finally {
+      setBusy(null);
+    }
   }
 
   // Every quick action needs write access on the server, so viewers aren't
   // offered them (U10). Backup all and Sync touch every device in view, so
   // they ask first.
-  const fleetConfirm = (what: string) => window.confirm(`${what} for all ${onlineDevices.length} online device${onlineDevices.length === 1 ? '' : 's'} in view?`);
-  const actions = !canWrite ? [] : [
-    { key: 'discovery', label: 'Run discovery', sub: 'Scan ARP / CDP / MNDP', icon: Wifi, color: 'var(--accent)',
-      run: () => runAction('discovery', async () => {
-        const r = await topologyApi.discover();
-        return (r.data as { message?: string })?.message || 'Discovery triggered';
-      }) },
-    { key: 'backup', label: 'Backup all', sub: `${onlineDevices.length} online`, icon: HardDrive, color: 'var(--info)',
-      run: () => fleetConfirm('Back up') && runAction('backup', async () => {
-        const r = await operationsApi.backupAll();
-        const ok = r.data.results.filter(x => x.ok).length;
-        return `Backed up ${ok}/${r.data.total} device${r.data.total !== 1 ? 's' : ''}`;
-      }) },
-    { key: 'terminal', label: 'Open terminal', sub: 'Pick a device', icon: Terminal, color: 'var(--violet)',
-      run: () => { setActionMsg(null); setTerminalSearch(''); setPickTerminal(true); } },
-    { key: 'sync', label: 'Sync config', sub: 'Pull latest /export', icon: RefreshCw, color: 'var(--ink-2)',
-      run: () => fleetConfirm('Pull the configuration') && runAction('sync', async () => {
-        const r = await operationsApi.syncAll();
-        const ok = r.data.results.filter(x => x.ok).length;
-        qc.invalidateQueries({ queryKey: ['ops-insights'] });
-        return `Synced ${ok}/${r.data.total} device${r.data.total !== 1 ? 's' : ''}`;
-      }) },
-    { key: 'events', label: 'Tail events', sub: 'Live syslog stream', icon: Activity, color: 'var(--ink-2)',
-      run: () => navigate('/events') },
-    { key: 'topology', label: 'Open topology', sub: 'Visualize links', icon: GitBranch, color: 'var(--ink-2)',
-      run: () => navigate('/topology') },
-  ];
+  const fleetConfirm = (what: string) =>
+    window.confirm(
+      `${what} for all ${onlineDevices.length} online device${onlineDevices.length === 1 ? '' : 's'} in view?`,
+    );
+  const actions = !canWrite
+    ? []
+    : [
+        {
+          key: 'discovery',
+          label: 'Run discovery',
+          sub: 'Scan ARP / CDP / MNDP',
+          icon: Wifi,
+          color: 'var(--accent)',
+          run: () =>
+            runAction('discovery', async () => {
+              const r = await topologyApi.discover();
+              return (r.data as { message?: string })?.message || 'Discovery triggered';
+            }),
+        },
+        {
+          key: 'backup',
+          label: 'Backup all',
+          sub: `${onlineDevices.length} online`,
+          icon: HardDrive,
+          color: 'var(--info)',
+          run: () =>
+            fleetConfirm('Back up') &&
+            runAction('backup', async () => {
+              const r = await operationsApi.backupAll();
+              const ok = r.data.results.filter((x) => x.ok).length;
+              return `Backed up ${ok}/${r.data.total} device${r.data.total !== 1 ? 's' : ''}`;
+            }),
+        },
+        {
+          key: 'terminal',
+          label: 'Open terminal',
+          sub: 'Pick a device',
+          icon: Terminal,
+          color: 'var(--violet)',
+          run: () => {
+            setActionMsg(null);
+            setTerminalSearch('');
+            setPickTerminal(true);
+          },
+        },
+        {
+          key: 'sync',
+          label: 'Sync config',
+          sub: 'Pull latest /export',
+          icon: RefreshCw,
+          color: 'var(--ink-2)',
+          run: () =>
+            fleetConfirm('Pull the configuration') &&
+            runAction('sync', async () => {
+              const r = await operationsApi.syncAll();
+              const ok = r.data.results.filter((x) => x.ok).length;
+              qc.invalidateQueries({ queryKey: ['ops-insights'] });
+              return `Synced ${ok}/${r.data.total} device${r.data.total !== 1 ? 's' : ''}`;
+            }),
+        },
+        {
+          key: 'events',
+          label: 'Tail events',
+          sub: 'Live syslog stream',
+          icon: Activity,
+          color: 'var(--ink-2)',
+          run: () => navigate('/events'),
+        },
+        {
+          key: 'topology',
+          label: 'Open topology',
+          sub: 'Visualize links',
+          icon: GitBranch,
+          color: 'var(--ink-2)',
+          run: () => navigate('/topology'),
+        },
+      ];
 
   // Security rollup derived values
-  const scored = (posture ?? []).filter(p => p.score !== null);
-  const avgScore = scored.length ? Math.round(scored.reduce((s, p) => s + (p.score ?? 0), 0) / scored.length) : null;
-  const highFindings = (posture ?? []).reduce((s, p) => s + p.checks.filter(c => c.severity === 'high').length, 0);
+  const scored = (posture ?? []).filter((p) => p.score !== null);
+  const avgScore = scored.length
+    ? Math.round(scored.reduce((s, p) => s + (p.score ?? 0), 0) / scored.length)
+    : null;
+  const highFindings = (posture ?? []).reduce(
+    (s, p) => s + p.checks.filter((c) => c.severity === 'high').length,
+    0,
+  );
   const worstDevices = [...scored].sort((a, b) => (a.score ?? 0) - (b.score ?? 0)).slice(0, 3);
-  const scoreColor = (s: number | null) => s == null ? 'var(--ink-3)' : s >= 85 ? 'var(--good)' : s >= 60 ? 'var(--warn)' : 'var(--bad)';
+  const scoreColor = (s: number | null) =>
+    s == null ? 'var(--ink-3)' : s >= 85 ? 'var(--good)' : s >= 60 ? 'var(--warn)' : 'var(--bad)';
 
-  const sortedCapacity = [...capacity].sort((a, b) => Math.max(b.cpu, b.mem_pct) - Math.max(a.cpu, a.mem_pct));
+  const sortedCapacity = [...capacity].sort(
+    (a, b) => Math.max(b.cpu, b.mem_pct) - Math.max(a.cpu, a.mem_pct),
+  );
   const CAPACITY_ROWS = 8;
   // Fleet strip: two rows of tiles at most, the last one linking to the rest (#303).
   const FLEET_TILES = 10;
   const fleetList = devices as Device[];
-  const fleetTiles = fleetList.length > FLEET_TILES ? byAttention(fleetList).slice(0, FLEET_TILES - 1) : fleetList;
+  const fleetTiles =
+    fleetList.length > FLEET_TILES ? byAttention(fleetList).slice(0, FLEET_TILES - 1) : fleetList;
   const fleetHidden = fleetList.length - fleetTiles.length;
   const fleetOffline = fleetList.filter((d) => d.status === 'offline').length;
   const shownCapacity = showAllCapacity ? sortedCapacity : sortedCapacity.slice(0, CAPACITY_ROWS);
-  const meterColor = (v: number) => v >= 90 ? 'var(--bad)' : v >= 75 ? 'var(--warn)' : 'var(--accent)';
+  const meterColor = (v: number) =>
+    v >= 90 ? 'var(--bad)' : v >= 75 ? 'var(--warn)' : 'var(--accent)';
 
-  const sevColor = (s: string) => s === 'error' ? 'var(--bad)' : s === 'warn' ? 'var(--warn)' : 'var(--info)';
-  const activityIcon = (kind: string) => kind === 'config' ? FileText : kind === 'alert' ? Bell : Activity;
+  const sevColor = (s: string) =>
+    s === 'error' ? 'var(--bad)' : s === 'warn' ? 'var(--warn)' : 'var(--info)';
+  const activityIcon = (kind: string) =>
+    kind === 'config' ? FileText : kind === 'alert' ? Bell : Activity;
 
   return (
     <div className="space-y-4">
@@ -770,7 +1103,10 @@ function OperationsView({
       <div className="card relative overflow-hidden" style={{ padding: '32px 36px' }}>
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(circle at 95% 0%, rgba(193,241,126,0.06), transparent 60%)' }}
+          style={{
+            background:
+              'radial-gradient(circle at 95% 0%, rgba(193,241,126,0.06), transparent 60%)',
+          }}
         />
         <div className="relative flex flex-wrap items-center gap-8">
           <div className="flex items-center gap-5">
@@ -781,25 +1117,53 @@ function OperationsView({
               <StatusDot color={statusColor} glow size={20} />
             </div>
             <div>
-              <div className="text-[11px] uppercase tracking-[0.1em] mb-[6px]" style={{ color: 'var(--ink-3)' }}>Network status</div>
-              <div className="text-[32px] font-semibold leading-none" style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+              <div
+                className="text-[11px] uppercase tracking-[0.1em] mb-[6px]"
+                style={{ color: 'var(--ink-3)' }}
+              >
+                Network status
+              </div>
+              <div
+                className="text-[32px] font-semibold leading-none"
+                style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+              >
                 {statusText}
               </div>
               <div className="text-[13px] mt-[6px]" style={{ color: 'var(--ink-3)' }}>
                 {summary?.devices.online ?? 0} of {summary?.devices.total ?? 0} devices reachable
-                {(summary?.alerts.warning ?? 0) > 0 && ` · ${summary!.alerts.warning} warning${summary!.alerts.warning !== 1 ? 's' : ''}`}
+                {(summary?.alerts.warning ?? 0) > 0 &&
+                  ` · ${summary!.alerts.warning} warning${summary!.alerts.warning !== 1 ? 's' : ''}`}
               </div>
             </div>
           </div>
           <div className="ml-auto flex gap-6">
             {[
-              { label: 'CLIENTS', value: String(summary?.clients.active ?? '—'), color: 'var(--accent)' },
-              { label: 'DEVICES', value: `${summary?.devices.online ?? '—'}/${summary?.devices.total ?? '—'}`, color: 'var(--info)' },
-              { label: 'ALERTS', value: String((summary?.alerts.critical ?? 0) + (summary?.alerts.warning ?? 0)), color: (summary?.alerts.critical ?? 0) > 0 ? 'var(--bad)' : 'var(--ink-3)' },
+              {
+                label: 'CLIENTS',
+                value: String(summary?.clients.active ?? '—'),
+                color: 'var(--accent)',
+              },
+              {
+                label: 'DEVICES',
+                value: `${summary?.devices.online ?? '—'}/${summary?.devices.total ?? '—'}`,
+                color: 'var(--info)',
+              },
+              {
+                label: 'ALERTS',
+                value: String((summary?.alerts.critical ?? 0) + (summary?.alerts.warning ?? 0)),
+                color: (summary?.alerts.critical ?? 0) > 0 ? 'var(--bad)' : 'var(--ink-3)',
+              },
             ].map(({ label, value, color }) => (
               <div key={label}>
-                <div className="text-[10px] tracking-[0.1em] mb-1" style={{ color: 'var(--ink-4)' }}>{label}</div>
-                <div className="text-[22px] font-semibold num-tab" style={{ color }}>{value}</div>
+                <div
+                  className="text-[10px] tracking-[0.1em] mb-1"
+                  style={{ color: 'var(--ink-4)' }}
+                >
+                  {label}
+                </div>
+                <div className="text-[22px] font-semibold num-tab" style={{ color }}>
+                  {value}
+                </div>
               </div>
             ))}
           </div>
@@ -816,20 +1180,30 @@ function OperationsView({
               onClick={run}
               disabled={!!busy}
               className="text-[12px] rounded-[6px] px-3 py-[7px] flex items-center gap-2 transition-colors disabled:opacity-50"
-              style={{ background: 'var(--surface-2)', border: '1px solid var(--line)', color: 'var(--ink-2)' }}
-              onMouseEnter={(e) => { if (!busy) e.currentTarget.style.background = 'var(--surface-3)'; }}
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--line)',
+                color: 'var(--ink-2)',
+              }}
+              onMouseEnter={(e) => {
+                if (!busy) e.currentTarget.style.background = 'var(--surface-3)';
+              }}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
             >
-              {isBusy
-                ? <RefreshCw className="w-3.5 h-3.5 animate-spin" style={{ color }} />
-                : <Icon className="w-3.5 h-3.5" style={{ color }} />}
+              {isBusy ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" style={{ color }} />
+              ) : (
+                <Icon className="w-3.5 h-3.5" style={{ color }} />
+              )}
               {label}
             </button>
           );
         })}
         {actionMsg && (
-          <span className="text-[11.5px] ml-1"
-                style={{ color: actionMsg.ok ? 'var(--good)' : 'var(--bad)' }}>
+          <span
+            className="text-[11.5px] ml-1"
+            style={{ color: actionMsg.ok ? 'var(--good)' : 'var(--bad)' }}
+          >
             {actionMsg.text}
           </span>
         )}
@@ -837,15 +1211,23 @@ function OperationsView({
 
       {/* Platform update available */}
       {versionInfo?.update_available && versionInfo.latest && (
-        <div className="card flex items-center gap-3 px-5 py-[13px]" style={{ borderLeft: '3px solid var(--info)' }}>
-          <ArrowUpCircle className="w-[18px] h-[18px] flex-shrink-0" style={{ color: 'var(--info)' }} />
+        <div
+          className="card flex items-center gap-3 px-5 py-[13px]"
+          style={{ borderLeft: '3px solid var(--info)' }}
+        >
+          <ArrowUpCircle
+            className="w-[18px] h-[18px] flex-shrink-0"
+            style={{ color: 'var(--info)' }}
+          />
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
               Platform update available — v{versionInfo.latest}
             </div>
             <div className="text-[12px]" style={{ color: 'var(--ink-3)' }}>
               You&apos;re on v{versionInfo.current}. Run{' '}
-              <code className="mono text-[11px]" style={{ color: 'var(--ink-2)' }}>docker compose pull &amp;&amp; docker compose up -d</code>{' '}
+              <code className="mono text-[11px]" style={{ color: 'var(--ink-2)' }}>
+                docker compose pull &amp;&amp; docker compose up -d
+              </code>{' '}
               to update.
             </div>
           </div>
@@ -865,96 +1247,140 @@ function OperationsView({
           child of a two-column grid left behind when quick actions moved to the
           header (#104), so it rendered at 57% with an empty column beside it. */}
       <div className="card" style={{ overflow: 'hidden' }}>
+        <div
+          className="flex items-center gap-[10px] px-5 py-[14px]"
+          style={{ borderBottom: '1px solid var(--line)' }}
+        >
           <div
-            className="flex items-center gap-[10px] px-5 py-[14px]"
-            style={{ borderBottom: '1px solid var(--line)' }}
+            className="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center text-[12px] font-bold flex-shrink-0"
+            style={{ background: 'var(--warn)', color: 'var(--accent-fg)' }}
           >
-            <div
-              className="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center text-[12px] font-bold flex-shrink-0"
-              style={{ background: 'var(--warn)', color: 'var(--accent-fg)' }}
-            >!
-            </div>
-            <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Things to handle</span>
-            <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
-              {thingsToHandle.length} item{thingsToHandle.length !== 1 ? 's' : ''}
-            </span>
+            !
           </div>
-          {/* A fleet with a real backlog can generate dozens of these. Capping the
+          <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+            Things to handle
+          </span>
+          <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
+            {thingsToHandle.length} item{thingsToHandle.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        {/* A fleet with a real backlog can generate dozens of these. Capping the
               list and scrolling keeps the card a fixed part of the page instead of
               something that grows without bound and displaces everything below. */}
-          <div style={{ maxHeight: 'min(52vh, 460px)', overflowY: 'auto' }}>
-          {thingsToHandle.length > 0 ? thingsToHandle.map((item, i) => (
-            <div
-              key={i}
-              className="grid items-start gap-[14px] px-5 py-[14px]"
-              style={{
-                gridTemplateColumns: '3px 1fr auto',
-                borderBottom: i < thingsToHandle.length - 1 ? '1px solid var(--line-soft)' : 'none',
-              }}
-            >
-              <div className="self-stretch rounded-full" style={{ background: sevColor(item.sev), width: 3 }} />
-              <div>
-                <div className="text-[13.5px] font-medium mb-[3px]" style={{ color: 'var(--ink)' }}>{item.title}</div>
-                <div className="text-[12.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>{item.body}</div>
-              </div>
-              {/* Both buttons share the grid's third column. Placed as siblings
+        <div style={{ maxHeight: 'min(52vh, 460px)', overflowY: 'auto' }}>
+          {thingsToHandle.length > 0 ? (
+            thingsToHandle.map((item, i) => (
+              <div
+                key={i}
+                className="grid items-start gap-[14px] px-5 py-[14px]"
+                style={{
+                  gridTemplateColumns: '3px 1fr auto',
+                  borderBottom:
+                    i < thingsToHandle.length - 1 ? '1px solid var(--line-soft)' : 'none',
+                }}
+              >
+                <div
+                  className="self-stretch rounded-full"
+                  style={{ background: sevColor(item.sev), width: 3 }}
+                />
+                <div>
+                  <div
+                    className="text-[13.5px] font-medium mb-[3px]"
+                    style={{ color: 'var(--ink)' }}
+                  >
+                    {item.title}
+                  </div>
+                  <div className="text-[12.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+                    {item.body}
+                  </div>
+                </div>
+                {/* Both buttons share the grid's third column. Placed as siblings
                   they made four children in a three-column grid, which wrapped
                   Snooze onto an implicit second row inside the 3px severity
                   column — where it rendered as an unreadable sliver. */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={() => navigate(item.path)}
-                  className="text-[11.5px] rounded-[5px] px-3 py-[6px] whitespace-nowrap transition-colors"
-                  style={{ background: 'transparent', border: '1px solid var(--line)', color: 'var(--ink-2)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  {item.action} →
-                </button>
-                {item.resetOutagesDeviceId != null && canWrite && (
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
-                    onClick={() => resetOutages.mutate(item.resetOutagesDeviceId!)}
-                    disabled={resetOutages.isPending && resetOutages.variables === item.resetOutagesDeviceId}
-                    title="Count outages from now on. Uptime figures and history are kept."
-                    className="text-[11.5px] rounded-[5px] px-2 py-[6px] whitespace-nowrap transition-colors disabled:opacity-50"
-                    style={{ background: 'transparent', border: '1px solid var(--line)', color: 'var(--ink-3)' }}
+                    onClick={() => navigate(item.path)}
+                    className="text-[11.5px] rounded-[5px] px-3 py-[6px] whitespace-nowrap transition-colors"
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid var(--line)',
+                      color: 'var(--ink-2)',
+                    }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
-                    Reset count
+                    {item.action} →
                   </button>
-                )}
-                {/* "Not now" rather than "never": an item that is genuinely resolved
+                  {item.resetOutagesDeviceId != null && canWrite && (
+                    <button
+                      onClick={() => resetOutages.mutate(item.resetOutagesDeviceId!)}
+                      disabled={
+                        resetOutages.isPending &&
+                        resetOutages.variables === item.resetOutagesDeviceId
+                      }
+                      title="Count outages from now on. Uptime figures and history are kept."
+                      className="text-[11.5px] rounded-[5px] px-2 py-[6px] whitespace-nowrap transition-colors disabled:opacity-50"
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--line)',
+                        color: 'var(--ink-3)',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      Reset count
+                    </button>
+                  )}
+                  {/* "Not now" rather than "never": an item that is genuinely resolved
                     stops being generated, so a dismissal is time-boxed (#102). */}
-                {item.fingerprint && (
-                  <button
-                    onClick={() => dismissInsight.mutate({
-                      fingerprint: item.fingerprint!, hours: 24,
-                      category: item.category, title: item.title,
-                    })}
-                    // Only the insight being snoozed: one shared flag dimmed
-                    // every button in the list at once (#215).
-                    disabled={dismissInsight.isPending && dismissInsight.variables?.fingerprint === item.fingerprint}
-                    title="Hide this for 24 hours. It returns if it is still true."
-                    className="text-[11.5px] rounded-[5px] px-2 py-[6px] whitespace-nowrap transition-colors disabled:opacity-50"
-                    style={{ background: 'transparent', border: '1px solid var(--line)', color: 'var(--ink-3)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    Snooze
-                  </button>
-                )}
+                  {item.fingerprint && (
+                    <button
+                      onClick={() =>
+                        dismissInsight.mutate({
+                          fingerprint: item.fingerprint!,
+                          hours: 24,
+                          category: item.category,
+                          title: item.title,
+                        })
+                      }
+                      // Only the insight being snoozed: one shared flag dimmed
+                      // every button in the list at once (#215).
+                      disabled={
+                        dismissInsight.isPending &&
+                        dismissInsight.variables?.fingerprint === item.fingerprint
+                      }
+                      title="Hide this for 24 hours. It returns if it is still true."
+                      className="text-[11.5px] rounded-[5px] px-2 py-[6px] whitespace-nowrap transition-colors disabled:opacity-50"
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--line)',
+                        color: 'var(--ink-3)',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      Snooze
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          )) : (
-            <div className="flex items-center justify-center gap-2 py-8" style={{ color: 'var(--ink-3)' }}>
+            ))
+          ) : (
+            <div
+              className="flex items-center justify-center gap-2 py-8"
+              style={{ color: 'var(--ink-3)' }}
+            >
               <StatusDot color="var(--good)" glow size={8} />
               <span className="text-[13px]">Nothing needs attention</span>
             </div>
           )}
-          </div>
+        </div>
         {(insights?.dismissedCount ?? 0) > 0 && (
-          <div className="px-5 py-2 text-[11.5px]" style={{ color: 'var(--ink-3)', borderTop: '1px solid var(--line-soft)' }}>
+          <div
+            className="px-5 py-2 text-[11.5px]"
+            style={{ color: 'var(--ink-3)', borderTop: '1px solid var(--line-soft)' }}
+          >
             {insights!.dismissedCount} snoozed — they return automatically if still true.
           </div>
         )}
@@ -964,34 +1390,80 @@ function OperationsView({
       <div className="grid gap-4" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
         {/* Capacity / health */}
         <div className="card" style={{ overflow: 'hidden' }}>
-          <div className="flex items-center gap-2 px-5 py-[14px]" style={{ borderBottom: '1px solid var(--line)' }}>
+          <div
+            className="flex items-center gap-2 px-5 py-[14px]"
+            style={{ borderBottom: '1px solid var(--line)' }}
+          >
             <Cpu className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-            <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Capacity &amp; health</span>
-            <span className="mono text-[11px] ml-auto" style={{ color: 'var(--ink-3)' }}>busiest first · CPU · MEM</span>
+            <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+              Capacity &amp; health
+            </span>
+            <span className="mono text-[11px] ml-auto" style={{ color: 'var(--ink-3)' }}>
+              busiest first · CPU · MEM
+            </span>
           </div>
           {sortedCapacity.length === 0 ? (
-            <div className="py-8 text-center text-[13px]" style={{ color: 'var(--ink-3)' }}>No resource data yet.</div>
+            <div className="py-8 text-center text-[13px]" style={{ color: 'var(--ink-3)' }}>
+              No resource data yet.
+            </div>
           ) : (
-            <div className="px-5 py-3 space-y-3" style={showAllCapacity ? { maxHeight: 'min(52vh, 460px)', overflowY: 'auto' } : undefined}>
+            <div
+              className="px-5 py-3 space-y-3"
+              style={
+                showAllCapacity ? { maxHeight: 'min(52vh, 460px)', overflowY: 'auto' } : undefined
+              }
+            >
               {shownCapacity.map((c) => (
-                <button key={c.id} onClick={() => navigate(`/devices/${c.id}`)}
-                  className="w-full text-left flex items-center gap-3 group">
-                  <div className="text-[12.5px] font-medium truncate" style={{ color: 'var(--ink)', width: 130 }}>{c.name}</div>
+                <button
+                  key={c.id}
+                  onClick={() => navigate(`/devices/${c.id}`)}
+                  className="w-full text-left flex items-center gap-3 group"
+                >
+                  <div
+                    className="text-[12.5px] font-medium truncate"
+                    style={{ color: 'var(--ink)', width: 130 }}
+                  >
+                    {c.name}
+                  </div>
                   <div className="flex-1 flex items-center gap-3">
-                    {([['CPU', c.cpu], ['MEM', c.mem_pct]] as const).map(([lbl, v]) => (
+                    {(
+                      [
+                        ['CPU', c.cpu],
+                        ['MEM', c.mem_pct],
+                      ] as const
+                    ).map(([lbl, v]) => (
                       <div key={lbl} className="flex-1 flex items-center gap-1.5">
-                        <span className="mono text-[9px]" style={{ color: 'var(--ink-4)', width: 22 }}>{lbl}</span>
-                        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-3)' }}>
-                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, v)}%`, background: meterColor(v) }} />
+                        <span
+                          className="mono text-[9px]"
+                          style={{ color: 'var(--ink-4)', width: 22 }}
+                        >
+                          {lbl}
+                        </span>
+                        <div
+                          className="flex-1 h-1.5 rounded-full overflow-hidden"
+                          style={{ background: 'var(--surface-3)' }}
+                        >
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${Math.min(100, v)}%`, background: meterColor(v) }}
+                          />
                         </div>
-                        <span className="mono text-[10px] num-tab" style={{ color: 'var(--ink-3)', width: 30, textAlign: 'right' }}>{v}%</span>
+                        <span
+                          className="mono text-[10px] num-tab"
+                          style={{ color: 'var(--ink-3)', width: 30, textAlign: 'right' }}
+                        >
+                          {v}%
+                        </span>
                       </div>
                     ))}
                   </div>
                 </button>
               ))}
               {sortedCapacity.length > CAPACITY_ROWS && (
-                <div className="pt-1 text-[11.5px] flex items-center gap-2" style={{ color: 'var(--ink-3)' }}>
+                <div
+                  className="pt-1 text-[11.5px] flex items-center gap-2"
+                  style={{ color: 'var(--ink-3)' }}
+                >
                   {showAllCapacity
                     ? `All ${sortedCapacity.length} devices`
                     : `${CAPACITY_ROWS} busiest of ${sortedCapacity.length} shown`}
@@ -1013,24 +1485,37 @@ function OperationsView({
           onClick={() => navigate('/security')}
           className="card text-left transition-colors"
           style={{ overflow: 'hidden', padding: 0 }}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--line-strong, var(--line))')}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.borderColor = 'var(--line-strong, var(--line))')
+          }
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = '')}
         >
-          <div className="flex items-center gap-2 px-5 py-[14px]" style={{ borderBottom: '1px solid var(--line)' }}>
+          <div
+            className="flex items-center gap-2 px-5 py-[14px]"
+            style={{ borderBottom: '1px solid var(--line)' }}
+          >
             <Shield className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-            <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Security posture</span>
+            <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+              Security posture
+            </span>
             <ChevronRight className="w-4 h-4 ml-auto" style={{ color: 'var(--ink-3)' }} />
           </div>
           <div className="px-5 py-4">
             <div className="flex items-end gap-3 mb-3">
-              <span className="text-[34px] font-semibold leading-none num-tab" style={{ color: scoreColor(avgScore) }}>
+              <span
+                className="text-[34px] font-semibold leading-none num-tab"
+                style={{ color: scoreColor(avgScore) }}
+              >
                 {avgScore ?? '—'}
               </span>
               <span className="text-[12px] mb-1" style={{ color: 'var(--ink-3)' }}>
                 avg hardening · {scored.length} scanned
               </span>
             </div>
-            <div className="flex items-center gap-2 text-[12px] mb-3" style={{ color: highFindings > 0 ? 'var(--bad)' : 'var(--ink-3)' }}>
+            <div
+              className="flex items-center gap-2 text-[12px] mb-3"
+              style={{ color: highFindings > 0 ? 'var(--bad)' : 'var(--ink-3)' }}
+            >
               <AlertTriangle className="w-3.5 h-3.5" />
               {highFindings} high-severity finding{highFindings !== 1 ? 's' : ''}
             </div>
@@ -1039,8 +1524,12 @@ function OperationsView({
                 {worstDevices.map((d) => (
                   <div key={d.id} className="flex items-center gap-2 text-[12px]">
                     <StatusDot color={scoreColor(d.score)} size={6} />
-                    <span className="truncate" style={{ color: 'var(--ink-2)' }}>{d.name}</span>
-                    <span className="mono ml-auto num-tab" style={{ color: scoreColor(d.score) }}>{d.score ?? '—'}</span>
+                    <span className="truncate" style={{ color: 'var(--ink-2)' }}>
+                      {d.name}
+                    </span>
+                    <span className="mono ml-auto num-tab" style={{ color: scoreColor(d.score) }}>
+                      {d.score ?? '—'}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -1051,14 +1540,23 @@ function OperationsView({
 
       {/* Activity feed */}
       <div className="card" style={{ overflow: 'hidden' }}>
-        <div className="flex items-center gap-2 px-5 py-[14px]" style={{ borderBottom: '1px solid var(--line)' }}>
+        <div
+          className="flex items-center gap-2 px-5 py-[14px]"
+          style={{ borderBottom: '1px solid var(--line)' }}
+        >
           <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-          <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Recent activity</span>
+          <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+            Recent activity
+          </span>
           <button
             onClick={toggleRequests}
             className="ml-auto text-[11px]"
             style={{ color: 'var(--ink-3)' }}
-            title={showRequests ? 'Hide requests made through this app' : 'Include requests made through this app'}
+            title={
+              showRequests
+                ? 'Hide requests made through this app'
+                : 'Include requests made through this app'
+            }
           >
             {showRequests
               ? 'Hide app requests'
@@ -1066,21 +1564,40 @@ function OperationsView({
           </button>
         </div>
         {activity.length === 0 ? (
-          <div className="py-8 text-center text-[13px]" style={{ color: 'var(--ink-3)' }}>No recent activity.</div>
+          <div className="py-8 text-center text-[13px]" style={{ color: 'var(--ink-3)' }}>
+            No recent activity.
+          </div>
         ) : (
           <div>
             {activity.map((a, i) => {
               const Icon = activityIcon(a.kind);
-              const color = a.kind === 'alert' ? sevColor(a.sev === 'error' ? 'error' : 'warn') : a.kind === 'config' ? 'var(--info)' : 'var(--ink-3)';
+              const color =
+                a.kind === 'alert'
+                  ? sevColor(a.sev === 'error' ? 'error' : 'warn')
+                  : a.kind === 'config'
+                    ? 'var(--info)'
+                    : 'var(--ink-3)';
               return (
-                <div key={i} className="flex items-start gap-3 px-5 py-[11px]"
-                  style={{ borderBottom: i < activity.length - 1 ? '1px solid var(--line-soft)' : 'none' }}>
+                <div
+                  key={i}
+                  className="flex items-start gap-3 px-5 py-[11px]"
+                  style={{
+                    borderBottom: i < activity.length - 1 ? '1px solid var(--line-soft)' : 'none',
+                  }}
+                >
                   <Icon className="w-3.5 h-3.5 flex-shrink-0 mt-[2px]" style={{ color }} />
                   <div className="min-w-0 flex-1">
-                    <div className="text-[12.5px] truncate" style={{ color: 'var(--ink)' }}>{a.title}</div>
-                    <div className="text-[11px]" style={{ color: 'var(--ink-3)' }}>{a.sub}</div>
+                    <div className="text-[12.5px] truncate" style={{ color: 'var(--ink)' }}>
+                      {a.title}
+                    </div>
+                    <div className="text-[11px]" style={{ color: 'var(--ink-3)' }}>
+                      {a.sub}
+                    </div>
                   </div>
-                  <span className="mono text-[10.5px] flex-shrink-0" style={{ color: 'var(--ink-4)' }}>
+                  <span
+                    className="mono text-[10.5px] flex-shrink-0"
+                    style={{ color: 'var(--ink-4)' }}
+                  >
                     {formatDistanceToNow(new Date(a.at), { addSuffix: false })}
                   </span>
                 </div>
@@ -1093,15 +1610,24 @@ function OperationsView({
       {/* Fleet strip */}
       <div className="card" style={{ padding: '18px 20px' }}>
         <div className="flex items-baseline justify-between mb-3">
-          <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Fleet</div>
+          <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+            Fleet
+          </div>
           <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
             {(devices as Device[]).length} device{(devices as Device[]).length !== 1 ? 's' : ''}
-            {fleetOffline > 0 && <span style={{ color: 'var(--bad)' }}> · {fleetOffline} offline</span>}
+            {fleetOffline > 0 && (
+              <span style={{ color: 'var(--bad)' }}> · {fleetOffline} offline</span>
+            )}
           </span>
         </div>
         {/* One tile per device stops at two rows; past that, the tiles needing
             attention and a link to the rest (#303). */}
-        <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min((devices as Device[]).length, 5)}, minmax(0, 1fr))` }}>
+        <div
+          className="grid gap-3"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min((devices as Device[]).length, 5)}, minmax(0, 1fr))`,
+          }}
+        >
           {fleetTiles.map((d) => {
             const hasAlert = d.firmware_update_available || d.routerboard_upgrade_available;
             return (
@@ -1115,19 +1641,35 @@ function OperationsView({
               >
                 <div className="flex items-center gap-2 mb-[10px]">
                   <StatusDot
-                    color={d.status === 'online' ? 'var(--good)' : d.status === 'offline' ? 'var(--bad)' : 'var(--warn)'}
-                    glow size={6}
+                    color={
+                      d.status === 'online'
+                        ? 'var(--good)'
+                        : d.status === 'offline'
+                          ? 'var(--bad)'
+                          : 'var(--warn)'
+                    }
+                    glow
+                    size={6}
                   />
                   <DeviceTypePill type={d.device_type} />
                   {hasAlert && (
                     <span
                       className="ml-auto text-[10px] font-bold px-[5px] py-[1px] rounded-full"
                       style={{ background: 'var(--warn-bg)', color: 'var(--warn)' }}
-                    >!</span>
+                    >
+                      !
+                    </span>
                   )}
                 </div>
-                <div className="text-[13px] font-semibold truncate mb-[3px]" style={{ color: 'var(--ink)' }}>{d.name}</div>
-                <div className="mono text-[10.5px]" style={{ color: 'var(--ink-3)' }}>{d.ros_version}</div>
+                <div
+                  className="text-[13px] font-semibold truncate mb-[3px]"
+                  style={{ color: 'var(--ink)' }}
+                >
+                  {d.name}
+                </div>
+                <div className="mono text-[10.5px]" style={{ color: 'var(--ink-3)' }}>
+                  {d.ros_version}
+                </div>
               </button>
             );
           })}
@@ -1139,8 +1681,12 @@ function OperationsView({
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
-              <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>+{fleetHidden} more</div>
-              <div className="text-[11px]" style={{ color: 'var(--accent)' }}>View all devices →</div>
+              <div className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+                +{fleetHidden} more
+              </div>
+              <div className="text-[11px]" style={{ color: 'var(--accent)' }}>
+                View all devices →
+              </div>
             </button>
           )}
         </div>
@@ -1148,13 +1694,28 @@ function OperationsView({
 
       {/* Terminal device picker */}
       {pickTerminal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          onClick={() => setPickTerminal(false)}>
-          <div className="card w-full max-w-sm" style={{ overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 px-5 py-[14px]" style={{ borderBottom: '1px solid var(--line)' }}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={() => setPickTerminal(false)}
+        >
+          <div
+            className="card w-full max-w-sm"
+            style={{ overflow: 'hidden' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="flex items-center gap-2 px-5 py-[14px]"
+              style={{ borderBottom: '1px solid var(--line)' }}
+            >
               <Terminal className="w-4 h-4" style={{ color: 'var(--violet)' }} />
-              <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>Open terminal — pick a device</span>
-              <button onClick={() => setPickTerminal(false)} className="ml-auto" style={{ color: 'var(--ink-3)' }}>
+              <span className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+                Open terminal — pick a device
+              </span>
+              <button
+                onClick={() => setPickTerminal(false)}
+                className="ml-auto"
+                style={{ color: 'var(--ink-3)' }}
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1165,8 +1726,13 @@ function OperationsView({
                 onChange={(e) => setTerminalSearch(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter') return;
-                  const first = filterDevices(deviceList, terminalSearch).find((d) => d.status === 'online');
-                  if (first) { setTerminalDevice({ id: first.id, name: first.name }); setPickTerminal(false); }
+                  const first = filterDevices(deviceList, terminalSearch).find(
+                    (d) => d.status === 'online',
+                  );
+                  if (first) {
+                    setTerminalDevice({ id: first.id, name: first.name });
+                    setPickTerminal(false);
+                  }
                 }}
                 placeholder="Name, address, site or model"
                 aria-label="Search devices"
@@ -1175,21 +1741,46 @@ function OperationsView({
               />
             </div>
             <div className="max-h-[360px] overflow-y-auto">
-              {[...filterDevices(deviceList, terminalSearch)].sort((a, b) => (a.status === 'online' ? 0 : 1) - (b.status === 'online' ? 0 : 1)).map((d) => (
-                <button key={d.id} disabled={d.status !== 'online'}
-                  onClick={() => { setTerminalDevice({ id: d.id, name: d.name }); setPickTerminal(false); }}
-                  className="w-full text-left flex items-center gap-3 px-5 py-[11px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ borderBottom: '1px solid var(--line-soft)' }}
-                  onMouseEnter={(e) => { if (d.status === 'online') e.currentTarget.style.background = 'var(--surface-3)'; }}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
-                  <StatusDot color={d.status === 'online' ? 'var(--good)' : 'var(--bad)'} size={6} />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-medium truncate" style={{ color: 'var(--ink)' }}>{d.name}</div>
-                    <div className="mono text-[10.5px]" style={{ color: 'var(--ink-3)' }}>{d.ip_address}</div>
-                  </div>
-                  {d.status !== 'online' && <span className="text-[10px]" style={{ color: 'var(--ink-4)' }}>offline</span>}
-                </button>
-              ))}
+              {[...filterDevices(deviceList, terminalSearch)]
+                .sort((a, b) => (a.status === 'online' ? 0 : 1) - (b.status === 'online' ? 0 : 1))
+                .map((d) => (
+                  <button
+                    key={d.id}
+                    disabled={d.status !== 'online'}
+                    onClick={() => {
+                      setTerminalDevice({ id: d.id, name: d.name });
+                      setPickTerminal(false);
+                    }}
+                    className="w-full text-left flex items-center gap-3 px-5 py-[11px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ borderBottom: '1px solid var(--line-soft)' }}
+                    onMouseEnter={(e) => {
+                      if (d.status === 'online')
+                        e.currentTarget.style.background = 'var(--surface-3)';
+                    }}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <StatusDot
+                      color={d.status === 'online' ? 'var(--good)' : 'var(--bad)'}
+                      size={6}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className="text-[13px] font-medium truncate"
+                        style={{ color: 'var(--ink)' }}
+                      >
+                        {d.name}
+                      </div>
+                      <div className="mono text-[10.5px]" style={{ color: 'var(--ink-3)' }}>
+                        {d.ip_address}
+                      </div>
+                    </div>
+                    {d.status !== 'online' && (
+                      <span className="text-[10px]" style={{ color: 'var(--ink-4)' }}>
+                        offline
+                      </span>
+                    )}
+                  </button>
+                ))}
             </div>
           </div>
         </div>
@@ -1217,7 +1808,9 @@ function loadSeverities(): Set<string> {
   try {
     const saved = localStorage.getItem(SEVERITY_KEY);
     if (saved) return new Set(JSON.parse(saved));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return new Set(ALL_SEVERITIES);
 }
 
@@ -1225,11 +1818,11 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [dashView, setDashView] = useState<'summary' | 'operations'>(() =>
-    (localStorage.getItem('dashboard:view') as 'summary' | 'operations') ?? 'summary'
+  const [dashView, setDashView] = useState<'summary' | 'operations'>(
+    () => (localStorage.getItem('dashboard:view') as 'summary' | 'operations') ?? 'summary',
   );
-  const [chartRange, setChartRange] = useState<string>(() =>
-    localStorage.getItem('dashboard:chart-range') ?? '24h'
+  const [chartRange, setChartRange] = useState<string>(
+    () => localStorage.getItem('dashboard:chart-range') ?? '24h',
   );
   const [severities, setSeverities] = useState<Set<string>>(loadSeverities);
   const [dismissedFirmwareIds, setDismissedFirmwareIds] = useState<number[]>([]);
@@ -1237,36 +1830,37 @@ export default function DashboardPage() {
   const toggleSeverity = (s: string) =>
     setSeverities((prev) => {
       const next = new Set(prev);
-      if (next.has(s)) next.delete(s); else next.add(s);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
       localStorage.setItem(SEVERITY_KEY, JSON.stringify([...next]));
       return next;
     });
 
   const { data: summary } = useQuery({
     queryKey: ['metrics-summary'],
-    queryFn: () => metricsApi.summary().then(r => r.data),
+    queryFn: () => metricsApi.summary().then((r) => r.data),
     refetchInterval: 30_000,
   });
 
   const { data: clientsOverTimeRaw = [] } = useQuery({
     queryKey: ['clients-over-time', chartRange],
-    queryFn: () => metricsApi.clientsOverTime(chartRange).then(r => r.data),
+    queryFn: () => metricsApi.clientsOverTime(chartRange).then((r) => r.data),
     refetchInterval: 60_000,
   });
-  const clientsOverTime = clientsOverTimeRaw.map(p => ({ ...p, ts: new Date(p.time).getTime() }));
+  const clientsOverTime = clientsOverTimeRaw.map((p) => ({ ...p, ts: new Date(p.time).getTime() }));
 
   // Top talkers: prefer NetFlow data (same source as the Traffic page) so the
   // numbers match everywhere; fall back to the device-reported per-connection
   // counters when the collector has no data (e.g. NetFlow disabled).
   const { data: netflowTopClients = [], isLoading: netflowTopLoading } = useQuery({
     queryKey: ['traffic-top-clients', '24h', 8],
-    queryFn: () => trafficApi.topClients('24h', 8).then(r => r.data),
+    queryFn: () => trafficApi.topClients('24h', 8).then((r) => r.data),
     refetchInterval: 60_000,
   });
   const usingNetflowTop = netflowTopClients.length > 0;
   const { data: counterTopClients = [], isError: counterTopError } = useQuery({
     queryKey: ['top-clients'],
-    queryFn: () => metricsApi.topClients(8).then(r => r.data),
+    queryFn: () => metricsApi.topClients(8).then((r) => r.data),
     refetchInterval: 60_000,
     enabled: !netflowTopLoading && !usingNetflowTop,
   });
@@ -1274,16 +1868,19 @@ export default function DashboardPage() {
     ? netflowTopClients.map((c) => ({
         mac_address: c.mac,
         hostname:
-          c.mac === 'unknown' ? 'Unattributed (local)'
-          : c.mac === 'other' ? 'Other clients'
-          : c.custom_name || c.hostname || c.vendor || undefined,
+          c.mac === 'unknown'
+            ? 'Unattributed (local)'
+            : c.mac === 'other'
+              ? 'Other clients'
+              : c.custom_name || c.hostname || c.vendor || undefined,
         total_bytes: c.total_bytes,
       }))
     : counterTopClients;
 
   const { data: wirelessClientsData } = useQuery({
     queryKey: ['wireless-clients-active'],
-    queryFn: () => clientsApi.list({ active: true, client_type: 'wireless', limit: 1 }).then(r => r.data),
+    queryFn: () =>
+      clientsApi.list({ active: true, client_type: 'wireless', limit: 1 }).then((r) => r.data),
     refetchInterval: 30_000,
   });
 
@@ -1294,13 +1891,13 @@ export default function DashboardPage() {
 
   const { data: recentEvents } = useQuery({
     queryKey: ['events-recent', severityParam],
-    queryFn: () => eventsApi.recent({ limit: 5, severity: severityParam }).then(r => r.data),
+    queryFn: () => eventsApi.recent({ limit: 5, severity: severityParam }).then((r) => r.data),
     refetchInterval: 30_000,
   });
 
   const { data: devices = [] } = useQuery({
     queryKey: ['devices'],
-    queryFn: () => devicesApi.list().then(r => r.data),
+    queryFn: () => devicesApi.list().then((r) => r.data),
     refetchInterval: 30_000,
   });
 
@@ -1319,10 +1916,10 @@ export default function DashboardPage() {
   });
 
   const devicesWithRosUpdates = devices.filter(
-    d => d.firmware_update_available && !dismissedFirmwareIds.includes(d.id)
+    (d) => d.firmware_update_available && !dismissedFirmwareIds.includes(d.id),
   );
   const devicesWithRbUpgrades = devices.filter(
-    d => d.routerboard_upgrade_available && !dismissedFirmwareIds.includes(d.id)
+    (d) => d.routerboard_upgrade_available && !dismissedFirmwareIds.includes(d.id),
   );
   const showUpdateBanner = devicesWithRosUpdates.length > 0 || devicesWithRbUpgrades.length > 0;
 
@@ -1330,7 +1927,7 @@ export default function DashboardPage() {
   const clientSparkline = useMemo(() => {
     if (clientsOverTime.length < 2) return [];
     const recent = clientsOverTime.slice(-24);
-    return recent.map(p => p.value);
+    return recent.map((p) => p.value);
   }, [clientsOverTime]);
 
   const wirelessCount = wirelessClientsData?.total ?? 0;
@@ -1339,7 +1936,10 @@ export default function DashboardPage() {
     <div className="space-y-4">
       {/* Page header */}
       <div className="flex items-baseline gap-3 flex-wrap">
-        <h1 className="text-[28px] font-semibold leading-none" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>
+        <h1
+          className="text-[28px] font-semibold leading-none"
+          style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
+        >
           Dashboard
         </h1>
         <span className="mono text-[11px]" style={{ color: 'var(--ink-3)' }}>
@@ -1375,9 +1975,14 @@ export default function DashboardPage() {
             border: '1px solid var(--warn)',
           }}
         >
-          <ArrowUpCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--warn)' }} />
+          <ArrowUpCircle
+            className="w-4 h-4 mt-0.5 flex-shrink-0"
+            style={{ color: 'var(--warn)' }}
+          />
           <div className="flex-1 text-[13px] space-y-1" style={{ color: 'var(--ink-2)' }}>
-            <span className="font-semibold" style={{ color: 'var(--warn)' }}>Updates available</span>
+            <span className="font-semibold" style={{ color: 'var(--warn)' }}>
+              Updates available
+            </span>
             {devicesWithRosUpdates.length > 0 && (
               <div className="flex items-baseline gap-1.5 flex-wrap">
                 <span className="font-medium flex items-center gap-1">
@@ -1392,12 +1997,18 @@ export default function DashboardPage() {
                       className="underline underline-offset-2"
                     >
                       {d.name}
-                      {d.latest_ros_version && <span className="opacity-70"> ({d.latest_ros_version})</span>}
+                      {d.latest_ros_version && (
+                        <span className="opacity-70"> ({d.latest_ros_version})</span>
+                      )}
                     </button>
                   </span>
                 ))}
                 {devicesWithRosUpdates.length > BANNER_NAMES && (
-                  <button onClick={() => navigate('/firmware')} className="underline underline-offset-2" style={{ color: 'var(--ink-3)' }}>
+                  <button
+                    onClick={() => navigate('/firmware')}
+                    className="underline underline-offset-2"
+                    style={{ color: 'var(--ink-3)' }}
+                  >
                     and {devicesWithRosUpdates.length - BANNER_NAMES} more
                   </button>
                 )}
@@ -1417,12 +2028,18 @@ export default function DashboardPage() {
                       className="underline underline-offset-2"
                     >
                       {d.name}
-                      {d.upgrade_firmware_version && <span className="opacity-70"> ({d.upgrade_firmware_version})</span>}
+                      {d.upgrade_firmware_version && (
+                        <span className="opacity-70"> ({d.upgrade_firmware_version})</span>
+                      )}
                     </button>
                   </span>
                 ))}
                 {devicesWithRbUpgrades.length > BANNER_NAMES && (
-                  <button onClick={() => navigate('/firmware')} className="underline underline-offset-2" style={{ color: 'var(--ink-3)' }}>
+                  <button
+                    onClick={() => navigate('/firmware')}
+                    className="underline underline-offset-2"
+                    style={{ color: 'var(--ink-3)' }}
+                  >
                     and {devicesWithRbUpgrades.length - BANNER_NAMES} more
                   </button>
                 )}
@@ -1430,11 +2047,13 @@ export default function DashboardPage() {
             )}
           </div>
           <button
-            onClick={() => setDismissedFirmwareIds(ids => [
-              ...ids,
-              ...devicesWithRosUpdates.map(d => d.id),
-              ...devicesWithRbUpgrades.map(d => d.id),
-            ])}
+            onClick={() =>
+              setDismissedFirmwareIds((ids) => [
+                ...ids,
+                ...devicesWithRosUpdates.map((d) => d.id),
+                ...devicesWithRbUpgrades.map((d) => d.id),
+              ])
+            }
             className="p-0.5 rounded flex-shrink-0"
             style={{ color: 'var(--warn)' }}
             title="Dismiss"
@@ -1463,13 +2082,8 @@ export default function DashboardPage() {
           navigate={navigate}
         />
       ) : (
-        <OperationsView
-          summary={summary}
-          devices={devices}
-          navigate={navigate}
-        />
+        <OperationsView summary={summary} devices={devices} navigate={navigate} />
       )}
     </div>
   );
 }
-

@@ -1,11 +1,34 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  ArrowLeftRight,
+  ArrowUpFromLine,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Radio,
+  RadioTower,
+  RotateCcw,
+  Signal,
+} from 'lucide-react';
+import { useState } from 'react';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
+
+import {
+  lteApi,
+  type LteDwellTotal,
+  type LteHistoryEvent,
+  type LteInterface,
+} from '../../services/api';
 import { chartTooltip } from '../common/chartTooltip';
-import { Signal, RadioTower, ArrowLeftRight, RotateCcw, Radio, ArrowUpFromLine, Clock, ChevronDown, ChevronRight } from 'lucide-react';
-import { lteApi, type LteInterface, type LteHistoryEvent, type LteDwellTotal } from '../../services/api';
 import DataCapCard from './DataCapCard';
 
 interface Props {
@@ -18,10 +41,10 @@ type Quality = NonNullable<LteInterface['quality']>;
 
 const QUALITY_STYLE: Record<Quality, string> = {
   excellent: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-  good:      'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-  fair:      'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-  poor:      'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-  unknown:   'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300',
+  good: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  fair: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+  poor: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  unknown: 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300',
 };
 
 /**
@@ -57,17 +80,25 @@ function formatTime(iso: string, compact: boolean): string {
     : d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-function Metric({ label, value, unit, hint }: {
-  label: string; value: number | string | null; unit?: string; hint?: string;
+function Metric({
+  label,
+  value,
+  unit,
+  hint,
+}: {
+  label: string;
+  value: number | string | null;
+  unit?: string;
+  hint?: string;
 }) {
   return (
     <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3">
       <div className="text-xs text-gray-500 dark:text-slate-400">{label}</div>
       <div className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
         {value == null || value === '' ? '—' : value}
-        {value != null && value !== '' && unit
-          ? <span className="text-xs font-normal text-gray-500 dark:text-slate-400 ml-1">{unit}</span>
-          : null}
+        {value != null && value !== '' && unit ? (
+          <span className="text-xs font-normal text-gray-500 dark:text-slate-400 ml-1">{unit}</span>
+        ) : null}
       </div>
       {hint && <div className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">{hint}</div>}
     </div>
@@ -78,7 +109,7 @@ function Metric({ label, value, unit, hint }: {
 function BandChips({ iface }: { iface: LteInterface }) {
   const carriers = [
     ...(iface.primary_band ? [{ ...iface.primary_band, primary: true }] : []),
-    ...iface.ca_bands.map(b => ({ ...b, primary: false })),
+    ...iface.ca_bands.map((b) => ({ ...b, primary: false })),
   ];
 
   if (carriers.length === 0) {
@@ -99,7 +130,9 @@ function BandChips({ iface }: { iface: LteInterface }) {
           <div className="flex items-baseline gap-2">
             <span className="font-semibold text-gray-900 dark:text-white">B{c.band}</span>
             {c.bandwidthMhz != null && (
-              <span className="text-xs text-gray-600 dark:text-slate-300">{c.bandwidthMhz} MHz</span>
+              <span className="text-xs text-gray-600 dark:text-slate-300">
+                {c.bandwidthMhz} MHz
+              </span>
             )}
           </div>
           <div className="text-[11px] text-gray-500 dark:text-slate-400">
@@ -134,10 +167,10 @@ function DwellList({ rows, emptyText }: { rows: LteDwellTotal[]; emptyText: stri
   if (rows.length === 0) {
     return <p className="text-xs text-gray-500 dark:text-slate-400">{emptyText}</p>;
   }
-  const widest = Math.max(...rows.map(r => r.seconds), 1);
+  const widest = Math.max(...rows.map((r) => r.seconds), 1);
   return (
     <ul className="space-y-2">
-      {rows.map(r => (
+      {rows.map((r) => (
         <li key={r.key}>
           <div className="flex items-baseline justify-between gap-2 text-xs">
             <span className="font-medium text-gray-900 dark:text-white truncate">{r.label}</span>
@@ -146,8 +179,10 @@ function DwellList({ rows, emptyText }: { rows: LteDwellTotal[]; emptyText: stri
             </span>
           </div>
           <div className="mt-0.5 h-1.5 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
-            <div className="h-full rounded-full bg-blue-500"
-                 style={{ width: `${Math.max(2, (r.seconds / widest) * 100)}%` }} />
+            <div
+              className="h-full rounded-full bg-blue-500"
+              style={{ width: `${Math.max(2, (r.seconds / widest) * 100)}%` }}
+            />
           </div>
           {/* Six brief visits and one long stay are different situations. */}
           <div className="mt-0.5 text-[11px] text-gray-400 dark:text-slate-500">
@@ -160,13 +195,13 @@ function DwellList({ rows, emptyText }: { rows: LteDwellTotal[]; emptyText: stri
 }
 
 const EVENT_ICON = {
-  'handover': ArrowLeftRight,
+  handover: ArrowLeftRight,
   'session-reset': RotateCcw,
   'band-change': Radio,
 } as const;
 
 const EVENT_LABEL = {
-  'handover': 'Handover',
+  handover: 'Handover',
   'session-reset': 'Session restarted',
   'band-change': 'Bands changed',
 } as const;
@@ -190,7 +225,10 @@ function HistoryList({ events }: { events: LteHistoryEvent[] }) {
               <span className="font-medium text-gray-900 dark:text-white">
                 {EVENT_LABEL[e.kind] ?? e.kind}
               </span>
-              <span className="text-gray-500 dark:text-slate-400"> · {formatTime(e.at, false)}</span>
+              <span className="text-gray-500 dark:text-slate-400">
+                {' '}
+                · {formatTime(e.at, false)}
+              </span>
               {e.detail && (
                 <div className="text-gray-600 dark:text-slate-300 break-words">{e.detail}</div>
               )}
@@ -218,34 +256,36 @@ export default function LteTab({ deviceId }: Props) {
 
   const { data: state, isLoading } = useQuery({
     queryKey: ['lte', deviceId],
-    queryFn: () => lteApi.state(deviceId).then(r => r.data),
+    queryFn: () => lteApi.state(deviceId).then((r) => r.data),
     refetchInterval: 30_000,
   });
 
   // Graphs, dwell and history are for one modem at a time (outside review U14):
   // with two modems their points used to be drawn as one zig-zagging line.
   const [modem, setModem] = useState<string | null>(null);
-  const modemNames = (state?.interfaces ?? []).map(i => i.interface_name);
+  const modemNames = (state?.interfaces ?? []).map((i) => i.interface_name);
   const activeModem = modem && modemNames.includes(modem) ? modem : modemNames[0];
 
   const { data: metrics } = useQuery({
     queryKey: ['lte-metrics', deviceId, range, activeModem],
-    queryFn: () => lteApi.metrics(deviceId, range, activeModem).then(r => r.data),
+    queryFn: () => lteApi.metrics(deviceId, range, activeModem).then((r) => r.data),
     enabled: !!activeModem,
     refetchInterval: 60_000,
   });
 
   const { data: dwell } = useQuery({
     queryKey: ['lte-dwell', deviceId, dwellRange, activeModem],
-    queryFn: () => lteApi.dwell(deviceId, dwellRange, activeModem).then(r => r.data),
+    queryFn: () => lteApi.dwell(deviceId, dwellRange, activeModem).then((r) => r.data),
     enabled: !!activeModem,
     refetchInterval: 120_000,
   });
 
   const { data: history } = useQuery({
     queryKey: ['lte-history', deviceId, range, activeModem],
-    queryFn: () => lteApi.history(deviceId, range === '1h' || range === '6h' ? '24h' : range, activeModem)
-      .then(r => r.data),
+    queryFn: () =>
+      lteApi
+        .history(deviceId, range === '1h' || range === '6h' ? '24h' : range, activeModem)
+        .then((r) => r.data),
     enabled: !!activeModem,
     refetchInterval: 60_000,
   });
@@ -264,14 +304,17 @@ export default function LteTab({ deviceId }: Props) {
   }
 
   const compact = range === '1h' || range === '6h';
-  const chartData = (metrics?.metrics ?? []).map(p => ({
+  const chartData = (metrics?.metrics ?? []).map((p) => ({
     time: formatTime(p.time, compact),
-    rsrp: p.rsrp, sinr: p.sinr, rsrq: p.rsrq, rssi: p.rssi,
+    rsrp: p.rsrp,
+    sinr: p.sinr,
+    rsrq: p.rsrq,
+    rssi: p.rssi,
   }));
 
   return (
     <div className="space-y-6">
-      {interfaces.map(iface => {
+      {interfaces.map((iface) => {
         const quality = (iface.quality ?? 'unknown') as Quality;
         const connected = iface.status === 'running' || iface.status === 'connected';
         const carriers = iface.ca_bands.length + (iface.primary_band ? 1 : 0);
@@ -291,7 +334,9 @@ export default function LteTab({ deviceId }: Props) {
                     <h3 className="font-semibold text-gray-900 dark:text-white">
                       {iface.interface_name}
                     </h3>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${QUALITY_STYLE[quality]}`}>
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-medium ${QUALITY_STYLE[quality]}`}
+                    >
                       {connected ? quality : 'not connected'}
                     </span>
                     {carriers > 1 && (
@@ -306,7 +351,8 @@ export default function LteTab({ deviceId }: Props) {
                   </p>
                   <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                     {[iface.operator, iface.data_class, iface.modem_model]
-                      .filter(Boolean).join(' · ') || 'Modem details not reported'}
+                      .filter(Boolean)
+                      .join(' · ') || 'Modem details not reported'}
                   </p>
                 </div>
               </div>
@@ -326,7 +372,11 @@ export default function LteTab({ deviceId }: Props) {
               <Metric
                 label="Streams"
                 value={iface.rank_indicator}
-                hint={iface.dl_modulation ? `${iface.dl_modulation.toUpperCase()} downlink` : 'MIMO rank'}
+                hint={
+                  iface.dl_modulation
+                    ? `${iface.dl_modulation.toUpperCase()} downlink`
+                    : 'MIMO rank'
+                }
               />
             </div>
 
@@ -334,7 +384,9 @@ export default function LteTab({ deviceId }: Props) {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <RadioTower className="w-4 h-4 text-gray-400 dark:text-slate-500" />
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Carriers in use</h4>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                  Carriers in use
+                </h4>
               </div>
               <BandChips iface={iface} />
 
@@ -347,10 +399,11 @@ export default function LteTab({ deviceId }: Props) {
                     </div>
                     <p className="mt-0.5 text-amber-800 dark:text-amber-300">
                       The uplink runs on B{iface.uplink_anchor.primaryBand} alone at{' '}
-                      {iface.uplink_anchor.primaryMhz} MHz, while B{iface.uplink_anchor.widestBand} is
-                      being aggregated at {iface.uplink_anchor.widestMhz} MHz for download. Left on
-                      automatic, a modem anchors to whichever band it hears loudest rather than the
-                      widest one — excluding the narrow bands moves the anchor and raises upload.
+                      {iface.uplink_anchor.primaryMhz} MHz, while B{iface.uplink_anchor.widestBand}{' '}
+                      is being aggregated at {iface.uplink_anchor.widestMhz} MHz for download. Left
+                      on automatic, a modem anchors to whichever band it hears loudest rather than
+                      the widest one — excluding the narrow bands moves the anchor and raises
+                      upload.
                     </p>
                   </div>
                 </div>
@@ -358,27 +411,31 @@ export default function LteTab({ deviceId }: Props) {
 
               <div className="mt-3 grid sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-gray-500 dark:text-slate-400">Allowed by configuration: </span>
+                  <span className="text-gray-500 dark:text-slate-400">
+                    Allowed by configuration:{' '}
+                  </span>
                   <span className="text-gray-900 dark:text-white font-medium">
                     {iface.allowed_bands.length > 0
-                      ? iface.allowed_bands.map(b => `B${b}`).join(', ')
+                      ? iface.allowed_bands.map((b) => `B${b}`).join(', ')
                       : 'Any (modem chooses)'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-slate-400">Seen serving this device: </span>
+                  <span className="text-gray-500 dark:text-slate-400">
+                    Seen serving this device:{' '}
+                  </span>
                   <span className="text-gray-900 dark:text-white font-medium">
                     {iface.observed_bands.length > 0
-                      ? iface.observed_bands.map(o => `B${o.band}`).join(', ')
+                      ? iface.observed_bands.map((o) => `B${o.band}`).join(', ')
                       : 'Nothing recorded yet'}
                   </span>
                 </div>
               </div>
               {iface.observed_bands.length > 0 && (
                 <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
-                  Observed bands accumulate from polling. They are the evidence a future band
-                  lock will be checked against — scanning costs service to run and comes back
-                  empty where a site has only one base station, so history is the safer source.
+                  Observed bands accumulate from polling. They are the evidence a future band lock
+                  will be checked against — scanning costs service to run and comes back empty where
+                  a site has only one base station, so history is the safer source.
                 </p>
               )}
             </div>
@@ -395,15 +452,27 @@ export default function LteTab({ deviceId }: Props) {
       })}
 
       {/* Carrier data-cap SMS, per interface (discussion #85) */}
-      {interfaces.map(iface => (
-        <DataCapCard key={`cap-${iface.interface_name}`} deviceId={deviceId} interfaceName={iface.interface_name} />
+      {interfaces.map((iface) => (
+        <DataCapCard
+          key={`cap-${iface.interface_name}`}
+          deviceId={deviceId}
+          interfaceName={iface.interface_name}
+        />
       ))}
 
       {modemNames.length > 1 && (
         <div className="flex items-center gap-2 text-sm">
           <span className="text-gray-500 dark:text-slate-400">Graphs and history for</span>
-          <select className="input py-1 text-sm w-auto" value={activeModem} onChange={(e) => setModem(e.target.value)}>
-            {modemNames.map(n => <option key={n} value={n}>{n}</option>)}
+          <select
+            className="input py-1 text-sm w-auto"
+            value={activeModem}
+            onChange={(e) => setModem(e.target.value)}
+          >
+            {modemNames.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
           </select>
         </div>
       )}
@@ -413,7 +482,7 @@ export default function LteTab({ deviceId }: Props) {
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <h3 className="font-semibold text-gray-900 dark:text-white">Signal over time</h3>
           <div className="flex gap-1">
-            {RANGES.map(r => (
+            {RANGES.map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
@@ -436,23 +505,67 @@ export default function LteTab({ deviceId }: Props) {
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                className="stroke-gray-200 dark:stroke-slate-700"
+              />
               <XAxis dataKey="time" tick={{ fontSize: 11 }} minTickGap={24} />
               {/* dBm and dB share a chart but not a scale. */}
-              <YAxis yAxisId="dbm" tick={{ fontSize: 11 }} width={44}
-                     label={{ value: 'dBm', angle: -90, position: 'insideLeft', fontSize: 11 }} />
-              <YAxis yAxisId="db" orientation="right" tick={{ fontSize: 11 }} width={40}
-                     label={{ value: 'dB', angle: 90, position: 'insideRight', fontSize: 11 }} />
+              <YAxis
+                yAxisId="dbm"
+                tick={{ fontSize: 11 }}
+                width={44}
+                label={{ value: 'dBm', angle: -90, position: 'insideLeft', fontSize: 11 }}
+              />
+              <YAxis
+                yAxisId="db"
+                orientation="right"
+                tick={{ fontSize: 11 }}
+                width={40}
+                label={{ value: 'dB', angle: 90, position: 'insideRight', fontSize: 11 }}
+              />
               <Tooltip {...chartTooltip} />
               <Legend />
-              <Line yAxisId="dbm" type="monotone" dataKey="rsrp" name="RSRP (dBm)"
-                    stroke="#3b82f6" dot={false} strokeWidth={2} connectNulls />
-              <Line yAxisId="dbm" type="monotone" dataKey="rssi" name="RSSI (dBm)"
-                    stroke="#94a3b8" dot={false} strokeWidth={1} connectNulls />
-              <Line yAxisId="db" type="monotone" dataKey="sinr" name="SINR (dB)"
-                    stroke="#10b981" dot={false} strokeWidth={2} connectNulls />
-              <Line yAxisId="db" type="monotone" dataKey="rsrq" name="RSRQ (dB)"
-                    stroke="#f59e0b" dot={false} strokeWidth={1} connectNulls />
+              <Line
+                yAxisId="dbm"
+                type="monotone"
+                dataKey="rsrp"
+                name="RSRP (dBm)"
+                stroke="#3b82f6"
+                dot={false}
+                strokeWidth={2}
+                connectNulls
+              />
+              <Line
+                yAxisId="dbm"
+                type="monotone"
+                dataKey="rssi"
+                name="RSSI (dBm)"
+                stroke="#94a3b8"
+                dot={false}
+                strokeWidth={1}
+                connectNulls
+              />
+              <Line
+                yAxisId="db"
+                type="monotone"
+                dataKey="sinr"
+                name="SINR (dB)"
+                stroke="#10b981"
+                dot={false}
+                strokeWidth={2}
+                connectNulls
+              />
+              <Line
+                yAxisId="db"
+                type="monotone"
+                dataKey="rsrq"
+                name="RSRQ (dB)"
+                stroke="#f59e0b"
+                dot={false}
+                strokeWidth={1}
+                connectNulls
+              />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -464,21 +577,28 @@ export default function LteTab({ deviceId }: Props) {
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 mt-0.5 text-gray-400 dark:text-slate-500" />
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Where this link spends its time</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                Where this link spends its time
+              </h3>
               <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                Reconstructed from handovers and band changes. Aggregated carriers each count
-                for the whole stretch, so band shares describe usage rather than dividing the window.
+                Reconstructed from handovers and band changes. Aggregated carriers each count for
+                the whole stretch, so band shares describe usage rather than dividing the window.
               </p>
             </div>
           </div>
           <div className="flex gap-1">
-            {(['24h', '7d', '30d'] as const).map(r => (
-              <button key={r} onClick={() => setDwellRange(r)}
+            {(['24h', '7d', '30d'] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setDwellRange(r)}
                 className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
                   dwellRange === r
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
-                }`}>{r}</button>
+                }`}
+              >
+                {r}
+              </button>
             ))}
           </div>
         </div>
@@ -493,23 +613,31 @@ export default function LteTab({ deviceId }: Props) {
         <div className="grid sm:grid-cols-2 gap-6">
           <div>
             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">By band</h4>
-            <DwellList rows={dwell?.bands ?? []}
-              emptyText="No band changes recorded yet — the modem has stayed on one set of carriers." />
+            <DwellList
+              rows={dwell?.bands ?? []}
+              emptyText="No band changes recorded yet — the modem has stayed on one set of carriers."
+            />
           </div>
           <div>
             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">By cell</h4>
-            <DwellList rows={dwell?.cells ?? []}
-              emptyText="No handovers recorded yet — the modem has stayed on one cell." />
+            <DwellList
+              rows={dwell?.cells ?? []}
+              emptyText="No handovers recorded yet — the modem has stayed on one cell."
+            />
           </div>
         </div>
 
         {/* The event stream, folded away. It grows without bound, which is what
             made it hard to read as the primary view. */}
         <button
-          onClick={() => setShowEvents(v => !v)}
+          onClick={() => setShowEvents((v) => !v)}
           className="mt-4 flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white"
         >
-          {showEvents ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          {showEvents ? (
+            <ChevronDown className="w-3.5 h-3.5" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5" />
+          )}
           {showEvents ? 'Hide' : 'Show'} individual changes
           {dwell ? ` (${dwell.changes} in ${dwellRange})` : ''}
         </button>

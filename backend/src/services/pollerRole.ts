@@ -8,8 +8,8 @@
  *
  * An unknown value is treated as `all`, so a typo can't stop polling.
  */
-import { hostname } from 'os';
 import { randomBytes } from 'crypto';
+import { hostname } from 'os';
 
 export type PollerRole = 'all' | 'api' | 'worker';
 

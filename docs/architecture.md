@@ -16,25 +16,25 @@ Browser ──► nginx ──► Express API ──► RouterOS API / SSH ─�
 
 Three data stores, because they answer different questions:
 
-| Store | Holds | Why not the others |
-|---|---|---|
-| **PostgreSQL** | Devices, interfaces, VLANs, clients, users, audit log, findings | Relational, needs joins and constraints |
-| **InfluxDB** | CPU, memory, traffic, client counts, RF quality | Time-series at poll cadence; would bloat Postgres |
-| **Redis** | BullMQ job queues, per-device locks, poll gating | Ephemeral, needs atomic operations |
+| Store          | Holds                                                           | Why not the others                                |
+| -------------- | --------------------------------------------------------------- | ------------------------------------------------- |
+| **PostgreSQL** | Devices, interfaces, VLANs, clients, users, audit log, findings | Relational, needs joins and constraints           |
+| **InfluxDB**   | CPU, memory, traffic, client counts, RF quality                 | Time-series at poll cadence; would bloat Postgres |
+| **Redis**      | BullMQ job queues, per-device locks, poll gating                | Ephemeral, needs atomic operations                |
 
 ## Polling
 
 A scheduler enqueues work per device on separate cadences, so a slow operation never
 delays a fast one:
 
-| Cycle | Default | Collects |
-|---|---|---|
-| Fast | 30s | Reachability, CPU, memory, traffic counters, clients |
-| Slow | 5min | Interfaces, VLANs, addresses, neighbours, STP, wireless, CAPsMAN |
-| Logs | 60s | Device log entries, feeding log alerts |
-| Config snapshot | 60min | `/export`, deduplicated by content hash |
-| Config health | 60min | Read-only configuration audit |
-| MAC / spectral / AP scan | configurable | Switch MAC tables, RF surveys |
+| Cycle                    | Default      | Collects                                                         |
+| ------------------------ | ------------ | ---------------------------------------------------------------- |
+| Fast                     | 30s          | Reachability, CPU, memory, traffic counters, clients             |
+| Slow                     | 5min         | Interfaces, VLANs, addresses, neighbours, STP, wireless, CAPsMAN |
+| Logs                     | 60s          | Device log entries, feeding log alerts                           |
+| Config snapshot          | 60min        | `/export`, deduplicated by content hash                          |
+| Config health            | 60min        | Read-only configuration audit                                    |
+| MAC / spectral / AP scan | configurable | Switch MAC tables, RF surveys                                    |
 
 Devices are probed once for wireless capability and the result recorded, so non-wireless
 devices are skipped cheaply on every later poll.
@@ -68,7 +68,7 @@ backend/src/services/
 └── PollerService.ts          scheduling and workers
 ```
 
-Anything marked *pure* is a function over a snapshot with no I/O. That is deliberate: this
+Anything marked _pure_ is a function over a snapshot with no I/O. That is deliberate: this
 logic is subtle, its failure mode is a plausible-looking wrong answer rather than a crash,
 and it must be testable without the hardware it reasons about. Those modules carry the bulk
 of the test suite.

@@ -131,7 +131,11 @@ function savePersisted(p: PersistedSecrets): boolean {
     fs.mkdirSync(dir, { recursive: true });
     const file = secretsFile();
     fs.writeFileSync(file, JSON.stringify(p, null, 2), { mode: 0o600 });
-    try { fs.chmodSync(file, 0o600); } catch { /* best effort */ }
+    try {
+      fs.chmodSync(file, 0o600);
+    } catch {
+      /* best effort */
+    }
     return true;
   } catch {
     return false;
@@ -179,15 +183,19 @@ export function initSecrets(): SecretsInfo {
     const retiring = new Map<string, number>();
     for (const r of persisted.retiringJwtSecrets || []) {
       const until = Date.parse(r.until);
-      if (r.secret !== jwtCurrent && isStrongJwt(r.secret) && until > now) retiring.set(r.secret, until);
+      if (r.secret !== jwtCurrent && isStrongJwt(r.secret) && until > now)
+        retiring.set(r.secret, until);
     }
     for (const old of [persisted.jwtSecret, ...(history.prevJwtSecrets || [])]) {
-      if (old && old !== jwtCurrent && isStrongJwt(old) && !retiring.has(old)) retiring.set(old, now + JWT_RETIRE_MS);
+      if (old && old !== jwtCurrent && isStrongJwt(old) && !retiring.has(old))
+        retiring.set(old, now + JWT_RETIRE_MS);
     }
     jwtRetiring = [...retiring].map(([secret, until]) => ({ secret, until }));
     jwtVerifiers = [jwtCurrent];
-    jwtFileChanged = !!persisted.jwtSecret || (history.prevJwtSecrets || []).length > 0
-      || (persisted.retiringJwtSecrets || []).length !== jwtRetiring.length;
+    jwtFileChanged =
+      !!persisted.jwtSecret ||
+      (history.prevJwtSecrets || []).length > 0 ||
+      (persisted.retiringJwtSecrets || []).length !== jwtRetiring.length;
   } else {
     jwtVerifiers = [
       jwtCurrent,
@@ -218,7 +226,9 @@ export function initSecrets(): SecretsInfo {
   // ENCRYPTION_KEY in .env: an env key is never written to disk, so without it
   // the old key was simply gone (outside review P2-29).
   const envPrevious = (process.env.ENCRYPTION_KEY_PREVIOUS || '')
-    .split(',').map((k) => k.trim()).filter(Boolean);
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean);
   const encDecryptors = dedupeKeys([
     encMaterial,
     ...(persisted.encryptionKey ? [persisted.encryptionKey] : []),
@@ -236,16 +246,27 @@ export function initSecrets(): SecretsInfo {
       ...persisted,
       jwtSecret: undefined,
       prevJwtSecrets: [],
-      retiringJwtSecrets: jwtRetiring.map((r) => ({ secret: r.secret, until: new Date(r.until).toISOString() })),
+      retiringJwtSecrets: jwtRetiring.map((r) => ({
+        secret: r.secret,
+        until: new Date(r.until).toISOString(),
+      })),
     });
   }
   if (generatedJwt || generatedEnc) {
     // Record any superseded auto-managed secret in history for continuity.
-    if (persisted.jwtSecret && persisted.jwtSecret !== jwtCurrent && isStrongJwt(persisted.jwtSecret)) {
-      history.prevJwtSecrets = [...new Set([...(history.prevJwtSecrets || []), persisted.jwtSecret])];
+    if (
+      persisted.jwtSecret &&
+      persisted.jwtSecret !== jwtCurrent &&
+      isStrongJwt(persisted.jwtSecret)
+    ) {
+      history.prevJwtSecrets = [
+        ...new Set([...(history.prevJwtSecrets || []), persisted.jwtSecret]),
+      ];
     }
     if (persisted.encryptionKey && persisted.encryptionKey !== encMaterial) {
-      history.prevEncryptionKeys = [...new Set([...(history.prevEncryptionKeys || []), persisted.encryptionKey])];
+      history.prevEncryptionKeys = [
+        ...new Set([...(history.prevEncryptionKeys || []), persisted.encryptionKey]),
+      ];
     }
     const toSave: PersistedSecrets = {
       // Only store secrets we manage ourselves — never write an env-provided
@@ -257,9 +278,10 @@ export function initSecrets(): SecretsInfo {
       encryptionKey: encSource === 'env' || generatedEnc ? persisted.encryptionKey : encMaterial,
       prevJwtSecrets: jwtSource === 'env' ? [] : history.prevJwtSecrets,
       prevEncryptionKeys: history.prevEncryptionKeys,
-      retiringJwtSecrets: jwtSource === 'env'
-        ? jwtRetiring.map((r) => ({ secret: r.secret, until: new Date(r.until).toISOString() }))
-        : persisted.retiringJwtSecrets,
+      retiringJwtSecrets:
+        jwtSource === 'env'
+          ? jwtRetiring.map((r) => ({ secret: r.secret, until: new Date(r.until).toISOString() }))
+          : persisted.retiringJwtSecrets,
     };
     persistedOk = savePersisted(toSave);
   }
@@ -293,7 +315,10 @@ export function initSecrets(): SecretsInfo {
  * the generated key is not saved, and saving new credentials is refused, so
  * restoring the original key still recovers everything (P2-29).
  */
-export function confirmEncryptionKey(unreadableStoredValues: number): { saved: boolean; lost: boolean } {
+export function confirmEncryptionKey(unreadableStoredValues: number): {
+  saved: boolean;
+  lost: boolean;
+} {
   const r = ensure();
   if (unreadableStoredValues > 0) {
     encryptionKeyLost = true;
@@ -316,10 +341,16 @@ export function encryptionKeyMissing(): boolean {
 
 /** For the Settings page: where the key comes from and how many older keys are kept. */
 export function encryptionKeyInfo(): {
-  source: SecretsInfo['encSource']; keyId: string; savedPreviousKeys: number; envPreviousKeys: number;
+  source: SecretsInfo['encSource'];
+  keyId: string;
+  savedPreviousKeys: number;
+  envPreviousKeys: number;
 } {
   const r = ensure();
-  const envPrevious = (process.env.ENCRYPTION_KEY_PREVIOUS || '').split(',').map((k) => k.trim()).filter(Boolean);
+  const envPrevious = (process.env.ENCRYPTION_KEY_PREVIOUS || '')
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean);
   return {
     source: r.info.encSource,
     keyId: keyId(r.encCurrent),
@@ -342,9 +373,12 @@ export function keyId(key: Buffer): string {
 export function rotateEncryptionKey(): { keyId: string } {
   const r = ensure();
   if (r.info.encSource === 'env') {
-    throw new Error('The encryption key is set by ENCRYPTION_KEY in .env. Rotate it there, with ENCRYPTION_KEY_PREVIOUS.');
+    throw new Error(
+      'The encryption key is set by ENCRYPTION_KEY in .env. Rotate it there, with ENCRYPTION_KEY_PREVIOUS.',
+    );
   }
-  if (encryptionKeyLost) throw new Error('The encryption key is missing; restore it before rotating.');
+  if (encryptionKeyLost)
+    throw new Error('The encryption key is missing; restore it before rotating.');
   const next = crypto.randomBytes(16).toString('hex');
   const p = loadPersisted();
   const history = [...new Set([...(p.prevEncryptionKeys || []), r.encMaterial])];
@@ -373,7 +407,10 @@ export function retireOldEncryptionKeys(): number {
   if (dropped > 0 && !savePersisted({ ...p, prevEncryptionKeys: [] })) {
     throw new Error('Could not update secrets.json.');
   }
-  const envPrevious = (process.env.ENCRYPTION_KEY_PREVIOUS || '').split(',').map((k) => k.trim()).filter(Boolean);
+  const envPrevious = (process.env.ENCRYPTION_KEY_PREVIOUS || '')
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean);
   r.encDecryptors = dedupeKeys([r.encMaterial, ...envPrevious]);
   return dropped;
 }
@@ -411,7 +448,9 @@ let extraDecryptors: Buffer[] = [];
 /** All keys a ciphertext may be decrypted with (current + legacy). */
 export function decryptionKeys(): Buffer[] {
   const own = ensure().encDecryptors;
-  return extraDecryptors.length ? [...own, ...extraDecryptors.filter((k) => !own.some((o) => o.equals(k)))] : own;
+  return extraDecryptors.length
+    ? [...own, ...extraDecryptors.filter((k) => !own.some((o) => o.equals(k)))]
+    : own;
 }
 
 /** For a platform restore only: read data written under another server's key. */

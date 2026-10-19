@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 
 const SRC = join(__dirname, '..', '..');
@@ -44,17 +44,52 @@ function offendingCalls(src: string): string[] {
     let depth = 0;
     for (; i < src.length; i++) {
       const c = src[i];
-      if (c === '\\') { i++; continue; }
+      if (c === '\\') {
+        i++;
+        continue;
+      }
       if (depth === 0 && c === '`') break;
-      if (c === '$' && src[i + 1] === '{') { interpolated = true; depth++; i++; continue; }
+      if (c === '$' && src[i + 1] === '{') {
+        interpolated = true;
+        depth++;
+        i++;
+        continue;
+      }
       if (depth > 0 && c === '}') depth--;
     }
-    // A comma straight after the closing backtick means further arguments.
+    // Whitespace and commas directly after the template carry no argument
+    // information on their own: a comma can separate arguments, but a
+    // formatter with trailing commas (Prettier, trailingComma: "all") also
+    // puts one after a *single* argument. So a leading comma only means
+    // "further arguments" once every comma, whitespace run, and line comment
+    // directly following it is consumed and something other than the closing
+    // paren remains.
     const rest = src.slice(i + 1).trimStart();
     const template = src.slice(m.index, i + 1);
     const sanitisedValue = /\$\{[^}]*logSafe\(/.test(template);
     if (interpolated && sanitisedValue && rest.startsWith(',')) {
-      hits.push(src.slice(m.index, Math.min(i + 1, m.index + 120)));
+      let j = 0;
+      for (;;) {
+        while (
+          j < rest.length &&
+          (rest[j] === ',' ||
+            rest[j] === ' ' ||
+            rest[j] === '\t' ||
+            rest[j] === '\n' ||
+            rest[j] === '\r')
+        ) {
+          j++;
+        }
+        if (rest[j] === '/' && rest[j + 1] === '/') {
+          while (j < rest.length && rest[j] !== '\n') j++;
+          continue;
+        }
+        break;
+      }
+      const afterCommas = rest.slice(j);
+      if (afterCommas.length > 0 && !afterCommas.startsWith(')')) {
+        hits.push(src.slice(m.index, Math.min(i + 1, m.index + 120)));
+      }
     }
   }
   return hits;
@@ -80,5 +115,12 @@ describe('console format strings', () => {
     expect(offendingCalls('console.error(`oops ${logSafe(mac)}`);')).toHaveLength(0);
     expect(offendingCalls("console.error('oops %s:', logSafe(mac), err);")).toHaveLength(0);
     expect(offendingCalls('console.error(`plain`, err);')).toHaveLength(0);
+    // A formatter's trailing comma after a single argument is not a separator.
+    expect(offendingCalls('console.error(`oops ${logSafe(mac)}`,);')).toHaveLength(0);
+    expect(offendingCalls('console.error(\n  `oops ${logSafe(mac)}`,\n);')).toHaveLength(0);
+    // ...but a trailing comma followed by a real argument still is one.
+    expect(offendingCalls('console.error(\n  `oops ${logSafe(mac)}`,\n  err,\n);')).toHaveLength(1);
+    // A `+` continuation stays outside this detector's scope, as before.
+    expect(offendingCalls('console.error(`oops ${logSafe(mac)}` + suffix, err);')).toHaveLength(0);
   });
 });

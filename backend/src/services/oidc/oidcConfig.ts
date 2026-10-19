@@ -6,7 +6,7 @@
  * secret is only ever written through the dedicated, admin-only OIDC endpoints.
  */
 import { query, queryOne } from '../../config/database';
-import { encrypt, decrypt } from '../../utils/crypto';
+import { decrypt, encrypt } from '../../utils/crypto';
 
 export const OIDC_SETTINGS_KEY = 'oidc_config';
 
@@ -54,7 +54,7 @@ export const DEFAULT_OIDC_CONFIG: OidcConfig = {
 export async function loadOidcConfig(): Promise<OidcConfig> {
   const row = await queryOne<{ value: Partial<OidcConfig> }>(
     `SELECT value FROM app_settings WHERE key = $1`,
-    [OIDC_SETTINGS_KEY]
+    [OIDC_SETTINGS_KEY],
   );
   return { ...DEFAULT_OIDC_CONFIG, ...(row?.value ?? {}) };
 }
@@ -65,7 +65,7 @@ export async function loadOidcConfig(): Promise<OidcConfig> {
  */
 export async function saveOidcConfig(
   patch: Partial<OidcConfig>,
-  newSecret?: string
+  newSecret?: string,
 ): Promise<OidcConfig> {
   const current = await loadOidcConfig();
   const merged: OidcConfig = { ...current, ...patch };
@@ -77,7 +77,7 @@ export async function saveOidcConfig(
   await query(
     `INSERT INTO app_settings (key, value, updated_at) VALUES ($1, $2, NOW())
      ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
-    [OIDC_SETTINGS_KEY, JSON.stringify(merged)]
+    [OIDC_SETTINGS_KEY, JSON.stringify(merged)],
   );
   return merged;
 }
@@ -92,7 +92,9 @@ export function getClientSecret(config: OidcConfig): string | null {
 }
 
 /** Config shape safe to return to an admin UI — no secret material. */
-export function maskedConfig(config: OidcConfig): Omit<OidcConfig, 'client_secret_encrypted'> & { has_secret: boolean } {
+export function maskedConfig(
+  config: OidcConfig,
+): Omit<OidcConfig, 'client_secret_encrypted'> & { has_secret: boolean } {
   const { client_secret_encrypted, ...rest } = config;
   return { ...rest, has_secret: !!client_secret_encrypted };
 }

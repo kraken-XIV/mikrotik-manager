@@ -4,10 +4,11 @@ jest.mock('../../middleware/auth', () => ({
   requireWrite: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
-import request from 'supertest';
 import express from 'express';
-import eventsRoutes, { EVENTS_COUNT_CAP } from '../events';
+import request from 'supertest';
+
 import { query } from '../../config/database';
+import eventsRoutes, { EVENTS_COUNT_CAP } from '../events';
 
 const mockedQuery = jest.mocked(query);
 
@@ -57,13 +58,18 @@ describe('GET /api/events', () => {
 
   it('stops counting at the cap instead of testing every stored event', async () => {
     await request(makeApp()).get('/api/events?limit=5');
-    const countSql = String(mockedQuery.mock.calls.map(([s]) => s).find((s) => String(s).includes('FROM (SELECT 1 FROM events')));
+    const countSql = String(
+      mockedQuery.mock.calls
+        .map(([s]) => s)
+        .find((s) => String(s).includes('FROM (SELECT 1 FROM events')),
+    );
     expect(countSql).toContain(`LIMIT ${EVENTS_COUNT_CAP + 1}`);
   });
 
   it('reports a capped total when more than the cap match', async () => {
     mockedQuery.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM (SELECT 1 FROM events')) return [{ count: String(EVENTS_COUNT_CAP + 1) }] as never;
+      if (sql.includes('FROM (SELECT 1 FROM events'))
+        return [{ count: String(EVENTS_COUNT_CAP + 1) }] as never;
       if (sql.includes('COUNT(*)')) return [{ count: '2' }] as never;
       return [row] as never;
     });
@@ -74,7 +80,8 @@ describe('GET /api/events', () => {
 
   it('keeps an exact total at or below the cap', async () => {
     mockedQuery.mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM (SELECT 1 FROM events')) return [{ count: String(EVENTS_COUNT_CAP) }] as never;
+      if (sql.includes('FROM (SELECT 1 FROM events'))
+        return [{ count: String(EVENTS_COUNT_CAP) }] as never;
       if (sql.includes('COUNT(*)')) return [{ count: '2' }] as never;
       return [row] as never;
     });

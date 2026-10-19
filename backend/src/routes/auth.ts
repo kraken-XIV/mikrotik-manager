@@ -1,15 +1,16 @@
-import { Router, Request, Response } from 'express';
-import { revokeSessionToken, forgetSessionAccount } from '../utils/sessionState';
 import bcrypt from 'bcryptjs';
+import { Request, Response, Router } from 'express';
 import * as OTPAuth from 'otpauth';
 import * as qrcode from 'qrcode';
+
 import { query, queryOne } from '../config/database';
-import { signRawToken, verifyRawToken, requireAuth } from '../middleware/auth';
-import { getSecretsInfo, encryptionKeyMissing } from '../utils/secrets';
+import { requireAuth, signRawToken, verifyRawToken } from '../middleware/auth';
 import { loginRateLimit, rateLimitRedis } from '../middleware/rateLimitRedis';
-import { validatePassword } from '../utils/passwordPolicy';
-import { sessionResponse } from '../utils/sessionResponse';
 import { passwordLoginEnabled } from '../utils/passwordLogin';
+import { validatePassword } from '../utils/passwordPolicy';
+import { encryptionKeyMissing, getSecretsInfo } from '../utils/secrets';
+import { sessionResponse } from '../utils/sessionResponse';
+import { forgetSessionAccount, revokeSessionToken } from '../utils/sessionState';
 
 const router = Router();
 
@@ -31,14 +32,14 @@ router.get(
     if (encryptionKeyMissing()) warnings.push('encryption_key_missing');
 
     const adminUser = await queryOne<{ password_hash: string }>(
-      `SELECT password_hash FROM users WHERE username = 'admin' LIMIT 1`
+      `SELECT password_hash FROM users WHERE username = 'admin' LIMIT 1`,
     );
     if (adminUser && (await bcrypt.compare('admin', adminUser.password_hash))) {
       warnings.push('admin_password_default');
     }
 
     return res.json({ warnings });
-  }
+  },
 );
 
 /**
@@ -49,17 +50,22 @@ router.get(
 // the default admin/admin credentials: only until that password is changed.
 router.get('/login-hints', async (_req: Request, res: Response) => {
   const row = await queryOne<{ n: string }>(
-    `SELECT COUNT(*)::text AS n FROM users WHERE username = 'admin' AND must_change_password = TRUE`
+    `SELECT COUNT(*)::text AS n FROM users WHERE username = 'admin' AND must_change_password = TRUE`,
   ).catch(() => null);
   // password_login: false hides the username/password form for SSO-only
   // installs (#226).
-  return res.json({ default_credentials: parseInt(row?.n ?? '0', 10) > 0, password_login: await passwordLoginEnabled() });
+  return res.json({
+    default_credentials: parseInt(row?.n ?? '0', 10) > 0,
+    password_login: await passwordLoginEnabled(),
+  });
 });
 
 /** Refuse a password-based action while password sign-in is off (#226). */
 async function refuseIfPasswordLoginOff(res: Response): Promise<boolean> {
   if (await passwordLoginEnabled()) return false;
-  res.status(403).json({ error: 'Password sign-in is turned off on this server. Sign in with SSO.' });
+  res
+    .status(403)
+    .json({ error: 'Password sign-in is turned off on this server. Sign in with SSO.' });
   return true;
 }
 
@@ -79,7 +85,10 @@ router.post('/login', loginRateLimit(), async (req: Request, res: Response) => {
     role: string;
     totp_enabled: boolean;
     must_change_password: boolean;
-  }>(`SELECT id, username, password_hash, role, totp_enabled, must_change_password, session_version FROM users WHERE username = $1`, [username]);
+  }>(
+    `SELECT id, username, password_hash, role, totp_enabled, must_change_password, session_version FROM users WHERE username = $1`,
+    [username],
+  );
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ error: 'Invalid credentials' });
@@ -94,38 +103,53 @@ router.post('/login', loginRateLimit(), async (req: Request, res: Response) => {
 });
 
 // Exchange partial TOTP token + code for a full session token
-router.post('/totp/verify', rateLimitRedis({ windowSec: 60, max: 5, keyPrefix: 'totp-verify', allMethods: true }), async (req: Request, res: Response) => {
-  if (await refuseIfPasswordLoginOff(res)) return;
-  const { totp_token, code } = req.body as { totp_token?: string; code?: string };
-  if (!totp_token || !code) {
-    return res.status(400).json({ error: 'totp_token and code are required' });
-  }
-  let payload: { userId: number; partial: boolean };
-  try {
-    payload = verifyRawToken<{ userId: number; partial: boolean }>(totp_token);
-  } catch {
-    return res.status(401).json({ error: 'Invalid or expired TOTP token' });
-  }
-  if (!payload.partial) {
-    return res.status(401).json({ error: 'Invalid token type' });
-  }
+router.post(
+  '/totp/verify',
+  rateLimitRedis({ windowSec: 60, max: 5, keyPrefix: 'totp-verify', allMethods: true }),
+  async (req: Request, res: Response) => {
+    if (await refuseIfPasswordLoginOff(res)) return;
+    const { totp_token, code } = req.body as { totp_token?: string; code?: string };
+    if (!totp_token || !code) {
+      return res.status(400).json({ error: 'totp_token and code are required' });
+    }
+    let payload: { userId: number; partial: boolean };
+    try {
+      payload = verifyRawToken<{ userId: number; partial: boolean }>(totp_token);
+    } catch {
+      return res.status(401).json({ error: 'Invalid or expired TOTP token' });
+    }
+    if (!payload.partial) {
+      return res.status(401).json({ error: 'Invalid token type' });
+    }
 
-  const user = await queryOne<{ id: number; username: string; role: string; totp_secret: string | null; totp_enabled: boolean; must_change_password: boolean }>(
-    `SELECT id, username, role, totp_secret, totp_enabled, must_change_password, session_version FROM users WHERE id = $1`,
-    [payload.userId]
-  );
-  if (!user || !user.totp_enabled || !user.totp_secret) {
-    return res.status(401).json({ error: 'TOTP not configured' });
-  }
+    const user = await queryOne<{
+      id: number;
+      username: string;
+      role: string;
+      totp_secret: string | null;
+      totp_enabled: boolean;
+      must_change_password: boolean;
+    }>(
+      `SELECT id, username, role, totp_secret, totp_enabled, must_change_password, session_version FROM users WHERE id = $1`,
+      [payload.userId],
+    );
+    if (!user || !user.totp_enabled || !user.totp_secret) {
+      return res.status(401).json({ error: 'TOTP not configured' });
+    }
 
-  const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(user.totp_secret), digits: 6, period: 30 });
-  const delta = totp.validate({ token: code.replace(/\s/g, ''), window: 1 });
-  if (delta === null) {
-    return res.status(401).json({ error: 'Invalid TOTP code' });
-  }
+    const totp = new OTPAuth.TOTP({
+      secret: OTPAuth.Secret.fromBase32(user.totp_secret),
+      digits: 6,
+      period: 30,
+    });
+    const delta = totp.validate({ token: code.replace(/\s/g, ''), window: 1 });
+    if (delta === null) {
+      return res.status(401).json({ error: 'Invalid TOTP code' });
+    }
 
-  return res.json(await sessionResponse(user));
-});
+    return res.json(await sessionResponse(user));
+  },
+);
 
 // Generate a new TOTP secret + QR code for the current user (does not enable yet).
 // Requires the current password so a hijacked session can't enroll 2FA and lock
@@ -133,14 +157,17 @@ router.post('/totp/verify', rateLimitRedis({ windowSec: 60, max: 5, keyPrefix: '
 router.post('/totp/setup', requireAuth, async (req: Request, res: Response) => {
   if (await refuseIfPasswordLoginOff(res)) return;
   const { password } = req.body as { password?: string };
-  if (!password) return res.status(400).json({ error: 'Current password is required to set up 2FA' });
+  if (!password)
+    return res.status(400).json({ error: 'Current password is required to set up 2FA' });
 
   const account = await queryOne<{ password_hash: string | null }>(
     `SELECT password_hash FROM users WHERE id = $1`,
-    [req.user!.userId]
+    [req.user!.userId],
   );
   if (!account?.password_hash) {
-    return res.status(400).json({ error: 'This account has no local password (SSO). Set a password before enabling 2FA.' });
+    return res.status(400).json({
+      error: 'This account has no local password (SSO). Set a password before enabling 2FA.',
+    });
   }
   if (!(await bcrypt.compare(password, account.password_hash))) {
     return res.status(400).json({ error: 'Incorrect password', code: 'credential_rejected' });
@@ -159,7 +186,10 @@ router.post('/totp/setup', requireAuth, async (req: Request, res: Response) => {
   // Held as pending until a code from it is confirmed (outside review S1).
   // Writing it over totp_secret replaced a working authenticator the moment
   // setup was started, so an abandoned re-setup locked the user out.
-  await query(`UPDATE users SET totp_pending_secret = $1 WHERE id = $2`, [secret.base32, req.user!.userId]);
+  await query(`UPDATE users SET totp_pending_secret = $1 WHERE id = $2`, [
+    secret.base32,
+    req.user!.userId,
+  ]);
   return res.json({ secret: secret.base32, uri, qr: qrDataUrl });
 });
 
@@ -175,18 +205,24 @@ router.post('/totp/confirm', requireAuth, async (req: Request, res: Response) =>
 
   const user = await queryOne<{ totp_pending_secret: string | null }>(
     `SELECT totp_pending_secret FROM users WHERE id = $1`,
-    [req.user!.userId]
+    [req.user!.userId],
   );
   if (!user?.totp_pending_secret) return res.status(400).json({ error: 'Run /totp/setup first' });
 
-  const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(user.totp_pending_secret), digits: 6, period: 30 });
+  const totp = new OTPAuth.TOTP({
+    secret: OTPAuth.Secret.fromBase32(user.totp_pending_secret),
+    digits: 6,
+    period: 30,
+  });
   const delta = totp.validate({ token: code.replace(/\s/g, ''), window: 1 });
-  if (delta === null) return res.status(400).json({ error: 'Invalid code', code: 'credential_rejected' });
+  if (delta === null)
+    return res.status(400).json({ error: 'Invalid code', code: 'credential_rejected' });
 
   // Only now does the new authenticator replace the old one.
   await query(
     `UPDATE users SET totp_secret = totp_pending_secret, totp_pending_secret = NULL, totp_enabled = true WHERE id = $1`,
-    [req.user!.userId]);
+    [req.user!.userId],
+  );
   return res.json({ ok: true });
 });
 
@@ -198,13 +234,16 @@ router.post('/totp/disable', requireAuth, async (req: Request, res: Response) =>
 
   const user = await queryOne<{ password_hash: string }>(
     `SELECT password_hash FROM users WHERE id = $1`,
-    [req.user!.userId]
+    [req.user!.userId],
   );
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(400).json({ error: 'Incorrect password', code: 'credential_rejected' });
   }
 
-  await query(`UPDATE users SET totp_enabled = false, totp_secret = NULL, totp_pending_secret = NULL WHERE id = $1`, [req.user!.userId]);
+  await query(
+    `UPDATE users SET totp_enabled = false, totp_secret = NULL, totp_pending_secret = NULL WHERE id = $1`,
+    [req.user!.userId],
+  );
   return res.json({ ok: true });
 });
 
@@ -212,7 +251,7 @@ router.post('/totp/disable', requireAuth, async (req: Request, res: Response) =>
 router.get('/totp/status', requireAuth, async (req: Request, res: Response) => {
   const user = await queryOne<{ totp_enabled: boolean }>(
     `SELECT totp_enabled FROM users WHERE id = $1`,
-    [req.user!.userId]
+    [req.user!.userId],
   );
   return res.json({ totp_enabled: user?.totp_enabled ?? false });
 });
@@ -241,27 +280,40 @@ router.put('/password', requireAuth, async (req: Request, res: Response) => {
 
   const user = await queryOne<{ id: number; password_hash: string }>(
     `SELECT id, password_hash FROM users WHERE id = $1`,
-    [req.user!.userId]
+    [req.user!.userId],
   );
 
   if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) {
-    return res.status(400).json({ error: 'Current password is incorrect', code: 'credential_rejected' });
+    return res
+      .status(400)
+      .json({ error: 'Current password is incorrect', code: 'credential_rejected' });
   }
   if (newPassword === currentPassword) {
-    return res.status(400).json({ error: 'The new password must be different from the current one' });
+    return res
+      .status(400)
+      .json({ error: 'The new password must be different from the current one' });
   }
 
   const hash = await bcrypt.hash(newPassword, 12);
   // Changing the password ends every other session on the account, including
   // one someone else may have started with the old password (P2-1). This
   // request gets a fresh session under the new version.
-  const updated = await queryOne<{ id: number; username: string; role: string; must_change_password: boolean; session_version: number }>(
+  const updated = await queryOne<{
+    id: number;
+    username: string;
+    role: string;
+    must_change_password: boolean;
+    session_version: number;
+  }>(
     `UPDATE users SET password_hash = $1, must_change_password = FALSE, session_version = session_version + 1 WHERE id = $2
      RETURNING id, username, role, must_change_password, session_version`,
-    [hash, req.user!.userId]
+    [hash, req.user!.userId],
   );
   forgetSessionAccount(req.user!.userId);
-  return res.json({ message: 'Password updated', ...(updated ? await sessionResponse(updated) : {}) });
+  return res.json({
+    message: 'Password updated',
+    ...(updated ? await sessionResponse(updated) : {}),
+  });
 });
 
 export default router;

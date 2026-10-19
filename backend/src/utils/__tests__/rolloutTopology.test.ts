@@ -1,18 +1,37 @@
 import { findUpstreamWithinSelection, type TopologyEdge } from '../rolloutTopology';
 import type { StpBridge } from '../stpUpstream';
 
-const link = (from: number, to: number | null, iface = 'ether1'): TopologyEdge =>
-  ({ from_device_id: from, to_device_id: to, from_interface: iface });
+const link = (from: number, to: number | null, iface = 'ether1'): TopologyEdge => ({
+  from_device_id: from,
+  to_device_id: to,
+  from_interface: iface,
+});
 
-const root = (id: number, bridgeId: string): StpBridge =>
-  ({ device_id: id, bridge_name: 'bridge', bridge_id: bridgeId, root_bridge: true,
-     root_bridge_id: bridgeId, root_port: 'none', root_path_cost: 0 });
+const root = (id: number, bridgeId: string): StpBridge => ({
+  device_id: id,
+  bridge_name: 'bridge',
+  bridge_id: bridgeId,
+  root_bridge: true,
+  root_bridge_id: bridgeId,
+  root_port: 'none',
+  root_path_cost: 0,
+});
 
 const under = (
-  id: number, bridgeId: string, rootId: string, port: string, cost: number
-): StpBridge =>
-  ({ device_id: id, bridge_name: 'bridge', bridge_id: bridgeId, root_bridge: false,
-     root_bridge_id: rootId, root_port: port, root_path_cost: cost });
+  id: number,
+  bridgeId: string,
+  rootId: string,
+  port: string,
+  cost: number,
+): StpBridge => ({
+  device_id: id,
+  bridge_name: 'bridge',
+  bridge_id: bridgeId,
+  root_bridge: false,
+  root_bridge_id: rootId,
+  root_port: port,
+  root_path_cost: cost,
+});
 
 const ROOT_ID = '0x8000.AA';
 
@@ -44,19 +63,14 @@ describe('findUpstreamWithinSelection', () => {
       root(2, '0x8000.DD'),
     ];
     // sfp28-2 sees three neighbours; only device 1 qualifies.
-    const links = [
-      link(7, 2, 'sfp28-2'), link(7, 1, 'sfp28-2'), link(7, 8, 'sfp28-2'),
-    ];
+    const links = [link(7, 2, 'sfp28-2'), link(7, 1, 'sfp28-2'), link(7, 8, 'sfp28-2')];
     expect(findUpstreamWithinSelection([1, 2, 7, 8], links, bridges)).toEqual([1]);
   });
 
   // A device under a root nobody manages has an upstream we cannot see, so
   // there is nothing to warn about within this selection.
   it('says nothing when the root is unmanaged', () => {
-    const bridges = [
-      root(1, ROOT_ID),
-      under(8, '0x8000.CC', '0x2000.EXTERNAL', 'ether1', 41010),
-    ];
+    const bridges = [root(1, ROOT_ID), under(8, '0x8000.CC', '0x2000.EXTERNAL', 'ether1', 41010)];
     const links = [link(8, 1, 'ether1')];
     expect(findUpstreamWithinSelection([1, 8], links, bridges)).toEqual([]);
   });
@@ -94,7 +108,8 @@ describe('findUpstreamWithinSelection', () => {
 
   it('reports several upstream devices in a stable order', () => {
     const bridges = [
-      root(1, ROOT_ID), root(2, '0x8000.ZZ'),
+      root(1, ROOT_ID),
+      root(2, '0x8000.ZZ'),
       under(4, '0x8000.DD', ROOT_ID, 'e1', 10),
       under(3, '0x8000.CC', '0x8000.ZZ', 'e1', 10),
     ];

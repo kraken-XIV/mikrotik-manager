@@ -30,8 +30,7 @@ export function barGeometry(
   const span = bandEndMhz - bandStartMhz;
   if (!(span > 0)) return { leftPct: 0, widthPct: MIN_WIDTH_PCT };
 
-  const clamp = (mhz: number) =>
-    Math.max(0, Math.min(100, ((mhz - bandStartMhz) / span) * 100));
+  const clamp = (mhz: number) => Math.max(0, Math.min(100, ((mhz - bandStartMhz) / span) * 100));
 
   const start = clamp(lowMhz);
   const end = clamp(highMhz);

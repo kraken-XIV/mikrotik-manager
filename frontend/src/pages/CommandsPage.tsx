@@ -1,12 +1,22 @@
-import { useCanWrite } from '../hooks/useCanWrite';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertTriangle,
+  Ban,
+  ChevronDown,
+  ChevronRight,
+  Download,
+  Play,
+  ShieldCheck,
+  Terminal,
+} from 'lucide-react';
 import { useState } from 'react';
-import type { Device } from '../types';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Terminal, AlertTriangle, Play, ShieldCheck, ChevronDown, ChevronRight, Ban, Download } from 'lucide-react';
-import { commandsApi, devicesApi, type CommandRunDetail, tagsApi} from '../services/api';
+
 import CommandTemplateBar from '../components/commands/CommandTemplateBar';
 import DevicePicker from '../components/devices/DevicePicker';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { type CommandRunDetail, commandsApi, devicesApi, tagsApi } from '../services/api';
+import type { Device } from '../types';
 
 /**
  * Bulk command execution.
@@ -45,7 +55,7 @@ export default function CommandsPage() {
 
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
-    queryFn: () => tagsApi.list().then(r => r.data),
+    queryFn: () => tagsApi.list().then((r) => r.data),
   });
   const [waveSize, setWaveSize] = useState(1);
   const [haltOnFailure, setHaltOnFailure] = useState(true);
@@ -57,37 +67,42 @@ export default function CommandsPage() {
 
   const { data: devices = [] } = useQuery({
     queryKey: ['devices'],
-    queryFn: () => devicesApi.list().then(r => r.data),
+    queryFn: () => devicesApi.list().then((r) => r.data),
   });
 
   const { data: runs = [] } = useQuery({
     queryKey: ['command-runs'],
-    queryFn: () => commandsApi.listRuns().then(r => r.data),
+    queryFn: () => commandsApi.listRuns().then((r) => r.data),
     refetchInterval: 5_000,
   });
 
   const { data: detail } = useQuery<CommandRunDetail>({
     queryKey: ['command-run', openRun],
-    queryFn: () => commandsApi.getRun(openRun!).then(r => r.data),
+    queryFn: () => commandsApi.getRun(openRun!).then((r) => r.data),
     enabled: openRun != null,
     refetchInterval: 3_000,
   });
 
   const { data: preview, isFetching: previewLoading } = useQuery({
     queryKey: ['command-preview', command, selected, waveSize],
-    queryFn: () => commandsApi.preview(command, selected, waveSize).then(r => r.data),
+    queryFn: () => commandsApi.preview(command, selected, waveSize).then((r) => r.data),
     enabled: command.trim().length > 0 && selected.length > 0,
   });
 
   const startRun = useMutation({
     meta: { inlineError: true },
-    mutationFn: () => commandsApi.createRun({
-      name: command.slice(0, 60), command, device_ids: selected,
-      wave_size: waveSize, halt_on_failure: haltOnFailure,
-      use_change_guard: useGuard, start: true,
-      // The server checks this too (U3).
-      acknowledge_risk: acknowledged,
-    }),
+    mutationFn: () =>
+      commandsApi.createRun({
+        name: command.slice(0, 60),
+        command,
+        device_ids: selected,
+        wave_size: waveSize,
+        halt_on_failure: haltOnFailure,
+        use_change_guard: useGuard,
+        start: true,
+        // The server checks this too (U3).
+        acknowledge_risk: acknowledged,
+      }),
     onSuccess: (r) => {
       setOpenRun(r.data.id);
       setAcknowledged(false);
@@ -95,17 +110,24 @@ export default function CommandsPage() {
     },
   });
 
-
   const risky = preview?.risky ?? false;
   // Guards off on a command that can sever management is the one combination
   // worth insisting the operator states out loud.
   const needsAck = risky && !useGuard;
-  const sshOnlySelected = (devices as Device[]).filter((d) => d.ssh_only && selected.includes(d.id));
+  const sshOnlySelected = (devices as Device[]).filter(
+    (d) => d.ssh_only && selected.includes(d.id),
+  );
   // Not until the preview for exactly this command is in: running ahead of it
   // skipped the risk check and its acknowledgement (outside review U3).
   const previewCurrent = !!preview && !previewLoading && preview.command === command;
   // Running needs write access on the server (U10).
-  const canRun = canWrite && command.trim() && selected.length > 0 && previewCurrent && (!needsAck || acknowledged) && !startRun.isPending;
+  const canRun =
+    canWrite &&
+    command.trim() &&
+    selected.length > 0 &&
+    previewCurrent &&
+    (!needsAck || acknowledged) &&
+    !startRun.isPending;
 
   return (
     <div className="space-y-6">
@@ -121,13 +143,19 @@ export default function CommandsPage() {
       </div>
 
       <div className="card p-5 space-y-4">
-        <CommandTemplateBar command={command} onLoad={setCommand} initialTemplateId={initialTemplateId} />
+        <CommandTemplateBar
+          command={command}
+          onLoad={setCommand}
+          initialTemplateId={initialTemplateId}
+        />
         <label className="block">
           <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Command</span>
           <textarea
-            value={command} onChange={e => setCommand(e.target.value)}
-            rows={4} spellCheck={false}
-            placeholder="/system note set note=&quot;maintenance window&quot;"
+            value={command}
+            onChange={(e) => setCommand(e.target.value)}
+            rows={4}
+            spellCheck={false}
+            placeholder='/system note set note="maintenance window"'
             className="input mt-1 w-full font-mono text-sm"
           />
         </label>
@@ -138,11 +166,13 @@ export default function CommandsPage() {
             <div className="text-amber-800 dark:text-amber-300">
               <div className="font-medium">This command can cut management access.</div>
               <ul className="mt-1 list-disc list-inside">
-                {preview?.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                {preview?.reasons.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
               </ul>
               <p className="mt-1">
-                It is not blocked — you may know exactly why you are running it. With Change Guard on,
-                a device that stops answering afterwards restores itself.
+                It is not blocked — you may know exactly why you are running it. With Change Guard
+                on, a device that stops answering afterwards restores itself.
               </p>
             </div>
           </div>
@@ -155,25 +185,41 @@ export default function CommandsPage() {
               Devices {selected.length > 0 && `(${selected.length} selected)`}
             </span>
             <div className="flex gap-2 text-xs items-center flex-wrap">
-              <button className="underline text-blue-600 dark:text-blue-400"
-                      onClick={() => setSelected(devices.map(d => d.id))}>All</button>
-              <button className="underline text-blue-600 dark:text-blue-400"
-                      onClick={() => setSelected([])}>None</button>
+              <button
+                className="underline text-blue-600 dark:text-blue-400"
+                onClick={() => setSelected(devices.map((d) => d.id))}
+              >
+                All
+              </button>
+              <button
+                className="underline text-blue-600 dark:text-blue-400"
+                onClick={() => setSelected([])}
+              >
+                None
+              </button>
               {/* Selecting by tag is what makes a tag worth having: it is the one
                   grouping that crosses sites and device types, and until now
                   nothing consumed it (#149). */}
-              {tags.filter(t => devices.some(d => d.tags?.some(dt => dt.id === t.id))).map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelected(devices.filter(d => d.tags?.some(dt => dt.id === t.id)).map(d => d.id))}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
-                  style={{ background: `${t.color}22`, color: t.color }}
-                  title={`Select every device tagged ${t.name}`}
-                >
-                  <span className="w-2 h-2 rounded-full" style={{ background: t.color }} />
-                  {t.name}
-                </button>
-              ))}
+              {tags
+                .filter((t) => devices.some((d) => d.tags?.some((dt) => dt.id === t.id)))
+                .map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() =>
+                      setSelected(
+                        devices
+                          .filter((d) => d.tags?.some((dt) => dt.id === t.id))
+                          .map((d) => d.id),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
+                    style={{ background: `${t.color}22`, color: t.color }}
+                    title={`Select every device tagged ${t.name}`}
+                  >
+                    <span className="w-2 h-2 rounded-full" style={{ background: t.color }} />
+                    {t.name}
+                  </button>
+                ))}
             </div>
           </div>
           <DevicePicker devices={devices} selected={selected} onChange={setSelected} />
@@ -183,15 +229,24 @@ export default function CommandsPage() {
         <div className="grid sm:grid-cols-3 gap-3">
           <label className="text-xs">
             <span className="text-gray-500 dark:text-slate-400">Devices per wave</span>
-            <input type="number" min={1} max={50} value={waveSize}
-                   onChange={e => setWaveSize(Math.max(1, Number(e.target.value) || 1))}
-                   className="input mt-1 w-full text-sm" />
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={waveSize}
+              onChange={(e) => setWaveSize(Math.max(1, Number(e.target.value) || 1))}
+              className="input mt-1 w-full text-sm"
+            />
             <span className="text-[11px] text-gray-400 dark:text-slate-500">
               {preview ? `${preview.waves} wave${preview.waves === 1 ? '' : 's'}` : 'Start small.'}
             </span>
           </label>
           <label className="flex items-start gap-2 text-xs pt-5">
-            <input type="checkbox" checked={haltOnFailure} onChange={e => setHaltOnFailure(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={haltOnFailure}
+              onChange={(e) => setHaltOnFailure(e.target.checked)}
+            />
             <span className="text-gray-700 dark:text-slate-300">
               Stop at the first failure
               <span className="block text-[11px] text-gray-400 dark:text-slate-500">
@@ -200,7 +255,11 @@ export default function CommandsPage() {
             </span>
           </label>
           <label className="flex items-start gap-2 text-xs pt-5">
-            <input type="checkbox" checked={useGuard} onChange={e => setUseGuard(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={useGuard}
+              onChange={(e) => setUseGuard(e.target.checked)}
+            />
             <span className="text-gray-700 dark:text-slate-300">
               Change Guard
               <span className="block text-[11px] text-gray-400 dark:text-slate-500">
@@ -213,28 +272,41 @@ export default function CommandsPage() {
         {/* Change Guard arms over the API, which an SSH-only device lacks (#174). */}
         {useGuard && sshOnlySelected.length > 0 && (
           <p className="text-xs rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-300">
-            {sshOnlySelected.length === 1 ? `${sshOnlySelected[0].name.trim()} was` : `${sshOnlySelected.length} selected devices were`} added
-            over SSH only. Change Guard needs the RouterOS API, so with it on {sshOnlySelected.length === 1 ? 'that device fails' : 'they fail'}.
-            To turn the API on (<span className="mono">/ip service enable api-ssl</span>), run without Change Guard.
+            {sshOnlySelected.length === 1
+              ? `${sshOnlySelected[0].name.trim()} was`
+              : `${sshOnlySelected.length} selected devices were`}{' '}
+            added over SSH only. Change Guard needs the RouterOS API, so with it on{' '}
+            {sshOnlySelected.length === 1 ? 'that device fails' : 'they fail'}. To turn the API on (
+            <span className="mono">/ip service enable api-ssl</span>), run without Change Guard.
           </p>
         )}
 
         {needsAck && (
           <label className="flex items-start gap-2 text-xs rounded-lg border border-red-300 bg-red-50 p-3 dark:border-red-700/60 dark:bg-red-900/20">
-            <input type="checkbox" className="mt-0.5" checked={acknowledged}
-                   onChange={e => setAcknowledged(e.target.checked)} />
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={acknowledged}
+              onChange={(e) => setAcknowledged(e.target.checked)}
+            />
             <span className="text-red-800 dark:text-red-300">
               I am running a command that can cut management access, with Change Guard off. If a
-              device becomes unreachable it will stay that way until someone attends to it physically.
+              device becomes unreachable it will stay that way until someone attends to it
+              physically.
             </span>
           </label>
         )}
 
         <div className="flex items-center gap-3">
-          <button className="btn-primary text-sm flex items-center gap-2"
-                  disabled={!canRun} onClick={() => startRun.mutate()}>
+          <button
+            className="btn-primary text-sm flex items-center gap-2"
+            disabled={!canRun}
+            onClick={() => startRun.mutate()}
+          >
             <Play className="w-4 h-4" />
-            {startRun.isPending ? 'Starting…' : `Run on ${selected.length || 0} device${selected.length === 1 ? '' : 's'}`}
+            {startRun.isPending
+              ? 'Starting…'
+              : `Run on ${selected.length || 0} device${selected.length === 1 ? '' : 's'}`}
           </button>
           {preview?.unreachable && preview.unreachable.length > 0 && (
             <span className="text-xs text-amber-700 dark:text-amber-400">
@@ -243,7 +315,8 @@ export default function CommandsPage() {
           )}
           {startRun.isError && (
             <span className="text-xs text-red-600 dark:text-red-400">
-              {(startRun.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not start'}
+              {(startRun.error as { response?: { data?: { error?: string } } })?.response?.data
+                ?.error || 'Could not start'}
             </span>
           )}
         </div>
@@ -255,19 +328,36 @@ export default function CommandsPage() {
           <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Recent runs</h2>
         </div>
         {runs.length === 0 ? (
-          <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">Nothing run yet.</div>
+          <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">
+            Nothing run yet.
+          </div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-slate-800">
-            {runs.map(r => (
+            {runs.map((r) => (
               <div key={r.id}>
-                <button className="w-full px-5 py-3 flex items-center gap-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700/40"
-                        onClick={() => setOpenRun(openRun === r.id ? null : r.id)}>
-                  {openRun === r.id ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-                  <span className="font-mono text-xs text-gray-900 dark:text-white truncate flex-1">{r.command}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded ${
-                    r.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                    : r.status === 'running' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
-                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'}`}>{r.status}</span>
+                <button
+                  className="w-full px-5 py-3 flex items-center gap-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700/40"
+                  onClick={() => setOpenRun(openRun === r.id ? null : r.id)}
+                >
+                  {openRun === r.id ? (
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                  )}
+                  <span className="font-mono text-xs text-gray-900 dark:text-white truncate flex-1">
+                    {r.command}
+                  </span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded ${
+                      r.status === 'completed'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                        : r.status === 'running'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                    }`}
+                  >
+                    {r.status}
+                  </span>
                   <span className="text-xs text-gray-500 dark:text-slate-400 tabular-nums">
                     {r.succeeded}/{r.total}
                   </span>
@@ -277,32 +367,51 @@ export default function CommandsPage() {
                   <div className="px-5 pb-3 space-y-1">
                     <div className="flex items-center gap-2 mb-2">
                       {detail.status === 'running' && (
-                        <button className="btn-secondary text-xs flex items-center gap-1.5"
-                                onClick={() => commandsApi.cancelRun(r.id)}>
+                        <button
+                          className="btn-secondary text-xs flex items-center gap-1.5"
+                          onClick={() => commandsApi.cancelRun(r.id)}
+                        >
                           <Ban className="w-3.5 h-3.5" /> Stop before next wave
                         </button>
                       )}
                       {/* Requested on #118 for archiving and audit. */}
-                      <button className="btn-secondary text-xs flex items-center gap-1.5"
-                              onClick={() => downloadCsv(r.id)}>
+                      <button
+                        className="btn-secondary text-xs flex items-center gap-1.5"
+                        onClick={() => downloadCsv(r.id)}
+                      >
                         <Download className="w-3.5 h-3.5" /> Export CSV
                       </button>
                     </div>
-                    {detail.devices.map(d => (
-                      <div key={d.id} className="text-xs border-b border-gray-100 dark:border-slate-800 last:border-0 py-1.5">
-                        <button className="flex items-center gap-2 w-full text-left"
-                                onClick={() => setExpanded(e => ({ ...e, [d.id]: !e[d.id] }))}>
+                    {detail.devices.map((d) => (
+                      <div
+                        key={d.id}
+                        className="text-xs border-b border-gray-100 dark:border-slate-800 last:border-0 py-1.5"
+                      >
+                        <button
+                          className="flex items-center gap-2 w-full text-left"
+                          onClick={() => setExpanded((e) => ({ ...e, [d.id]: !e[d.id] }))}
+                        >
                           <span className="text-gray-400 w-12">wave {d.wave}</span>
-                          <span className="text-gray-900 dark:text-white flex-1 truncate">{d.device_name.trim()}</span>
+                          <span className="text-gray-900 dark:text-white flex-1 truncate">
+                            {d.device_name.trim()}
+                          </span>
                           {d.guarded && <ShieldCheck className="w-3 h-3 text-gray-400" />}
-                          <span className={
-                            d.status === 'success' ? 'text-green-600 dark:text-green-400'
-                            : d.status === 'skipped' ? 'text-gray-400'
-                            : 'text-red-600 dark:text-red-400'}>{d.status}</span>
+                          <span
+                            className={
+                              d.status === 'success'
+                                ? 'text-green-600 dark:text-green-400'
+                                : d.status === 'skipped'
+                                  ? 'text-gray-400'
+                                  : 'text-red-600 dark:text-red-400'
+                            }
+                          >
+                            {d.status}
+                          </span>
                         </button>
                         {expanded[d.id] && (
                           <pre className="mt-1 ml-14 whitespace-pre-wrap break-words text-[11px] text-gray-600 dark:text-slate-300">
-                            {d.error ? `${d.error}\n` : ''}{d.output || (d.status === 'success' ? '(no output)' : '')}
+                            {d.error ? `${d.error}\n` : ''}
+                            {d.output || (d.status === 'success' ? '(no output)' : '')}
                           </pre>
                         )}
                       </div>

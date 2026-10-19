@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Eye, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
-import { previewAll, type ChangePreview } from '../../services/api';
+import { Eye, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+
+import { type ChangePreview, previewAll } from '../../services/api';
 import ChangePreviewModal from './ChangePreviewModal';
 
 /**
@@ -12,7 +13,15 @@ import ChangePreviewModal from './ChangePreviewModal';
  * arguments; it is sent as a preview, so nothing is applied. A form that saves
  * in several requests passes `requests` instead: one call per request, in order.
  */
-export default function ReviewChangesButton({ request, requests, onApply, applyLabel, deviceName, disabled, className }: {
+export default function ReviewChangesButton({
+  request,
+  requests,
+  onApply,
+  applyLabel,
+  deviceName,
+  disabled,
+  className,
+}: {
   request?: () => Promise<unknown>;
   requests?: () => (() => Promise<unknown>)[];
   /** Apply from the review, as the form's own Save would. */
@@ -41,16 +50,31 @@ export default function ReviewChangesButton({ request, requests, onApply, applyL
 
   return (
     <>
-      <button type="button" className={clsx('btn-secondary text-sm inline-flex items-center gap-1.5', className)}
-        disabled={disabled || busy} onClick={() => { void run(); }}
-        title="See exactly what would be sent to the device, without applying it">
-        {busy ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+      <button
+        type="button"
+        className={clsx('btn-secondary text-sm inline-flex items-center gap-1.5', className)}
+        disabled={disabled || busy}
+        onClick={() => {
+          void run();
+        }}
+        title="See exactly what would be sent to the device, without applying it"
+      >
+        {busy ? (
+          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Eye className="w-3.5 h-3.5" />
+        )}
         Review changes
       </button>
       {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
       {preview && (
-        <ChangePreviewModal preview={preview} deviceName={deviceName} onApply={onApply} applyLabel={applyLabel}
-          onClose={() => setPreview(null)} />
+        <ChangePreviewModal
+          preview={preview}
+          deviceName={deviceName}
+          onApply={onApply}
+          applyLabel={applyLabel}
+          onClose={() => setPreview(null)}
+        />
       )}
     </>
   );

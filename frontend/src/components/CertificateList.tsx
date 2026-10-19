@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
-import { ShieldCheck, ShieldAlert, ShieldX, ShieldOff, Clock, KeyRound } from 'lucide-react';
-import { format } from 'date-fns';
 import clsx from 'clsx';
+import { format } from 'date-fns';
+import { Clock, KeyRound, ShieldAlert, ShieldCheck, ShieldOff, ShieldX } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+import type { CertState, DeviceCertificate } from '../services/api';
 import { isQuietCapsmanCertificate } from '../utils/capsmanCerts';
-import type { DeviceCertificate, CertState } from '../services/api';
 
 /**
  * Renders collected device certificates (#143).
@@ -15,12 +16,16 @@ import type { DeviceCertificate, CertState } from '../services/api';
  */
 
 const STYLE: Record<CertState, { cls: string; Icon: typeof ShieldCheck; label: string }> = {
-  revoked:         { cls: 'text-red-600 dark:text-red-400',       Icon: ShieldOff,   label: 'Revoked' },
-  expired:         { cls: 'text-red-600 dark:text-red-400',       Icon: ShieldX,     label: 'Expired' },
-  expiring:        { cls: 'text-amber-600 dark:text-amber-400',   Icon: ShieldAlert, label: 'Expiring' },
-  'not-yet-valid': { cls: 'text-amber-600 dark:text-amber-400',   Icon: Clock,       label: 'Not yet valid' },
-  valid:           { cls: 'text-green-600 dark:text-green-400',   Icon: ShieldCheck, label: 'Valid' },
-  unknown:         { cls: 'text-gray-400 dark:text-slate-500',    Icon: ShieldAlert, label: 'Unknown' },
+  revoked: { cls: 'text-red-600 dark:text-red-400', Icon: ShieldOff, label: 'Revoked' },
+  expired: { cls: 'text-red-600 dark:text-red-400', Icon: ShieldX, label: 'Expired' },
+  expiring: { cls: 'text-amber-600 dark:text-amber-400', Icon: ShieldAlert, label: 'Expiring' },
+  'not-yet-valid': {
+    cls: 'text-amber-600 dark:text-amber-400',
+    Icon: Clock,
+    label: 'Not yet valid',
+  },
+  valid: { cls: 'text-green-600 dark:text-green-400', Icon: ShieldCheck, label: 'Valid' },
+  unknown: { cls: 'text-gray-400 dark:text-slate-500', Icon: ShieldAlert, label: 'Unknown' },
 };
 
 /** "in 12 days" / "3 days ago" — the number people actually act on. */
@@ -67,31 +72,51 @@ function useHideExpired(storageKey: string): [boolean, (v: boolean) => void] {
 /** A remembered on/off choice, per list. */
 function useStoredFlag(key: string, fallback: boolean): [boolean, (v: boolean) => void] {
   const [hide, setHide] = useState(() => {
-    try { const v = localStorage.getItem(key); return v === null ? fallback : v === '1'; } catch { return fallback; }
+    try {
+      const v = localStorage.getItem(key);
+      return v === null ? fallback : v === '1';
+    } catch {
+      return fallback;
+    }
   });
-  return [hide, (v: boolean) => {
-    setHide(v);
-    try { localStorage.setItem(key, v ? '1' : '0'); } catch { /* private mode */ }
-  }];
+  return [
+    hide,
+    (v: boolean) => {
+      setHide(v);
+      try {
+        localStorage.setItem(key, v ? '1' : '0');
+      } catch {
+        /* private mode */
+      }
+    },
+  ];
 }
 
 export default function CertificateList({
-  certificates, showDevice, emptyText, storageKey = 'default', maxHeight,
+  certificates,
+  showDevice,
+  emptyText,
+  storageKey = 'default',
+  maxHeight,
 }: Props) {
   const [hideExpired, setHideExpired] = useHideExpired(storageKey);
   // CAPsMAN's own certificates (valid until 2038) are hidden by default (#197).
   const [showCapsman, setShowCapsman] = useStoredFlag(`certs.showCapsman.${storageKey}`, false);
-  const capsmanCount = useMemo(() => certificates.filter(isQuietCapsmanCertificate).length, [certificates]);
+  const capsmanCount = useMemo(
+    () => certificates.filter(isQuietCapsmanCertificate).length,
+    [certificates],
+  );
 
   const expiredCount = useMemo(
     () => certificates.filter((c) => c.state === 'expired').length,
-    [certificates]
+    [certificates],
   );
   const visible = useMemo(
-    () => certificates
-      .filter((c) => !hideExpired || c.state !== 'expired')
-      .filter((c) => showCapsman || !isQuietCapsmanCertificate(c)),
-    [certificates, hideExpired, showCapsman]
+    () =>
+      certificates
+        .filter((c) => !hideExpired || c.state !== 'expired')
+        .filter((c) => showCapsman || !isQuietCapsmanCertificate(c)),
+    [certificates, hideExpired, showCapsman],
   );
 
   if (certificates.length === 0) {
@@ -109,8 +134,10 @@ export default function CertificateList({
       {(expiredCount > 0 || capsmanCount > 0) && (
         <div className="flex items-center justify-end gap-4 pb-2">
           {capsmanCount > 0 && (
-            <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 cursor-pointer select-none"
-              title="Certificates CAPsMAN generated for itself and its CAPs, valid until 2038">
+            <label
+              className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 cursor-pointer select-none"
+              title="Certificates CAPsMAN generated for itself and its CAPs, valid until 2038"
+            >
               <input
                 type="checkbox"
                 checked={showCapsman}
@@ -121,117 +148,131 @@ export default function CertificateList({
             </label>
           )}
           {expiredCount > 0 && (
-          <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={hideExpired}
-              onChange={(e) => setHideExpired(e.target.checked)}
-              className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
-            />
-            Hide expired ({expiredCount})
-          </label>
+            <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={hideExpired}
+                onChange={(e) => setHideExpired(e.target.checked)}
+                className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+              />
+              Hide expired ({expiredCount})
+            </label>
           )}
         </div>
       )}
 
       {visible.length === 0 ? (
         <p className="text-sm text-gray-400 dark:text-slate-500 py-3">
-          {certificates.length} certificate{certificates.length === 1 ? ' is' : 's are'} hidden by the filters above.
+          {certificates.length} certificate{certificates.length === 1 ? ' is' : 's are'} hidden by
+          the filters above.
         </p>
       ) : (
-      <div className={clsx('overflow-x-auto', maxHeight && 'overflow-y-auto')} style={maxHeight ? { maxHeight } : undefined}>
-      <table className="w-full text-sm">
-        <thead className={clsx(maxHeight && 'sticky top-0 z-[1]')} style={maxHeight ? { background: 'var(--surface)' } : undefined}>
-          <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
-            {showDevice && <th className="px-3 py-2 font-medium">Device</th>}
-            <th className="px-3 py-2 font-medium">Certificate</th>
-            <th className="px-3 py-2 font-medium">Expires</th>
-            <th className="px-3 py-2 font-medium">Key</th>
-            <th className="px-3 py-2 font-medium text-right">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visible.map((c) => {
-            const s = STYLE[c.state] ?? STYLE.unknown;
-            return (
-              <tr
-                key={`${c.device_id}-${c.name}`}
-                className="border-b border-gray-100 dark:border-slate-800 last:border-0"
-              >
-                {showDevice && (
-                  <td className="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
-                    {c.device_name}
-                  </td>
-                )}
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-gray-900 dark:text-white">{c.name}</span>
-                    {c.is_authority && (
-                      // A CA expiring invalidates everything it signed, so it is
-                      // worth distinguishing at a glance.
-                      <span
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
-                        title="Certificate authority — its expiry invalidates everything it signed"
-                      >
-                        CA
-                      </span>
-                    )}
-                    {c.has_private_key && (
-                      <KeyRound className="w-3 h-3 text-gray-400" aria-label="Has private key" />
-                    )}
-                    {c.revoked && (
-                      // The expiry date on a revoked certificate is meaningless
-                      // but still rendered, so say why it does not count.
-                      <span
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                        title="Withdrawn by its issuing CA — no longer usable regardless of its expiry date"
-                      >
-                        REVOKED
-                      </span>
-                    )}
-                  </div>
-                  {c.common_name && c.common_name !== c.name && (
-                    <div className="text-xs text-gray-500 dark:text-slate-400">{c.common_name}</div>
-                  )}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  {c.invalid_after ? (
-                    <>
-                      <div className="text-gray-900 dark:text-white">
-                        {format(new Date(c.invalid_after), 'd MMM yyyy')}
-                      </div>
-                      {c.revoked ? (
-                        // "expires in 11 months" is true and completely
-                        // irrelevant once a certificate has been withdrawn, so
-                        // the date it was withdrawn takes that line instead.
-                        <div className={clsx('text-xs', s.cls)}>
-                          {c.revoked_at
-                            ? `revoked ${format(new Date(c.revoked_at), 'd MMM yyyy')}`
-                            : 'revoked'}
-                        </div>
-                      ) : (
-                        <div className={clsx('text-xs', s.cls)}>{relative(c.days_left)}</div>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-gray-500 dark:text-slate-400 whitespace-nowrap">
-                  {c.key_type ? `${c.key_type.toUpperCase()}${c.key_size ? ` ${c.key_size}` : ''}` : '—'}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <span className={clsx('inline-flex items-center gap-1 font-medium', s.cls)}>
-                    <s.Icon className="w-3.5 h-3.5" />
-                    {s.label}
-                  </span>
-                </td>
+        <div
+          className={clsx('overflow-x-auto', maxHeight && 'overflow-y-auto')}
+          style={maxHeight ? { maxHeight } : undefined}
+        >
+          <table className="w-full text-sm">
+            <thead
+              className={clsx(maxHeight && 'sticky top-0 z-[1]')}
+              style={maxHeight ? { background: 'var(--surface)' } : undefined}
+            >
+              <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+                {showDevice && <th className="px-3 py-2 font-medium">Device</th>}
+                <th className="px-3 py-2 font-medium">Certificate</th>
+                <th className="px-3 py-2 font-medium">Expires</th>
+                <th className="px-3 py-2 font-medium">Key</th>
+                <th className="px-3 py-2 font-medium text-right">Status</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      </div>
+            </thead>
+            <tbody>
+              {visible.map((c) => {
+                const s = STYLE[c.state] ?? STYLE.unknown;
+                return (
+                  <tr
+                    key={`${c.device_id}-${c.name}`}
+                    className="border-b border-gray-100 dark:border-slate-800 last:border-0"
+                  >
+                    {showDevice && (
+                      <td className="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
+                        {c.device_name}
+                      </td>
+                    )}
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-gray-900 dark:text-white">{c.name}</span>
+                        {c.is_authority && (
+                          // A CA expiring invalidates everything it signed, so it is
+                          // worth distinguishing at a glance.
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                            title="Certificate authority — its expiry invalidates everything it signed"
+                          >
+                            CA
+                          </span>
+                        )}
+                        {c.has_private_key && (
+                          <KeyRound
+                            className="w-3 h-3 text-gray-400"
+                            aria-label="Has private key"
+                          />
+                        )}
+                        {c.revoked && (
+                          // The expiry date on a revoked certificate is meaningless
+                          // but still rendered, so say why it does not count.
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                            title="Withdrawn by its issuing CA — no longer usable regardless of its expiry date"
+                          >
+                            REVOKED
+                          </span>
+                        )}
+                      </div>
+                      {c.common_name && c.common_name !== c.name && (
+                        <div className="text-xs text-gray-500 dark:text-slate-400">
+                          {c.common_name}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      {c.invalid_after ? (
+                        <>
+                          <div className="text-gray-900 dark:text-white">
+                            {format(new Date(c.invalid_after), 'd MMM yyyy')}
+                          </div>
+                          {c.revoked ? (
+                            // "expires in 11 months" is true and completely
+                            // irrelevant once a certificate has been withdrawn, so
+                            // the date it was withdrawn takes that line instead.
+                            <div className={clsx('text-xs', s.cls)}>
+                              {c.revoked_at
+                                ? `revoked ${format(new Date(c.revoked_at), 'd MMM yyyy')}`
+                                : 'revoked'}
+                            </div>
+                          ) : (
+                            <div className={clsx('text-xs', s.cls)}>{relative(c.days_left)}</div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-gray-500 dark:text-slate-400 whitespace-nowrap">
+                      {c.key_type
+                        ? `${c.key_type.toUpperCase()}${c.key_size ? ` ${c.key_size}` : ''}`
+                        : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <span className={clsx('inline-flex items-center gap-1 font-medium', s.cls)}>
+                        <s.Icon className="w-3.5 h-3.5" />
+                        {s.label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {hideExpired && visible.length > 0 && (

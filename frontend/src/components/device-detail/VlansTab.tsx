@@ -1,13 +1,24 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, AlertCircle, RefreshCw, Pencil, Check, X, Network, Copy } from 'lucide-react';
-import { devicesApi } from '../../services/api';
-import type { Vlan, SwitchPort } from '../../types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import {
+  AlertCircle,
+  Check,
+  Copy,
+  Network,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
-import CopyVlanModal from './CopyVlanModal';
-import { LockoutVerdictDialog, lockoutVerdictOf, type LockoutVerdict } from '../ChangeGuardDialog';
+import { devicesApi } from '../../services/api';
+import type { SwitchPort, Vlan } from '../../types';
+import { type LockoutVerdict, LockoutVerdictDialog, lockoutVerdictOf } from '../ChangeGuardDialog';
 import ReviewChangesButton from '../common/ReviewChangesButton';
+import CopyVlanModal from './CopyVlanModal';
 import L3HwCard from './L3HwCard';
 import SwitchVlanCard from './SwitchVlanCard';
 
@@ -16,7 +27,12 @@ interface PortForm {
   untagged_ports: string;
 }
 
-export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts }: {
+export default function VlansTab({
+  deviceId,
+  deviceName,
+  deviceType,
+  onGoToPorts,
+}: {
   deviceId: number;
   deviceName?: string;
   deviceType?: string;
@@ -26,9 +42,16 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
   const canWrite = useCanWrite();
   // A predicted lockout comes back as 409 with a verdict; hold it plus the retry
   // that re-sends the same change with confirm_lockout once the user accepts.
-  const [lockout, setLockout] = useState<{ verdict: LockoutVerdict; retry: () => void } | null>(null);
+  const [lockout, setLockout] = useState<{ verdict: LockoutVerdict; retry: () => void } | null>(
+    null,
+  );
 
-  const { data: vlans = [], isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: vlans = [],
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ['vlans', deviceId],
     queryFn: () => devicesApi.getVlans(deviceId).then((r) => r.data),
     refetchInterval: 60_000,
@@ -51,7 +74,10 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
 
   // Find bridges where vlan-filtering is not enabled (stored as 'yes' from RouterOS or 'true' after toggle)
   const bridgesWithoutFiltering = ports.filter(
-    (p) => p.type === 'bridge' && p.config_json?.['vlan-filtering'] !== 'yes' && p.config_json?.['vlan-filtering'] !== 'true'
+    (p) =>
+      p.type === 'bridge' &&
+      p.config_json?.['vlan-filtering'] !== 'yes' &&
+      p.config_json?.['vlan-filtering'] !== 'true',
   );
 
   // ── Copy VLAN modal ──
@@ -59,7 +85,12 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
 
   // ── Add form ──
   const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState({ vlan_id: '', bridge: '', tagged_ports: '', untagged_ports: '' });
+  const [addForm, setAddForm] = useState({
+    vlan_id: '',
+    bridge: '',
+    tagged_ports: '',
+    untagged_ports: '',
+  });
   const [addError, setAddError] = useState('');
 
   // ── Edit form ──
@@ -72,15 +103,25 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
 
   // Every bridge on the device, not just those that already have VLANs: a bridge
   // with none could never get its first one (outside review U14).
-  const bridgeOptions = [...new Set([
-    ...ports.filter((p) => p.type === 'bridge').map((p) => p.name),
-    ...(vlans as Vlan[]).map((v) => v.bridge),
-  ].filter(Boolean))];
+  const bridgeOptions = [
+    ...new Set(
+      [
+        ...ports.filter((p) => p.type === 'bridge').map((p) => p.name),
+        ...(vlans as Vlan[]).map((v) => v.bridge),
+      ].filter(Boolean),
+    ),
+  ];
 
   // ── Mutations ──
   const addRequest = (confirm: boolean) => {
-    const tagged = addForm.tagged_ports.split(',').map((s) => s.trim()).filter(Boolean);
-    const untagged = addForm.untagged_ports.split(',').map((s) => s.trim()).filter(Boolean);
+    const tagged = addForm.tagged_ports
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const untagged = addForm.untagged_ports
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     return devicesApi.addVlan(deviceId, {
       bridge: addForm.bridge,
       vlan_id: parseInt(addForm.vlan_id, 10),
@@ -93,14 +134,22 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
     mutationFn: addRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vlans', deviceId] });
-      setAddForm({ vlan_id: '', bridge: bridgeOptions[0] || '', tagged_ports: '', untagged_ports: '' });
+      setAddForm({
+        vlan_id: '',
+        bridge: bridgeOptions[0] || '',
+        tagged_ports: '',
+        untagged_ports: '',
+      });
       setShowAdd(false);
       setAddError('');
       setLockout(null);
     },
     onError: (err: unknown) => {
       const verdict = lockoutVerdictOf(err);
-      if (verdict) { setLockout({ verdict, retry: () => addMutation.mutate(true) }); return; }
+      if (verdict) {
+        setLockout({ verdict, retry: () => addMutation.mutate(true) });
+        return;
+      }
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setAddError(msg || 'Failed to add VLAN');
     },
@@ -108,8 +157,14 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
 
   const updateRequest = (confirm: boolean) => {
     if (!editingVlan) throw new Error('No VLAN selected');
-    const tagged = editForm.tagged_ports.split(',').map((s) => s.trim()).filter(Boolean);
-    const untagged = editForm.untagged_ports.split(',').map((s) => s.trim()).filter(Boolean);
+    const tagged = editForm.tagged_ports
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const untagged = editForm.untagged_ports
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     return devicesApi.updateVlan(deviceId, editingVlan.id, {
       tagged_ports: tagged,
       untagged_ports: untagged,
@@ -126,7 +181,10 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
     },
     onError: (err: unknown) => {
       const verdict = lockoutVerdictOf(err);
-      if (verdict) { setLockout({ verdict, retry: () => updateMutation.mutate(true) }); return; }
+      if (verdict) {
+        setLockout({ verdict, retry: () => updateMutation.mutate(true) });
+        return;
+      }
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setEditError(msg || 'Failed to update VLAN');
     },
@@ -139,7 +197,10 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
       setAddError('VLAN ID must be a whole number from 1 to 4094.');
       return;
     }
-    if (!addForm.bridge) { setAddError('Choose a bridge.'); return; }
+    if (!addForm.bridge) {
+      setAddError('Choose a bridge.');
+      return;
+    }
     addMutation.mutate(false);
   };
 
@@ -154,7 +215,10 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
     onError: (err: unknown, vars) => {
       const verdict = lockoutVerdictOf(err);
       if (verdict) {
-        setLockout({ verdict, retry: () => deleteMutation.mutate({ vlanDbId: vars.vlanDbId, confirm: true }) });
+        setLockout({
+          verdict,
+          retry: () => deleteMutation.mutate({ vlanDbId: vars.vlanDbId, confirm: true }),
+        });
         return;
       }
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -187,11 +251,12 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
         <div className="flex items-start gap-3 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
           <Network className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="flex-1 text-sm text-amber-800 dark:text-amber-300">
-            <span className="font-semibold">VLAN Filtering is not enabled</span> on the Bridge interface
+            <span className="font-semibold">VLAN Filtering is not enabled</span> on the Bridge
+            interface
             {bridgesWithoutFiltering.length > 1
               ? ` (${bridgesWithoutFiltering.map((b) => b.name).join(', ')})`
-              : ` (${bridgesWithoutFiltering[0].name})`}.
-            {' '}VLAN functionality is disabled — tagging and untagging rules will not be enforced.{' '}
+              : ` (${bridgesWithoutFiltering[0].name})`}
+            . VLAN functionality is disabled — tagging and untagging rules will not be enforced.{' '}
             {onGoToPorts && (
               <button
                 onClick={() => onGoToPorts(bridgesWithoutFiltering[0].name)}
@@ -209,7 +274,8 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
         <div>
           {deleteError && (
             <span className="text-sm text-red-500 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />{deleteError}
+              <AlertCircle className="w-4 h-4" />
+              {deleteError}
             </span>
           )}
         </div>
@@ -239,7 +305,12 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
                 setShowAdd(!showAdd);
                 setEditingVlan(null);
                 setAddError('');
-                setAddForm({ vlan_id: '', bridge: bridgeOptions[0] || '', tagged_ports: '', untagged_ports: '' });
+                setAddForm({
+                  vlan_id: '',
+                  bridge: bridgeOptions[0] || '',
+                  tagged_ports: '',
+                  untagged_ports: '',
+                });
               }}
               className="btn-primary flex items-center gap-2 text-sm"
             >
@@ -262,7 +333,8 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
                 className="input"
                 value={addForm.vlan_id}
                 onChange={(e) => setAddForm((f) => ({ ...f, vlan_id: e.target.value }))}
-                min={1} max={4094}
+                min={1}
+                max={4094}
                 placeholder="10"
               />
             </div>
@@ -274,7 +346,11 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
                   value={addForm.bridge}
                   onChange={(e) => setAddForm((f) => ({ ...f, bridge: e.target.value }))}
                 >
-                  {bridgeOptions.map((b) => <option key={b} value={b}>{b}</option>)}
+                  {bridgeOptions.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
                 </select>
               ) : (
                 <input
@@ -320,9 +396,16 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
               {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
               Add VLAN
             </button>
-            <ReviewChangesButton request={() => addRequest(false)} onApply={submitAdd} applyLabel="Add VLAN"
-              deviceName={deviceName} disabled={!addForm.vlan_id || !addForm.bridge || addMutation.isPending} />
-            <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">Cancel</button>
+            <ReviewChangesButton
+              request={() => addRequest(false)}
+              onApply={submitAdd}
+              applyLabel="Add VLAN"
+              deviceName={deviceName}
+              disabled={!addForm.vlan_id || !addForm.bridge || addMutation.isPending}
+            />
+            <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -333,12 +416,20 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
               Edit VLAN{' '}
-              <span className="font-mono text-blue-600 dark:text-blue-400">{editingVlan.vlan_id}</span>
+              <span className="font-mono text-blue-600 dark:text-blue-400">
+                {editingVlan.vlan_id}
+              </span>
               {editingVlan.bridge && (
-                <span className="text-gray-400 dark:text-slate-500 font-normal"> on {editingVlan.bridge}</span>
+                <span className="text-gray-400 dark:text-slate-500 font-normal">
+                  {' '}
+                  on {editingVlan.bridge}
+                </span>
               )}
             </h4>
-            <button onClick={() => setEditingVlan(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
+            <button
+              onClick={() => setEditingVlan(null)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -379,14 +470,23 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
               disabled={updateMutation.isPending}
               className="btn-primary flex items-center gap-2 text-sm"
             >
-              {updateMutation.isPending
-                ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                : <Check className="w-3.5 h-3.5" />}
+              {updateMutation.isPending ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Check className="w-3.5 h-3.5" />
+              )}
               Save Changes
             </button>
-            <ReviewChangesButton request={() => updateRequest(false)} onApply={() => updateMutation.mutate(false)}
-              applyLabel="Save changes" deviceName={deviceName} disabled={updateMutation.isPending} />
-            <button onClick={() => setEditingVlan(null)} className="btn-secondary text-sm">Cancel</button>
+            <ReviewChangesButton
+              request={() => updateRequest(false)}
+              onApply={() => updateMutation.mutate(false)}
+              applyLabel="Save changes"
+              deviceName={deviceName}
+              disabled={updateMutation.isPending}
+            />
+            <button onClick={() => setEditingVlan(null)} className="btn-secondary text-sm">
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -428,7 +528,7 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
                   key={vlan.id}
                   className={clsx(
                     'hover:bg-gray-50 dark:hover:bg-slate-700/30',
-                    editingVlan?.id === vlan.id && 'bg-blue-50 dark:bg-blue-900/10'
+                    editingVlan?.id === vlan.id && 'bg-blue-50 dark:bg-blue-900/10',
                   )}
                 >
                   <td className="px-4 py-2.5 font-mono font-bold text-blue-600 dark:text-blue-400">
@@ -443,21 +543,27 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
                   <td className="px-4 py-2.5">
                     <div className="flex flex-wrap gap-1">
                       {(vlan.tagged_ports ?? []).map((p) => (
-                        <span key={p} className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded font-mono">
+                        <span
+                          key={p}
+                          className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded font-mono"
+                        >
                           {p}
                         </span>
                       ))}
-                      {!(vlan.tagged_ports?.length) && '—'}
+                      {!vlan.tagged_ports?.length && '—'}
                     </div>
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex flex-wrap gap-1">
                       {(vlan.untagged_ports ?? []).map((p) => (
-                        <span key={p} className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 text-xs rounded font-mono">
+                        <span
+                          key={p}
+                          className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 text-xs rounded font-mono"
+                        >
                           {p}
                         </span>
                       ))}
-                      {!(vlan.untagged_ports?.length) && '—'}
+                      {!vlan.untagged_ports?.length && '—'}
                     </div>
                   </td>
                   {canWrite && (
@@ -469,7 +575,7 @@ export default function VlansTab({ deviceId, deviceName, deviceType, onGoToPorts
                             'p-1 rounded transition-colors',
                             editingVlan?.id === vlan.id
                               ? 'text-blue-500 bg-blue-100 dark:bg-blue-900/30'
-                              : 'text-gray-400 hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-slate-700'
+                              : 'text-gray-400 hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-slate-700',
                           )}
                           title="Edit VLAN"
                         >

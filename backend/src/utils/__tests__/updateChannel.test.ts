@@ -1,4 +1,4 @@
-import { resolveChannel, isUpdateChannel } from '../updateChannel';
+import { isUpdateChannel, resolveChannel } from '../updateChannel';
 
 describe('resolveChannel', () => {
   it('leaves the device alone when nothing is set, as before this existed', () => {
@@ -22,6 +22,7 @@ describe('resolveChannel', () => {
 
 describe('isUpdateChannel', () => {
   it('accepts the four RouterOS channels', () => {
-    for (const c of ['stable', 'long-term', 'testing', 'development']) expect(isUpdateChannel(c)).toBe(true);
+    for (const c of ['stable', 'long-term', 'testing', 'development'])
+      expect(isUpdateChannel(c)).toBe(true);
   });
 });

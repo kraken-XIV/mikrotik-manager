@@ -3,37 +3,37 @@
 Reference material for people already running the platform. If you are still deciding
 whether to try it, the [project README](https://github.com/2GT-Media-Group-LLC/mikrotik-manager/blob/main/README.md) is the better starting point.
 
-| Document | Covers |
-|---|---|
-| [Configuration](configuration.md) | Environment variables, secret management and key rotation |
-| [Devices](devices.md) | The device list, the tabs on a device, ports and VLANs, and the per-device tools |
-| [Clients](clients.md) | Where client data comes from, identification, history, and per-port clients |
-| [Topology](topology.md) | How links are discovered, spanning-tree resolution, client devices, your own nodes and hand-drawn links |
-| [Traffic analytics](traffic.md) | The NetFlow collector, top talkers, application breakdown, retention |
-| [Wireless](wireless.md) | Radios and SSIDs, RF health, signal bands, rogue APs, guest WiFi |
-| [Network services](network-services.md) | DHCP, DNS, NTP, WireGuard, logging, discovery and SNMP |
-| [Adopting devices](adoption.md) | Adding configured devices, and configuring factory-default ones so they can be managed |
-| [Sites](sites.md) | Grouping devices into sites, switching between them, and what each site scopes |
-| [Change Guard and Config Health](change-guard.md) | How the safety system works, its settings, and what to expect when it fires |
-| [Security page](security.md) | Firewall posture, certificates, and known vulnerabilities (CVEs) in the fleet's RouterOS versions |
-| [Alerting](alerting.md) | Alert rules, delivery channels, webhooks, scheduled reports, maintenance windows |
-| [Single sign-on (OIDC)](sso-oidc.md) | Identity provider setup, group-to-role mapping, break-glass behaviour |
-| [CAPsMAN](capsman.md) | How centrally provisioned access points are modelled, and current limits |
-| [User Manager](user-manager.md) | RouterOS's RADIUS server: sessions, users, groups and their attributes, and clearing a stuck session |
-| [Cellular (LTE)](cellular.md) | Signal, carriers, tower movement, and the data-cap reset SMS |
-| [SSH keys](ssh-keys.md) | Per-device keypairs, rotation, and what installing one costs |
-| [Bulk commands](commands.md) | Running one command across a fleet, in waves |
-| [Firmware rollouts](firmware.md) | Waves, the upgrade pipeline, and what upgrading several at once costs |
-| [Backups](backups.md) | Finding, reading, comparing and deleting configuration backups |
-| [Polling and scaling](scaling.md) | Poller health, headroom, tuning, and clearing a backlog |
-| [API and automation](api.md) | Scoped tokens, authentication, and driving the platform from scripts |
-| [Architecture](architecture.md) | How the system is put together, for contributors |
+| Document                                          | Covers                                                                                                  |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [Configuration](configuration.md)                 | Environment variables, secret management and key rotation                                               |
+| [Devices](devices.md)                             | The device list, the tabs on a device, ports and VLANs, and the per-device tools                        |
+| [Clients](clients.md)                             | Where client data comes from, identification, history, and per-port clients                             |
+| [Topology](topology.md)                           | How links are discovered, spanning-tree resolution, client devices, your own nodes and hand-drawn links |
+| [Traffic analytics](traffic.md)                   | The NetFlow collector, top talkers, application breakdown, retention                                    |
+| [Wireless](wireless.md)                           | Radios and SSIDs, RF health, signal bands, rogue APs, guest WiFi                                        |
+| [Network services](network-services.md)           | DHCP, DNS, NTP, WireGuard, logging, discovery and SNMP                                                  |
+| [Adopting devices](adoption.md)                   | Adding configured devices, and configuring factory-default ones so they can be managed                  |
+| [Sites](sites.md)                                 | Grouping devices into sites, switching between them, and what each site scopes                          |
+| [Change Guard and Config Health](change-guard.md) | How the safety system works, its settings, and what to expect when it fires                             |
+| [Security page](security.md)                      | Firewall posture, certificates, and known vulnerabilities (CVEs) in the fleet's RouterOS versions       |
+| [Alerting](alerting.md)                           | Alert rules, delivery channels, webhooks, scheduled reports, maintenance windows                        |
+| [Single sign-on (OIDC)](sso-oidc.md)              | Identity provider setup, group-to-role mapping, break-glass behaviour                                   |
+| [CAPsMAN](capsman.md)                             | How centrally provisioned access points are modelled, and current limits                                |
+| [User Manager](user-manager.md)                   | RouterOS's RADIUS server: sessions, users, groups and their attributes, and clearing a stuck session    |
+| [Cellular (LTE)](cellular.md)                     | Signal, carriers, tower movement, and the data-cap reset SMS                                            |
+| [SSH keys](ssh-keys.md)                           | Per-device keypairs, rotation, and what installing one costs                                            |
+| [Bulk commands](commands.md)                      | Running one command across a fleet, in waves                                                            |
+| [Firmware rollouts](firmware.md)                  | Waves, the upgrade pipeline, and what upgrading several at once costs                                   |
+| [Backups](backups.md)                             | Finding, reading, comparing and deleting configuration backups                                          |
+| [Polling and scaling](scaling.md)                 | Poller health, headroom, tuning, and clearing a backlog                                                 |
+| [API and automation](api.md)                      | Scoped tokens, authentication, and driving the platform from scripts                                    |
+| [Architecture](architecture.md)                   | How the system is put together, for contributors                                                        |
 
 ## Conventions used here
 
 - **Settings in the UI** are stored in the database and apply without a restart.
 - **Environment variables** live in `.env` and require a container restart to change.
-- Anything described as *read-only* makes no writes to your devices.
+- Anything described as _read-only_ makes no writes to your devices.
 
 ## Which version is this?
 

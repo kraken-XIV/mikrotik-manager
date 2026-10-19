@@ -1,6 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { resolveSiteId, type SiteScope } from '../utils/siteScope';
+import { NextFunction, Request, Response } from 'express';
+
 import { groupSites } from '../services/siteGroups';
+import { resolveSiteId, type SiteScope } from '../utils/siteScope';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -34,11 +35,21 @@ export function siteContext(req: Request, res: Response, next: NextFunction): vo
   // A group (#306): its sites, an empty list if it holds none (which matches
   // nothing, never everything). A site, when both are sent, wins.
   const gHeader = req.headers['x-site-group'];
-  const groupId = req.siteId === null ? resolveSiteId(Array.isArray(gHeader) ? gHeader[0] : gHeader) : null;
-  if (groupId === null) { next(); return; }
+  const groupId =
+    req.siteId === null ? resolveSiteId(Array.isArray(gHeader) ? gHeader[0] : gHeader) : null;
+  if (groupId === null) {
+    next();
+    return;
+  }
   groupSites(groupId)
-    .then((sites) => { req.siteId = sites; req.siteGroupId = groupId; next(); })
-    .catch(() => res.status(503).json({ error: 'Could not read the group. Try again in a moment.' }));
+    .then((sites) => {
+      req.siteId = sites;
+      req.siteGroupId = groupId;
+      next();
+    })
+    .catch(() =>
+      res.status(503).json({ error: 'Could not read the group. Try again in a moment.' }),
+    );
 }
 
 /**
@@ -57,18 +68,42 @@ export function activeSite(req: Request): SiteScope {
  * is at least an operator: the chosen site, or its only site. With several
  * sites and none chosen, the caller is asked to pick one.
  */
-export function targetSite(req: Request): { ok: true; siteId: number | null } | { ok: false; status: number; error: string } {
+export function targetSite(
+  req: Request,
+): { ok: true; siteId: number | null } | { ok: false; status: number; error: string } {
   const scope = req.siteId ?? null;
   const roles = req.user?.siteRoles;
   // A group holding one site (#306) is that site.
-  if (!roles) return { ok: true, siteId: typeof scope === 'number' ? scope : (Array.isArray(scope) && scope.length === 1 ? scope[0] : null) };
-  const site = typeof scope === 'number' ? scope : (Array.isArray(scope) && scope.length === 1 ? scope[0] : null);
+  if (!roles)
+    return {
+      ok: true,
+      siteId:
+        typeof scope === 'number'
+          ? scope
+          : Array.isArray(scope) && scope.length === 1
+            ? scope[0]
+            : null,
+    };
+  const site =
+    typeof scope === 'number'
+      ? scope
+      : Array.isArray(scope) && scope.length === 1
+        ? scope[0]
+        : null;
   if (site === null) {
-    return { ok: false, status: 400, error: 'Choose which site the device belongs to with the site switcher first.' };
+    return {
+      ok: false,
+      status: 400,
+      error: 'Choose which site the device belongs to with the site switcher first.',
+    };
   }
   const role = roles[site];
   if (role !== 'admin' && role !== 'operator') {
-    return { ok: false, status: 403, error: 'You need operator access to that site to add devices to it.' };
+    return {
+      ok: false,
+      status: 403,
+      error: 'You need operator access to that site to add devices to it.',
+    };
   }
   return { ok: true, siteId: site };
 }

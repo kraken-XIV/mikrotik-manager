@@ -1,5 +1,14 @@
+import {
+  affects,
+  correctedAway,
+  fixedIn,
+  matchUncertainty,
+  parseKevResponse,
+  parseNvdResponse,
+  rangeFromCpeMatch,
+  versionInRange,
+} from '../cveMatch';
 import fixture from './fixtures-nvd-routeros.json';
-import { parseNvdResponse, parseKevResponse, affects, fixedIn, versionInRange, rangeFromCpeMatch, matchUncertainty, correctedAway } from '../cveMatch';
 
 // Real NVD 2.0 entries for RouterOS (fetched 2026-09-28).
 const cves = parseNvdResponse(fixture);
@@ -34,7 +43,7 @@ describe('matching', () => {
     expect(affects(kev, '7.23.3')).toBe(true);
     expect(affects(kev, '7.23.4')).toBe(false);
     expect(affects(kev, '7.24.1')).toBe(true);
-    expect(affects(kev, '7.24.4')).toBe(false);   // this fleet
+    expect(affects(kev, '7.24.4')).toBe(false); // this fleet
   });
 
   it('names the first fixed release on the matching line', () => {
@@ -43,33 +52,69 @@ describe('matching', () => {
   });
 
   it('matches an exact version, including release candidates', () => {
-    expect(rangeFromCpeMatch({ criteria: 'cpe:2.3:o:mikrotik:routeros:6.42:rc11:*:*:*:*:*:*', vulnerable: true }))
-      .toEqual({ exact: '6.42rc11' });
+    expect(
+      rangeFromCpeMatch({
+        criteria: 'cpe:2.3:o:mikrotik:routeros:6.42:rc11:*:*:*:*:*:*',
+        vulnerable: true,
+      }),
+    ).toEqual({ exact: '6.42rc11' });
     expect(versionInRange('6.42rc11', { exact: '6.42rc11' })).toBe(true);
     expect(versionInRange('6.42', { exact: '6.42rc11' })).toBe(false);
   });
 
   it('treats a bound that is not a version as no usable range (NVD lists CVE-2021-3014 up to "2021-01-04")', () => {
-    const [c] = parseNvdResponse({ vulnerabilities: [{ cve: {
-      id: 'CVE-2021-3014',
-      configurations: [{ nodes: [{ cpeMatch: [{ vulnerable: true, criteria: 'cpe:2.3:o:mikrotik:routeros:*:*:*:*:*:*:*:*', versionEndIncluding: '2021-01-04' }] }] }],
-    } }] });
+    const [c] = parseNvdResponse({
+      vulnerabilities: [
+        {
+          cve: {
+            id: 'CVE-2021-3014',
+            configurations: [
+              {
+                nodes: [
+                  {
+                    cpeMatch: [
+                      {
+                        vulnerable: true,
+                        criteria: 'cpe:2.3:o:mikrotik:routeros:*:*:*:*:*:*:*:*',
+                        versionEndIncluding: '2021-01-04',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    });
     expect(c.unranged).toBe(true);
     expect(affects(c, '7.24.4')).toBe(false);
   });
 
   it('ignores other products and non-vulnerable entries', () => {
-    expect(rangeFromCpeMatch({ criteria: 'cpe:2.3:h:mikrotik:rb750:-:*:*:*:*:*:*:*', vulnerable: false })).toBeUndefined();
-    expect(rangeFromCpeMatch({ criteria: 'cpe:2.3:o:mikrotik:routeros:6.40:*:*:*:*:*:*:*', vulnerable: false })).toBeUndefined();
+    expect(
+      rangeFromCpeMatch({
+        criteria: 'cpe:2.3:h:mikrotik:rb750:-:*:*:*:*:*:*:*',
+        vulnerable: false,
+      }),
+    ).toBeUndefined();
+    expect(
+      rangeFromCpeMatch({
+        criteria: 'cpe:2.3:o:mikrotik:routeros:6.40:*:*:*:*:*:*:*',
+        vulnerable: false,
+      }),
+    ).toBeUndefined();
   });
 });
 
 describe('parseKevResponse', () => {
   it('collects only MikroTik entries', () => {
-    const ids = parseKevResponse({ vulnerabilities: [
-      { cveID: 'CVE-2026-67277', vendorProject: 'MikroTik' },
-      { cveID: 'CVE-2021-44228', vendorProject: 'Apache' },
-    ] });
+    const ids = parseKevResponse({
+      vulnerabilities: [
+        { cveID: 'CVE-2026-67277', vendorProject: 'MikroTik' },
+        { cveID: 'CVE-2021-44228', vendorProject: 'Apache' },
+      ],
+    });
     expect([...ids]).toEqual(['CVE-2026-67277']);
   });
 });
@@ -77,7 +122,7 @@ describe('parseKevResponse', () => {
 // Henk's report on #175: on 6.49.21 (current long-term) three CVEs matched that
 // NVD lists only as "before 7.x", with no starting version.
 describe('uncertain and corrected matches', () => {
-  const before75 = { ranges: [{ endExcluding: '7.5' }] };                       // CVE-2022-45313 in NVD
+  const before75 = { ranges: [{ endExcluding: '7.5' }] }; // CVE-2022-45313 in NVD
   const lined = { ranges: [{ startIncluding: '6.0', endExcluding: '6.49.21' }] }; // written for v6
 
   it('marks an open-ended "before 7.x" match on v6 as uncertain', () => {
@@ -86,7 +131,7 @@ describe('uncertain and corrected matches', () => {
 
   it('is sure when the range was written for the device release line', () => {
     expect(matchUncertainty(lined, '6.48.6')).toBeNull();
-    expect(matchUncertainty(before75, '7.4')).toBeNull();   // on v7 "before 7.5" means what it says
+    expect(matchUncertainty(before75, '7.4')).toBeNull(); // on v7 "before 7.5" means what it says
   });
 
   it('knows CVE-2025-6443 (VXLAN) does not apply to RouterOS 6', () => {

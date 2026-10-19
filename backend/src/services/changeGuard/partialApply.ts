@@ -14,7 +14,9 @@ export class PartialApplyError extends Error {
 }
 
 export function isPartialApply(err: unknown): boolean {
-  return !!err && typeof err === 'object' && (err as { partialApply?: unknown }).partialApply === true;
+  return (
+    !!err && typeof err === 'object' && (err as { partialApply?: unknown }).partialApply === true
+  );
 }
 
 /**
@@ -23,7 +25,11 @@ export function isPartialApply(err: unknown): boolean {
  * report on it (a restore keeps RouterOS's verdict).
  */
 export class PartialApplyRevertError extends Error {
-  constructor(message: string, readonly original: unknown, readonly revertAt: Date) {
+  constructor(
+    message: string,
+    readonly original: unknown,
+    readonly revertAt: Date,
+  ) {
     super(message, { cause: original });
   }
 }
@@ -46,7 +52,11 @@ export function isAmbiguousWriteError(err: unknown): boolean {
  * Change Guard disarms instead of reverting (and, in binary mode, rebooting) a
  * device nothing was written to.
  */
-export function stepFailure(err: unknown, wrote: boolean, message = (err as Error)?.message ?? String(err)): Error {
+export function stepFailure(
+  err: unknown,
+  wrote: boolean,
+  message = (err as Error)?.message ?? String(err),
+): Error {
   if (isPartialApply(err)) return err as Error;
   if (wrote || isAmbiguousWriteError(err)) return new PartialApplyError(message, { cause: err });
   return err instanceof Error && err.message === message ? err : new Error(message, { cause: err });

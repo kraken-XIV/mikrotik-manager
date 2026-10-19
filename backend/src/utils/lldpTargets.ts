@@ -11,6 +11,7 @@ export function parseDeviceTypes(v: unknown): LldpDeviceType[] | null {
   if (v === undefined || v === null || v === '') return [...LLDP_DEVICE_TYPES];
   const list = Array.isArray(v) ? v : String(v).split(',');
   const out = list.map((s) => String(s).trim()).filter(Boolean);
-  if (!out.length || out.some((t) => !(LLDP_DEVICE_TYPES as readonly string[]).includes(t))) return null;
+  if (!out.length || out.some((t) => !(LLDP_DEVICE_TYPES as readonly string[]).includes(t)))
+    return null;
   return [...new Set(out)] as LldpDeviceType[];
 }

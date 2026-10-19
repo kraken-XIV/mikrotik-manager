@@ -1,101 +1,102 @@
 import 'express-async-errors';
-import { clientIpBehindProxy } from './utils/clientIp';
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
+
 import compression from 'compression';
-import morgan from 'morgan';
-import { createServer } from 'http';
-import { Server as SocketServer } from 'socket.io';
-import { Client as SshClient } from 'ssh2';
-import { resolveAuth, type SshExecDevice } from './services/sshExec';
-import type { ClientChannel } from 'ssh2';
+import cors from 'cors';
 import dotenv from 'dotenv';
+import express from 'express';
+import helmet from 'helmet';
+import { createServer } from 'http';
+import morgan from 'morgan';
+import { Server as SocketServer } from 'socket.io';
+import type { ClientChannel } from 'ssh2';
+import { Client as SshClient } from 'ssh2';
+
+import { resolveAuth, type SshExecDevice } from './services/sshExec';
+import { clientIpBehindProxy } from './utils/clientIp';
 
 dotenv.config();
 
-import { pool, queryOne, query } from './config/database';
-import { initOuiDatabase } from './utils/oui';
+import { pool, query, queryOne } from './config/database';
 import { redis } from './config/redis';
 import { runMigrations } from './db/migrate';
-import { startProxyBackfillsInBackground } from './services/ProxyBackfillService';
+import { auditMiddleware } from './middleware/auditMiddleware';
+import { type AuthPayload, highestRole, verifyToken } from './middleware/auth';
+import { changePreview } from './middleware/changePreview';
 import { errorHandler } from './middleware/errorHandler';
-import { PollerService } from './services/PollerService';
-import { POLLER_ROLE } from './services/pollerRole';
-import { setSharedPollerService } from './services/pollerRef';
+import { rateLimitRedis } from './middleware/rateLimitRedis';
+import { siteContext } from './middleware/site';
+import adoptionRoutes, { setPollerService as setAdoptionPoller } from './routes/adoption';
+import alertsRoutes, { ensureDefaultRules } from './routes/alerts';
+import auditLogRoutes from './routes/auditLog';
+import authRoutes from './routes/auth';
+import automationRoutes from './routes/automation';
+import backupsRoutes from './routes/backups';
+import certRoutes from './routes/cert';
+import certificatesRoutes from './routes/certificates';
+import clientsRoutes, { setPollerService as setClientsPoller } from './routes/clients';
+import commandRoutes from './routes/commands';
+import commandSecretsRoutes from './routes/commandSecrets';
+import commandTemplatesRoutes from './routes/commandTemplates';
+import configHistoryRoutes from './routes/configHistory';
+import configTemplatesRoutes from './routes/configTemplates';
+import credentialPresetsRoutes from './routes/credentialPresets';
+import cveRoutes from './routes/cves';
+import deviceCertsRoutes from './routes/deviceCerts';
+import devicesRoutes, { setPollerService as setDevicesPoller } from './routes/devices';
+import eventsRoutes from './routes/events';
+import firmwareRoutes from './routes/firmware';
+import firmwareMirrorRoutes from './routes/firmwareMirror';
+import guestWifiRoutes from './routes/guestWifi';
+import maintenanceWindowsRoutes from './routes/maintenanceWindows';
+import metricsRoutes from './routes/metrics';
+import networkServicesRoutes from './routes/networkServices';
+import oidcRoutes from './routes/oidc';
+import operationsRoutes from './routes/operations';
+import platformBackupRoutes from './routes/platformBackup';
+import proxyRoutes from './routes/proxy';
+import romonRoutes from './routes/romon';
+import routersRoutes from './routes/routers';
+import routingRoutes from './routes/routing';
+import searchRoutes from './routes/search';
+import settingsRoutes from './routes/settings';
+import siteGroupsRoutes from './routes/siteGroups';
+import sitesRoutes from './routes/sites';
+import sshKeysRoutes from './routes/sshKeys';
+import switchesRoutes from './routes/switches';
+import systemRoutes, { setPollerService as setSystemPoller } from './routes/system';
+import tagsRoutes from './routes/tags';
+import topologyRoutes, { setPollerService as setTopologyPoller } from './routes/topology';
+import trafficAnalyticsRoutes from './routes/trafficAnalytics';
+import userManagerRoutes from './routes/userManager';
+import wirelessRoutes from './routes/wireless';
+import { reconcileStaleGuards } from './services/changeGuard/ChangeGuard';
+import { commandRunner } from './services/CommandRunner';
+import { convertConfigTemplates } from './services/convertConfigTemplates';
 import {
   setBulkAddPollerService,
   startBulkAddWorker,
   stopBulkAddWorker,
 } from './services/DeviceBulkAddWorker';
-import { startSshKeyFleetWorker, stopSshKeyFleetWorker } from './services/SshKeyFleetWorker';
-import sshKeysRoutes from './routes/sshKeys';
-import commandTemplatesRoutes from './routes/commandTemplates';
-import commandSecretsRoutes from './routes/commandSecrets';
-import { convertConfigTemplates } from './services/convertConfigTemplates';
-import { netflowCollector } from './services/netflow/NetflowCollector';
-import { verifyToken, highestRole, type AuthPayload } from './middleware/auth';
-import { roleOnDevice } from './utils/siteAccess';
-import { validateSession } from './utils/sessionState';
+import { adoptCaCertificate, verifyManagedCertificate } from './services/deviceCa';
+import { countUnreadable, reencryptAll, sealPlaintextSecrets } from './services/encryptedData';
+import { startMirrorScheduler } from './services/firmwareMirror';
+import { firmwareOrchestrator } from './services/FirmwareOrchestrator';
 import { verifyDeviceIdentity } from './services/identityPins';
 import { RouterOSClient } from './services/mikrotik/RouterOSClient';
-import { rateLimitRedis } from './middleware/rateLimitRedis';
-import { initSecrets, confirmEncryptionKey } from './utils/secrets';
-import { countUnreadable, reencryptAll, sealPlaintextSecrets } from './services/encryptedData';
-import { reconcileStaleGuards } from './services/changeGuard/ChangeGuard';
-import { corsMiddlewareOptions, socketIoCorsOptions } from './utils/corsOrigins';
-
-import authRoutes from './routes/auth';
-import oidcRoutes from './routes/oidc';
-import auditLogRoutes from './routes/auditLog';
-import tagsRoutes from './routes/tags';
-import maintenanceWindowsRoutes from './routes/maintenanceWindows';
-import devicesRoutes, { setPollerService as setDevicesPoller } from './routes/devices';
-import clientsRoutes, { setPollerService as setClientsPoller } from './routes/clients';
-import eventsRoutes from './routes/events';
-import proxyRoutes from './routes/proxy';
-import backupsRoutes from './routes/backups';
-import guestWifiRoutes from './routes/guestWifi';
-import firmwareRoutes from './routes/firmware';
-import firmwareMirrorRoutes from './routes/firmwareMirror';
-import { startMirrorScheduler } from './services/firmwareMirror';
-import automationRoutes from './routes/automation';
-import { reportService } from './services/ReportService';
-import { firmwareOrchestrator } from './services/FirmwareOrchestrator';
-import { commandRunner } from './services/CommandRunner';
-import operationsRoutes from './routes/operations';
-import metricsRoutes from './routes/metrics';
-import topologyRoutes, { setPollerService as setTopologyPoller } from './routes/topology';
-import settingsRoutes from './routes/settings';
-import certRoutes from './routes/cert';
-import searchRoutes from './routes/search';
-import switchesRoutes from './routes/switches';
-import routersRoutes from './routes/routers';
-import alertsRoutes, { ensureDefaultRules } from './routes/alerts';
-import configTemplatesRoutes from './routes/configTemplates';
-import configHistoryRoutes from './routes/configHistory';
-import wirelessRoutes from './routes/wireless';
-import networkServicesRoutes from './routes/networkServices';
-import userManagerRoutes from './routes/userManager';
-import trafficAnalyticsRoutes from './routes/trafficAnalytics';
-import credentialPresetsRoutes from './routes/credentialPresets';
-import commandRoutes from './routes/commands';
-import systemRoutes, { setPollerService as setSystemPoller } from './routes/system';
-import sitesRoutes from './routes/sites';
-import siteGroupsRoutes from './routes/siteGroups';
-import romonRoutes from './routes/romon';
-import certificatesRoutes from './routes/certificates';
-import routingRoutes from './routes/routing';
-import platformBackupRoutes from './routes/platformBackup';
-import deviceCertsRoutes from './routes/deviceCerts';
-import { verifyManagedCertificate, adoptCaCertificate } from './services/deviceCa';
+import { netflowCollector } from './services/netflow/NetflowCollector';
 import { isRestoring } from './services/platformBackup/service';
-import cveRoutes from './routes/cves';
-import adoptionRoutes, { setPollerService as setAdoptionPoller } from './routes/adoption';
-import { siteContext } from './middleware/site';
-import { changePreview } from './middleware/changePreview';
-import { auditMiddleware } from './middleware/auditMiddleware';
-import { sshHostCheck, explainSshError } from './services/sshHostCheck';
+import { setSharedPollerService } from './services/pollerRef';
+import { POLLER_ROLE } from './services/pollerRole';
+import { PollerService } from './services/PollerService';
+import { startProxyBackfillsInBackground } from './services/ProxyBackfillService';
+import { reportService } from './services/ReportService';
+import { explainSshError, sshHostCheck } from './services/sshHostCheck';
+import { startSshKeyFleetWorker, stopSshKeyFleetWorker } from './services/SshKeyFleetWorker';
+import { corsMiddlewareOptions, socketIoCorsOptions } from './utils/corsOrigins';
+import { initOuiDatabase } from './utils/oui';
+import { confirmEncryptionKey, initSecrets } from './utils/secrets';
+import { validateSession } from './utils/sessionState';
+import { roleOnDevice } from './utils/siteAccess';
 
 // ─── Secret hygiene ───────────────────────────────────────────────────────────
 // Self-healing: if JWT_SECRET / ENCRYPTION_KEY aren't set to strong values, we
@@ -112,14 +113,14 @@ function provisionSecrets(): void {
   if (info.envJwtIgnored) {
     console.warn(
       '[secrets] JWT_SECRET in the environment is a placeholder or shorter than 32 characters, ' +
-      'so it is ignored and a generated secret is used instead. Remove it from .env or set a long random value.'
+        'so it is ignored and a generated secret is used instead. Remove it from .env or set a long random value.',
     );
   }
   if (info.ephemeral) {
     console.error(
       '[secrets] WARNING: generated secrets could not be persisted (SECRETS_DIR not writable). ' +
-      'They will change on restart — users will be logged out and credentials written now may not ' +
-      'decrypt later. Mount a writable volume at SECRETS_DIR (default /app/data) or set JWT_SECRET/ENCRYPTION_KEY.'
+        'They will change on restart — users will be logged out and credentials written now may not ' +
+        'decrypt later. Mount a writable volume at SECRETS_DIR (default /app/data) or set JWT_SECRET/ENCRYPTION_KEY.',
     );
   }
 }
@@ -131,7 +132,9 @@ function provisionSecrets(): void {
 RouterOSClient.tlsVerifier = async (host, port, fingerprint, raw) => {
   // First, take up a certificate the CA issued that isn't on record (after
   // restoring an older platform backup), so it isn't reported as a change.
-  await adoptCaCertificate(host, port, raw).catch((e) => console.error('[device-ca] adopt check failed:', (e as Error).message));
+  await adoptCaCertificate(host, port, raw).catch((e) =>
+    console.error('[device-ca] adopt check failed:', (e as Error).message),
+  );
   await verifyDeviceIdentity('api-tls', host, port, fingerprint);
   await verifyManagedCertificate(host, port, raw);
 };
@@ -170,7 +173,11 @@ async function socketSession(token: string | undefined): Promise<AuthPayload | n
 
 /** The live-update rooms an account belongs in: 'fleet', or one per site (P1-7). */
 function socketRooms(user: AuthPayload): string[] {
-  return user.siteRoles ? Object.keys(user.siteRoles).sort().map((id) => `site:${id}`) : ['fleet'];
+  return user.siteRoles
+    ? Object.keys(user.siteRoles)
+        .sort()
+        .map((id) => `site:${id}`)
+    : ['fleet'];
 }
 
 io.use((socket, next) => {
@@ -212,7 +219,7 @@ const terminalStartHistory = new Map<number, number[]>();
 function terminalStartAllowed(userId: number): boolean {
   const now = Date.now();
   const recent = (terminalStartHistory.get(userId) ?? []).filter(
-    (t) => now - t < TERMINAL_START_WINDOW_MS
+    (t) => now - t < TERMINAL_START_WINDOW_MS,
   );
   if (recent.length >= TERMINAL_START_LIMIT) {
     terminalStartHistory.set(userId, recent);
@@ -227,7 +234,7 @@ function auditTerminal(user: AuthPayload, ip: string, summary: string, deviceId?
   query(
     `INSERT INTO audit_log (user_id, username, method, path, entity_type, entity_id, summary, ip_address, status_code)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-    [user.userId, user.username, 'SSH', '/terminal', 'device', deviceId ?? null, summary, ip, 200]
+    [user.userId, user.username, 'SSH', '/terminal', 'device', deviceId ?? null, summary, ip, 200],
   ).catch(() => {});
 }
 
@@ -270,7 +277,10 @@ terminalNs.on('connection', (socket) => {
   let shellStream: ClientChannel | null = null;
   const user = socket.data.user as AuthPayload;
   // The user's address, not nginx's (P2-33).
-  const clientIp = clientIpBehindProxy(socket.handshake.headers['x-forwarded-for'], socket.handshake.address);
+  const clientIp = clientIpBehindProxy(
+    socket.handshake.headers['x-forwarded-for'],
+    socket.handshake.address,
+  );
 
   socket.on('start', async (payload: { deviceId: number; cols?: number; rows?: number }) => {
     const { deviceId, cols = 80, rows = 24 } = payload;
@@ -279,27 +289,49 @@ terminalNs.on('connection', (socket) => {
       // shell, not as they were when the socket connected (P2-1).
       const current = await socketSession(socket.data.token as string | undefined);
       if (!current || !TERMINAL_ROLES.has(current.role)) {
-        socket.emit('error', current ? 'Console access denied for this role' : 'Your session has ended. Please sign in again.');
+        socket.emit(
+          'error',
+          current
+            ? 'Console access denied for this role'
+            : 'Your session has ended. Please sign in again.',
+        );
         return;
       }
       if (!terminalStartAllowed(user.userId)) {
-        auditTerminal(user, clientIp, `terminal start rate-limited for device ${deviceId}`, deviceId);
-        socket.emit('error', 'Too many terminal sessions started. Please wait a moment and try again.');
+        auditTerminal(
+          user,
+          clientIp,
+          `terminal start rate-limited for device ${deviceId}`,
+          deviceId,
+        );
+        socket.emit(
+          'error',
+          'Too many terminal sessions started. Please wait a moment and try again.',
+        );
         return;
       }
       const device = await queryOne<SshExecDevice>(
         `SELECT id, name, ip_address, ssh_port, ssh_username, ssh_password_encrypted,
                 api_username, api_password_encrypted
            FROM devices WHERE id = $1`,
-        [deviceId]
+        [deviceId],
       );
 
-      if (!device) { socket.emit('error', 'Device not found'); return; }
+      if (!device) {
+        socket.emit('error', 'Device not found');
+        return;
+      }
       // Its role in this device's site, not just anywhere (P1-7); a device in
       // another site is "not found".
       const roleHere = await roleOnDevice(current, deviceId);
-      if (!roleHere) { socket.emit('error', 'Device not found'); return; }
-      if (!TERMINAL_ROLES.has(roleHere)) { socket.emit('error', 'Console access denied for this role'); return; }
+      if (!roleHere) {
+        socket.emit('error', 'Device not found');
+        return;
+      }
+      if (!TERMINAL_ROLES.has(roleHere)) {
+        socket.emit('error', 'Console access denied for this role');
+        return;
+      }
 
       // Resolve credentials the same way every other SSH consumer does, so a
       // deployed key works here too. Doing this locally, and looking only at
@@ -309,38 +341,48 @@ terminalNs.on('connection', (socket) => {
       try {
         auth = await resolveAuth(device);
       } catch (e) {
-        socket.emit('error',
+        socket.emit(
+          'error',
           `${(e as Error).message}. Add an SSH username and password in device settings, ` +
-          `or deploy an SSH key for this device.`);
+            `or deploy an SSH key for this device.`,
+        );
         return;
       }
       sshClient = new SshClient();
 
       sshClient.on('ready', () => {
-        sshClient!.shell(
-          { term: 'xterm-256color', cols, rows },
-          (err, stream) => {
-            if (err) { socket.emit('error', err.message); return; }
-            shellStream = stream;
-            auditTerminal(user, clientIp, `opened SSH shell on device ${deviceId} (${device.ip_address}) using ${auth.kind} auth`, deviceId);
-            socket.emit('ready');
-
-            stream.on('data', (data: Buffer) => {
-              socket.emit('data', data.toString('binary'));
-            });
-            stream.stderr.on('data', (data: Buffer) => {
-              socket.emit('data', data.toString('binary'));
-            });
-            stream.on('close', () => {
-              socket.emit('close');
-              sshClient?.end();
-            });
+        sshClient!.shell({ term: 'xterm-256color', cols, rows }, (err, stream) => {
+          if (err) {
+            socket.emit('error', err.message);
+            return;
           }
-        );
+          shellStream = stream;
+          auditTerminal(
+            user,
+            clientIp,
+            `opened SSH shell on device ${deviceId} (${device.ip_address}) using ${auth.kind} auth`,
+            deviceId,
+          );
+          socket.emit('ready');
+
+          stream.on('data', (data: Buffer) => {
+            socket.emit('data', data.toString('binary'));
+          });
+          stream.stderr.on('data', (data: Buffer) => {
+            socket.emit('data', data.toString('binary'));
+          });
+          stream.on('close', () => {
+            socket.emit('close');
+            sshClient?.end();
+          });
+        });
       });
 
       sshClient.on('error', (err) => {
-        socket.emit('error', `SSH error: ${explainSshError(err, device.ip_address, device.ssh_port ?? 22).message}`);
+        socket.emit(
+          'error',
+          `SSH error: ${explainSshError(err, device.ip_address, device.ssh_port ?? 22).message}`,
+        );
       });
 
       sshClient.connect({
@@ -360,12 +402,7 @@ terminalNs.on('connection', (socket) => {
             'diffie-hellman-group14-sha1',
             'diffie-hellman-group1-sha1',
           ],
-          serverHostKey: [
-            'ssh-rsa',
-            'ecdsa-sha2-nistp256',
-            'ecdsa-sha2-nistp384',
-            'ssh-ed25519',
-          ],
+          serverHostKey: ['ssh-rsa', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ssh-ed25519'],
         },
       });
     } catch (err) {
@@ -396,8 +433,12 @@ app.use(compression());
 // While a platform backup is being restored the data is being replaced:
 // nothing else may read or write it until MikroTik Manager restarts.
 app.use('/api', (req, res, next) => {
-  if (!isRestoring() || req.path === '/health' || req.path === '/platform-backup/restore/progress') return next();
-  res.status(503).json({ error: 'MikroTik Manager is restoring a platform backup and will restart in a moment.', restoring: true });
+  if (!isRestoring() || req.path === '/health' || req.path === '/platform-backup/restore/progress')
+    return next();
+  res.status(503).json({
+    error: 'MikroTik Manager is restoring a platform backup and will restart in a moment.',
+    restoring: true,
+  });
 });
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -525,8 +566,12 @@ async function start(): Promise<void> {
 
   // Run migrations
   await runMigrations();
-  await ensureDefaultRules().catch((e) => console.warn('[startup] default alert rules:', (e as Error).message));
-  await convertConfigTemplates().catch((e) => console.warn('[startup] config template conversion:', (e as Error).message));
+  await ensureDefaultRules().catch((e) =>
+    console.warn('[startup] default alert rules:', (e as Error).message),
+  );
+  await convertConfigTemplates().catch((e) =>
+    console.warn('[startup] config template conversion:', (e as Error).message),
+  );
 
   // Before anything new is encrypted: is there stored data no known key opens?
   // Then the key was lost, and a freshly generated one must not be saved over
@@ -538,8 +583,9 @@ async function start(): Promise<void> {
     if (lost) {
       console.error(
         `[secrets] ${unreadable} stored credential(s) can't be decrypted with any known key. The encryption key ` +
-        'is missing: restore secrets.json to the app_data volume, or set ENCRYPTION_KEY (or ENCRYPTION_KEY_PREVIOUS) ' +
-        'to the original key, then restart. Saving new credentials is refused until then.');
+          'is missing: restore secrets.json to the app_data volume, or set ENCRYPTION_KEY (or ENCRYPTION_KEY_PREVIOUS) ' +
+          'to the original key, then restart. Saving new credentials is refused until then.',
+      );
     } else {
       // Seal any alert channel / webhook secret still in plaintext (S7), then
       // move everything to the current key.
@@ -562,8 +608,10 @@ async function start(): Promise<void> {
   // Start loading the OUI database in the background (doesn't block startup)
   // Dark Site Mode: read before the first download attempt, which happens here.
   const ouiAllowed = await query<{ value: unknown }>(
-    `SELECT value FROM app_settings WHERE key = 'oui_download_enabled'`
-  ).then((r) => r[0]?.value !== false).catch(() => true);
+    `SELECT value FROM app_settings WHERE key = 'oui_download_enabled'`,
+  )
+    .then((r) => r[0]?.value !== false)
+    .catch(() => true);
   initOuiDatabase(ouiAllowed).catch(() => {});
 
   // Connect Redis
@@ -584,14 +632,16 @@ async function start(): Promise<void> {
   // Trim job history left over from before retention limits existed. Runs in the
   // background: an installation with millions of retained jobs would otherwise
   // hold up startup, and nothing depends on it having finished.
-  void pollerService.cleanupJobHistory().catch((e) =>
-    console.error('[Poller] Job history cleanup failed:', e));
+  void pollerService
+    .cleanupJobHistory()
+    .catch((e) => console.error('[Poller] Job history cleanup failed:', e));
 
   // Pending work accumulated before dedup existed is dropped too, not just
   // finished-job history. An upgrade that leaves hundreds of thousands of stale
   // polls queued has not actually fixed anything the operator can see (#114).
-  void pollerService.dropStalePending().catch((e) =>
-    console.error('[Poller] Stale-pending sweep failed:', e));
+  void pollerService
+    .dropStalePending()
+    .catch((e) => console.error('[Poller] Stale-pending sweep failed:', e));
   await startBulkAddWorker();
   await startSshKeyFleetWorker();
 
@@ -602,10 +652,14 @@ async function start(): Promise<void> {
   // Close out any rollout or command run left mid-flight by a previous process
   // (#140). Must happen before the scheduler starts, so a stale 'running' row
   // cannot block a due rollout from starting.
-  await firmwareOrchestrator.reconcileInterrupted().catch((e: unknown) =>
-    console.error('[Firmware] could not reconcile interrupted rollouts:', e));
-  await commandRunner.reconcileInterrupted().catch((e: unknown) =>
-    console.error('[Command] could not reconcile interrupted runs:', e));
+  await firmwareOrchestrator
+    .reconcileInterrupted()
+    .catch((e: unknown) =>
+      console.error('[Firmware] could not reconcile interrupted rollouts:', e),
+    );
+  await commandRunner
+    .reconcileInterrupted()
+    .catch((e: unknown) => console.error('[Command] could not reconcile interrupted runs:', e));
 
   firmwareOrchestrator.startScheduler();
   startMirrorScheduler();

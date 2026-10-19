@@ -1,13 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { borderToward, sidePoint, linkEnds, sideOf } from './topologyGeometry';
+import { describe, expect, it } from 'vitest';
+
+import { borderToward, linkEnds, sideOf, sidePoint } from './topologyGeometry';
 
 const card = (x: number, y: number) => ({ x, y, w: 160, h: 60 });
 
 describe('topology link geometry', () => {
   it('stops a link at the edge of each card, along the line between them', () => {
     const { s, t } = linkEnds(card(0, 0), card(0, 300));
-    expect(s).toEqual({ x: 80, y: 60 });   // bottom middle of the upper card
-    expect(t).toEqual({ x: 80, y: 300 });  // top middle of the lower one
+    expect(s).toEqual({ x: 80, y: 60 }); // bottom middle of the upper card
+    expect(t).toEqual({ x: 80, y: 300 }); // top middle of the lower one
   });
 
   it('leaves through the side for a card off to the right', () => {

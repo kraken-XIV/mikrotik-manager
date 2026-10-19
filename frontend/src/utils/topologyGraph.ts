@@ -5,9 +5,15 @@
  * turns the result into React Flow nodes and edges and owns all styling.
  */
 import type {
-  TopologyDevice, TopologyLink, ExternalTopologyNode, TopologyNode, HandLink, HandLinkEnd, TopologyClient,
+  ExternalTopologyNode,
+  HandLink,
+  HandLinkEnd,
+  TopologyClient,
+  TopologyDevice,
+  TopologyLink,
+  TopologyNode,
 } from '../types';
-import { resolveStpRoot, type BridgeInfo, type RootVerdict } from './stpRoot';
+import { type BridgeInfo, resolveStpRoot, type RootVerdict } from './stpRoot';
 import { layoutForest } from './topologyLayout';
 
 /** Upstream verdict as returned by /api/topology; resolved server-side. */
@@ -15,7 +21,8 @@ export interface StpUpstream {
   deviceId: number;
   bridgeName: string;
   upstreamDeviceId: number | null;
-  confidence: 'resolved' | 'external-upstream' | 'is-root' | 'external-root' | 'ambiguous' | 'unknown';
+  confidence:
+    'resolved' | 'external-upstream' | 'is-root' | 'external-root' | 'ambiguous' | 'unknown';
   rootBridgeId: string | null;
   /** 'designated': spanning tree named the far end of the root port (exact, #260). */
   method?: 'designated' | 'cost';
@@ -133,14 +140,29 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
     for (const end of [hl.a, hl.b]) {
       if (end.kind === 'external' && !seenExt.has(String(end.ref))) {
         seenExt.add(String(end.ref));
-        externalNodes.push({ id: String(end.ref), name: end.name || 'Neighbour', address: '', platform: '', mac: '', caps: 'gone' });
+        externalNodes.push({
+          id: String(end.ref),
+          name: end.name || 'Neighbour',
+          address: '',
+          platform: '',
+          mac: '',
+          caps: 'gone',
+        });
       }
     }
   }
   const manualById = new Map(nodes.map((n) => [nodeId.manual(n.id), n]));
   const adj = new Map<string, Set<string>>();
-  const ensure = (id: string) => { if (!adj.has(id)) adj.set(id, new Set()); return adj.get(id)!; };
-  const connect = (a: string, b: string) => { if (adj.has(a) && adj.has(b) && a !== b) { adj.get(a)!.add(b); adj.get(b)!.add(a); } };
+  const ensure = (id: string) => {
+    if (!adj.has(id)) adj.set(id, new Set());
+    return adj.get(id)!;
+  };
+  const connect = (a: string, b: string) => {
+    if (adj.has(a) && adj.has(b) && a !== b) {
+      adj.get(a)!.add(b);
+      adj.get(b)!.add(a);
+    }
+  };
 
   for (const d of devices) ensure(nodeId.device(d.id));
   for (const e of externalNodes) ensure(e.id);
@@ -154,10 +176,15 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
     let dst: string | null = null;
     if (link.to_device_id) dst = nodeId.device(link.to_device_id);
     else {
-      const ext = externalNodes.find((e) =>
-        (link.neighbor_address && e.address === link.neighbor_address)
-        || (link.neighbor_mac && e.mac === link.neighbor_mac)
-        || (!link.neighbor_address && !link.neighbor_mac && link.neighbor_identity && e.name === link.neighbor_identity));
+      const ext = externalNodes.find(
+        (e) =>
+          (link.neighbor_address && e.address === link.neighbor_address) ||
+          (link.neighbor_mac && e.mac === link.neighbor_mac) ||
+          (!link.neighbor_address &&
+            !link.neighbor_mac &&
+            link.neighbor_identity &&
+            e.name === link.neighbor_identity),
+      );
       if (ext) dst = ext.id;
     }
     if (dst) farEnd.set(link.id, dst);
@@ -170,7 +197,10 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
   for (const c of cables) connect(c.source, c.target);
   for (const hl of handLinks) connect(endId(hl.a), endId(hl.b));
   if (hidden.size) {
-    const reached = new Set([...cables.flatMap((c) => [c.source, c.target]), ...handLinks.flatMap((hl) => [endId(hl.a), endId(hl.b)])]);
+    const reached = new Set([
+      ...cables.flatMap((c) => [c.source, c.target]),
+      ...handLinks.flatMap((hl) => [endId(hl.a), endId(hl.b)]),
+    ]);
     for (const e of externalNodes) if (!reached.has(e.id)) adj.delete(e.id);
     externalNodes = externalNodes.filter((e) => reached.has(e.id));
   }
@@ -192,7 +222,9 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
     for (const c of clients) {
       const dev = nodeId.device(c.deviceId);
       if (!deviceIds.has(dev)) continue;
-      const behind = c.behindNeighbour ? neighbourOnPort.get(`${c.deviceId}:${(c.interface ?? '').toLowerCase()}`) : undefined;
+      const behind = c.behindNeighbour
+        ? neighbourOnPort.get(`${c.deviceId}:${(c.interface ?? '').toLowerCase()}`)
+        : undefined;
       const at = behind ?? dev;
       if (!byDevice.has(at)) byDevice.set(at, []);
       byDevice.get(at)!.push(c);
@@ -202,19 +234,42 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
       // block, so they never mix with the device's real children in a row.
       const group = nodeId.clientGroup(dev);
       const open = input.expandedClients.has(dev);
-      ensure(group); connect(dev, group);
+      ensure(group);
+      connect(dev, group);
       clientNodes.push({
-        id: group, kind: 'clientGroup', x: 0, y: 0,
-        data: { deviceId: dev, count: list.length, wireless: list.filter((c) => c.wireless).length, expanded: open },
+        id: group,
+        kind: 'clientGroup',
+        x: 0,
+        y: 0,
+        data: {
+          deviceId: dev,
+          count: list.length,
+          wireless: list.filter((c) => c.wireless).length,
+          expanded: open,
+        },
       });
-      clientEdges.push({ id: `cgedge-${dev}`, kind: 'client', source: dev, target: group, parallel: 0 });
+      clientEdges.push({
+        id: `cgedge-${dev}`,
+        kind: 'client',
+        source: dev,
+        target: group,
+        parallel: 0,
+      });
       if (!open) continue;
       const hang = (parent: string, members: TopologyClient[]) => {
         for (const c of members) {
           const id = nodeId.client(c.mac);
-          ensure(id); connect(parent, id);
+          ensure(id);
+          connect(parent, id);
           clientNodes.push({ id, kind: 'client', x: 0, y: 0, data: { ...c } });
-          clientEdges.push({ id: `cedge-${c.mac}`, kind: 'client', source: parent, target: id, parallel: 0, label: c.interface ?? undefined });
+          clientEdges.push({
+            id: `cedge-${c.mac}`,
+            kind: 'client',
+            source: parent,
+            target: id,
+            parallel: 0,
+            label: c.interface ?? undefined,
+          });
         }
       };
       // By VLAN (#296): one chip per VLAN, each opening to its clients, so a
@@ -226,18 +281,43 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
         if (!byVlan.has(k)) byVlan.set(k, []);
         byVlan.get(k)!.push(c);
       }
-      if (!input.groupClientsByVlan || byVlan.size < 2) { hang(group, list); continue; }
-      const order = [...byVlan.keys()].sort((a, b) => (a === 'No VLAN' ? 1 : b === 'No VLAN' ? -1 : a.localeCompare(b, undefined, { numeric: true })));
+      if (!input.groupClientsByVlan || byVlan.size < 2) {
+        hang(group, list);
+        continue;
+      }
+      const order = [...byVlan.keys()].sort((a, b) =>
+        a === 'No VLAN'
+          ? 1
+          : b === 'No VLAN'
+            ? -1
+            : a.localeCompare(b, undefined, { numeric: true }),
+      );
       for (const label of order) {
         const members = byVlan.get(label)!;
         const vg = `${group}:vlan:${label}`;
         const vOpen = input.expandedClients.has(vg);
-        ensure(vg); connect(group, vg);
+        ensure(vg);
+        connect(group, vg);
         clientNodes.push({
-          id: vg, kind: 'clientGroup', x: 0, y: 0,
-          data: { deviceId: vg, count: members.length, wireless: members.filter((c) => c.wireless).length, expanded: vOpen, label },
+          id: vg,
+          kind: 'clientGroup',
+          x: 0,
+          y: 0,
+          data: {
+            deviceId: vg,
+            count: members.length,
+            wireless: members.filter((c) => c.wireless).length,
+            expanded: vOpen,
+            label,
+          },
         });
-        clientEdges.push({ id: `cvedge-${vg}`, kind: 'client', source: group, target: vg, parallel: 0 });
+        clientEdges.push({
+          id: `cvedge-${vg}`,
+          kind: 'client',
+          source: group,
+          target: vg,
+          parallel: 0,
+        });
         if (vOpen) hang(vg, members);
       }
     }
@@ -246,7 +326,8 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
   // ── Spanning-tree parents, where the switches agree on one ───────────────
   const stpParent = new Map<string, string>();
   for (const u of upstreams) {
-    if (u.confidence === 'resolved' && u.upstreamDeviceId != null) stpParent.set(nodeId.device(u.deviceId), nodeId.device(u.upstreamDeviceId));
+    if (u.confidence === 'resolved' && u.upstreamDeviceId != null)
+      stpParent.set(nodeId.device(u.deviceId), nodeId.device(u.upstreamDeviceId));
     // An unmanaged switch spanning tree names as upstream (#260): hang the
     // device under it, so two switches on it show as siblings.
     else if (u.confidence === 'external-upstream' && u.viaLinkId != null) {
@@ -263,21 +344,36 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
     let verdict: RootVerdict | null = null;
     if (bridges.length && managed.length) {
       verdict = resolveStpRoot(managed, bridges);
-      if (verdict.deviceId && managed.includes(verdict.deviceId)) { stpRoots.add(verdict.deviceId); root = verdict.deviceId; }
+      if (verdict.deviceId && managed.includes(verdict.deviceId)) {
+        stpRoots.add(verdict.deviceId);
+        root = verdict.deviceId;
+      }
     }
     if (!root) {
       const inComp = new Set(comp);
       let bestScore = -1;
       for (const id of comp) {
-        const score = (deviceIds.has(id) ? 1000 : 0) + [...(adj.get(id) || [])].filter((x) => inComp.has(x)).length;
-        if (score > bestScore) { root = id; bestScore = score; }
+        const score =
+          (deviceIds.has(id) ? 1000 : 0) +
+          [...(adj.get(id) || [])].filter((x) => inComp.has(x)).length;
+        if (score > bestScore) {
+          root = id;
+          bestScore = score;
+        }
       }
     }
     // A modem or "the internet" drawn by hand goes above the device it feeds.
-    const above = [...(adj.get(root!) || [])].find((n) => UPSTREAM_KINDS.has(manualById.get(n)?.kind ?? ''));
+    const above = [...(adj.get(root!) || [])].find((n) =>
+      UPSTREAM_KINDS.has(manualById.get(n)?.kind ?? ''),
+    );
     if (verdict?.confidence === 'external' && root) {
-      const named = input.stpDomains?.find((d) => d.rootBridgeId.toLowerCase() === (verdict!.rootBridgeId ?? '').toLowerCase())?.guessedName;
-      notes.set(root, `Spanning-tree root is outside the managed fleet${verdict.rootBridgeId ? ` (${verdict.rootBridgeId}${named ? `, probably ${named}` : ''})` : ''}`);
+      const named = input.stpDomains?.find(
+        (d) => d.rootBridgeId.toLowerCase() === (verdict!.rootBridgeId ?? '').toLowerCase(),
+      )?.guessedName;
+      notes.set(
+        root,
+        `Spanning-tree root is outside the managed fleet${verdict.rootBridgeId ? ` (${verdict.rootBridgeId}${named ? `, probably ${named}` : ''})` : ''}`,
+      );
     }
     return above ?? root!;
   };
@@ -292,52 +388,67 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
     while (stack.length) {
       const n = stack.pop()!;
       if (visited.has(n)) continue;
-      visited.add(n); comp.push(n);
+      visited.add(n);
+      comp.push(n);
       for (const m of adj.get(n) || []) if (!visited.has(m)) stack.push(m);
     }
     components.push(comp);
   }
   components.sort((a, b) => b.length - a.length);
   const loose = components.filter((c) => c.length === 1).map((c) => c[0]);
-  const trees = components.filter((c) => c.length > 1).map((comp) => {
-    const inComp = new Set(comp);
-    const root = pickRoot(comp);
-    const children = new Map<string, string[]>([[root, []]]);
-    const placed = new Set([root]);
-    const queue = [root];
-    // Where spanning tree names a node's upstream, that is its parent; the rest
-    // attach to whichever neighbour reaches them first.
-    while (queue.length) {
-      const cur = queue.shift()!;
-      for (const n of adj.get(cur) || []) {
-        if (!inComp.has(n) || placed.has(n)) continue;
-        const real = stpParent.get(n);
-        if (real && real !== cur && inComp.has(real) && !placed.has(real)) continue;
-        placed.add(n); children.set(n, []); children.get(cur)!.push(n); queue.push(n);
+  const trees = components
+    .filter((c) => c.length > 1)
+    .map((comp) => {
+      const inComp = new Set(comp);
+      const root = pickRoot(comp);
+      const children = new Map<string, string[]>([[root, []]]);
+      const placed = new Set([root]);
+      const queue = [root];
+      // Where spanning tree names a node's upstream, that is its parent; the rest
+      // attach to whichever neighbour reaches them first.
+      while (queue.length) {
+        const cur = queue.shift()!;
+        for (const n of adj.get(cur) || []) {
+          if (!inComp.has(n) || placed.has(n)) continue;
+          const real = stpParent.get(n);
+          if (real && real !== cur && inComp.has(real) && !placed.has(real)) continue;
+          placed.add(n);
+          children.set(n, []);
+          children.get(cur)!.push(n);
+          queue.push(n);
+        }
       }
-    }
-    // Anything left (its STP parent was never reached) attaches to any placed neighbour.
-    let left = comp.filter((id) => !placed.has(id));
-    while (left.length) {
-      const before = left.length;
-      for (const id of [...left]) {
-        const at = [...(adj.get(id) || [])].find((n) => placed.has(n));
-        if (!at) continue;
-        placed.add(id); children.set(id, []); children.get(at)!.push(id);
-        left = left.filter((x) => x !== id);
+      // Anything left (its STP parent was never reached) attaches to any placed neighbour.
+      let left = comp.filter((id) => !placed.has(id));
+      while (left.length) {
+        const before = left.length;
+        for (const id of [...left]) {
+          const at = [...(adj.get(id) || [])].find((n) => placed.has(n));
+          if (!at) continue;
+          placed.add(id);
+          children.set(id, []);
+          children.get(at)!.push(id);
+          left = left.filter((x) => x !== id);
+        }
+        if (left.length === before) break;
       }
-      if (left.length === before) break;
-    }
-    return { rootId: root, children };
-  });
+      return { rootId: root, children };
+    });
 
   // Clients and their count chips are smaller cards than devices. A chip
   // naming its VLAN ("VLAN 300 · guests · 14 clients") needs a full slot, or
   // neighbouring chips overlap (#296).
   const clientIds = new Set(clientNodes.map((c) => c.id));
-  const labelledChips = new Set(clientNodes.filter((c) => c.kind === 'clientGroup' && c.data.label).map((c) => c.id));
-  const laid = layoutForest(trees, loose, undefined, undefined,
-    (id) => (labelledChips.has(id) ? { w: 1, h: 0.5 } : clientIds.has(id) ? { w: 0.75, h: 0.6 } : { w: 1, h: 1 }));
+  const labelledChips = new Set(
+    clientNodes.filter((c) => c.kind === 'clientGroup' && c.data.label).map((c) => c.id),
+  );
+  const laid = layoutForest(trees, loose, undefined, undefined, (id) =>
+    labelledChips.has(id)
+      ? { w: 1, h: 0.5 }
+      : clientIds.has(id)
+        ? { w: 0.75, h: 0.6 }
+        : { w: 1, h: 1 },
+  );
   // Automatic positions, in pixels.
   const auto = (id: string) => {
     const p = laid.positions.get(id) ?? { x: 0, y: 0 };
@@ -349,7 +460,8 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
   // it hangs from. Anything else unsaved goes below the arranged part.
   const saved = input.saved ?? {};
   const parentOf = new Map<string, string>();
-  for (const t of trees) for (const [p, kids] of t.children) for (const k of kids) parentOf.set(k, p);
+  for (const t of trees)
+    for (const [p, kids] of t.children) for (const k of kids) parentOf.set(k, p);
   const placed = new Map<string, { x: number; y: number }>();
   const savedVals = Object.values(saved);
   const anySaved = savedVals.length > 0;
@@ -367,7 +479,8 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
       const parent = parentOf.get(id);
       if (parent && depth < 64 && hasSavedAncestor(parent)) {
         const pp = resolve(parent, depth + 1);
-        const a = auto(id); const ap = auto(parent);
+        const a = auto(id);
+        const ap = auto(parent);
         out = { x: pp.x + (a.x - ap.x), y: pp.y + (a.y - ap.y) };
       } else if (anySaved) {
         const a = auto(id);
@@ -379,7 +492,10 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
   };
   function hasSavedAncestor(id: string): boolean {
     let cur: string | undefined = id;
-    for (let i = 0; cur && i < 64; i++) { if (saved[cur]) return true; cur = parentOf.get(cur); }
+    for (let i = 0; cur && i < 64; i++) {
+      if (saved[cur]) return true;
+      cur = parentOf.get(cur);
+    }
     return false;
   }
   const pos = (id: string) => resolve(id);
@@ -389,18 +505,38 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
     ...devices.map((d) => {
       const id = nodeId.device(d.id);
       return {
-        id, kind: 'device' as const, ...pos(id),
-        data: { ...d, isRootBridge: stpRoots.has(id), stpNote: notes.get(id) ?? null, orphan: loose.includes(id) } as Record<string, unknown>,
+        id,
+        kind: 'device' as const,
+        ...pos(id),
+        data: {
+          ...d,
+          isRootBridge: stpRoots.has(id),
+          stpNote: notes.get(id) ?? null,
+          orphan: loose.includes(id),
+        } as Record<string, unknown>,
       };
     }),
     ...externalNodes.map((e) => {
       const o = input.neighbourOverrides?.[e.id];
-      return { id: e.id, kind: 'external' as const, ...pos(e.id),
-        data: { ...e, ...(o?.name ? { name: o.name, discoveredName: e.name } : {}), overrideKind: o?.kind ?? null } as Record<string, unknown> };
+      return {
+        id: e.id,
+        kind: 'external' as const,
+        ...pos(e.id),
+        data: {
+          ...e,
+          ...(o?.name ? { name: o.name, discoveredName: e.name } : {}),
+          overrideKind: o?.kind ?? null,
+        } as Record<string, unknown>,
+      };
     }),
     ...nodes.map((n) => {
       const id = nodeId.manual(n.id);
-      return { id, kind: 'manual' as const, ...pos(id), data: { ...n, orphan: loose.includes(id) } as Record<string, unknown> };
+      return {
+        id,
+        kind: 'manual' as const,
+        ...pos(id),
+        data: { ...n, orphan: loose.includes(id) } as Record<string, unknown>,
+      };
     }),
     ...clientNodes.map((c) => ({ ...c, ...pos(c.id) })),
   ].map((n) => (saved[n.id] ? { ...n, pinned: true } : n));
@@ -412,7 +548,8 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
     const k = [a, b].sort().join('|');
     const n = pairCount.get(k) ?? 0;
     pairCount.set(k, n + 1);
-    hasEdge.add(a); hasEdge.add(b);
+    hasEdge.add(a);
+    hasEdge.add(b);
     return n;
   };
 
@@ -426,11 +563,21 @@ export function buildTopologyGraph(input: GraphInput): GraphOutput {
     // The ports at each end, as typed (#260), then the label.
     const ports = hl.aPort || hl.bPort ? `${hl.aPort ?? '?'} ↔ ${hl.bPort ?? '?'}` : '';
     const label = [ports, hl.label].filter(Boolean).join(' · ') || undefined;
-    edges.push({ id: `hand-${hl.id}`, kind: 'hand', source: src, target: dst, label, deleteId: hl.id, parallel: nextParallel(src, dst) });
+    edges.push({
+      id: `hand-${hl.id}`,
+      kind: 'hand',
+      source: src,
+      target: dst,
+      label,
+      deleteId: hl.id,
+      parallel: nextParallel(src, dst),
+    });
   }
   for (const e of clientEdges) edges.push(e);
 
-  const orphanCount = devices.filter((d) => !hasEdge.has(nodeId.device(d.id)) && loose.includes(nodeId.device(d.id))).length;
+  const orphanCount = devices.filter(
+    (d) => !hasEdge.has(nodeId.device(d.id)) && loose.includes(nodeId.device(d.id)),
+  ).length;
   return { nodes: outNodes, edges, orphanCount };
 }
 
@@ -444,7 +591,14 @@ export function mergeCables(
   discovered: TopologyLink[],
   farEnd: Map<number, string>,
 ): Omit<GraphEdge, 'parallel'>[] {
-  interface Cable { a: string; b: string; aPort?: string; bPort?: string; roles: string[]; ids: number[] }
+  interface Cable {
+    a: string;
+    b: string;
+    aPort?: string;
+    bPort?: string;
+    roles: string[];
+    ids: number[];
+  }
   const cables: Cable[] = [];
   for (const l of discovered) {
     const dst = farEnd.get(l.id);
@@ -459,25 +613,44 @@ export function mergeCables(
       }
       if (c.a === dst && c.b === src) {
         // The other end: its ports must agree with this report where both are known.
-        const portsAgree = (!fromPort || !c.bPort || c.bPort === fromPort) && (!toPort || !c.aPort || c.aPort === toPort);
+        const portsAgree =
+          (!fromPort || !c.bPort || c.bPort === fromPort) &&
+          (!toPort || !c.aPort || c.aPort === toPort);
         return portsAgree;
       }
       return false;
     });
     if (same) {
-      if (same.a === src) { same.aPort ??= fromPort; same.bPort ??= toPort; } else { same.bPort ??= fromPort; same.aPort ??= toPort; }
+      if (same.a === src) {
+        same.aPort ??= fromPort;
+        same.bPort ??= toPort;
+      } else {
+        same.bPort ??= fromPort;
+        same.aPort ??= toPort;
+      }
       if (l.stp_role) same.roles.push(l.stp_role);
       same.ids.push(l.id);
     } else {
-      cables.push({ a: src, b: dst, aPort: fromPort, bPort: toPort, roles: l.stp_role ? [l.stp_role] : [], ids: [l.id] });
+      cables.push({
+        a: src,
+        b: dst,
+        aPort: fromPort,
+        bPort: toPort,
+        roles: l.stp_role ? [l.stp_role] : [],
+        ids: [l.id],
+      });
     }
   }
   const used = new Map<string, number>();
   return cables.map((c) => {
-    const role = c.roles.some((r) => r === 'alternate' || r === 'backup') ? 'blocked'
-      : c.roles.includes('root') ? 'root'
-        : c.roles.includes('designated') ? 'designated' : undefined;
-    const ports = c.aPort && c.bPort ? `${c.aPort} ↔ ${c.bPort}` : c.aPort ?? c.bPort ?? '';
+    const role = c.roles.some((r) => r === 'alternate' || r === 'backup')
+      ? 'blocked'
+      : c.roles.includes('root')
+        ? 'root'
+        : c.roles.includes('designated')
+          ? 'designated'
+          : undefined;
+    const ports = c.aPort && c.bPort ? `${c.aPort} ↔ ${c.bPort}` : (c.aPort ?? c.bPort ?? '');
     // Built from the ends, not a row id: discovery rewrites its rows on every
     // poll, and a link's saved attachment points must survive that.
     const ends = [`${c.a}@${c.aPort ?? ''}`, `${c.b}@${c.bPort ?? ''}`].sort();
@@ -486,6 +659,13 @@ export function mergeCables(
     used.set(base, n + 1);
     // Two cables between the same switches with ports unknown would share an id.
     const id = n ? `${base}.${n}` : base;
-    return { id, kind: 'discovered' as const, source: c.a, target: c.b, label: ports || undefined, role };
+    return {
+      id,
+      kind: 'discovered' as const,
+      source: c.a,
+      target: c.b,
+      label: ports || undefined,
+      role,
+    };
   });
 }

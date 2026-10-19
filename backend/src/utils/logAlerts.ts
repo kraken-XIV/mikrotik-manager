@@ -9,10 +9,13 @@
  */
 const RECENT_MS = 15 * 60_000;
 
-export function logAlertCandidates<T extends { id: number; severity: string; event_time: Date | string }>(
-  stored: T[], now = new Date(),
-): T[] {
-  const recent = stored.filter((e) => Math.abs(now.getTime() - new Date(e.event_time).getTime()) <= RECENT_MS);
-  const newest = (sev: string) => recent.filter((e) => e.severity === sev).sort((a, b) => b.id - a.id)[0];
+export function logAlertCandidates<
+  T extends { id: number; severity: string; event_time: Date | string },
+>(stored: T[], now = new Date()): T[] {
+  const recent = stored.filter(
+    (e) => Math.abs(now.getTime() - new Date(e.event_time).getTime()) <= RECENT_MS,
+  );
+  const newest = (sev: string) =>
+    recent.filter((e) => e.severity === sev).sort((a, b) => b.id - a.id)[0];
   return [newest('error'), newest('warning')].filter((e): e is T => !!e);
 }

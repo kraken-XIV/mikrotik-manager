@@ -1,12 +1,18 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
+import { activeSite, writableScope } from '../middleware/site';
+import { getLldpStatuses, setLldpForTypes } from '../services/lldpApply';
+import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
+import {
+  applySnmpConfig,
+  getSnmpStatuses,
+  type SnmpConfigInput,
+  SnmpInputError,
+} from '../services/snmpApply';
 import { maskSecretsForReadOnly } from '../utils/redactSecrets';
 import { siteScopeDevices } from '../utils/siteScope';
-import { activeSite, writableScope } from '../middleware/site';
-import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
-import { getLldpStatuses, setLldpForTypes } from '../services/lldpApply';
-import { applySnmpConfig, getSnmpStatuses, SnmpInputError, type SnmpConfigInput } from '../services/snmpApply';
 
 const router = Router();
 router.use(requireAuth);
@@ -65,7 +71,13 @@ router.put('/snmp', requireWrite, async (req: Request, res: Response) => {
   // See services/snmpApply.ts: per-device variables, blanks left alone, and
   // only the active site's devices.
   try {
-    return res.json(await applySnmpConfig({ all: true, deviceTypes: ['switch'] }, req.body as SnmpConfigInput, writableScope(req)));
+    return res.json(
+      await applySnmpConfig(
+        { all: true, deviceTypes: ['switch'] },
+        req.body as SnmpConfigInput,
+        writableScope(req),
+      ),
+    );
   } catch (e) {
     if (e instanceof SnmpInputError) return res.status(400).json({ error: e.message });
     throw e;

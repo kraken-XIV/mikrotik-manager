@@ -1,24 +1,34 @@
-import { mapWithConcurrency, settleWithConcurrency, FLEET_ACTION_CONCURRENCY } from '../utils/concurrency';
-import { liveForDevices } from '../services/liveCache';
-import { securityPosture, type PostureDevice } from './devices';
-import { Router, Request, Response } from 'express';
+import { fluxString } from '@influxdata/influxdb-client';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { getQueryApi } from '../config/influxdb';
-import { requireAuth, requireWrite, fleetOnly } from '../middleware/auth';
-import { siteScopeDevices, siteScopeByDevice, siteScopeByNullableDevice, type SiteScope } from '../utils/siteScope';
+import { fleetOnly, requireAuth, requireWrite } from '../middleware/auth';
 import { activeSite, writableScope } from '../middleware/site';
-import { certExpiryState, needsAttention, describeCert } from '../utils/certExpiry';
 import { alertService } from '../services/AlertService';
+import { BackupDevice, BackupService } from '../services/BackupService';
 import { portErrorSummaries } from '../services/interfaceErrors';
-import type { PortErrorSummary } from '../utils/interfaceErrors';
-import { opticStatuses } from '../services/opticLevels';
-import { poolState } from '../utils/dhcpPools';
-import type { OpticStatus } from '../utils/opticLevels';
-import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
-import { BackupService, BackupDevice } from '../services/BackupService';
-import { fluxString } from '@influxdata/influxdb-client';
-import { stpDomains } from '../utils/stpUpstream';
 import { latestResources } from '../services/latestMetrics';
+import { liveForDevices } from '../services/liveCache';
+import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
+import { opticStatuses } from '../services/opticLevels';
+import { certExpiryState, describeCert, needsAttention } from '../utils/certExpiry';
+import {
+  FLEET_ACTION_CONCURRENCY,
+  mapWithConcurrency,
+  settleWithConcurrency,
+} from '../utils/concurrency';
+import { poolState } from '../utils/dhcpPools';
+import type { PortErrorSummary } from '../utils/interfaceErrors';
+import type { OpticStatus } from '../utils/opticLevels';
+import {
+  type SiteScope,
+  siteScopeByDevice,
+  siteScopeByNullableDevice,
+  siteScopeDevices,
+} from '../utils/siteScope';
+import { stpDomains } from '../utils/stpUpstream';
+import { type PostureDevice, securityPosture } from './devices';
 
 const router = Router();
 
@@ -30,7 +40,12 @@ const bucket = process.env.INFLUXDB_BUCKET || 'mikrotik';
 
 type Sev = 'error' | 'warn' | 'info';
 interface AttentionItem {
-  sev: Sev; category: string; title: string; body: string; action: string; path: string;
+  sev: Sev;
+  category: string;
+  title: string;
+  body: string;
+  action: string;
+  path: string;
   /** A device whose outage count this item reports, so it can be reset (#85). */
   resetOutagesDeviceId?: number;
   /** Stable identity for an item that is otherwise recomputed each request (#102). */
@@ -62,7 +77,9 @@ export function scopeKey(scope: SiteScope): string {
 }
 
 // Latest TX-retry % per radio (from the RF Health series).
-async function latestRetries(): Promise<{ device_id: string; device_name: string; interface: string; pct: number }[]> {
+async function latestRetries(): Promise<
+  { device_id: string; device_name: string; interface: string; pct: number }[]
+> {
   const rows: { device_id: string; device_name: string; interface: string; pct: number }[] = [];
   const flux = `
     from(bucket: "${bucket}")
@@ -89,7 +106,9 @@ async function latestRetries(): Promise<{ device_id: string; device_name: string
         complete: resolve,
       });
     });
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return rows;
 }
 
@@ -97,31 +116,36 @@ async function latestRetries(): Promise<{ device_id: string; device_name: string
 // device connections; all from Postgres + InfluxDB so it's fast).
 router.get('/insights', async (req: Request, res: Response) => {
   const siteId = activeSite(req);
-  const devFilter  = siteScopeDevices(siteId);
+  const devFilter = siteScopeDevices(siteId);
   const devFilterD = siteScopeDevices(siteId, 'd');
-  const cliFilter  = siteScopeByDevice(siteId, 'device_id');
+  const cliFilter = siteScopeByDevice(siteId, 'device_id');
   const availFilter = siteScopeByDevice(siteId, 'a.device_id');
-  const evtFilter  = siteScopeByNullableDevice(siteId, 'device_id');
-  const [
-    devices, missingBackup, recentOutages, weakWifi, coChannel, eventCounts,
-  ] = await Promise.all([
-    query<{
-      id: number; name: string; status: string; last_seen: string | null;
-      device_type: string; ros_version: string | null;
-      firmware_update_available: boolean; latest_ros_version: string | null;
-      routerboard_upgrade_available: boolean; firmware_version: string | null;
-      upgrade_firmware_version: string | null;
-    }>(`SELECT id, name, status, last_seen, device_type, ros_version,
+  const evtFilter = siteScopeByNullableDevice(siteId, 'device_id');
+  const [devices, missingBackup, recentOutages, weakWifi, coChannel, eventCounts] =
+    await Promise.all([
+      query<{
+        id: number;
+        name: string;
+        status: string;
+        last_seen: string | null;
+        device_type: string;
+        ros_version: string | null;
+        firmware_update_available: boolean;
+        latest_ros_version: string | null;
+        routerboard_upgrade_available: boolean;
+        firmware_version: string | null;
+        upgrade_firmware_version: string | null;
+      }>(`SELECT id, name, status, last_seen, device_type, ros_version,
                firmware_update_available, latest_ros_version,
                routerboard_upgrade_available, firmware_version, upgrade_firmware_version
         FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`),
-    query<{ id: number; name: string; last_backup: string | null }>(`
+      query<{ id: number; name: string; last_backup: string | null }>(`
       SELECT d.id, d.name, MAX(b.created_at) AS last_backup
       FROM devices d LEFT JOIN backups b ON b.device_id = d.id
       ${devFilterD ? `WHERE ${devFilterD}` : ''}
       GROUP BY d.id
       HAVING MAX(b.created_at) IS NULL OR MAX(b.created_at) < NOW() - INTERVAL '7 days'`),
-    query<{ device_id: number; name: string; outages: string }>(`
+      query<{ device_id: number; name: string; outages: string }>(`
       SELECT a.device_id, d.name, COUNT(*) AS outages
       FROM device_availability a JOIN devices d ON d.id = a.device_id
       WHERE a.went_offline_at > NOW() - INTERVAL '7 days'
@@ -129,23 +153,23 @@ router.get('/insights', async (req: Request, res: Response) => {
         AND (d.outages_reset_at IS NULL OR a.went_offline_at > d.outages_reset_at)
         ${availFilter ? `AND ${availFilter}` : ''}
       GROUP BY a.device_id, d.name`),
-    query<{ count: string }>(`
+      query<{ count: string }>(`
       SELECT COUNT(*) AS count FROM clients
       WHERE active = TRUE AND client_type = 'wireless'
         AND signal_strength IS NOT NULL AND signal_strength < -75
         ${cliFilter ? `AND ${cliFilter}` : ''}`),
-    query<{ frequency: number; radios: string }>(`
+      query<{ frequency: number; radios: string }>(`
       SELECT frequency, COUNT(*) AS radios FROM wireless_interfaces
       WHERE disabled = FALSE AND frequency IS NOT NULL AND frequency > 0
         AND (config_json->>'master-interface') IS NULL
         ${cliFilter ? `AND ${cliFilter}` : ''}
       GROUP BY frequency HAVING COUNT(*) > 1`),
-    query<{ errors: string; warnings: string }>(`
+      query<{ errors: string; warnings: string }>(`
       SELECT COUNT(*) FILTER (WHERE severity = 'error')   AS errors,
              COUNT(*) FILTER (WHERE severity = 'warning') AS warnings
       FROM events WHERE event_time > NOW() - INTERVAL '24 hours'
         ${evtFilter ? `AND ${evtFilter}` : ''}`),
-  ]);
+    ]);
 
   const [resources, retries] = await Promise.all([latestResources(), latestRetries()]);
 
@@ -154,10 +178,12 @@ router.get('/insights', async (req: Request, res: Response) => {
   for (const d of devices) {
     if (d.status === 'offline') {
       attention.push({
-        sev: 'error', category: 'availability',
+        sev: 'error',
+        category: 'availability',
         title: `${d.name} is unreachable`,
         body: `Last seen ${d.last_seen ? timeAgo(d.last_seen) : 'never'}.`,
-        action: 'View device', path: `/devices/${d.id}`,
+        action: 'View device',
+        path: `/devices/${d.id}`,
       });
     }
   }
@@ -181,26 +207,33 @@ router.get('/insights', async (req: Request, res: Response) => {
         body: saturated
           ? `Each cycle enqueues ${cap.arrival_per_sec}/s but the workers clear only ${cap.service_per_sec}/s, so devices will go stale. Raise POLLER_CONCURRENCY or lengthen the interval.`
           : `Clearing at the current rate takes ${cap.drain_eta_sec == null ? 'longer than it is accumulating' : `about ${Math.round((cap.drain_eta_sec || 0) / 60)} min`}. Devices poll late until it clears.`,
-        action: 'Open poller health', path: '/settings?tab=poller',
+        action: 'Open poller health',
+        path: '/settings?tab=poller',
       });
     }
-  } catch { /* health is advisory — never let it break the dashboard */ }
+  } catch {
+    /* health is advisory — never let it break the dashboard */
+  }
 
   for (const d of devices) {
     if (d.firmware_update_available) {
       attention.push({
-        sev: 'warn', category: 'updates',
+        sev: 'warn',
+        category: 'updates',
         title: `RouterOS update available for ${d.name}`,
         body: `Running ${d.ros_version}${d.latest_ros_version ? `, ${d.latest_ros_version} available` : ''}.`,
-        action: 'Review update', path: `/devices/${d.id}?tab=config`,
+        action: 'Review update',
+        path: `/devices/${d.id}?tab=config`,
       });
     }
     if (d.routerboard_upgrade_available) {
       attention.push({
-        sev: 'info', category: 'updates',
+        sev: 'info',
+        category: 'updates',
         title: `RouterBOOT upgrade available for ${d.name}`,
         body: `Firmware ${d.firmware_version}${d.upgrade_firmware_version ? ` → ${d.upgrade_firmware_version}` : ''}.`,
-        action: 'Review upgrade', path: `/devices/${d.id}?tab=config`,
+        action: 'Review upgrade',
+        path: `/devices/${d.id}?tab=config`,
       });
     }
   }
@@ -214,18 +247,22 @@ router.get('/insights', async (req: Request, res: Response) => {
     capacity.push({ id: d.id, name: d.name, cpu: Math.round(r.cpu), mem_pct: memPct });
     if (r.cpu >= 85) {
       attention.push({
-        sev: 'warn', category: 'capacity',
+        sev: 'warn',
+        category: 'capacity',
         title: `${d.name} CPU is high (${Math.round(r.cpu)}%)`,
         body: 'Sustained high CPU can drop management responsiveness and routing throughput.',
-        action: 'View device', path: `/devices/${d.id}`,
+        action: 'View device',
+        path: `/devices/${d.id}`,
       });
     }
     if (memPct >= 90) {
       attention.push({
-        sev: 'warn', category: 'capacity',
+        sev: 'warn',
+        category: 'capacity',
         title: `${d.name} memory is high (${memPct}%)`,
         body: 'Low free memory risks instability; check for leaks or oversized tables.',
-        action: 'View device', path: `/devices/${d.id}`,
+        action: 'View device',
+        path: `/devices/${d.id}`,
       });
     }
   }
@@ -233,22 +270,28 @@ router.get('/insights', async (req: Request, res: Response) => {
   // Backups
   for (const b of missingBackup) {
     attention.push({
-      sev: 'warn', category: 'backups',
+      sev: 'warn',
+      category: 'backups',
       title: `${b.name} has no recent backup`,
-      body: b.last_backup ? `Last backup ${timeAgo(b.last_backup)}.` : 'No backup has ever been taken.',
-      action: 'Back up', path: '/backups',
+      body: b.last_backup
+        ? `Last backup ${timeAgo(b.last_backup)}.`
+        : 'No backup has ever been taken.',
+      action: 'Back up',
+      path: '/backups',
     });
   }
 
   // Reliability — recent outages (device still online now, but flapped)
   for (const o of recentOutages) {
-    const dev = devices.find(d => d.id === o.device_id);
+    const dev = devices.find((d) => d.id === o.device_id);
     if (dev && dev.status === 'offline') continue; // already covered by the offline item
     attention.push({
-      sev: 'info', category: 'reliability',
+      sev: 'info',
+      category: 'reliability',
       title: `${o.name} had ${o.outages} outage${Number(o.outages) !== 1 ? 's' : ''} this week`,
       body: 'Recent connectivity flapping — worth checking power, uplink, or PoE.',
-      action: 'View device', path: `/devices/${o.device_id}`,
+      action: 'View device',
+      path: `/devices/${o.device_id}`,
       resetOutagesDeviceId: o.device_id,
     });
   }
@@ -260,18 +303,23 @@ router.get('/insights', async (req: Request, res: Response) => {
     const ports = (portErrors.get(d.id) ?? []).filter((p: PortErrorSummary) => p.state);
     if (ports.length === 0) continue;
     const bad = ports.filter((p: PortErrorSummary) => p.state === 'alert');
-    const list = (bad.length ? bad : ports).slice(0, 4).map((p: PortErrorSummary) =>
-      p.flapping && p.rate_per_min === 0
-        ? `${p.interface} (down ${p.hour.link_downs}× this hour)`
-        : `${p.interface} (${p.rate_per_min}/min${p.hour.link_downs ? `, down ${p.hour.link_downs}×` : ''})`);
+    const list = (bad.length ? bad : ports)
+      .slice(0, 4)
+      .map((p: PortErrorSummary) =>
+        p.flapping && p.rate_per_min === 0
+          ? `${p.interface} (down ${p.hour.link_downs}× this hour)`
+          : `${p.interface} (${p.rate_per_min}/min${p.hour.link_downs ? `, down ${p.hour.link_downs}×` : ''})`,
+      );
     const more = (bad.length ? bad : ports).length - list.length;
     attention.push({
-      sev: bad.length ? 'error' : 'warn', category: 'reliability',
+      sev: bad.length ? 'error' : 'warn',
+      category: 'reliability',
       title: bad.length
         ? `${d.name}: ${bad.length} port${bad.length !== 1 ? 's' : ''} with errors or flapping`
         : `${d.name}: errors on ${ports.length} port${ports.length !== 1 ? 's' : ''}`,
       body: `${list.join(', ')}${more > 0 ? ` and ${more} more` : ''}. Bad frames on a link that stays up usually mean a failing optic or cable.`,
-      action: 'View ports', path: `/devices/${d.id}?tab=ports`,
+      action: 'View ports',
+      path: `/devices/${d.id}?tab=ports`,
     });
   }
 
@@ -281,29 +329,46 @@ router.get('/insights', async (req: Request, res: Response) => {
     const flagged = (optics.get(d.id) ?? []).filter((o: OpticStatus) => o.state);
     if (flagged.length === 0) continue;
     const bad = flagged.filter((o: OpticStatus) => o.state === 'alert');
-    const shown = (bad.length ? bad : flagged);
+    const shown = bad.length ? bad : flagged;
     attention.push({
-      sev: bad.length ? 'error' : 'warn', category: 'reliability',
-      title: `${d.name}: optic${shown.length !== 1 ? 's' : ''} to check on ${shown.map((o: OpticStatus) => o.interface).slice(0, 3).join(', ')}${shown.length > 3 ? ` and ${shown.length - 3} more` : ''}`,
-      body: `${shown.slice(0, 3).map((o: OpticStatus) => `${o.interface}: ${o.reason}`).join('; ')}.`
-        + (shown.some((o: OpticStatus) => /light/.test(o.reason ?? '')) ? ' A light level on the move is often a dirty or damaged connector, a damaged fibre or an ageing optic.' : '')
-        + (shown.some((o: OpticStatus) => /°C/.test(o.reason ?? '')) ? ' A hot module needs better airflow.' : ''),
-      action: 'View ports', path: `/devices/${d.id}?tab=ports`,
+      sev: bad.length ? 'error' : 'warn',
+      category: 'reliability',
+      title: `${d.name}: optic${shown.length !== 1 ? 's' : ''} to check on ${shown
+        .map((o: OpticStatus) => o.interface)
+        .slice(0, 3)
+        .join(', ')}${shown.length > 3 ? ` and ${shown.length - 3} more` : ''}`,
+      body:
+        `${shown
+          .slice(0, 3)
+          .map((o: OpticStatus) => `${o.interface}: ${o.reason}`)
+          .join('; ')}.` +
+        (shown.some((o: OpticStatus) => /light/.test(o.reason ?? ''))
+          ? ' A light level on the move is often a dirty or damaged connector, a damaged fibre or an ageing optic.'
+          : '') +
+        (shown.some((o: OpticStatus) => /°C/.test(o.reason ?? ''))
+          ? ' A hot module needs better airflow.'
+          : ''),
+      action: 'View ports',
+      path: `/devices/${d.id}?tab=ports`,
     });
   }
 
   // DHCP pools nearly full (#156): clients would connect and get no address.
   const pools = await query<{ device_id: number; name: string; size: number | null; used: number }>(
-    `SELECT device_id, name, size, used FROM dhcp_pool_usage WHERE device_id = ANY($1::int[])`, [devices.map((d) => d.id)]).catch(() => []);
+    `SELECT device_id, name, size, used FROM dhcp_pool_usage WHERE device_id = ANY($1::int[])`,
+    [devices.map((d) => d.id)],
+  ).catch(() => []);
   for (const p of pools) {
     const st = poolState(p.used, p.size);
     if (!st || !p.size) continue;
     const dev = devices.find((d) => d.id === p.device_id);
     attention.push({
-      sev: st === 'full' ? 'error' : 'warn', category: 'reliability',
+      sev: st === 'full' ? 'error' : 'warn',
+      category: 'reliability',
       title: `${dev?.name ?? 'A device'}: address pool "${p.name}" is ${Math.round((p.used / p.size) * 100)}% used`,
       body: `${p.used} of ${p.size} addresses handed out. When it runs out, new clients connect but get no address; widen the range or shorten the lease time.`,
-      action: 'Open DHCP', path: '/network-services/dhcp',
+      action: 'Open DHCP',
+      path: '/network-services/dhcp',
     });
   }
 
@@ -311,21 +376,25 @@ router.get('/insights', async (req: Request, res: Response) => {
   const weakCount = parseInt(weakWifi[0]?.count || '0', 10);
   if (weakCount > 0) {
     attention.push({
-      sev: 'warn', category: 'wifi',
+      sev: 'warn',
+      category: 'wifi',
       title: `${weakCount} wireless client${weakCount !== 1 ? 's' : ''} on weak signal`,
       body: 'Clients connected below −75 dBm — likely coverage gaps or far-roaming devices.',
-      action: 'Open Wireless', path: '/wireless',
+      action: 'Open Wireless',
+      path: '/wireless',
     });
   }
 
   // WiFi — co-channel overlap
   if (coChannel.length > 0) {
-    const chans = coChannel.map(c => freqToChannel(c.frequency)).filter(Boolean);
+    const chans = coChannel.map((c) => freqToChannel(c.frequency)).filter(Boolean);
     attention.push({
-      sev: 'warn', category: 'wifi',
+      sev: 'warn',
+      category: 'wifi',
       title: `Co-channel overlap on ${coChannel.length} channel${coChannel.length !== 1 ? 's' : ''}`,
       body: `Multiple radios share channel${chans.length ? ` ${chans.join(', ')}` : ''}. Overlapping cells reduce airtime — re-plan channels.`,
-      action: 'Open Wireless', path: '/wireless',
+      action: 'Open Wireless',
+      path: '/wireless',
     });
   }
 
@@ -333,13 +402,15 @@ router.get('/insights', async (req: Request, res: Response) => {
   // retries comes from Influx across the whole fleet; keep only radios on
   // devices in this site.
   const scopedIds = new Set(devices.map((d) => String(d.id)));
-  const badRetries = retries.filter(r => r.pct >= 15 && scopedIds.has(r.device_id));
+  const badRetries = retries.filter((r) => r.pct >= 15 && scopedIds.has(r.device_id));
   for (const r of badRetries) {
     attention.push({
-      sev: 'warn', category: 'wifi',
+      sev: 'warn',
+      category: 'wifi',
       title: `High TX retries on ${r.device_name} (${r.interface})`,
       body: `${r.pct.toFixed(0)}% transmit retries — interference or weak clients on this radio.`,
-      action: 'Open Wireless', path: '/wireless',
+      action: 'Open Wireless',
+      path: '/wireless',
     });
   }
 
@@ -347,10 +418,12 @@ router.get('/insights', async (req: Request, res: Response) => {
   const errCount = parseInt(eventCounts[0]?.errors || '0', 10);
   if (errCount > 0) {
     attention.push({
-      sev: 'info', category: 'events',
+      sev: 'info',
+      category: 'events',
       title: `${errCount} error-level event${errCount !== 1 ? 's' : ''} in the last 24h`,
       body: 'Recent error logs across the fleet may need a look.',
-      action: 'Open Events', path: '/events',
+      action: 'Open Events',
+      path: '/events',
     });
   }
 
@@ -359,26 +432,41 @@ router.get('/insights', async (req: Request, res: Response) => {
     const { classifyLatestScans } = await import('../services/rogueScan');
     const { rogues } = await classifyLatestScans(siteId);
     for (const r of rogues) {
-      attention.push(r.reason === 'bssid' ? {
-        sev: 'error', category: 'security',
-        title: `Our access point address ${r.bssid} heard on the wrong channel`,
-        body: `${r.bssid} is one of our radios, but ${r.seenBy} heard it at ${r.signal} dBm on a channel that radio isn't using — possibly a spoofed copy of our AP.`,
-        action: 'Open Wireless', path: '/wireless',
-      } : {
-        sev: 'error', category: 'security',
-        title: `Rogue AP broadcasting "${r.ssid}"`,
-        body: `Foreign BSSID ${r.bssid}${r.vendor ? ` (${r.vendor})` : ''} at ${r.signal} dBm, seen by ${r.seenBy} — possible evil twin.`,
-        action: 'Open Wireless', path: '/wireless',
-      });
+      attention.push(
+        r.reason === 'bssid'
+          ? {
+              sev: 'error',
+              category: 'security',
+              title: `Our access point address ${r.bssid} heard on the wrong channel`,
+              body: `${r.bssid} is one of our radios, but ${r.seenBy} heard it at ${r.signal} dBm on a channel that radio isn't using — possibly a spoofed copy of our AP.`,
+              action: 'Open Wireless',
+              path: '/wireless',
+            }
+          : {
+              sev: 'error',
+              category: 'security',
+              title: `Rogue AP broadcasting "${r.ssid}"`,
+              body: `Foreign BSSID ${r.bssid}${r.vendor ? ` (${r.vendor})` : ''} at ${r.signal} dBm, seen by ${r.seenBy} — possible evil twin.`,
+              action: 'Open Wireless',
+              path: '/wireless',
+            },
+      );
     }
-  } catch { /* scan data unavailable */ }
+  } catch {
+    /* scan data unavailable */
+  }
 
   // Config Health — configurations RouterOS accepted but that do not work. These
   // are latent: nothing alerts on them because the device reports no error, so the
   // dashboard is where they surface. Grouped per device to avoid flooding the feed.
   try {
     const findings = await query<{
-      device_id: number; name: string; severity: string; title: string; rule: string; count: string;
+      device_id: number;
+      name: string;
+      severity: string;
+      title: string;
+      rule: string;
+      count: string;
     }>(`
       SELECT f.device_id, d.name, f.severity, f.title, f.rule,
              COUNT(*) OVER (PARTITION BY f.device_id, f.severity) AS count
@@ -391,21 +479,27 @@ router.get('/insights', async (req: Request, res: Response) => {
     const seen = new Set<string>();
     for (const f of findings) {
       const key = `${f.device_id}:${f.severity}`;
-      if (seen.has(key)) continue;      // one item per device+severity, naming the first
+      if (seen.has(key)) continue; // one item per device+severity, naming the first
       seen.add(key);
       const extra = parseInt(f.count, 10) - 1;
       attention.push({
         sev: f.severity === 'critical' ? 'error' : 'warn',
         category: 'config',
         title: `${f.name}: ${f.title}`,
-        body: (f.rule.startsWith('device-mode')
-          ? 'RouterOS device-mode restricts what can be done on this device.'
-          : 'RouterOS accepted this configuration without complaint.')
-          + (extra > 0 ? ` ${extra} more ${f.severity} finding${extra !== 1 ? 's' : ''} on this device.` : ''),
-        action: 'Open Config Health', path: `/devices/${f.device_id}?tab=security`,
+        body:
+          (f.rule.startsWith('device-mode')
+            ? 'RouterOS device-mode restricts what can be done on this device.'
+            : 'RouterOS accepted this configuration without complaint.') +
+          (extra > 0
+            ? ` ${extra} more ${f.severity} finding${extra !== 1 ? 's' : ''} on this device.`
+            : ''),
+        action: 'Open Config Health',
+        path: `/devices/${f.device_id}?tab=security`,
       });
     }
-  } catch { /* findings table unavailable */ }
+  } catch {
+    /* findings table unavailable */
+  }
 
   // Certificates at or past expiry (#143).
   //
@@ -415,8 +509,13 @@ router.get('/insights', async (req: Request, res: Response) => {
   try {
     const certFilter = siteScopeByDevice(siteId, 'c.device_id');
     const certs = await query<{
-      device_id: number; device_name: string; name: string; common_name: string | null;
-      is_authority: boolean; invalid_after: string; invalid_before: string | null;
+      device_id: number;
+      device_name: string;
+      name: string;
+      common_name: string | null;
+      is_authority: boolean;
+      invalid_after: string;
+      invalid_before: string | null;
     }>(`
       SELECT c.device_id, d.name AS device_name, c.name, c.common_name, c.is_authority,
              c.invalid_after, c.invalid_before
@@ -435,14 +534,18 @@ router.get('/insights', async (req: Request, res: Response) => {
         sev: verdict.state === 'expired' ? 'error' : 'warn',
         category: 'security',
         title: `${c.device_name}: ${describeCert(c, verdict)}`,
-        body: verdict.state === 'expired'
-          ? 'Anything relying on it is already failing, and will keep failing until it is replaced.'
-          : `Expires ${new Date(c.invalid_after).toISOString().slice(0, 10)}. `
-            + 'Renewing before it lapses avoids the outage rather than explaining it.',
-        action: 'View device', path: `/devices/${c.device_id}`,
+        body:
+          verdict.state === 'expired'
+            ? 'Anything relying on it is already failing, and will keep failing until it is replaced.'
+            : `Expires ${new Date(c.invalid_after).toISOString().slice(0, 10)}. ` +
+              'Renewing before it lapses avoids the outage rather than explaining it.',
+        action: 'View device',
+        path: `/devices/${c.device_id}`,
       });
     }
-  } catch { /* device_certificates unavailable */ }
+  } catch {
+    /* device_certificates unavailable */
+  }
 
   // Spanning tree — what the fleet view can see and a single device cannot.
   //
@@ -452,9 +555,14 @@ router.get('/insights', async (req: Request, res: Response) => {
   // network, and we cannot see why.
   try {
     const stpBridges = await query<{
-      device_id: number; name: string; bridge_name: string; bridge_id: string | null;
-      root_bridge: boolean | null; root_bridge_id: string | null;
-      root_port: string | null; root_path_cost: number | null;
+      device_id: number;
+      name: string;
+      bridge_name: string;
+      bridge_id: string | null;
+      root_bridge: boolean | null;
+      root_bridge_id: string | null;
+      root_port: string | null;
+      root_path_cost: number | null;
     }>(`
       SELECT b.device_id, d.name, b.bridge_name, b.bridge_id, b.root_bridge,
              b.root_bridge_id, b.root_port, b.root_path_cost
@@ -462,7 +570,7 @@ router.get('/insights', async (req: Request, res: Response) => {
        ${siteScopeByDevice(siteId, 'b.device_id') ? `WHERE ${siteScopeByDevice(siteId, 'b.device_id')}` : ''}`);
 
     const owned = new Set(
-      stpBridges.map((b) => (b.bridge_id || '').trim().toLowerCase()).filter(Boolean)
+      stpBridges.map((b) => (b.bridge_id || '').trim().toLowerCase()).filter(Boolean),
     );
     const external = new Map<string, string[]>();
     for (const b of stpBridges) {
@@ -474,24 +582,46 @@ router.get('/insights', async (req: Request, res: Response) => {
     // Name it where discovery saw it: a neighbour whose MAC fits the root's bridge id (#260).
     const seenNeighbours = external.size
       ? await query<{ neighbor_mac: string | null; neighbor_identity: string | null }>(
-        `SELECT DISTINCT neighbor_mac, neighbor_identity FROM topology_links WHERE neighbor_mac IS NOT NULL`).catch(() => [])
+          `SELECT DISTINCT neighbor_mac, neighbor_identity FROM topology_links WHERE neighbor_mac IS NOT NULL`,
+        ).catch(() => [])
       : [];
     for (const [rootId, names] of external) {
       const devices = [...new Set(names)].sort();
-      const named = stpDomains([{ device_id: -1, bridge_name: '', bridge_id: null, root_bridge: false, root_bridge_id: rootId, root_port: null, root_path_cost: null }],
-        seenNeighbours.map((n) => ({ from_device_id: null, to_device_id: null, neighbor_mac: n.neighbor_mac, neighbor_identity: n.neighbor_identity })))[0]?.guessedName;
+      const named = stpDomains(
+        [
+          {
+            device_id: -1,
+            bridge_name: '',
+            bridge_id: null,
+            root_bridge: false,
+            root_bridge_id: rootId,
+            root_port: null,
+            root_path_cost: null,
+          },
+        ],
+        seenNeighbours.map((n) => ({
+          from_device_id: null,
+          to_device_id: null,
+          neighbor_mac: n.neighbor_mac,
+          neighbor_identity: n.neighbor_identity,
+        })),
+      )[0]?.guessedName;
       attention.push({
-        sev: 'info', category: 'topology',
+        sev: 'info',
+        category: 'topology',
         title: `Spanning-tree root ${rootId}${named ? ` (probably ${named})` : ''} is not a managed device`,
         body:
           `${devices.join(', ')} ${devices.length === 1 ? 'follows' : 'follow'} a root bridge ` +
           `that no device here owns. Layer-2 decisions for that segment — which links forward ` +
           `and which are blocked — are being made by equipment this tool cannot see. Adding it ` +
           `would complete the topology.`,
-        action: 'Open Topology', path: '/topology',
+        action: 'Open Topology',
+        path: '/topology',
       });
     }
-  } catch { /* device_bridges unavailable */ }
+  } catch {
+    /* device_bridges unavailable */
+  }
 
   // Baseline anomalies (client counts, CPU, error bursts)
   const anomalies = await detectAnomalies(siteId);
@@ -502,8 +632,11 @@ router.get('/insights', async (req: Request, res: Response) => {
   // reappears — which is the intended behaviour of "remind me later".
   await query(`DELETE FROM insight_dismissals WHERE expires_at < NOW()`).catch(() => []);
   const dismissed = new Set(
-    (await query<{ fingerprint: string }>(`SELECT fingerprint FROM insight_dismissals`)
-      .catch(() => [])).map((r) => r.fingerprint)
+    (
+      await query<{ fingerprint: string }>(`SELECT fingerprint FROM insight_dismissals`).catch(
+        () => [],
+      )
+    ).map((r) => r.fingerprint),
   );
 
   for (const item of attention) item.fingerprint = fingerprintOf(item, siteId);
@@ -516,7 +649,12 @@ router.get('/insights', async (req: Request, res: Response) => {
   // Activity feed — recent config changes, user actions, and notable events
   const activity = await buildActivity(siteId);
 
-  res.json({ attention: visible, dismissedCount: attention.length - visible.length, capacity, activity });
+  res.json({
+    attention: visible,
+    dismissedCount: attention.length - visible.length,
+    capacity,
+    activity,
+  });
 });
 
 /**
@@ -527,8 +665,12 @@ router.get('/insights', async (req: Request, res: Response) => {
  * never lapsed would only ever hide things that are still true.
  */
 router.post('/insights/dismiss', requireWrite, fleetOnly, async (req: Request, res: Response) => {
-  const { fingerprint, category, title, hours } = req.body as
-    { fingerprint?: string; category?: string; title?: string; hours?: number };
+  const { fingerprint, category, title, hours } = req.body as {
+    fingerprint?: string;
+    category?: string;
+    title?: string;
+    hours?: number;
+  };
   if (!fingerprint) return res.status(400).json({ error: 'fingerprint is required' });
 
   const h = Math.min(720, Math.max(1, Number(hours) || 24));
@@ -537,8 +679,13 @@ router.post('/insights/dismiss', requireWrite, fleetOnly, async (req: Request, r
      VALUES ($1, $2, $3, $4, NOW() + ($5 || ' hours')::interval)
      ON CONFLICT (fingerprint) DO UPDATE SET
        expires_at = EXCLUDED.expires_at, dismissed_at = NOW(), dismissed_by = EXCLUDED.dismissed_by`,
-    [fingerprint.slice(0, 160), category ?? null, title ?? null,
-     (req as unknown as { user?: { username?: string } }).user?.username ?? null, String(h)]
+    [
+      fingerprint.slice(0, 160),
+      category ?? null,
+      title ?? null,
+      (req as unknown as { user?: { username?: string } }).user?.username ?? null,
+      String(h),
+    ],
   );
   res.status(201).json({ fingerprint, hours: h });
 });
@@ -549,19 +696,27 @@ router.get('/insights/dismissed', async (req: Request, res: Response) => {
   // A site-scoped account sees only dismissals made in its own view, not other
   // sites' findings by title.
   if (req.user?.siteRoles) {
-    res.json(await query(
-      `SELECT * FROM insight_dismissals WHERE fingerprint LIKE $1 ORDER BY expires_at ASC`,
-      [`${scopeKey(activeSite(req))}|%`]));
+    res.json(
+      await query(
+        `SELECT * FROM insight_dismissals WHERE fingerprint LIKE $1 ORDER BY expires_at ASC`,
+        [`${scopeKey(activeSite(req))}|%`],
+      ),
+    );
     return;
   }
   res.json(await query(`SELECT * FROM insight_dismissals ORDER BY expires_at ASC`));
 });
 
 /** DELETE — bring an item back before its dismissal lapses. */
-router.delete('/insights/dismiss/:fingerprint', requireWrite, fleetOnly, async (req: Request, res: Response) => {
-  await query(`DELETE FROM insight_dismissals WHERE fingerprint = $1`, [req.params.fingerprint]);
-  res.status(204).end();
-});
+router.delete(
+  '/insights/dismiss/:fingerprint',
+  requireWrite,
+  fleetOnly,
+  async (req: Request, res: Response) => {
+    await query(`DELETE FROM insight_dismissals WHERE fingerprint = $1`, [req.params.fingerprint]);
+    res.status(204).end();
+  },
+);
 
 // ─── Baseline anomaly detection ────────────────────────────────────────────────
 // Mist-style "this is unusual for you" insights: compare the last 30 minutes
@@ -584,7 +739,9 @@ async function influxGroupValues(flux: string): Promise<Map<string, number>> {
         complete: resolve,
       });
     });
-  } catch { /* influx unavailable */ }
+  } catch {
+    /* influx unavailable */
+  }
   return out;
 }
 
@@ -596,7 +753,7 @@ async function detectAnomalies(siteId: SiteScope): Promise<AttentionItem[]> {
   // Influx series are matched back to this map by device id, so scoping the map
   // scopes the metric anomalies too -- an unknown id is skipped.
   const devices = await query<{ id: number; name: string }>(
-    `SELECT id, name FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`
+    `SELECT id, name FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`,
   );
   for (const d of devices) nameById.set(String(d.id), d);
 
@@ -625,16 +782,19 @@ async function detectAnomalies(siteId: SiteScope): Promise<AttentionItem[]> {
   // Client-count deviations (device dropped clients / unusual surge)
   const cc = await metric('client_counts', 'total_clients');
   for (const [id, current] of cc.cur) {
-    const m = cc.mean.get(id), s = cc.std.get(id);
+    const m = cc.mean.get(id),
+      s = cc.std.get(id);
     const dev = nameById.get(id);
     if (!dev || m === undefined || s === undefined || s < 1) continue;
     const z = (current - m) / s;
     if (Math.abs(z) >= 2.5 && Math.abs(current - m) >= 5) {
       items.push({
-        sev: 'warn', category: 'anomaly',
+        sev: 'warn',
+        category: 'anomaly',
         title: `Client count on ${dev.name} is unusually ${z < 0 ? 'low' : 'high'}`,
         body: `${Math.round(current)} clients now vs ~${Math.round(m)} typical for this hour (14-day baseline).`,
-        action: 'View device', path: `/devices/${dev.id}`,
+        action: 'View device',
+        path: `/devices/${dev.id}`,
       });
     }
   }
@@ -642,16 +802,19 @@ async function detectAnomalies(siteId: SiteScope): Promise<AttentionItem[]> {
   // Sustained CPU deviations (only flag high — idle is not a problem)
   const cpu = await metric('device_resources', 'cpu_load');
   for (const [id, current] of cpu.cur) {
-    const m = cpu.mean.get(id), s = cpu.std.get(id);
+    const m = cpu.mean.get(id),
+      s = cpu.std.get(id);
     const dev = nameById.get(id);
     if (!dev || m === undefined || s === undefined || s < 1) continue;
     const z = (current - m) / s;
     if (z >= 2.5 && current >= 50) {
       items.push({
-        sev: 'warn', category: 'anomaly',
+        sev: 'warn',
+        category: 'anomaly',
         title: `CPU on ${dev.name} is far above its baseline`,
         body: `${Math.round(current)}% for the last 30m vs ~${Math.round(m)}% typical for this hour.`,
-        action: 'View device', path: `/devices/${dev.id}`,
+        action: 'View device',
+        path: `/devices/${dev.id}`,
       });
     }
   }
@@ -674,10 +837,12 @@ async function detectAnomalies(siteId: SiteScope): Promise<AttentionItem[]> {
     WHERE c.n >= 10 AND c.n > 5 * GREATEST(COALESCE(h.avg_hourly, 0), 0.5)`);
   for (const b of bursts) {
     items.push({
-      sev: 'warn', category: 'anomaly',
+      sev: 'warn',
+      category: 'anomaly',
       title: `Error-log burst on ${b.name}`,
       body: `${b.cur} error entries in the last hour (typically ~${Number(b.avg_hourly).toFixed(1)}/h).`,
-      action: 'Open Events', path: '/events',
+      action: 'Open Events',
+      path: '/events',
     });
   }
 
@@ -700,8 +865,9 @@ async function buildActivity(siteId: SiteScope) {
       WHERE dc.change_summary IS NOT NULL AND dc.change_summary != ''
         ${cfgFilter ? `AND ${cfgFilter}` : ''}
       ORDER BY dc.collected_at DESC LIMIT 8`),
-    siteId !== null ? Promise.resolve([]) :
-    query<{ at: string; username: string | null; method: string; summary: string | null }>(`
+    siteId !== null
+      ? Promise.resolve([])
+      : query<{ at: string; username: string | null; method: string; summary: string | null }>(`
       SELECT created_at AS at, username, method, summary
       FROM audit_log
       WHERE method <> 'GET' AND status_code < 400
@@ -715,11 +881,36 @@ async function buildActivity(siteId: SiteScope) {
       ORDER BY e.event_time DESC LIMIT 8`),
   ]);
 
-  type Act = { at: string; kind: 'config' | 'audit' | 'alert'; sev?: string; title: string; sub: string };
+  type Act = {
+    at: string;
+    kind: 'config' | 'audit' | 'alert';
+    sev?: string;
+    title: string;
+    sub: string;
+  };
   const items: Act[] = [];
-  for (const c of configs) items.push({ at: c.at, kind: 'config', title: c.summary || 'Configuration changed', sub: c.name });
-  for (const a of audits) items.push({ at: a.at, kind: 'audit', title: a.summary || `${a.method} request`, sub: a.username || 'system' });
-  for (const e of events) items.push({ at: e.at, kind: 'alert', sev: e.severity, title: e.message, sub: e.name || 'fleet' });
+  for (const c of configs)
+    items.push({
+      at: c.at,
+      kind: 'config',
+      title: c.summary || 'Configuration changed',
+      sub: c.name,
+    });
+  for (const a of audits)
+    items.push({
+      at: a.at,
+      kind: 'audit',
+      title: a.summary || `${a.method} request`,
+      sub: a.username || 'system',
+    });
+  for (const e of events)
+    items.push({
+      at: e.at,
+      kind: 'alert',
+      sev: e.severity,
+      title: e.message,
+      sub: e.name || 'fleet',
+    });
   items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
   return items.slice(0, 14);
 }
@@ -731,16 +922,20 @@ router.post('/backup-all', requireWrite, async (req: Request, res: Response) => 
   const siteFilter = siteScopeDevices(writableScope(req));
   const devices = await query<DeviceRow>(
     `SELECT * FROM devices WHERE status = 'online'
-       ${siteFilter ? `AND ${siteFilter}` : ''}`
+       ${siteFilter ? `AND ${siteFilter}` : ''}`,
   );
   // A few devices at a time, not every device at once: each holds an SSH
   // session and database connections (outside review J10).
   const settled = await settleWithConcurrency(devices, FLEET_ACTION_CONCURRENCY, (d) => {
     const dev: BackupDevice = {
-      id: d.id, name: d.name, ip_address: d.ip_address,
-      ssh_port: d.ssh_port ?? 22, ssh_username: d.ssh_username,
+      id: d.id,
+      name: d.name,
+      ip_address: d.ip_address,
+      ssh_port: d.ssh_port ?? 22,
+      ssh_username: d.ssh_username,
       ssh_password_encrypted: d.ssh_password_encrypted,
-      api_username: d.api_username, api_password_encrypted: d.api_password_encrypted,
+      api_username: d.api_username,
+      api_password_encrypted: d.api_password_encrypted,
     };
     return backupService.createBackup(dev, 'Operations: backup all');
   });
@@ -760,13 +955,28 @@ router.post('/backup-all', requireWrite, async (req: Request, res: Response) => 
 router.get('/security-posture', async (req: Request, res: Response) => {
   const scope = siteScopeDevices(activeSite(req));
   const devices = await query<PostureDevice>(
-    `SELECT * FROM devices WHERE status = 'online' AND NOT ssh_only ${scope ? `AND ${scope}` : ''} ORDER BY name`);
-  const live = await liveForDevices('posture', devices as unknown as DeviceRow[], (c, d) => securityPosture(c, d as unknown as PostureDevice),
-    { maxAgeMs: 15 * 60_000, refresh: req.query.refresh === '1', waitMs: 3000 });
+    `SELECT * FROM devices WHERE status = 'online' AND NOT ssh_only ${scope ? `AND ${scope}` : ''} ORDER BY name`,
+  );
+  const live = await liveForDevices(
+    'posture',
+    devices as unknown as DeviceRow[],
+    (c, d) => securityPosture(c, d as unknown as PostureDevice),
+    { maxAgeMs: 15 * 60_000, refresh: req.query.refresh === '1', waitMs: 3000 },
+  );
   res.json({
     devices: devices.flatMap((d) => {
       const e = live.get(d.id)!;
-      return e.data ? [{ id: d.id, name: d.name, score: e.data.score, checks: e.data.checks, fetched_at: e.fetchedAt }] : [];
+      return e.data
+        ? [
+            {
+              id: d.id,
+              name: d.name,
+              score: e.data.score,
+              checks: e.data.checks,
+              fetched_at: e.fetchedAt,
+            },
+          ]
+        : [];
     }),
     refreshing: [...live.values()].filter((e) => e.refreshing).length,
   });
@@ -779,14 +989,18 @@ router.post('/sync-all', requireWrite, async (req: Request, res: Response) => {
   const siteFilter = siteScopeDevices(writableScope(req));
   const devices = await query<DeviceRow>(
     `SELECT * FROM devices WHERE status = 'online' AND NOT ssh_only
-       ${siteFilter ? `AND ${siteFilter}` : ''}`
+       ${siteFilter ? `AND ${siteFilter}` : ''}`,
   );
   // Bounded like backup-all (J10): sync-all used to open a session to every
   // device at once through a 20-connection database pool.
   const settled = await settleWithConcurrency(devices, FLEET_ACTION_CONCURRENCY, async (d) => {
     const c = new DeviceCollector(d);
-    try { await c.connect(); await c.collectAll(); }
-    finally { c.disconnect(); }
+    try {
+      await c.connect();
+      await c.collectAll();
+    } finally {
+      c.disconnect();
+    }
   });
   res.json({
     total: devices.length,

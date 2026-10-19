@@ -1,19 +1,29 @@
-import { useState, useEffect } from 'react';
-import ReviewChangesButton from '../components/common/ReviewChangesButton';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Globe, RefreshCw, AlertTriangle, Save, Trash2, Plus, Pencil, X, Check, Eraser,
-} from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { networkServicesApi, devicesApi } from '../services/api';
-import { liveRefetch, type LiveRow } from '../utils/liveFreshness';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { apiErrorMessage } from '../utils/apiError';
-import ListInput from '../components/common/ListInput';
-import { splitList } from '../utils/ipPrefix';
-import { isValidIPv4, isValidIPv6 } from '../utils/deviceAddress';
+import {
+  AlertTriangle,
+  Check,
+  Eraser,
+  Globe,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Save,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+
 import DevicePicker from '../components/common/DevicePicker';
+import ListInput from '../components/common/ListInput';
+import ReviewChangesButton from '../components/common/ReviewChangesButton';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { devicesApi, networkServicesApi } from '../services/api';
+import { apiErrorMessage } from '../utils/apiError';
+import { isValidIPv4, isValidIPv6 } from '../utils/deviceAddress';
 import { shortList } from '../utils/deviceCards';
+import { splitList } from '../utils/ipPrefix';
+import { liveRefetch, type LiveRow } from '../utils/liveFreshness';
 
 type NS = Record<string, string>;
 
@@ -23,8 +33,13 @@ type NS = Record<string, string>;
 // its own property (outside review C7): MX in mx-exchange, NS in ns, SRV in
 // srv-target, FWD in forward-to.
 const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SRV', 'FWD'] as const;
-type RecordType = typeof RECORD_TYPES[number];
-const TARGET_PROP: Partial<Record<RecordType, string>> = { MX: 'mx-exchange', NS: 'ns', SRV: 'srv-target', FWD: 'forward-to' };
+type RecordType = (typeof RECORD_TYPES)[number];
+const TARGET_PROP: Partial<Record<RecordType, string>> = {
+  MX: 'mx-exchange',
+  NS: 'ns',
+  SRV: 'srv-target',
+  FWD: 'forward-to',
+};
 
 // ─── Static record form modal ─────────────────────────────────────────────────
 
@@ -50,49 +65,88 @@ function RecordForm({ deviceId, existing, onClose }: RecordFormProps) {
   const [disabled, setDisabled] = useState(existing?.['disabled'] === 'true');
 
   const saveRequest = () => {
-      const body: NS = { name, type };
-      if (type === 'A' || type === 'AAAA') body['address'] = address;
-      else if (type === 'CNAME') body['cname'] = cname;
-      else if (type === 'TXT') body['text'] = text;
-      else body[TARGET_PROP[type] ?? 'address'] = address;
-      if (type === 'MX') body['mx-preference'] = mxPreference || '10';
-      if (type === 'SRV') {
-        body['srv-port'] = srvPort;
-        body['srv-priority'] = srvPriority || '0';
-        body['srv-weight'] = srvWeight || '0';
-      }
-      if (ttl) body['ttl'] = ttl;
-      else if (existing) body['ttl'] = '';   // back to the default TTL on the device
-      body['disabled'] = disabled ? 'yes' : 'no';
+    const body: NS = { name, type };
+    if (type === 'A' || type === 'AAAA') body['address'] = address;
+    else if (type === 'CNAME') body['cname'] = cname;
+    else if (type === 'TXT') body['text'] = text;
+    else body[TARGET_PROP[type] ?? 'address'] = address;
+    if (type === 'MX') body['mx-preference'] = mxPreference || '10';
+    if (type === 'SRV') {
+      body['srv-port'] = srvPort;
+      body['srv-priority'] = srvPriority || '0';
+      body['srv-weight'] = srvWeight || '0';
+    }
+    if (ttl) body['ttl'] = ttl;
+    else if (existing) body['ttl'] = ''; // back to the default TTL on the device
+    body['disabled'] = disabled ? 'yes' : 'no';
 
-      return existing?.['.id']
-        ? networkServicesApi.updateDnsStatic(deviceId, existing['.id'], body)
-        : networkServicesApi.addDnsStatic(deviceId, body);
-    };
+    return existing?.['.id']
+      ? networkServicesApi.updateDnsStatic(deviceId, existing['.id'], body)
+      : networkServicesApi.addDnsStatic(deviceId, body);
+  };
   const save = useMutation({
     meta: { inlineError: true },
     mutationFn: saveRequest,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['ns-dns', deviceId] }); onClose(); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ns-dns', deviceId] });
+      onClose();
+    },
   });
 
-  const valueLabel = type === 'CNAME' ? 'CNAME Target' : type === 'TXT' ? 'Text'
-    : type === 'MX' ? 'Mail server' : type === 'NS' ? 'Name server' : type === 'SRV' ? 'Target host'
-    : type === 'FWD' ? 'Forward to (DNS server)' : 'Address';
+  const valueLabel =
+    type === 'CNAME'
+      ? 'CNAME Target'
+      : type === 'TXT'
+        ? 'Text'
+        : type === 'MX'
+          ? 'Mail server'
+          : type === 'NS'
+            ? 'Name server'
+            : type === 'SRV'
+              ? 'Target host'
+              : type === 'FWD'
+                ? 'Forward to (DNS server)'
+                : 'Address';
   const valuePlaceholder =
-    type === 'A' ? '192.168.1.10' :
-    type === 'AAAA' ? '2001:db8::1' :
-    type === 'CNAME' ? 'alias.example.com' :
-    type === 'TXT' ? '"v=spf1 include:example.com ~all"' :
-    type === 'MX' ? 'mail.example.com' :
-    type === 'NS' ? 'ns1.example.com' :
-    type === 'FWD' ? '10.0.0.53' :
-    'sip.example.com';
+    type === 'A'
+      ? '192.168.1.10'
+      : type === 'AAAA'
+        ? '2001:db8::1'
+        : type === 'CNAME'
+          ? 'alias.example.com'
+          : type === 'TXT'
+            ? '"v=spf1 include:example.com ~all"'
+            : type === 'MX'
+              ? 'mail.example.com'
+              : type === 'NS'
+                ? 'ns1.example.com'
+                : type === 'FWD'
+                  ? '10.0.0.53'
+                  : 'sip.example.com';
 
-  const valueField = type === 'TXT'
-    ? <textarea className="input w-full h-20 resize-y" value={text} onChange={e => setText(e.target.value)} placeholder={valuePlaceholder} />
-    : type === 'CNAME'
-    ? <input className="input w-full" value={cname} onChange={e => setCname(e.target.value)} placeholder={valuePlaceholder} />
-    : <input className="input w-full" value={address} onChange={e => setAddress(e.target.value)} placeholder={valuePlaceholder} />;
+  const valueField =
+    type === 'TXT' ? (
+      <textarea
+        className="input w-full h-20 resize-y"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={valuePlaceholder}
+      />
+    ) : type === 'CNAME' ? (
+      <input
+        className="input w-full"
+        value={cname}
+        onChange={(e) => setCname(e.target.value)}
+        placeholder={valuePlaceholder}
+      />
+    ) : (
+      <input
+        className="input w-full"
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        placeholder={valuePlaceholder}
+      />
+    );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -101,71 +155,162 @@ function RecordForm({ deviceId, existing, onClose }: RecordFormProps) {
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
             {existing ? 'Edit' : 'Add'} DNS Record
           </h3>
-          <button onClick={onClose} className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"><X className="w-4 h-4" /></button>
+          <button
+            onClick={onClose}
+            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Name *</label>
-              <input className="input w-full" value={name} onChange={e => setName(e.target.value)} placeholder="hostname.local" />
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
+                Name *
+              </label>
+              <input
+                className="input w-full"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="hostname.local"
+              />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Type</label>
-              <select className="input w-full" value={type} onChange={e => setType(e.target.value as RecordType)}>
-                {RECORD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
+                Type
+              </label>
+              <select
+                className="input w-full"
+                value={type}
+                onChange={(e) => setType(e.target.value as RecordType)}
+              >
+                {RECORD_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">{valueLabel} *</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
+              {valueLabel} *
+            </label>
             {valueField}
           </div>
           {type === 'MX' && (
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Preference</label>
-              <input className="input w-full" type="number" min={0} max={65535} value={mxPreference} onChange={e => setMxPreference(e.target.value)} />
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
+                Preference
+              </label>
+              <input
+                className="input w-full"
+                type="number"
+                min={0}
+                max={65535}
+                value={mxPreference}
+                onChange={(e) => setMxPreference(e.target.value)}
+              />
             </div>
           )}
           {type === 'SRV' && (
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Port *</label>
-                <input className="input w-full" type="number" min={0} max={65535} value={srvPort} onChange={e => setSrvPort(e.target.value)} placeholder="5060" />
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
+                  Port *
+                </label>
+                <input
+                  className="input w-full"
+                  type="number"
+                  min={0}
+                  max={65535}
+                  value={srvPort}
+                  onChange={(e) => setSrvPort(e.target.value)}
+                  placeholder="5060"
+                />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Priority</label>
-                <input className="input w-full" type="number" min={0} max={65535} value={srvPriority} onChange={e => setSrvPriority(e.target.value)} />
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
+                  Priority
+                </label>
+                <input
+                  className="input w-full"
+                  type="number"
+                  min={0}
+                  max={65535}
+                  value={srvPriority}
+                  onChange={(e) => setSrvPriority(e.target.value)}
+                />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Weight</label>
-                <input className="input w-full" type="number" min={0} max={65535} value={srvWeight} onChange={e => setSrvWeight(e.target.value)} />
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
+                  Weight
+                </label>
+                <input
+                  className="input w-full"
+                  type="number"
+                  min={0}
+                  max={65535}
+                  value={srvWeight}
+                  onChange={(e) => setSrvWeight(e.target.value)}
+                />
               </div>
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">TTL</label>
-              <input className="input w-full" value={ttl} onChange={e => setTtl(e.target.value)} placeholder="e.g. 5m (blank = default)" />
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">
+                TTL
+              </label>
+              <input
+                className="input w-full"
+                value={ttl}
+                onChange={(e) => setTtl(e.target.value)}
+                placeholder="e.g. 5m (blank = default)"
+              />
             </div>
             <div className="flex items-end gap-2 pb-0.5">
-              <button role="switch" aria-checked={disabled}
-                onClick={() => setDisabled(v => !v)}
-                className={clsx('relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors mb-0.5', disabled ? 'bg-gray-300 dark:bg-slate-600' : 'bg-blue-600')}>
-                <span className={clsx('pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform', disabled ? 'translate-x-0' : 'translate-x-4')} />
+              <button
+                role="switch"
+                aria-checked={disabled}
+                onClick={() => setDisabled((v) => !v)}
+                className={clsx(
+                  'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors mb-0.5',
+                  disabled ? 'bg-gray-300 dark:bg-slate-600' : 'bg-blue-600',
+                )}
+              >
+                <span
+                  className={clsx(
+                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
+                    disabled ? 'translate-x-0' : 'translate-x-4',
+                  )}
+                />
               </button>
               <span className="text-xs text-gray-600 dark:text-slate-300">Enabled</span>
             </div>
           </div>
         </div>
         <div className="px-5 pb-4 flex items-center gap-3">
-          <button onClick={() => save.mutate()} disabled={!name || (type === 'SRV' && !srvPort) || save.isPending}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors">
+          <button
+            onClick={() => save.mutate()}
+            disabled={!name || (type === 'SRV' && !srvPort) || save.isPending}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+          >
             <Check className="w-3.5 h-3.5" />
             {save.isPending ? 'Saving…' : 'Save'}
           </button>
-          <ReviewChangesButton request={saveRequest} onApply={() => save.mutate()} applyLabel="Save" disabled={!name || (type === 'SRV' && !srvPort) || save.isPending} />
-          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
-          {save.isError && <span className="text-xs text-red-500">{apiErrorMessage(save.error)}</span>}
+          <ReviewChangesButton
+            request={saveRequest}
+            onApply={() => save.mutate()}
+            applyLabel="Save"
+            disabled={!name || (type === 'SRV' && !srvPort) || save.isPending}
+          />
+          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700">
+            Cancel
+          </button>
+          {save.isError && (
+            <span className="text-xs text-red-500">{apiErrorMessage(save.error)}</span>
+          )}
         </div>
       </div>
     </div>
@@ -192,16 +337,22 @@ export default function NetworkServicesDNSPage() {
 
   const { data: devices = [] } = useQuery({
     queryKey: ['devices'],
-    queryFn: () => devicesApi.list().then(r => r.data),
+    queryFn: () => devicesApi.list().then((r) => r.data),
     staleTime: 60_000,
   });
 
   const deviceId = typeof selectedDeviceId === 'number' ? selectedDeviceId : 0;
-  const selectedDevice = devices.find(d => d.id === deviceId);
+  const selectedDevice = devices.find((d) => d.id === deviceId);
 
-  const { data: dns, isLoading, refetch, isFetching, error } = useQuery({
+  const {
+    data: dns,
+    isLoading,
+    refetch,
+    isFetching,
+    error,
+  } = useQuery({
     queryKey: ['ns-dns', deviceId],
-    queryFn: () => networkServicesApi.getDns(deviceId).then(r => r.data),
+    queryFn: () => networkServicesApi.getDns(deviceId).then((r) => r.data),
     enabled: deviceId > 0,
   });
 
@@ -221,28 +372,39 @@ export default function NetworkServicesDNSPage() {
   // Conflict detection
   const { data: overview = [] } = useQuery({
     queryKey: ['network-services-overview'],
-    queryFn: () => networkServicesApi.overview().then(r => r.data as NS[]),
+    queryFn: () => networkServicesApi.overview().then((r) => r.data as NS[]),
     staleTime: 60_000,
     refetchInterval: (q) => liveRefetch(q.state.data as LiveRow[] | undefined),
   });
-  const conflictDevices = overview.filter(d => {
+  const conflictDevices = overview.filter((d) => {
     if (parseInt(d['id']) === deviceId) return false;
     return (d['dns'] as unknown as { allow_remote: boolean } | null)?.allow_remote;
   });
 
-  const saveSettingsRequest = () => networkServicesApi.setDns(deviceId, {
-      servers: serversInput, allow_remote_requests: allowRemote,
-      max_udp_packet_size: maxUdpSize, cache_size: cacheSize, cache_max_ttl: cacheMaxTtl,
+  const saveSettingsRequest = () =>
+    networkServicesApi.setDns(deviceId, {
+      servers: serversInput,
+      allow_remote_requests: allowRemote,
+      max_udp_packet_size: maxUdpSize,
+      cache_size: cacheSize,
+      cache_max_ttl: cacheMaxTtl,
     });
   const saveSettings = useMutation({
     meta: { inlineError: true },
     mutationFn: saveSettingsRequest,
-    onSuccess: () => { setSettingsDirty(false); qc.invalidateQueries({ queryKey: ['ns-dns', deviceId] }); qc.invalidateQueries({ queryKey: ['network-services-overview'] }); },
+    onSuccess: () => {
+      setSettingsDirty(false);
+      qc.invalidateQueries({ queryKey: ['ns-dns', deviceId] });
+      qc.invalidateQueries({ queryKey: ['network-services-overview'] });
+    },
   });
 
   const flushCache = useMutation({
     mutationFn: () => networkServicesApi.flushDns(deviceId),
-    onSuccess: () => { setFlushMsg('Cache flushed'); setTimeout(() => setFlushMsg(''), 3000); },
+    onSuccess: () => {
+      setFlushMsg('Cache flushed');
+      setTimeout(() => setFlushMsg(''), 3000);
+    },
   });
 
   const deleteRecord = useMutation({
@@ -252,7 +414,9 @@ export default function NetworkServicesDNSPage() {
 
   const statics = dns?.statics || [];
 
-  function mark() { setSettingsDirty(true); }
+  function mark() {
+    setSettingsDirty(true);
+  }
 
   return (
     <div className="space-y-6">
@@ -260,7 +424,7 @@ export default function NetworkServicesDNSPage() {
       {recordForm && (
         <RecordForm
           deviceId={deviceId}
-          existing={recordForm === 'new' ? undefined : recordForm as NS}
+          existing={recordForm === 'new' ? undefined : (recordForm as NS)}
           onClose={() => setRecordForm(null)}
         />
       )}
@@ -269,11 +433,16 @@ export default function NetworkServicesDNSPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">DNS Server</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">DNS resolver settings and static records</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            DNS resolver settings and static records
+          </p>
         </div>
         {deviceId > 0 && (
-          <button onClick={() => refetch()} disabled={isFetching}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors">
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+          >
             <RefreshCw className={clsx('w-3.5 h-3.5', isFetching && 'animate-spin')} />
             Refresh
           </button>
@@ -282,15 +451,20 @@ export default function NetworkServicesDNSPage() {
 
       {/* Device selector */}
       <div className="card p-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-2">Select Device</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-2">
+          Select Device
+        </label>
         <DevicePicker
-          className="max-w-xs" devices={devices} aria-label="Device"
+          className="max-w-xs"
+          devices={devices}
+          aria-label="Device"
           value={selectedDeviceId === '' ? null : selectedDeviceId}
           onChange={(id) => setSelectedDeviceId(id ?? '')}
         />
         {selectedDevice?.status !== 'online' && deviceId > 0 && (
           <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-            <AlertTriangle className="w-3.5 h-3.5" />This device is currently offline.
+            <AlertTriangle className="w-3.5 h-3.5" />
+            This device is currently offline.
           </div>
         )}
       </div>
@@ -298,15 +472,28 @@ export default function NetworkServicesDNSPage() {
       {conflictDevices.length > 0 && deviceId > 0 && allowRemote && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-sm text-amber-700 dark:text-amber-300">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          <span>DNS remote requests also enabled on: <strong>{shortList(conflictDevices.map(d => String(d['name'])))}</strong>. Multiple DNS servers may cause resolution issues.</span>
+          <span>
+            DNS remote requests also enabled on:{' '}
+            <strong>{shortList(conflictDevices.map((d) => String(d['name'])))}</strong>. Multiple
+            DNS servers may cause resolution issues.
+          </span>
         </div>
       )}
 
-      {deviceId === 0 && <div className="card p-8 text-center text-sm text-gray-400 dark:text-slate-500">Select a device above.</div>}
-      {deviceId > 0 && isLoading && <div className="card p-8 text-center text-sm text-gray-400 dark:text-slate-500">Loading…</div>}
+      {deviceId === 0 && (
+        <div className="card p-8 text-center text-sm text-gray-400 dark:text-slate-500">
+          Select a device above.
+        </div>
+      )}
+      {deviceId > 0 && isLoading && (
+        <div className="card p-8 text-center text-sm text-gray-400 dark:text-slate-500">
+          Loading…
+        </div>
+      )}
       {deviceId > 0 && error && (
         <div className="card p-4 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0" />Failed: {(error as Error).message}
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          Failed: {(error as Error).message}
         </div>
       )}
 
@@ -316,7 +503,9 @@ export default function NetworkServicesDNSPage() {
           <div className="card overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
               <Globe className="w-4 h-4 text-blue-500" />
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">DNS Settings</h2>
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                DNS Settings
+              </h2>
               <div className="ml-auto flex items-center gap-2">
                 {canWrite && (
                   <button
@@ -328,71 +517,173 @@ export default function NetworkServicesDNSPage() {
                     {flushCache.isPending ? 'Flushing…' : 'Flush Cache'}
                   </button>
                 )}
-                {flushMsg && <span className="text-xs text-green-600 dark:text-green-400">{flushMsg}</span>}
+                {flushMsg && (
+                  <span className="text-xs text-green-600 dark:text-green-400">{flushMsg}</span>
+                )}
               </div>
             </div>
             <div className="p-5 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Upstream DNS Servers</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
+                  Upstream DNS Servers
+                </label>
                 {/* One entry at a time rather than a comma-separated box (#207). */}
                 <div className="max-w-sm">
-                  <ListInput value={splitList(serversInput)} onChange={(v) => { setServersInput(v.join(',')); mark(); }}
-                    ariaLabel="Upstream DNS servers" placeholder="8.8.8.8" disabled={!canWrite}
-                    validate={(e) => (isValidIPv4(e) || isValidIPv6(e) ? null : `${e} isn\u2019t an IP address`)} />
+                  <ListInput
+                    value={splitList(serversInput)}
+                    onChange={(v) => {
+                      setServersInput(v.join(','));
+                      mark();
+                    }}
+                    ariaLabel="Upstream DNS servers"
+                    placeholder="8.8.8.8"
+                    disabled={!canWrite}
+                    validate={(e) =>
+                      isValidIPv4(e) || isValidIPv6(e) ? null : `${e} isn\u2019t an IP address`
+                    }
+                  />
                 </div>
-                <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">Upstream resolver addresses, in the order they&apos;re tried.</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
+                  Upstream resolver addresses, in the order they&apos;re tried.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Max UDP Packet Size</label>
-                  <input type="text" className="input w-full" value={maxUdpSize}
-                    onChange={e => { setMaxUdpSize(e.target.value); mark(); }} placeholder="4096" disabled={!canWrite} />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
+                    Max UDP Packet Size
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={maxUdpSize}
+                    onChange={(e) => {
+                      setMaxUdpSize(e.target.value);
+                      mark();
+                    }}
+                    placeholder="4096"
+                    disabled={!canWrite}
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">Cache Max TTL</label>
-                  <input type="text" className="input w-full" value={cacheMaxTtl}
-                    onChange={e => { setCacheMaxTtl(e.target.value); mark(); }} placeholder="e.g. 1d" disabled={!canWrite} />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
+                    Cache Max TTL
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={cacheMaxTtl}
+                    onChange={(e) => {
+                      setCacheMaxTtl(e.target.value);
+                      mark();
+                    }}
+                    placeholder="e.g. 1d"
+                    disabled={!canWrite}
+                  />
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <button role="switch" aria-checked={allowRemote}
-                  onClick={() => { if (canWrite) { setAllowRemote(v => !v); mark(); } }}
+                <button
+                  role="switch"
+                  aria-checked={allowRemote}
+                  onClick={() => {
+                    if (canWrite) {
+                      setAllowRemote((v) => !v);
+                      mark();
+                    }
+                  }}
                   disabled={!canWrite}
-                  className={clsx('relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors mt-0.5',
-                    allowRemote ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600', !canWrite && 'opacity-50 cursor-not-allowed')}>
-                  <span className={clsx('pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform', allowRemote ? 'translate-x-4' : 'translate-x-0')} />
+                  className={clsx(
+                    'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors mt-0.5',
+                    allowRemote ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                    !canWrite && 'opacity-50 cursor-not-allowed',
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
+                      allowRemote ? 'translate-x-4' : 'translate-x-0',
+                    )}
+                  />
                 </button>
                 <div>
-                  <div className="text-sm font-medium text-gray-700 dark:text-slate-200">Allow Remote Requests</div>
-                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Allow other devices to use this router as a DNS resolver.</p>
+                  <div className="text-sm font-medium text-gray-700 dark:text-slate-200">
+                    Allow Remote Requests
+                  </div>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                    Allow other devices to use this router as a DNS resolver.
+                  </p>
                 </div>
               </div>
 
               {/* Read-only stats */}
-              {(dns.settings['cache-used'] || dns.settings['cache-size'] || dns.settings['dynamic-servers']) && (
+              {(dns.settings['cache-used'] ||
+                dns.settings['cache-size'] ||
+                dns.settings['dynamic-servers']) && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-3 border-t border-gray-100 dark:border-slate-800">
-                  {dns.settings['cache-size'] && <div><div className="text-xs text-gray-400 mb-0.5">Cache Size</div><div className="text-sm font-medium text-gray-900 dark:text-white">{dns.settings['cache-size']} KiB</div></div>}
-                  {dns.settings['cache-used'] && <div><div className="text-xs text-gray-400 mb-0.5">Cache Used</div><div className="text-sm font-medium text-gray-900 dark:text-white">{dns.settings['cache-used']} KiB</div></div>}
-                  {dns.settings['dynamic-servers'] && <div><div className="text-xs text-gray-400 mb-0.5">Dynamic Servers</div><div className="text-sm font-medium text-gray-900 dark:text-white">{dns.settings['dynamic-servers']}</div></div>}
+                  {dns.settings['cache-size'] && (
+                    <div>
+                      <div className="text-xs text-gray-400 mb-0.5">Cache Size</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {dns.settings['cache-size']} KiB
+                      </div>
+                    </div>
+                  )}
+                  {dns.settings['cache-used'] && (
+                    <div>
+                      <div className="text-xs text-gray-400 mb-0.5">Cache Used</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {dns.settings['cache-used']} KiB
+                      </div>
+                    </div>
+                  )}
+                  {dns.settings['dynamic-servers'] && (
+                    <div>
+                      <div className="text-xs text-gray-400 mb-0.5">Dynamic Servers</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {dns.settings['dynamic-servers']}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
               {canWrite && settingsDirty && (
                 <div className="flex items-center gap-3 pt-2">
-                  <button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors">
-                    <Save className="w-3.5 h-3.5" />{saveSettings.isPending ? 'Saving…' : 'Save Changes'}
+                  <button
+                    onClick={() => saveSettings.mutate()}
+                    disabled={saveSettings.isPending}
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    {saveSettings.isPending ? 'Saving…' : 'Save Changes'}
                   </button>
-                  <ReviewChangesButton request={saveSettingsRequest} onApply={() => saveSettings.mutate()} applyLabel="Save" disabled={saveSettings.isPending} />
-                  <button onClick={() => {
-                    const s = dns.settings;
-                    setServersInput(s['servers'] || ''); setAllowRemote(s['allow-remote-requests'] === 'yes');
-                    setMaxUdpSize(s['max-udp-packet-size'] || ''); setCacheSize(s['cache-size'] || '');
-                    setCacheMaxTtl(s['cache-max-ttl'] || ''); setSettingsDirty(false);
-                  }} className="text-sm text-gray-500 hover:text-gray-700">Discard</button>
-                  {saveSettings.isError && <span className="text-xs text-red-500">{apiErrorMessage(saveSettings.error)}</span>}
+                  <ReviewChangesButton
+                    request={saveSettingsRequest}
+                    onApply={() => saveSettings.mutate()}
+                    applyLabel="Save"
+                    disabled={saveSettings.isPending}
+                  />
+                  <button
+                    onClick={() => {
+                      const s = dns.settings;
+                      setServersInput(s['servers'] || '');
+                      setAllowRemote(s['allow-remote-requests'] === 'yes');
+                      setMaxUdpSize(s['max-udp-packet-size'] || '');
+                      setCacheSize(s['cache-size'] || '');
+                      setCacheMaxTtl(s['cache-max-ttl'] || '');
+                      setSettingsDirty(false);
+                    }}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    Discard
+                  </button>
+                  {saveSettings.isError && (
+                    <span className="text-xs text-red-500">
+                      {apiErrorMessage(saveSettings.error)}
+                    </span>
+                  )}
                 </div>
               )}
               {canWrite && saveSettings.isSuccess && !settingsDirty && (
@@ -405,57 +696,125 @@ export default function NetworkServicesDNSPage() {
           <div className="card overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
               <Globe className="w-4 h-4 text-green-500" />
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Static DNS Records</h2>
-              <span className="text-xs text-gray-400 dark:text-slate-500 ml-1">{statics.length}</span>
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                Static DNS Records
+              </h2>
+              <span className="text-xs text-gray-400 dark:text-slate-500 ml-1">
+                {statics.length}
+              </span>
               {canWrite && (
-                <button onClick={() => setRecordForm('new')}
-                  className="ml-auto flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors">
-                  <Plus className="w-3 h-3" />Add Record
+                <button
+                  onClick={() => setRecordForm('new')}
+                  className="ml-auto flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Record
                 </button>
               )}
             </div>
             {statics.length === 0 ? (
-              <div className="px-5 py-6 text-sm text-gray-400 dark:text-slate-500 text-center">No static records configured.</div>
+              <div className="px-5 py-6 text-sm text-gray-400 dark:text-slate-500 text-center">
+                No static records configured.
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40">
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Name</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Type</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Value</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">TTL</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Status</th>
-                      {canWrite && <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Actions</th>}
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        Name
+                      </th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        Type
+                      </th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        Value
+                      </th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        TTL
+                      </th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        Status
+                      </th>
+                      {canWrite && (
+                        <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
                     {statics.map((r, i) => {
                       const isDisabled = r['disabled'] === 'true';
-                      const value = r['address'] || r['cname'] || r['text'] || r['mx-exchange'] || r['ns'] || r['srv-target'] || r['forward-to'] || '—';
+                      const value =
+                        r['address'] ||
+                        r['cname'] ||
+                        r['text'] ||
+                        r['mx-exchange'] ||
+                        r['ns'] ||
+                        r['srv-target'] ||
+                        r['forward-to'] ||
+                        '—';
                       return (
-                        <tr key={r['.id'] || i} className={clsx('border-b border-gray-100 dark:border-slate-800 transition-colors hover:bg-blue-50 dark:hover:bg-slate-700/40', i % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-gray-50 dark:bg-slate-800/40')}>
-                          <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{r['name'] || '—'}</td>
+                        <tr
+                          key={r['.id'] || i}
+                          className={clsx(
+                            'border-b border-gray-100 dark:border-slate-800 transition-colors hover:bg-blue-50 dark:hover:bg-slate-700/40',
+                            i % 2 === 0
+                              ? 'bg-white dark:bg-transparent'
+                              : 'bg-gray-50 dark:bg-slate-800/40',
+                          )}
+                        >
+                          <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                            {r['name'] || '—'}
+                          </td>
                           <td className="px-4 py-3">
                             <span className="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-mono font-medium">
                               {r['type'] || 'A'}
                             </span>
                           </td>
-                          <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-slate-300 max-w-xs truncate">{value}</td>
-                          <td className="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs">{r['ttl'] || '—'}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-slate-300 max-w-xs truncate">
+                            {value}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs">
+                            {r['ttl'] || '—'}
+                          </td>
                           <td className="px-4 py-3">
-                            <span className={clsx('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-                              isDisabled ? 'bg-gray-100 dark:bg-slate-700 text-gray-500' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400')}>
-                              <span className={clsx('w-1.5 h-1.5 rounded-full', isDisabled ? 'bg-gray-400' : 'bg-green-500')} />
+                            <span
+                              className={clsx(
+                                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
+                                isDisabled
+                                  ? 'bg-gray-100 dark:bg-slate-700 text-gray-500'
+                                  : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+                              )}
+                            >
+                              <span
+                                className={clsx(
+                                  'w-1.5 h-1.5 rounded-full',
+                                  isDisabled ? 'bg-gray-400' : 'bg-green-500',
+                                )}
+                              />
                               {isDisabled ? 'Disabled' : 'Active'}
                             </span>
                           </td>
                           {canWrite && (
                             <td className="px-4 py-3">
                               <div className="flex items-center justify-end gap-1">
-                                <button onClick={() => setRecordForm(r)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                                <button onClick={() => { if (confirm(`Delete record "${r['name']}"?`)) deleteRecord.mutate(r['.id']); }}
-                                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                <button
+                                  onClick={() => setRecordForm(r)}
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Delete record "${r['name']}"?`))
+                                      deleteRecord.mutate(r['.id']);
+                                  }}
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
                               </div>
                             </td>
                           )}

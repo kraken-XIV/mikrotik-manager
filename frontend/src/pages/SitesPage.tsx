@@ -1,17 +1,29 @@
+import 'leaflet/dist/leaflet.css';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import L from 'leaflet';
+import {
+  AlertCircle,
+  Building2,
+  Check,
+  MapPin,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Building2, MapPin, Plus, Pencil, Trash2, Check, X, AlertCircle, RefreshCw } from 'lucide-react';
-import { sitesApi, settingsApi, siteGroupsApi } from '../services/api';
-import { useSiteStore, type Site } from '../store/siteStore';
-import { useCanWrite, useIsSiteScoped } from '../hooks/useCanWrite';
+
+import PollOverridesCard from '../components/common/PollOverridesCard';
 import GroupsCard from '../components/sites/GroupsCard';
 import RomonCard from '../components/sites/RomonCard';
-import { geocodeAddress, OSM_TILE_URL, OSM_ATTRIBUTION } from '../utils/geocode';
+import { useCanWrite, useIsSiteScoped } from '../hooks/useCanWrite';
+import { settingsApi, siteGroupsApi, sitesApi } from '../services/api';
+import { type Site, useSiteStore } from '../store/siteStore';
 import { escapeHtml } from '../utils/escapeHtml';
-import PollOverridesCard from '../components/common/PollOverridesCard';
+import { geocodeAddress, OSM_ATTRIBUTION, OSM_TILE_URL } from '../utils/geocode';
 
 /** World map with one pin per site that has coordinates. */
 function SitesMap({ sites, onSelect }: { sites: Site[]; onSelect: (id: number) => void }) {
@@ -29,14 +41,16 @@ function SitesMap({ sites, onSelect }: { sites: Site[]; onSelect: (id: number) =
       const lng = Number(s.location_lng);
       points.push([lat, lng]);
       const marker = L.circleMarker([lat, lng], {
-        radius: 10, color: '#fff', weight: 2,
+        radius: 10,
+        color: '#fff',
+        weight: 2,
         fillColor: s.online_count > 0 ? '#3b82f6' : '#94a3b8',
         fillOpacity: 0.9,
       }).addTo(map);
       marker.bindPopup(
         `<b>${escapeHtml(s.name)}</b><br/>${escapeHtml(s.address ?? '')}<br/>` +
-        `${s.device_count} device${s.device_count === 1 ? '' : 's'}` +
-        `${s.device_count ? ` &middot; ${s.online_count} online` : ''}`
+          `${s.device_count} device${s.device_count === 1 ? '' : 's'}` +
+          `${s.device_count ? ` &middot; ${s.online_count} online` : ''}`,
       );
       marker.on('click', () => onSelect(s.id));
     }
@@ -47,14 +61,21 @@ function SitesMap({ sites, onSelect }: { sites: Site[]; onSelect: (id: number) =
     else if (points.length > 1) map.fitBounds(L.latLngBounds(points).pad(0.25));
     else map.setView([20, 0], 2);
 
-    return () => { map.remove(); };
-  }, [JSON.stringify(pinned.map((s) => [s.id, s.location_lat, s.location_lng, s.online_count])), onSelect]);
+    return () => {
+      map.remove();
+    };
+  }, [
+    JSON.stringify(pinned.map((s) => [s.id, s.location_lat, s.location_lng, s.online_count])),
+    onSelect,
+  ]);
 
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-700">
         <MapPin className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex-1">Site locations</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex-1">
+          Site locations
+        </h3>
         <span className="text-xs text-gray-400">
           {pinned.length} of {sites.length} mapped
         </span>
@@ -114,7 +135,10 @@ export default function SitesPage() {
 
   async function save() {
     const trimmed = name.trim();
-    if (!trimmed) { setError('Site name is required'); return; }
+    if (!trimmed) {
+      setError('Site name is required');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -128,7 +152,9 @@ export default function SitesPage() {
       const payload = {
         name: trimmed,
         address: addr,
-        ...(!isScoped && (editing ? (editing.group_id ?? null) !== groupId : groupId != null) ? { group_id: groupId } : {}),
+        ...(!isScoped && (editing ? (editing.group_id ?? null) !== groupId : groupId != null)
+          ? { group_id: groupId }
+          : {}),
         ...(addressChanged
           ? { location_lat: coords?.lat ?? null, location_lng: coords?.lng ?? null }
           : {}),
@@ -156,15 +182,29 @@ export default function SitesPage() {
   });
 
   function cancel() {
-    setEditing(null); setAdding(false); setName(''); setAddress(''); setError(''); setGroupId(null);
+    setEditing(null);
+    setAdding(false);
+    setName('');
+    setAddress('');
+    setError('');
+    setGroupId(null);
   }
 
   function startEdit(s: Site) {
-    setEditing(s); setAdding(false); setName(s.name); setAddress(s.address ?? ''); setError(''); setGroupId(s.group_id ?? null);
+    setEditing(s);
+    setAdding(false);
+    setName(s.name);
+    setAddress(s.address ?? '');
+    setError('');
+    setGroupId(s.group_id ?? null);
   }
 
   const q = filter.trim().toLowerCase();
-  const shownSites = q ? sites.filter((s) => [s.name, s.address, s.group_name].some((v) => (v ?? '').toLowerCase().includes(q))) : sites;
+  const shownSites = q
+    ? sites.filter((s) =>
+        [s.name, s.address, s.group_name].some((v) => (v ?? '').toLowerCase().includes(q)),
+      )
+    : sites;
   const anyGroups = sites.some((s) => s.group_id != null);
 
   const totalDevices = sites.reduce((n, s) => n + s.device_count, 0);
@@ -182,7 +222,12 @@ export default function SitesPage() {
         </div>
         {canWrite && !adding && !editing && (
           <button
-            onClick={() => { setAdding(true); setName(''); setAddress(''); setError(''); }}
+            onClick={() => {
+              setAdding(true);
+              setName('');
+              setAddress('');
+              setError('');
+            }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-500"
           >
             <Plus className="w-4 h-4" /> New site
@@ -194,7 +239,9 @@ export default function SitesPage() {
         <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-sm text-red-700 dark:text-red-300">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <span className="flex-1">{error}</span>
-          <button onClick={() => setError('')}><X className="w-4 h-4" /></button>
+          <button onClick={() => setError('')}>
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
@@ -218,13 +265,26 @@ export default function SitesPage() {
               className="input"
             />
             {!isScoped && (
-              <label className="flex items-center gap-2 text-sm sm:col-span-2" style={{ color: 'var(--ink-3)' }}>
+              <label
+                className="flex items-center gap-2 text-sm sm:col-span-2"
+                style={{ color: 'var(--ink-3)' }}
+              >
                 Group
-                <select className="input max-w-xs" value={groupId ?? ''} onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : null)}>
+                <select
+                  className="input max-w-xs"
+                  value={groupId ?? ''}
+                  onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : null)}
+                >
                   <option value="">No group</option>
-                  {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
                 </select>
-                <span className="text-xs" style={{ color: 'var(--ink-4)' }}>The customer it belongs to. New groups are made under Groups below.</span>
+                <span className="text-xs" style={{ color: 'var(--ink-4)' }}>
+                  The customer it belongs to. New groups are made under Groups below.
+                </span>
               </label>
             )}
           </div>
@@ -239,10 +299,17 @@ export default function SitesPage() {
               disabled={busy}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
             >
-              {busy ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              {busy ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
               {busy ? 'Saving…' : 'Save'}
             </button>
-            <button onClick={cancel} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-slate-600">
+            <button
+              onClick={cancel}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-slate-600"
+            >
               Cancel
             </button>
           </div>
@@ -261,7 +328,13 @@ export default function SitesPage() {
       <RomonCard sites={sites} />
 
       {sites.length > 10 && (
-        <input className="input max-w-sm" placeholder="Find a site by name, address or group" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Find a site" />
+        <input
+          className="input max-w-sm"
+          placeholder="Find a site by name, address or group"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          aria-label="Find a site"
+        />
       )}
 
       <div className="card overflow-hidden">
@@ -278,10 +351,18 @@ export default function SitesPage() {
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Loading…</td></tr>
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  Loading…
+                </td>
+              </tr>
             )}
             {!isLoading && sites.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No sites yet.</td></tr>
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  No sites yet.
+                </td>
+              </tr>
             )}
             {shownSites.map((s) => (
               <tr
@@ -308,11 +389,17 @@ export default function SitesPage() {
                 <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
                   {s.address || <span className="text-gray-300 dark:text-slate-600">—</span>}
                 </td>
-                <td className="px-4 py-2.5 text-right text-gray-900 dark:text-white">{s.device_count}</td>
+                <td className="px-4 py-2.5 text-right text-gray-900 dark:text-white">
+                  {s.device_count}
+                </td>
                 <td className="px-4 py-2.5 text-right">
-                  <span className={s.online_count === s.device_count && s.device_count > 0
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-gray-500 dark:text-slate-400'}>
+                  <span
+                    className={
+                      s.online_count === s.device_count && s.device_count > 0
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-gray-500 dark:text-slate-400'
+                    }
+                  >
                     {s.online_count}
                   </span>
                 </td>

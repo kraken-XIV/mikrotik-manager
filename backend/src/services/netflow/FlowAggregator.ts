@@ -46,7 +46,8 @@ interface Bucket {
 }
 
 /** A client within its site. */
-const clientId = (b: { siteId: number | null; clientKey: string }): string => `${b.siteId ?? ''}|${b.clientKey}`;
+const clientId = (b: { siteId: number | null; clientKey: string }): string =>
+  `${b.siteId ?? ''}|${b.clientKey}`;
 
 export class FlowAggregator {
   private buckets = new Map<string, Bucket>();
@@ -122,20 +123,20 @@ export class FlowAggregator {
     }
 
     // 3. Top-N fold
-    const realClients = Array.from(clientBytes.keys()).filter((c) => !c.endsWith(`|${CLIENT_UNKNOWN}`));
+    const realClients = Array.from(clientBytes.keys()).filter(
+      (c) => !c.endsWith(`|${CLIENT_UNKNOWN}`),
+    );
     const keep = new Set(
       realClients
         .sort((a, c) => (clientBytes.get(c) || 0) - (clientBytes.get(a) || 0))
-        .slice(0, topN)
+        .slice(0, topN),
     );
 
     const result = new Map<string, AggregatedRow>();
     for (const row of merged.values()) {
       // Folded clients go to their own site's 'other' bucket.
       const clientKey =
-        row.clientKey === CLIENT_UNKNOWN || keep.has(clientId(row))
-          ? row.clientKey
-          : CLIENT_OTHER;
+        row.clientKey === CLIENT_UNKNOWN || keep.has(clientId(row)) ? row.clientKey : CLIENT_OTHER;
       const key = `${row.siteId ?? ''}|${clientKey}|${row.direction}|${row.app}`;
       const out = result.get(key);
       if (out) {

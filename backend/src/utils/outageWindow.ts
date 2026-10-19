@@ -14,9 +14,16 @@ export interface OutageRow {
 }
 
 /** Seconds of `o` that fall between windowStart and now. */
-export function outageSecondsInWindow(o: OutageRow, windowStart: Date, now: Date = new Date()): number {
+export function outageSecondsInWindow(
+  o: OutageRow,
+  windowStart: Date,
+  now: Date = new Date(),
+): number {
   const start = Math.max(new Date(o.went_offline_at).getTime(), windowStart.getTime());
-  const end = Math.min(o.came_back_online_at ? new Date(o.came_back_online_at).getTime() : now.getTime(), now.getTime());
+  const end = Math.min(
+    o.came_back_online_at ? new Date(o.came_back_online_at).getTime() : now.getTime(),
+    now.getTime(),
+  );
   return end > start ? Math.round((end - start) / 1000) : 0;
 }
 

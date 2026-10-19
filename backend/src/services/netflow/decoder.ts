@@ -42,7 +42,7 @@ export function pruneTemplateCache(
   cache: TemplateCache,
   ttlMs: number,
   max: number,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): number {
   let removed = 0;
   const cutoff = now - ttlMs;
@@ -102,8 +102,14 @@ function formatIPv6(buf: Buffer, offset: number): string {
 
   // IPv4-mapped (::ffff:a.b.c.d) — report the underlying IPv4 address so these
   // flows match client/exporter IPs and don't look like separate IPv6 endpoints.
-  if (groups[0] === 0 && groups[1] === 0 && groups[2] === 0 && groups[3] === 0 &&
-      groups[4] === 0 && groups[5] === 0xffff) {
+  if (
+    groups[0] === 0 &&
+    groups[1] === 0 &&
+    groups[2] === 0 &&
+    groups[3] === 0 &&
+    groups[4] === 0 &&
+    groups[5] === 0xffff
+  ) {
     return formatIPv4(buf, offset + 12);
   }
 
@@ -116,7 +122,10 @@ function formatIPv6(buf: Buffer, offset: number): string {
     if (groups[i] === 0) {
       if (runStart === -1) runStart = i;
       runLen++;
-      if (runLen > bestLen) { bestStart = runStart; bestLen = runLen; }
+      if (runLen > bestLen) {
+        bestStart = runStart;
+        bestLen = runLen;
+      }
     } else {
       runStart = -1;
       runLen = 0;
@@ -135,7 +144,7 @@ function parseTemplates(
   ipfix: boolean,
   exporterKey: string,
   sourceId: number,
-  cache: TemplateCache
+  cache: TemplateCache,
 ): number {
   let off = start;
   let parsed = 0;
@@ -150,26 +159,39 @@ function parseTemplates(
     let minLength = 0;
     let ok = true;
     for (let i = 0; i < fieldCount; i++) {
-      if (off + 4 > setEnd) { ok = false; break; }
+      if (off + 4 > setEnd) {
+        ok = false;
+        break;
+      }
       let id = buf.readUInt16BE(off);
       const length = buf.readUInt16BE(off + 2);
       off += 4;
       let enterprise = false;
       if (ipfix && (id & 0x8000) !== 0) {
         // Enterprise-specific element: 4-byte enterprise number follows
-        if (off + 4 > setEnd) { ok = false; break; }
+        if (off + 4 > setEnd) {
+          ok = false;
+          break;
+        }
         off += 4;
         id = id & 0x7fff;
         enterprise = true;
       }
       // A zero-length field is meaningless in v9/IPFIX and makes a record
       // zero-width, which would spin parseDataSet forever. Reject the template.
-      if (length === 0) { ok = false; break; }
+      if (length === 0) {
+        ok = false;
+        break;
+      }
       fields.push({ id, length, enterprise });
       minLength += length === 0xffff ? 1 : length;
     }
     if (!ok || minLength === 0) break;
-    cache.set(`${exporterKey}|${sourceId}|${templateId}`, { fields, minLength, lastUsed: Date.now() });
+    cache.set(`${exporterKey}|${sourceId}|${templateId}`, {
+      fields,
+      minLength,
+      lastUsed: Date.now(),
+    });
     parsed++;
   }
   return parsed;
@@ -180,7 +202,7 @@ function parseDataSet(
   start: number,
   setEnd: number,
   template: Template,
-  flows: FlowRecord[]
+  flows: FlowRecord[],
 ): void {
   let off = start;
   // Records are packed back to back; trailing bytes < minLength are padding
@@ -199,28 +221,55 @@ function parseDataSet(
       let len = field.length;
       if (len === 0xffff) {
         // IPFIX variable-length: first byte is the length (255 → next 2 bytes)
-        if (off + 1 > setEnd) { valid = false; break; }
+        if (off + 1 > setEnd) {
+          valid = false;
+          break;
+        }
         len = buf[off];
         off += 1;
         if (len === 255) {
-          if (off + 2 > setEnd) { valid = false; break; }
+          if (off + 2 > setEnd) {
+            valid = false;
+            break;
+          }
           len = buf.readUInt16BE(off);
           off += 2;
         }
       }
-      if (off + len > setEnd) { valid = false; break; }
+      if (off + len > setEnd) {
+        valid = false;
+        break;
+      }
 
       if (!field.enterprise) {
         switch (field.id) {
-          case FIELD.BYTES: bytes = readUInt(buf, off, len); break;
-          case FIELD.PACKETS: packets = readUInt(buf, off, len); break;
-          case FIELD.PROTOCOL: protocol = readUInt(buf, off, len); break;
-          case FIELD.SRC_PORT: srcPort = readUInt(buf, off, len); break;
-          case FIELD.DST_PORT: dstPort = readUInt(buf, off, len); break;
-          case FIELD.SRC_IPV4: if (len === 4) srcAddr = formatIPv4(buf, off); break;
-          case FIELD.DST_IPV4: if (len === 4) dstAddr = formatIPv4(buf, off); break;
-          case FIELD.SRC_IPV6: if (len === 16 && !srcAddr) srcAddr = formatIPv6(buf, off); break;
-          case FIELD.DST_IPV6: if (len === 16 && !dstAddr) dstAddr = formatIPv6(buf, off); break;
+          case FIELD.BYTES:
+            bytes = readUInt(buf, off, len);
+            break;
+          case FIELD.PACKETS:
+            packets = readUInt(buf, off, len);
+            break;
+          case FIELD.PROTOCOL:
+            protocol = readUInt(buf, off, len);
+            break;
+          case FIELD.SRC_PORT:
+            srcPort = readUInt(buf, off, len);
+            break;
+          case FIELD.DST_PORT:
+            dstPort = readUInt(buf, off, len);
+            break;
+          case FIELD.SRC_IPV4:
+            if (len === 4) srcAddr = formatIPv4(buf, off);
+            break;
+          case FIELD.DST_IPV4:
+            if (len === 4) dstAddr = formatIPv4(buf, off);
+            break;
+          case FIELD.SRC_IPV6:
+            if (len === 16 && !srcAddr) srcAddr = formatIPv6(buf, off);
+            break;
+          case FIELD.DST_IPV6:
+            if (len === 16 && !dstAddr) dstAddr = formatIPv6(buf, off);
+            break;
         }
       }
       off += len;
@@ -275,7 +324,15 @@ export function decodePacket(buf: Buffer, exporterKey: string, cache: TemplateCa
     const isOptionsSet = ipfix ? setId === 3 : setId === 1;
 
     if (isTemplateSet) {
-      result.templatesParsed += parseTemplates(buf, setStart, setEnd, ipfix, exporterKey, sourceId, cache);
+      result.templatesParsed += parseTemplates(
+        buf,
+        setStart,
+        setEnd,
+        ipfix,
+        exporterKey,
+        sourceId,
+        cache,
+      );
     } else if (!isOptionsSet && setId >= 256) {
       const template = cache.get(`${exporterKey}|${sourceId}|${setId}`);
       if (template) {

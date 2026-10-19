@@ -14,13 +14,13 @@ Every device is classified from `/interface/wifi/capsman` and `/interface/wifi/c
 for legacy CAPsMAN from `/caps-man/manager` and `/interface/wireless/cap`
 (see [Legacy CAPsMAN](#legacy-capsman)):
 
-| Role | Meaning |
-|---|---|
-| `standalone` | Has radios, manages them itself |
-| `cap` | Radios are provisioned by a controller |
-| `controller` | Runs CAPsMAN; has no radios of its own |
+| Role             | Meaning                                                                         |
+| ---------------- | ------------------------------------------------------------------------------- |
+| `standalone`     | Has radios, manages them itself                                                 |
+| `cap`            | Radios are provisioned by a controller                                          |
+| `controller`     | Runs CAPsMAN; has no radios of its own                                          |
 | `controller_cap` | Runs CAPsMAN **and** its own radios under it — a supported MikroTik arrangement |
-| `none` | No wireless hardware |
+| `none`           | No wireless hardware                                                            |
 
 The role is detected, not inferred from `device_type`. That matters because a dedicated
 controller is usually classified as a router, and `device_type` is a label a human typed

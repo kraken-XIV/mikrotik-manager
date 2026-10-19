@@ -1,11 +1,12 @@
-import { Router, Request, Response } from 'express';
 import { execFile } from 'child_process';
-import { promisify } from 'util';
-import { readFile, writeFile, unlink } from 'fs/promises';
-import { existsSync } from 'fs';
 import crypto from 'crypto';
+import { Request, Response, Router } from 'express';
+import { existsSync } from 'fs';
+import { readFile, unlink, writeFile } from 'fs/promises';
 import path from 'path';
-import { requireAuth, requireAdmin } from '../middleware/auth';
+import { promisify } from 'util';
+
+import { requireAdmin, requireAuth } from '../middleware/auth';
 
 const router = Router();
 router.use(requireAuth);
@@ -14,13 +15,15 @@ const execFileAsync = promisify(execFile);
 
 const CERTS_DIR = '/certs';
 const CERT_PATH = path.join(CERTS_DIR, 'server.crt');
-const KEY_PATH  = path.join(CERTS_DIR, 'server.key');
+const KEY_PATH = path.join(CERTS_DIR, 'server.key');
 
 /** Certificate writes run one at a time so a cert and its key are always a pair. */
 let installChain: Promise<void> = Promise.resolve();
 function acquireInstallLock(): Promise<() => void> {
   let release!: () => void;
-  const next = new Promise<void>((r) => { release = r; });
+  const next = new Promise<void>((r) => {
+    release = r;
+  });
   const ready = installChain.then(() => release);
   installChain = installChain.then(() => next);
   return ready;
@@ -73,14 +76,27 @@ router.post('/regenerate', requireAdmin, async (_req: Request, res: Response) =>
   // Same lock as upload, so a regenerate can't interleave with an upload.
   const release = await acquireInstallLock();
   try {
-    await execFileAsync('openssl', [
-      'req', '-x509', '-nodes', '-days', '3650',
-      '-newkey', 'rsa:2048',
-      '-keyout', KEY_PATH,
-      '-out', CERT_PATH,
-      '-subj', '/CN=Mikrotik Manager/O=Self-Signed/OU=Local/C=US',
-      '-addext', 'subjectAltName=IP:127.0.0.1,DNS:localhost',
-    ], { timeout: 30000 });
+    await execFileAsync(
+      'openssl',
+      [
+        'req',
+        '-x509',
+        '-nodes',
+        '-days',
+        '3650',
+        '-newkey',
+        'rsa:2048',
+        '-keyout',
+        KEY_PATH,
+        '-out',
+        CERT_PATH,
+        '-subj',
+        '/CN=Mikrotik Manager/O=Self-Signed/OU=Local/C=US',
+        '-addext',
+        'subjectAltName=IP:127.0.0.1,DNS:localhost',
+      ],
+      { timeout: 30000 },
+    );
 
     // Signal nginx to reload
     await writeFile(RELOAD_SIGNAL, '');
@@ -105,7 +121,9 @@ router.post('/upload', requireAdmin, async (req: Request, res: Response) => {
 
   // Validate PEM format
   if (!certificate.includes('-----BEGIN CERTIFICATE-----')) {
-    return res.status(400).json({ error: 'certificate does not appear to be a valid PEM certificate' });
+    return res
+      .status(400)
+      .json({ error: 'certificate does not appear to be a valid PEM certificate' });
   }
   if (!private_key.includes('-----BEGIN')) {
     return res.status(400).json({ error: 'private_key does not appear to be a valid PEM key' });
@@ -116,7 +134,9 @@ router.post('/upload', requireAdmin, async (req: Request, res: Response) => {
   try {
     certInfo = parseCertInfo(certificate);
   } catch {
-    return res.status(400).json({ error: 'Failed to parse certificate — ensure it is valid PEM format' });
+    return res
+      .status(400)
+      .json({ error: 'Failed to parse certificate — ensure it is valid PEM format' });
   }
 
   // Verify the private key matches the certificate's public key
@@ -146,11 +166,11 @@ router.post('/upload', requireAdmin, async (req: Request, res: Response) => {
   // time: two uploads sharing the '.tmp' files could put one upload's
   // certificate next to the other's key (outside review S10).
   const tmpCert = CERT_PATH + '.tmp';
-  const tmpKey  = KEY_PATH + '.tmp';
+  const tmpKey = KEY_PATH + '.tmp';
   const release = await acquireInstallLock();
   try {
     await writeFile(tmpCert, certificate.trim() + '\n', { mode: 0o644 });
-    await writeFile(tmpKey,  private_key.trim() + '\n', { mode: 0o600 });
+    await writeFile(tmpKey, private_key.trim() + '\n', { mode: 0o600 });
 
     // Rename into place
     const { rename } = await import('fs/promises');

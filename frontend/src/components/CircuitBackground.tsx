@@ -1,16 +1,25 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Point { x: number; y: number }
-interface Seg { from: Point; to: Point }
-interface Trace { segs: Seg[]; bright: boolean }
+interface Point {
+  x: number;
+  y: number;
+}
+interface Seg {
+  from: Point;
+  to: Point;
+}
+interface Trace {
+  segs: Seg[];
+  bright: boolean;
+}
 interface Pulse {
   trace: Trace;
   segIdx: number;
-  t: number;        // [0,1] within current segment
-  speed: number;    // segments per second
-  hue: number;      // HSL hue
+  t: number; // [0,1] within current segment
+  speed: number; // segments per second
+  hue: number; // HSL hue
   trail: Point[];
 }
 
@@ -23,41 +32,41 @@ interface ThemePalette {
   viaStroke: string;
   viaFill: string;
   pulseHues: number[];
-  trailLightness: number;   // % lightness for trail hsla
-  glowLightness: number;    // % lightness for glow center
-  coreLightness: number;    // % lightness for core dot
-  coreSaturation: number;   // % saturation for core dot
+  trailLightness: number; // % lightness for trail hsla
+  glowLightness: number; // % lightness for glow center
+  coreLightness: number; // % lightness for core dot
+  coreSaturation: number; // % saturation for core dot
 }
 
 // ─── Theme palettes ───────────────────────────────────────────────────────────
 
 const DARK_PALETTE: ThemePalette = {
-  bg:           '#040c07',
-  traceBright:  '#112b1a',
-  traceDim:     '#0a1f10',
-  padBright:    '#183322',
-  padDim:       '#0f2219',
-  viaStroke:    '#1a3d25',
-  viaFill:      '#0d2218',
-  pulseHues:    [140, 150, 155, 160, 165, 170, 175, 180, 185],
+  bg: '#040c07',
+  traceBright: '#112b1a',
+  traceDim: '#0a1f10',
+  padBright: '#183322',
+  padDim: '#0f2219',
+  viaStroke: '#1a3d25',
+  viaFill: '#0d2218',
+  pulseHues: [140, 150, 155, 160, 165, 170, 175, 180, 185],
   trailLightness: 65,
-  glowLightness:  80,
-  coreLightness:  96,
+  glowLightness: 80,
+  coreLightness: 96,
   coreSaturation: 60,
 };
 
 const LIGHT_PALETTE: ThemePalette = {
-  bg:           '#e8f2f7',
-  traceBright:  '#7aafc8',
-  traceDim:     '#9dc4d8',
-  padBright:    '#689fbc',
-  padDim:       '#88b8cc',
-  viaStroke:    '#5590ac',
-  viaFill:      '#c2dce8',
-  pulseHues:    [185, 190, 195, 200, 205, 210, 215, 220, 170],
+  bg: '#e8f2f7',
+  traceBright: '#7aafc8',
+  traceDim: '#9dc4d8',
+  padBright: '#689fbc',
+  padDim: '#88b8cc',
+  viaStroke: '#5590ac',
+  viaFill: '#c2dce8',
+  pulseHues: [185, 190, 195, 200, 205, 210, 215, 220, 170],
   trailLightness: 38,
-  glowLightness:  28,
-  coreLightness:  22,
+  glowLightness: 28,
+  coreLightness: 22,
   coreSaturation: 75,
 };
 
@@ -86,9 +95,7 @@ function buildTraces(w: number, h: number): Trace[] {
     let r = Math.floor(Math.random() * rows);
     let dir = Math.floor(Math.random() * 4);
     const bright = Math.random() < 0.35;
-    const maxLen = bright
-      ? 6 + Math.floor(Math.random() * 14)
-      : 3 + Math.floor(Math.random() * 8);
+    const maxLen = bright ? 6 + Math.floor(Math.random() * 14) : 3 + Math.floor(Math.random() * 8);
     const segs: Seg[] = [];
 
     for (let step = 0; step < maxLen; step++) {
@@ -143,17 +150,22 @@ interface Props {
 export default function CircuitBackground({ theme = 'dark' }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<{ traces: Trace[]; pulses: Pulse[]; raf: number }>({
-    traces: [], pulses: [], raf: 0,
+    traces: [],
+    pulses: [],
+    raf: 0,
   });
 
   const palette = theme === 'light' ? LIGHT_PALETTE : DARK_PALETTE;
 
-  const init = useCallback((w: number, h: number) => {
-    const traces = buildTraces(w, h);
-    const pulses = buildPulses(traces, palette);
-    stateRef.current.traces = traces;
-    stateRef.current.pulses = pulses;
-  }, [palette]);
+  const init = useCallback(
+    (w: number, h: number) => {
+      const traces = buildTraces(w, h);
+      const pulses = buildPulses(traces, palette);
+      stateRef.current.traces = traces;
+      stateRef.current.pulses = pulses;
+    },
+    [palette],
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -227,9 +239,9 @@ export default function CircuitBackground({ theme = 'dark' }: Props) {
 
       const head = pulse.trail[len - 1];
       const glow = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 16);
-      glow.addColorStop(0,    `hsla(${pulse.hue}, 90%, ${glowLightness}%, 0.7)`);
+      glow.addColorStop(0, `hsla(${pulse.hue}, 90%, ${glowLightness}%, 0.7)`);
       glow.addColorStop(0.35, `hsla(${pulse.hue}, 90%, ${trailLightness}%, 0.25)`);
-      glow.addColorStop(1,    `hsla(${pulse.hue}, 90%, ${trailLightness}%, 0)`);
+      glow.addColorStop(1, `hsla(${pulse.hue}, 90%, ${trailLightness}%, 0)`);
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(head.x, head.y, 16, 0, Math.PI * 2);
@@ -283,10 +295,6 @@ export default function CircuitBackground({ theme = 'dark' }: Props) {
   }, [init, palette]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0 }}
-    />
+    <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }} />
   );
 }

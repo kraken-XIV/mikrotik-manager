@@ -1,19 +1,24 @@
 import { query, queryOne } from '../config/database';
-import { encrypt, decrypt } from '../utils/crypto';
-import { parsePort } from '../utils/parsePort';
-import { safeConnectionError } from '../utils/safeClientError';
+import type { CredentialPresetRow } from '../routes/credentialPresets';
+import { checkPort, parseApiTls, usesApiTls } from '../utils/apiTls';
+import { decrypt, encrypt } from '../utils/crypto';
 import { normalizeDeviceAddress, reconcileAddressPort } from '../utils/deviceAddress';
+import { fit } from '../utils/fit';
 import { logSafe } from '../utils/logSafe';
+import { parsePort } from '../utils/parsePort';
+import { type PresetCaller, presetUseRefusal } from '../utils/presetAccess';
+import { safeConnectionError } from '../utils/safeClientError';
+import {
+  classifyApiFailure,
+  describeSshFailure,
+  parseSshOnlyFlag,
+  type SshInfo,
+} from '../utils/sshOnly';
+import { DEVICE_BASE_COLUMNS } from './deviceColumns';
+import { pinIdentity } from './identityPins';
+import { API_SSL_PORT, connectPreferringSsl } from './mikrotik/apiConnect';
 import { RouterOSClient } from './mikrotik/RouterOSClient';
 import type { PollerService } from './PollerService';
-import type { CredentialPresetRow } from '../routes/credentialPresets';
-import { DEVICE_BASE_COLUMNS } from './deviceColumns';
-import { connectPreferringSsl, API_SSL_PORT } from './mikrotik/apiConnect';
-import { usesApiTls, parseApiTls, checkPort } from '../utils/apiTls';
-import { pinIdentity } from './identityPins';
-import { presetUseRefusal, type PresetCaller } from '../utils/presetAccess';
-import { fit } from '../utils/fit';
-import { parseSshOnlyFlag, classifyApiFailure, describeSshFailure, type SshInfo } from '../utils/sshOnly';
 import { readSshInfo } from './sshOnly';
 
 export type CreateDeviceContext = {
@@ -55,18 +60,23 @@ export async function loadCredentialPreset(
   if (id === null || id === undefined) return null;
   const preset = await queryOne<CredentialPresetRow>(
     `SELECT * FROM credential_presets WHERE id = $1`,
-    [id]
+    [id],
   );
   if (!preset) throw new Error(`Credential preset ${id} not found`);
   // A caller that passes nothing gets least privilege: not an admin, and no
   // site's admin (the bulk-add worker once passed no role at all).
-  const caller: PresetCaller = ctx?.presetCaller
-    ?? { fleetAdmin: ctx?.requestingUserRole === 'admin', adminSites: [], memberSites: null };
+  const caller: PresetCaller = ctx?.presetCaller ?? {
+    fleetAdmin: ctx?.requestingUserRole === 'admin',
+    adminSites: [],
+    memberSites: null,
+  };
   // The device's site: the one it's joining or in, else the default site
   // that a device with no site lands in.
   let deviceSite = deviceSiteId ?? null;
   if (deviceSite == null && preset.site_id != null) {
-    deviceSite = (await queryOne<{ id: number }>(`SELECT id FROM sites WHERE is_default ORDER BY id LIMIT 1`))?.id ?? null;
+    deviceSite =
+      (await queryOne<{ id: number }>(`SELECT id FROM sites WHERE is_default ORDER BY id LIMIT 1`))
+        ?.id ?? null;
   }
   const refusal = presetUseRefusal(caller, preset, deviceSite);
   if (refusal) {
@@ -134,7 +144,11 @@ export type CreateDeviceResult =
  *    following it going forward changes nothing).
  * Locked otherwise: the operator typed something else on purpose.
  */
-export function computeNameLocked(name: string, address: string, deviceIdentity: string | null): boolean {
+export function computeNameLocked(
+  name: string,
+  address: string,
+  deviceIdentity: string | null,
+): boolean {
   if (name.toLowerCase() === address.toLowerCase()) return false;
   if (!deviceIdentity) return false;
   return name !== deviceIdentity;
@@ -148,7 +162,7 @@ export function computeNameLocked(name: string, address: string, deviceIdentity:
 export async function createDeviceFromBody(
   input: CreateDeviceInput,
   pollerService: PollerService | null,
-  ctx?: CreateDeviceContext
+  ctx?: CreateDeviceContext,
 ): Promise<CreateDeviceResult> {
   const result = await createDevice(input, pollerService, ctx);
   const deviceId = Number(result.body?.id);
@@ -161,8 +175,10 @@ export async function createDeviceFromBody(
       `INSERT INTO device_tags (device_id, tag_id)
        SELECT $1, t.id FROM tags t WHERE t.id = ANY($2::int[])
        ON CONFLICT DO NOTHING`,
-      [deviceId, tagIds]
-    ).catch((e) => console.warn(`[deviceCreation] tags not applied to ${deviceId}: ${(e as Error).message}`));
+      [deviceId, tagIds],
+    ).catch((e) =>
+      console.warn(`[deviceCreation] tags not applied to ${deviceId}: ${(e as Error).message}`),
+    );
   }
   return result;
 }
@@ -170,15 +186,9 @@ export async function createDeviceFromBody(
 async function createDevice(
   input: CreateDeviceInput,
   pollerService: PollerService | null,
-  ctx?: CreateDeviceContext
+  ctx?: CreateDeviceContext,
 ): Promise<CreateDeviceResult> {
-  const {
-    name,
-    ip_address,
-    device_type = 'router',
-    notes,
-    credential_preset_id,
-  } = input;
+  const { name, ip_address, device_type = 'router', notes, credential_preset_id } = input;
 
   let preset: Awaited<ReturnType<typeof loadCredentialPreset>>;
   try {
@@ -191,18 +201,23 @@ async function createDevice(
   const sshOnlyRequested = parseSshOnlyFlag(input.ssh_only);
   // SSH only: one login is enough. It is used for SSH now and tried on the API
   // later, so the device can become ordinary without being edited (#174).
-  const api_username: string | undefined = preset?.api_username ?? input.api_username
-    ?? (sshOnlyRequested ? input.ssh_username ?? undefined : undefined);
-  const api_password: string | undefined = preset?.api_password ?? input.api_password
-    ?? (sshOnlyRequested ? input.ssh_password ?? undefined : undefined);
+  const api_username: string | undefined =
+    preset?.api_username ??
+    input.api_username ??
+    (sshOnlyRequested ? (input.ssh_username ?? undefined) : undefined);
+  const api_password: string | undefined =
+    preset?.api_password ??
+    input.api_password ??
+    (sshOnlyRequested ? (input.ssh_password ?? undefined) : undefined);
   let api_port: number = preset?.api_port ?? parsePort(input.api_port, 8728);
   const ssh_username: string | null = preset ? preset.ssh_username : (input.ssh_username ?? null);
   const ssh_password: string | null = preset ? preset.ssh_password : (input.ssh_password ?? null);
   const ssh_port: number = preset?.ssh_port ?? parsePort(input.ssh_port, 22);
   // Whether a port was actually given: a merge with an existing record keeps
   // its SSH port otherwise, instead of resetting it to 22 (outside review C2).
-  const sshPortGiven: number | null = preset?.ssh_port
-    ?? (input.ssh_port != null && input.ssh_port !== '' ? parsePort(input.ssh_port, 22) : null);
+  const sshPortGiven: number | null =
+    preset?.ssh_port ??
+    (input.ssh_port != null && input.ssh_port !== '' ? parsePort(input.ssh_port, 22) : null);
   const combineWithDeviceId =
     typeof input.combine_with_device_id === 'number' ? input.combine_with_device_id : null;
   const forceReplaceBySerial = input.force_replace_existing_by_serial === true;
@@ -216,7 +231,10 @@ async function createDevice(
   }
 
   // Out-of-range ports used to be stored as given (#257).
-  for (const [value, label] of [[input.api_port, 'API port'], [input.ssh_port, 'SSH port']] as const) {
+  for (const [value, label] of [
+    [input.api_port, 'API port'],
+    [input.ssh_port, 'SSH port'],
+  ] as const) {
     const pc = checkPort(value, label);
     if (!pc.ok) return { ok: false, status: 400, body: { error: pc.error } };
   }
@@ -230,20 +248,35 @@ async function createDevice(
     return { ok: false, status: 400, body: { error: normalizedAddress.reason } };
   }
   const address = normalizedAddress.address;
-  const portCheck = reconcileAddressPort(normalizedAddress.port, preset?.api_port ?? input.api_port);
+  const portCheck = reconcileAddressPort(
+    normalizedAddress.port,
+    preset?.api_port ?? input.api_port,
+  );
   if (!portCheck.ok) return { ok: false, status: 400, body: { error: portCheck.reason } };
   if (portCheck.port) api_port = portCheck.port;
   if (!Number.isInteger(api_port) || api_port < 1 || api_port > 65535) {
-    return { ok: false, status: 400, body: { error: 'API port must be a number from 1 to 65535.' } };
+    return {
+      ok: false,
+      status: 400,
+      body: { error: 'API port must be a number from 1 to 65535.' },
+    };
   }
 
   // No port chosen anywhere (form, preset, or written into the address): try
   // API-SSL first and fall back to the plain API (outside review P1-4). A port
   // that was chosen is used as given, and so is an explicit API-SSL choice
   // (#257), on the port that goes with it when none was given.
-  const portChosen = preset?.api_port != null || (input.api_port != null && input.api_port !== '') || !!portCheck.port
-    || apiTls !== null;
-  if (apiTls !== null && preset?.api_port == null && (input.api_port == null || input.api_port === '') && !portCheck.port) {
+  const portChosen =
+    preset?.api_port != null ||
+    (input.api_port != null && input.api_port !== '') ||
+    !!portCheck.port ||
+    apiTls !== null;
+  if (
+    apiTls !== null &&
+    preset?.api_port == null &&
+    (input.api_port == null || input.api_port === '') &&
+    !portCheck.port
+  ) {
     api_port = apiTls ? API_SSL_PORT : 8728;
   }
   let testClient: RouterOSClient | undefined;
@@ -256,20 +289,35 @@ async function createDevice(
   let apiUnavailable: string | undefined;
   try {
     if (portChosen) {
-      testClient = new RouterOSClient(address, api_port, api_username, api_password, sshOnlyRequested ? 6_000 : 10_000,
-        30_000, usesApiTls({ api_port, api_tls: apiTls }));
+      testClient = new RouterOSClient(
+        address,
+        api_port,
+        api_username,
+        api_password,
+        sshOnlyRequested ? 6_000 : 10_000,
+        30_000,
+        usesApiTls({ api_port, api_tls: apiTls }),
+      );
       await testClient.connect();
     } else {
-      const chosen = await connectPreferringSsl(address, api_username, api_password,
-        sshOnlyRequested ? { sslTimeoutMs: 5_000, plainTimeoutMs: 6_000 } : {});
+      const chosen = await connectPreferringSsl(
+        address,
+        api_username,
+        api_password,
+        sshOnlyRequested ? { sslTimeoutMs: 5_000, plainTimeoutMs: 6_000 } : {},
+      );
       testClient = chosen.client;
       api_port = chosen.port;
       sslFallbackReason = chosen.sslError;
     }
-    const rb = await testClient.execute('/system/routerboard/print').catch(() => [] as Record<string, string>[]);
+    const rb = await testClient
+      .execute('/system/routerboard/print')
+      .catch(() => [] as Record<string, string>[]);
     detectedSerial = (rb[0]?.['serial-number'] || '').trim() || null;
     const identity = await testClient.execute('/system/identity/print').catch((e) => {
-      console.warn(`[deviceCreation] /system/identity/print failed for ${logSafe(address)}: ${logSafe((e as Error)?.message)}`);
+      console.warn(
+        `[deviceCreation] /system/identity/print failed for ${logSafe(address)}: ${logSafe((e as Error)?.message)}`,
+      );
       return [] as Record<string, string>[];
     });
     deviceIdentity = (identity[0]?.['name'] || '').trim() || null;
@@ -286,17 +334,31 @@ async function createDevice(
     testClient?.disconnect();
     testClient = undefined;
     try {
-      sshInfo = await readSshInfo({
-        id: 0, name, ip_address: address, ssh_port,
-        ssh_username: ssh_username || api_username,
-        ssh_password_encrypted: encrypt(ssh_password || api_password),
-      }, { onHostKey: (fp) => { sshHostKey = fp; } });
+      sshInfo = await readSshInfo(
+        {
+          id: 0,
+          name,
+          ip_address: address,
+          ssh_port,
+          ssh_username: ssh_username || api_username,
+          ssh_password_encrypted: encrypt(ssh_password || api_password),
+        },
+        {
+          onHostKey: (fp) => {
+            sshHostKey = fp;
+          },
+        },
+      );
     } catch (sshErr) {
-      console.warn(`[deviceCreation] SSH-only add of ${logSafe(address)} failed: ${logSafe((sshErr as Error).message)}`);
+      console.warn(
+        `[deviceCreation] SSH-only add of ${logSafe(address)} failed: ${logSafe((sshErr as Error).message)}`,
+      );
       return {
         ok: false,
         status: 422,
-        body: { error: `The API didn't answer (${apiUnavailable.replace(/\.$/, '')}), and SSH failed too: ${describeSshFailure(sshErr, ssh_port)}` },
+        body: {
+          error: `The API didn't answer (${apiUnavailable.replace(/\.$/, '')}), and SSH failed too: ${describeSshFailure(sshErr, ssh_port)}`,
+        },
       };
     }
     detectedSerial = sshInfo.serial;
@@ -310,11 +372,15 @@ async function createDevice(
   const addedOverSsh = sshInfo !== null;
   const connection = addedOverSsh
     ? { ssh_only: true, api_unavailable: apiUnavailable }
-    : { api_ssl: usesApiTls({ api_port, api_tls: apiTls }), port: api_port, ...(sslFallbackReason ? { ssl_unavailable: sslFallbackReason } : {}),
-        ...(sshOnlyRequested ? { api_answered: true } : {}) };
+    : {
+        api_ssl: usesApiTls({ api_port, api_tls: apiTls }),
+        port: api_port,
+        ...(sslFallbackReason ? { ssl_unavailable: sslFallbackReason } : {}),
+        ...(sshOnlyRequested ? { api_answered: true } : {}),
+      };
   // An SSH-only device keeps its SSH login explicitly (config history needs it).
-  const sshUserToStore = addedOverSsh ? (ssh_username || api_username) : ssh_username;
-  const sshPassToStore = addedOverSsh ? (ssh_password || api_password) : ssh_password;
+  const sshUserToStore = addedOverSsh ? ssh_username || api_username : ssh_username;
+  const sshPassToStore = addedOverSsh ? ssh_password || api_password : ssh_password;
   // The certificate seen while adding is the one pinned, so there is no gap
   // before the first poll in which a different one would be accepted (P1-4).
   const tlsFingerprint = testClient?.tlsFingerprint ?? null;
@@ -330,14 +396,21 @@ async function createDevice(
       `SELECT id, name, ip_address, serial_number, site_id
          FROM devices
         WHERE serial_number = $1`,
-      [detectedSerial]
+      [detectedSerial],
     );
 
-    if (existingBySerial && ctx?.allowedSites && !ctx.allowedSites.includes(existingBySerial.site_id ?? -1)) {
+    if (
+      existingBySerial &&
+      ctx?.allowedSites &&
+      !ctx.allowedSites.includes(existingBySerial.site_id ?? -1)
+    ) {
       return {
         ok: false,
         status: 409,
-        body: { error: 'This device is already managed in a site you do not have access to.', code: 'duplicate_serial_elsewhere' },
+        body: {
+          error: 'This device is already managed in a site you do not have access to.',
+          code: 'duplicate_serial_elsewhere',
+        },
       };
     }
 
@@ -351,7 +424,12 @@ async function createDevice(
           body: {
             error: 'duplicate_serial',
             code: 'duplicate_serial',
-            existing_device: { id: existingBySerial.id, name: existingBySerial.name, ip_address: existingBySerial.ip_address, serial_number: existingBySerial.serial_number },
+            existing_device: {
+              id: existingBySerial.id,
+              name: existingBySerial.name,
+              ip_address: existingBySerial.ip_address,
+              serial_number: existingBySerial.serial_number,
+            },
             candidate: {
               serial_number: detectedSerial,
               identity: name,
@@ -395,7 +473,7 @@ async function createDevice(
           existingBySerial.id,
           addedOverSsh,
           apiTls,
-        ]
+        ],
       );
 
       if (pollerService) {
@@ -404,7 +482,7 @@ async function createDevice(
 
       const updatedExisting = await queryOne(
         `SELECT ${DEVICE_BASE_COLUMNS}, created_at FROM devices WHERE id = $1`,
-        [existingBySerial.id]
+        [existingBySerial.id],
       );
       if (!updatedExisting) {
         return {
@@ -443,18 +521,43 @@ async function createDevice(
                $14::boolean, CASE WHEN $14::boolean THEN NOW() END, $15, $16, $17, $18, $19,
                CASE WHEN $14::boolean THEN NOW() END, $20, $21)
        RETURNING id`,
-      [name, nameLocked, address, api_port, api_username, encryptedPass,
-       ssh_port, sshUserToStore || null, encryptedSshPass, device_type, notes || null,
-       ctx?.siteId ?? null, detectedSerial, addedOverSsh,
-       fit(sshInfo?.model, 100), fit(sshInfo?.rosVersion, 20), fit(sshInfo?.firmware, 50),
-       fit(sshInfo?.architecture, 32), fit(sshInfo?.identity, 255), addedOverSsh ? apiUnavailable ?? null : null, apiTls]
+      [
+        name,
+        nameLocked,
+        address,
+        api_port,
+        api_username,
+        encryptedPass,
+        ssh_port,
+        sshUserToStore || null,
+        encryptedSshPass,
+        device_type,
+        notes || null,
+        ctx?.siteId ?? null,
+        detectedSerial,
+        addedOverSsh,
+        fit(sshInfo?.model, 100),
+        fit(sshInfo?.rosVersion, 20),
+        fit(sshInfo?.firmware, 50),
+        fit(sshInfo?.architecture, 32),
+        fit(sshInfo?.identity, 255),
+        addedOverSsh ? (apiUnavailable ?? null) : null,
+        apiTls,
+      ],
     );
   } catch (err) {
-    if ((err as { code?: string }).code === '23505' && /serial/i.test(String((err as { constraint?: string }).constraint ?? ''))) {
+    if (
+      (err as { code?: string }).code === '23505' &&
+      /serial/i.test(String((err as { constraint?: string }).constraint ?? ''))
+    ) {
       return {
         ok: false,
         status: 409,
-        body: { error: 'A device with this serial number was added at the same moment. Refresh the device list.', code: 'duplicate_serial' },
+        body: {
+          error:
+            'A device with this serial number was added at the same moment. Refresh the device list.',
+          code: 'duplicate_serial',
+        },
       };
     }
     throw err;
@@ -471,7 +574,7 @@ async function createDevice(
 
   const device = await queryOne(
     `SELECT ${DEVICE_BASE_COLUMNS}, created_at FROM devices WHERE id = $1`,
-    [newId]
+    [newId],
   );
 
   return { ok: true, status: 201, body: { ...(device as Record<string, unknown>), connection } };

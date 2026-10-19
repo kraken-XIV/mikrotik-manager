@@ -1,6 +1,7 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
-import { requireAuth, requireWrite, fleetOnly } from '../middleware/auth';
+import { fleetOnly, requireAuth, requireWrite } from '../middleware/auth';
 
 /**
  * Saved command templates (#163).
@@ -15,7 +16,10 @@ router.use(requireAuth);
 
 const MAX_COMMAND = 10_000;
 
-function validate(body: Record<string, unknown>, partial: boolean): { error?: string; name?: string; description?: string | null; command?: string } {
+function validate(
+  body: Record<string, unknown>,
+  partial: boolean,
+): { error?: string; name?: string; description?: string | null; command?: string } {
   const out: { name?: string; description?: string | null; command?: string } = {};
   if (body.name !== undefined || !partial) {
     const name = String(body.name ?? '').trim();
@@ -23,9 +27,12 @@ function validate(body: Record<string, unknown>, partial: boolean): { error?: st
     out.name = name;
   }
   if (body.command !== undefined || !partial) {
-    const command = String(body.command ?? '').replace(/\r\n/g, '\n').trim();
+    const command = String(body.command ?? '')
+      .replace(/\r\n/g, '\n')
+      .trim();
     if (!command) return { error: 'command is required' };
-    if (command.length > MAX_COMMAND) return { error: `command is limited to ${MAX_COMMAND} characters` };
+    if (command.length > MAX_COMMAND)
+      return { error: `command is limited to ${MAX_COMMAND} characters` };
     out.command = command;
   }
   if (body.description !== undefined) {
@@ -38,10 +45,12 @@ function validate(body: Record<string, unknown>, partial: boolean): { error?: st
 const uniqueError = (e: unknown) => (e as { code?: string }).code === '23505';
 
 router.get('/', async (_req: Request, res: Response) => {
-  res.json(await query(
-    `SELECT id, name, description, command, created_by, created_at, updated_at
-       FROM command_templates ORDER BY lower(name)`
-  ));
+  res.json(
+    await query(
+      `SELECT id, name, description, command, created_by, created_at, updated_at
+       FROM command_templates ORDER BY lower(name)`,
+    ),
+  );
 });
 
 router.post('/', requireWrite, fleetOnly, async (req: Request, res: Response) => {
@@ -51,11 +60,12 @@ router.post('/', requireWrite, fleetOnly, async (req: Request, res: Response) =>
     const [row] = await query(
       `INSERT INTO command_templates (name, description, command, created_by)
        VALUES ($1, $2, $3, $4) RETURNING *`,
-      [v.name, v.description ?? null, v.command, req.user?.username ?? null]
+      [v.name, v.description ?? null, v.command, req.user?.username ?? null],
     );
     return res.status(201).json(row);
   } catch (e) {
-    if (uniqueError(e)) return res.status(409).json({ error: 'A template with that name already exists' });
+    if (uniqueError(e))
+      return res.status(409).json({ error: 'A template with that name already exists' });
     throw e;
   }
 });
@@ -66,23 +76,30 @@ router.put('/:id', requireWrite, fleetOnly, async (req: Request, res: Response) 
   const sets: string[] = [];
   const params: unknown[] = [req.params.id];
   for (const k of ['name', 'description', 'command'] as const) {
-    if (v[k] !== undefined) { params.push(v[k]); sets.push(`${k} = $${params.length}`); }
+    if (v[k] !== undefined) {
+      params.push(v[k]);
+      sets.push(`${k} = $${params.length}`);
+    }
   }
   if (!sets.length) return res.status(400).json({ error: 'Nothing to change' });
   try {
     const [row] = await query(
-      `UPDATE command_templates SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $1 RETURNING *`, params
+      `UPDATE command_templates SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $1 RETURNING *`,
+      params,
     );
     if (!row) return res.status(404).json({ error: 'Template not found' });
     return res.json(row);
   } catch (e) {
-    if (uniqueError(e)) return res.status(409).json({ error: 'A template with that name already exists' });
+    if (uniqueError(e))
+      return res.status(409).json({ error: 'A template with that name already exists' });
     throw e;
   }
 });
 
 router.delete('/:id', requireWrite, fleetOnly, async (req: Request, res: Response) => {
-  const rows = await query(`DELETE FROM command_templates WHERE id = $1 RETURNING id`, [req.params.id]);
+  const rows = await query(`DELETE FROM command_templates WHERE id = $1 RETURNING id`, [
+    req.params.id,
+  ]);
   if (!rows.length) return res.status(404).json({ error: 'Template not found' });
   return res.json({ ok: true });
 });

@@ -221,17 +221,17 @@ curl -X PUT -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json
 Adding a device (`POST /api/devices`, or the items of a bulk add) can name its site: `site_id`,
 or `site_name` to use or make a site by name, with `group_name` for the group a new site goes in.
 
-| Method | Path | Purpose |
-|---|---|---|
-| `GET` | `/api/sites` | List sites with device counts |
-| `POST` | `/api/sites` | Create a site |
-| `PUT` | `/api/sites/:id` | Rename, set address, notes or `group_id` |
-| `DELETE` | `/api/sites/:id` | Delete (refused while devices remain, or if it's an account's only access) |
-| `POST` | `/api/sites/:id/devices` | Move devices into the site |
-| `GET` | `/api/site-groups` | List groups with their sites and device counts |
-| `POST` | `/api/site-groups` | Create a group: `name`, optional `site_ids` |
-| `PUT` | `/api/site-groups/:id` | Rename, or replace its sites with `site_ids` |
-| `DELETE` | `/api/site-groups/:id` | Delete; its sites stay, without a group |
+| Method   | Path                     | Purpose                                                                    |
+| -------- | ------------------------ | -------------------------------------------------------------------------- |
+| `GET`    | `/api/sites`             | List sites with device counts                                              |
+| `POST`   | `/api/sites`             | Create a site                                                              |
+| `PUT`    | `/api/sites/:id`         | Rename, set address, notes or `group_id`                                   |
+| `DELETE` | `/api/sites/:id`         | Delete (refused while devices remain, or if it's an account's only access) |
+| `POST`   | `/api/sites/:id/devices` | Move devices into the site                                                 |
+| `GET`    | `/api/site-groups`       | List groups with their sites and device counts                             |
+| `POST`   | `/api/site-groups`       | Create a group: `name`, optional `site_ids`                                |
+| `PUT`    | `/api/site-groups/:id`   | Rename, or replace its sites with `site_ids`                               |
+| `DELETE` | `/api/site-groups/:id`   | Delete; its sites stay, without a group                                    |
 
 ## The Connected Clients chart
 

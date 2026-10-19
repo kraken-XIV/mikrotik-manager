@@ -83,11 +83,15 @@ function describe(r: HealthReading, tempLimit: number): string | null {
 
 export function evaluateHealth(
   readings: HealthReading[],
-  opts: { tempLimitC?: number; ignored?: string[] } = {}
+  opts: { tempLimitC?: number; ignored?: string[] } = {},
 ): HealthVerdict {
   const tempLimit = opts.tempLimitC && opts.tempLimitC > 0 ? opts.tempLimitC : DEFAULT_TEMP_LIMIT_C;
   const ignored = new Set(opts.ignored ?? []);
-  const verdict: HealthVerdict = { status: readings.length ? 'ok' : 'unknown', issues: [], ignored: [] };
+  const verdict: HealthVerdict = {
+    status: readings.length ? 'ok' : 'unknown',
+    issues: [],
+    ignored: [],
+  };
   for (const r of readings) {
     const message = describe(r, tempLimit);
     if (!message) continue;

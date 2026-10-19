@@ -1,8 +1,15 @@
-import { offlineAction, recoveryAlert, describeDuration } from '../intermittent';
+import { describeDuration, offlineAction, recoveryAlert } from '../intermittent';
 
 const now = new Date('2026-09-25T12:00:00Z');
 const hoursAgo = (h: number) => new Date(now.getTime() - h * 3600_000);
-const base = { intermittent: true, alertAfterMin: 1440, wasOffline: true, offlineSince: hoursAgo(1), alreadyAlerted: false, now };
+const base = {
+  intermittent: true,
+  alertAfterMin: 1440,
+  wasOffline: true,
+  offlineSince: hoursAgo(1),
+  alreadyAlerted: false,
+  now,
+};
 
 describe('offlineAction', () => {
   it('alerts once for a normal device going offline', () => {
@@ -15,7 +22,9 @@ describe('offlineAction', () => {
   });
   it('alerts once when it has been gone longer than its limit', () => {
     expect(offlineAction({ ...base, offlineSince: hoursAgo(25) })).toBe('alert-long-offline');
-    expect(offlineAction({ ...base, offlineSince: hoursAgo(25), alreadyAlerted: true })).toBe('none');
+    expect(offlineAction({ ...base, offlineSince: hoursAgo(25), alreadyAlerted: true })).toBe(
+      'none',
+    );
   });
   it('never alerts with a limit of 0', () => {
     expect(offlineAction({ ...base, alertAfterMin: 0, offlineSince: hoursAgo(500) })).toBe('none');

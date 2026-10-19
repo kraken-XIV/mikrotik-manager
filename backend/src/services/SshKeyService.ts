@@ -12,21 +12,27 @@
  * access is an explicit, separate decision, taken after keys are seen working.
  */
 import { Client as SSHClient } from 'ssh2';
+
 import { query, queryOne } from '../config/database';
-import { encrypt, decrypt } from '../utils/crypto';
+import { usesApiTls } from '../utils/apiTls';
+import { decrypt, encrypt } from '../utils/crypto';
+import { resolveKeyCredentials } from '../utils/sshKeyCredentials';
 import {
-  generateDeviceKeyPair, keyFileName, keyComment, isUsablePrivateKey, keyTypeForVersion, importRejection, type KeyStatus,
+  generateDeviceKeyPair,
+  importRejection,
+  isUsablePrivateKey,
+  keyComment,
+  keyFileName,
+  type KeyStatus,
+  keyTypeForVersion,
 } from '../utils/sshKeys';
 import { RouterOSClient } from './mikrotik/RouterOSClient';
-import { usesApiTls } from '../utils/apiTls';
-import { resolveKeyCredentials } from '../utils/sshKeyCredentials';
-import { sshHostCheck, explainSshError } from './sshHostCheck';
+import { explainSshError, sshHostCheck } from './sshHostCheck';
 
 const CONNECT_TIMEOUT_MS = 20_000;
 
 /** The device columns an SshTarget needs. */
-export const SSH_TARGET_COLS =
-  `id, name, ip_address, ssh_port, ssh_username, ssh_password_encrypted,
+export const SSH_TARGET_COLS = `id, name, ip_address, ssh_port, ssh_username, ssh_password_encrypted,
    api_port, api_tls, api_username, api_password_encrypted`;
 
 export interface SshTarget {
@@ -73,10 +79,21 @@ function withSsh<T>(
 
     conn.on('ready', () => {
       work(conn)
-        .then((r) => { clearTimeout(timer); conn.end(); resolve(r); })
-        .catch((e) => { clearTimeout(timer); conn.end(); reject(e); });
+        .then((r) => {
+          clearTimeout(timer);
+          conn.end();
+          resolve(r);
+        })
+        .catch((e) => {
+          clearTimeout(timer);
+          conn.end();
+          reject(e);
+        });
     });
-    conn.on('error', (err) => { clearTimeout(timer); reject(explainSshError(err, target.ip_address, target.ssh_port ?? 22)); });
+    conn.on('error', (err) => {
+      clearTimeout(timer);
+      reject(explainSshError(err, target.ip_address, target.ssh_port ?? 22));
+    });
 
     conn.connect({
       host: target.ip_address,
@@ -95,8 +112,12 @@ function exec(conn: SSHClient, command: string): Promise<string> {
     conn.exec(command, (err, stream) => {
       if (err) return reject(err);
       let out = '';
-      stream.on('data', (d: Buffer) => { out += d.toString(); });
-      stream.stderr.on('data', (d: Buffer) => { out += d.toString(); });
+      stream.on('data', (d: Buffer) => {
+        out += d.toString();
+      });
+      stream.stderr.on('data', (d: Buffer) => {
+        out += d.toString();
+      });
       stream.on('close', () => resolve(out));
     });
   });
@@ -129,15 +150,21 @@ export class SshKeyService {
    * any of that, which makes it the one reliable way to undo this feature.
    */
   private async removeKeyViaApi(
-    target: SshTarget, comment: string, fingerprint?: string | null,
+    target: SshTarget,
+    comment: string,
+    fingerprint?: string | null,
   ): Promise<number> {
     if (!target.api_username || !target.api_password_encrypted) {
       throw new Error('No API credentials available to remove the key');
     }
     const client = new RouterOSClient(
-      target.ip_address, target.api_port ?? 8728,
-      target.api_username, decrypt(target.api_password_encrypted),
-      15000, 30000, usesApiTls(target),
+      target.ip_address,
+      target.api_port ?? 8728,
+      target.api_username,
+      decrypt(target.api_password_encrypted),
+      15000,
+      30000,
+      usesApiTls(target),
     );
     // RouterOS keeps the key comment in `info`, not `key-owner` — matching the
     // latter silently matched nothing and left every rotation's old key behind.
@@ -193,13 +220,17 @@ export class SshKeyService {
     if (!target.api_username || !target.api_password_encrypted) {
       throw new Error(
         'This device has no API login, so a key installed now could never be removed by the manager if its ' +
-        'private key were lost. Add an API login to the device first.'
+          'private key were lost. Add an API login to the device first.',
       );
     }
     const client = new RouterOSClient(
-      target.ip_address, target.api_port ?? 8728,
-      target.api_username, decrypt(target.api_password_encrypted),
-      15000, 30000, usesApiTls(target),
+      target.ip_address,
+      target.api_port ?? 8728,
+      target.api_username,
+      decrypt(target.api_password_encrypted),
+      15000,
+      30000,
+      usesApiTls(target),
     );
     try {
       await client.connect();
@@ -207,8 +238,8 @@ export class SshKeyService {
     } catch (e) {
       throw new Error(
         `The manager can't log in to this device over the API right now (${(e as Error).message}), and the API is ` +
-        `how it would remove the key again if it had to. Fix the API login, then deploy the key.`,
-        { cause: e }
+          `how it would remove the key again if it had to. Fix the API login, then deploy the key.`,
+        { cause: e },
       );
     } finally {
       client.disconnect();
@@ -226,7 +257,8 @@ export class SshKeyService {
     let username: string;
     let passwordEncrypted: string | null = null;
     if (canUseExistingKey) {
-      username = existing!.ssh_username || target.ssh_username?.trim() || target.api_username?.trim() || '';
+      username =
+        existing!.ssh_username || target.ssh_username?.trim() || target.api_username?.trim() || '';
       if (!username) throw new Error('No SSH username on record for the existing key');
     } else {
       const cred = resolveKeyCredentials(target);
@@ -237,9 +269,14 @@ export class SshKeyService {
 
     // RSA for devices older than RouterOS 7.12, which can't use Ed25519 keys.
     const version = await queryOne<{ ros_version: string | null }>(
-      `SELECT ros_version FROM devices WHERE id = $1`, [target.id]
+      `SELECT ros_version FROM devices WHERE id = $1`,
+      [target.id],
     ).catch(() => null);
-    const pair = generateDeviceKeyPair(target.id, undefined, keyTypeForVersion(version?.ros_version));
+    const pair = generateDeviceKeyPair(
+      target.id,
+      undefined,
+      keyTypeForVersion(version?.ros_version),
+    );
     if (!isUsablePrivateKey(pair.privateKey)) {
       throw new Error('Generated key could not be parsed — refusing to deploy it');
     }
@@ -257,7 +294,10 @@ export class SshKeyService {
         await putFile(conn, fileName, pair.publicKey + '\n');
         // Space-separated menu paths: RouterOS 6 rejects the /user/ssh-keys form
         // that v7 accepts, and v7 accepts both.
-        const out = await exec(conn, `/user ssh-keys import public-key-file=${fileName} user=${username}`);
+        const out = await exec(
+          conn,
+          `/user ssh-keys import public-key-file=${fileName} user=${username}`,
+        );
         const rejected = importRejection(out);
         if (rejected) throw new Error(`Device rejected the key import: ${rejected}`);
         // RouterOS deletes the key file itself as part of the import. A plain
@@ -277,8 +317,8 @@ export class SshKeyService {
         if (orphans > 0) {
           throw new Error(
             `Key deployment failed: ${msg}. This device already holds ${orphans} key(s) ` +
-            `from this manager, which disables password SSH. Revoke to clear them, then retry.`,
-            { cause: e }
+              `from this manager, which disables password SSH. Revoke to clear them, then retry.`,
+            { cause: e },
           );
         }
       }
@@ -291,10 +331,13 @@ export class SshKeyService {
       // Undo, or the device is left with a key it will demand and we cannot
       // supply — which is exactly how SSH was lost the first time.
       await this.removeKeyViaApi(target, pair.comment, pair.fingerprint).catch((e) =>
-        console.error(`[SshKey] ${target.name}: could not remove the failed key: ${(e as Error).message}`));
+        console.error(
+          `[SshKey] ${target.name}: could not remove the failed key: ${(e as Error).message}`,
+        ),
+      );
       throw new Error(
         `The key was installed but would not authenticate (${proved.error}). ` +
-        `It has been removed from the device and nothing was changed.`
+          `It has been removed from the device and nothing was changed.`,
       );
     }
 
@@ -310,7 +353,14 @@ export class SshKeyService {
          fingerprint = EXCLUDED.fingerprint, ssh_username = EXCLUDED.ssh_username,
          status = 'verified', last_error = NULL, deployed_at = NOW(),
          last_verified_at = NOW(), updated_at = NOW()`,
-      [target.id, pair.keyType, pair.publicKey, encrypt(pair.privateKey), pair.fingerprint, username]
+      [
+        target.id,
+        pair.keyType,
+        pair.publicKey,
+        encrypt(pair.privateKey),
+        pair.fingerprint,
+        username,
+      ],
     );
 
     // Retire the previous key only once its replacement is proved, and target it
@@ -319,8 +369,12 @@ export class SshKeyService {
       const oldComment = existing.public_key.trim().split(/\s+/).pop();
       if (oldComment && oldComment !== pair.comment) {
         await this.removeKeyViaApi(target, oldComment, existing.fingerprint)
-          .then((n) => { if (n === 0) console.warn(`[SshKey] ${target.name}: old key not found on device`); })
-          .catch((e) => console.warn(`[SshKey] ${target.name}: old key left in place: ${(e as Error).message}`));
+          .then((n) => {
+            if (n === 0) console.warn(`[SshKey] ${target.name}: old key not found on device`);
+          })
+          .catch((e) =>
+            console.warn(`[SshKey] ${target.name}: old key left in place: ${(e as Error).message}`),
+          );
       }
     }
 
@@ -332,9 +386,13 @@ export class SshKeyService {
   private async countManagerKeys(target: SshTarget): Promise<number> {
     if (!target.api_username || !target.api_password_encrypted) return 0;
     const client = new RouterOSClient(
-      target.ip_address, target.api_port ?? 8728,
-      target.api_username, decrypt(target.api_password_encrypted),
-      15000, 30000, usesApiTls(target),
+      target.ip_address,
+      target.api_port ?? 8728,
+      target.api_username,
+      decrypt(target.api_password_encrypted),
+      15000,
+      30000,
+      usesApiTls(target),
     );
     try {
       await client.connect();
@@ -347,10 +405,14 @@ export class SshKeyService {
 
   /** Can this private key authenticate, right now, on its own connection? */
   private async tryKey(
-    target: SshTarget, username: string, privateKey: string,
+    target: SshTarget,
+    username: string,
+    privateKey: string,
   ): Promise<{ ok: boolean; error?: string }> {
     try {
-      await withSsh(target, username, { privateKey }, (conn) => exec(conn, '/system identity print'));
+      await withSsh(target, username, { privateKey }, (conn) =>
+        exec(conn, '/system identity print'),
+      );
       return { ok: true };
     } catch (e) {
       return { ok: false, error: (e as Error).message };
@@ -373,11 +435,15 @@ export class SshKeyService {
     if (result.ok) {
       await query(
         `UPDATE device_ssh_keys SET status='verified', last_verified_at=NOW(),
-                last_error=NULL, updated_at=NOW() WHERE device_id=$1`, [target.id]);
+                last_error=NULL, updated_at=NOW() WHERE device_id=$1`,
+        [target.id],
+      );
     } else {
       await query(
         `UPDATE device_ssh_keys SET status='failed', last_error=$2, updated_at=NOW()
-          WHERE device_id=$1`, [target.id, result.error]);
+          WHERE device_id=$1`,
+        [target.id, result.error],
+      );
     }
     return result;
   }

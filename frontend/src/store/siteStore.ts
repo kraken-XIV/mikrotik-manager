@@ -49,7 +49,9 @@ interface SiteState {
  */
 export function reconcileSiteSelection(siteRoles: Record<string, string> | null | undefined): void {
   if (!siteRoles) return;
-  const allowed = Object.keys(siteRoles).map(Number).filter((n) => Number.isFinite(n));
+  const allowed = Object.keys(siteRoles)
+    .map(Number)
+    .filter((n) => Number.isFinite(n));
   if (allowed.length === 0) return;
   const { currentSiteId, setCurrentSite } = useSiteStore.getState();
   if (currentSiteId != null && allowed.includes(currentSiteId)) return;
@@ -70,7 +72,10 @@ export const useSiteStore = create<SiteState>()(
     }),
     {
       name: 'mikrotik-site',
-      partialize: (state) => ({ currentSiteId: state.currentSiteId, currentGroupId: state.currentGroupId }),
-    }
-  )
+      partialize: (state) => ({
+        currentSiteId: state.currentSiteId,
+        currentGroupId: state.currentGroupId,
+      }),
+    },
+  ),
 );

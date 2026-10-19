@@ -62,25 +62,38 @@ export function planBridgePortMove(input: {
   if (input.createTarget) {
     if (!target) return { ok: false, error: 'Give the new bridge a name.' };
     if (!BRIDGE_NAME.test(target)) {
-      return { ok: false, error: 'Bridge names start with a letter or digit and use only letters, digits, dot, dash and underscore (up to 32).' };
+      return {
+        ok: false,
+        error:
+          'Bridge names start with a letter or digit and use only letters, digits, dot, dash and underscore (up to 32).',
+      };
     }
-    if (ifaceByName.has(target)) return { ok: false, error: `There is already an interface called ${target}.` };
+    if (ifaceByName.has(target))
+      return { ok: false, error: `There is already an interface called ${target}.` };
   } else if (target) {
     const t = ifaceByName.get(target);
-    if (!t || t['type'] !== 'bridge') return { ok: false, error: `There is no bridge called ${target} on this device.` };
+    if (!t || t['type'] !== 'bridge')
+      return { ok: false, error: `There is no bridge called ${target} on this device.` };
   }
 
   for (const port of ports) {
     const iface = ifaceByName.get(port);
     if (!iface) return { ok: false, error: `There is no interface called ${port} on this device.` };
-    if (iface['type'] === 'bridge') return { ok: false, error: `${port} is a bridge. Bridges can't be put inside other bridges here.` };
+    if (iface['type'] === 'bridge')
+      return {
+        ok: false,
+        error: `${port} is a bridge. Bridges can't be put inside other bridges here.`,
+      };
     if (port === target) return { ok: false, error: `${port} can't be put inside itself.` };
     if (isTrue(iface['slave']) && !input.bridgePorts.some((r) => r['interface'] === port)) {
       return { ok: false, error: `${port} is a member of a bond. Move the bond instead.` };
     }
     const row = input.bridgePorts.find((r) => r['interface'] === port);
     if (row && isTrue(row['dynamic'])) {
-      return { ok: false, error: `${port} was added to ${row['bridge']} automatically (by CAPsMAN or another service), so it can't be moved by hand.` };
+      return {
+        ok: false,
+        error: `${port} was added to ${row['bridge']} automatically (by CAPsMAN or another service), so it can't be moved by hand.`,
+      };
     }
   }
 
@@ -91,14 +104,20 @@ export function planBridgePortMove(input: {
   for (const port of ports) {
     const row = input.bridgePorts.find((r) => r['interface'] === port);
     const current = row?.['bridge'] || null;
-    if (current === target) { plan.unchanged.push(port); continue; }
+    if (current === target) {
+      plan.unchanged.push(port);
+      continue;
+    }
     if (current) leaving.set(current, [...(leaving.get(current) ?? []), port]);
     if (!target) plan.ops.push({ action: 'remove', port, id: row!['.id'] });
     else if (row) plan.ops.push({ action: 'set', port, id: row['.id'] });
     else plan.ops.push({ action: 'add', port });
   }
   if (plan.ops.length === 0) {
-    return { ok: false, error: target ? `Already in ${target}.` : 'Those ports are not in a bridge.' };
+    return {
+      ok: false,
+      error: target ? `Already in ${target}.` : 'Those ports are not in a bridge.',
+    };
   }
 
   for (const [bridge, gone] of leaving) {
@@ -108,7 +127,9 @@ export function planBridgePortMove(input: {
       const untagged = rosList(row['untagged']);
       if (![...tagged, ...untagged].some((m) => gone.includes(m))) continue;
       plan.vlanEdits.push({
-        id: row['.id'], bridge, vlanIds: row['vlan-ids'] || '',
+        id: row['.id'],
+        bridge,
+        vlanIds: row['vlan-ids'] || '',
         tagged: tagged.filter((m) => !gone.includes(m)),
         untagged: untagged.filter((m) => !gone.includes(m)),
       });
@@ -122,10 +143,15 @@ export function planBridgePortMove(input: {
  * a bridge, an address on the port itself stops working: the classic way to cut
  * a router's internet is to drop the WAN port into the LAN bridge.
  */
-export function addressesOnPorts(ports: string[], addresses: RosRow[], dhcpClients: RosRow[]): string[] {
+export function addressesOnPorts(
+  ports: string[],
+  addresses: RosRow[],
+  dhcpClients: RosRow[],
+): string[] {
   const out: string[] = [];
   for (const a of addresses) {
-    if (ports.includes(a['interface']) && !isTrue(a['dynamic'])) out.push(`${a['interface']} has address ${a['address']}`);
+    if (ports.includes(a['interface']) && !isTrue(a['dynamic']))
+      out.push(`${a['interface']} has address ${a['address']}`);
   }
   for (const d of dhcpClients) {
     if (ports.includes(d['interface'])) out.push(`${d['interface']} gets its address over DHCP`);
@@ -134,11 +160,18 @@ export function addressesOnPorts(ports: string[], addresses: RosRow[], dhcpClien
 }
 
 /** Why a bridge can't be deleted, or null. Only empty, unused bridges are. */
-export function bridgeDeleteRefusal(bridge: string, rows: {
-  bridgePorts: RosRow[]; addresses: RosRow[]; vlanInterfaces: RosRow[]; dhcpServers: RosRow[];
-}): string | null {
+export function bridgeDeleteRefusal(
+  bridge: string,
+  rows: {
+    bridgePorts: RosRow[];
+    addresses: RosRow[];
+    vlanInterfaces: RosRow[];
+    dhcpServers: RosRow[];
+  },
+): string | null {
   const members = rows.bridgePorts.filter((p) => p['bridge'] === bridge).map((p) => p['interface']);
-  if (members.length) return `${bridge} still has ports (${members.join(', ')}). Move them out first.`;
+  if (members.length)
+    return `${bridge} still has ports (${members.join(', ')}). Move them out first.`;
   const addr = rows.addresses.find((a) => a['interface'] === bridge);
   if (addr) return `${bridge} has address ${addr['address']}. Remove it first.`;
   const vlan = rows.vlanInterfaces.find((v) => v['interface'] === bridge);

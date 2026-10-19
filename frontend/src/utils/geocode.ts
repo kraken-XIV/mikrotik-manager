@@ -6,11 +6,13 @@
  * setting before calling: geocoding is a third-party request that discloses
  * where your hardware is, and issue #106 exists to let operators refuse it.
  */
-export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+export async function geocodeAddress(
+  address: string,
+): Promise<{ lat: number; lng: number } | null> {
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
-      { headers: { Accept: 'application/json' } }
+      { headers: { Accept: 'application/json' } },
     );
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {

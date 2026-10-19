@@ -27,7 +27,10 @@ export function isRouterOs6(version: string | null | undefined): boolean {
   return /^6\./.test((version ?? '').trim());
 }
 
-export function exportPlan(version: string | null | undefined, includeSecrets: boolean): ExportPlan {
+export function exportPlan(
+  version: string | null | undefined,
+  includeSecrets: boolean,
+): ExportPlan {
   if (isRouterOs6(version)) {
     return includeSecrets
       ? { command: '/export compact', containsSecrets: true }

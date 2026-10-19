@@ -60,7 +60,9 @@ export function fleetStatus(devices?: FleetSummaryDevices | null): FleetStatus {
   const parts = [
     n > 0 ? `${n} ${plural(n)} unreachable` : null,
     d > 0 ? `${d} ${n > 0 ? '' : `${plural(d)} `}degraded` : null,
-  ].filter(Boolean).map((p) => (p as string).replace(/\s+/g, ' ').trim());
+  ]
+    .filter(Boolean)
+    .map((p) => (p as string).replace(/\s+/g, ' ').trim());
   return {
     kind: 'degraded',
     headline: parts.join(' · '),

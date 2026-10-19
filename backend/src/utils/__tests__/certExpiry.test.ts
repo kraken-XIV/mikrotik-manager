@@ -1,4 +1,4 @@
-import { certExpiryState, needsAttention, describeCert } from '../certExpiry';
+import { certExpiryState, describeCert, needsAttention } from '../certExpiry';
 
 const NOW = new Date('2026-09-16T12:00:00Z');
 const inDays = (n: number) => new Date(NOW.getTime() + n * 86_400_000);
@@ -92,13 +92,17 @@ describe('describeCert', () => {
   });
 
   it('reports how long ago an expired certificate went', () => {
-    expect(describeCert(cert, certExpiryState(inDays(-3), NOW, 14))).toContain('expired 3 days ago');
+    expect(describeCert(cert, certExpiryState(inDays(-3), NOW, 14))).toContain(
+      'expired 3 days ago',
+    );
   });
 
   // A CA expiring invalidates everything it signed, not one connection.
   it('calls out a certificate authority as such', () => {
     const ca = { name: 'local-ca', is_authority: true };
-    expect(describeCert(ca, certExpiryState(inDays(2), NOW, 14))).toMatch(/^Certificate authority local-ca/);
+    expect(describeCert(ca, certExpiryState(inDays(2), NOW, 14))).toMatch(
+      /^Certificate authority local-ca/,
+    );
   });
 
   it('does not repeat the name when the common name matches', () => {
@@ -119,8 +123,9 @@ describe('day counting rounds towards zero in both directions', () => {
   it('does not overstate how long ago something expired', () => {
     const justOverThree = new Date(NOW.getTime() - (3 * 86_400_000 + 3_600_000));
     expect(certExpiryState(justOverThree, NOW, 14).daysLeft).toBe(-3);
-    expect(describeCert({ name: 'c' }, certExpiryState(justOverThree, NOW, 14)))
-      .toContain('expired 3 days ago');
+    expect(describeCert({ name: 'c' }, certExpiryState(justOverThree, NOW, 14))).toContain(
+      'expired 3 days ago',
+    );
   });
 
   it('does not overstate how long is left', () => {
@@ -166,13 +171,16 @@ describe('revoked certificates', () => {
 
   it('says so in words', () => {
     const v = certExpiryState('2027-09-17T12:00:00Z', now, 14, null, { revoked: true });
-    expect(describeCert({ name: 'vpn-client', is_authority: false }, v))
-      .toBe('Certificate vpn-client has been revoked');
+    expect(describeCert({ name: 'vpn-client', is_authority: false }, v)).toBe(
+      'Certificate vpn-client has been revoked',
+    );
   });
 
   it('a missing flag is not revoked — RouterOS omits the field entirely', () => {
     expect(certExpiryState('2027-09-17T12:00:00Z', now, 14, null, {}).state).toBe('valid');
-    expect(certExpiryState('2027-09-17T12:00:00Z', now, 14, null, { revoked: null }).state).toBe('valid');
+    expect(certExpiryState('2027-09-17T12:00:00Z', now, 14, null, { revoked: null }).state).toBe(
+      'valid',
+    );
     expect(certExpiryState('2027-09-17T12:00:00Z', now, 14).state).toBe('valid');
   });
 

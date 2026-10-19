@@ -1,4 +1,4 @@
-import { presetCaller, canManagePresetSite, canSeePreset, presetUseRefusal } from '../presetAccess';
+import { canManagePresetSite, canSeePreset, presetCaller, presetUseRefusal } from '../presetAccess';
 
 const fleetAdmin = presetCaller({ role: 'admin' });
 const fleetOperator = presetCaller({ role: 'operator' });
@@ -20,10 +20,16 @@ describe('credential preset access (#228)', () => {
   });
 
   it('shows each account only what it may use', () => {
-    expect([fleetWide, fleetAdminOnly, site2AdminOnly, site3Open, site9Open].map((r) => canSeePreset(siteAdmin, r)))
-      .toEqual([true, false, true, true, false]);
-    expect([fleetWide, fleetAdminOnly, site2AdminOnly, site3Open].map((r) => canSeePreset(fleetOperator, r)))
-      .toEqual([true, false, false, true]);
+    expect(
+      [fleetWide, fleetAdminOnly, site2AdminOnly, site3Open, site9Open].map((r) =>
+        canSeePreset(siteAdmin, r),
+      ),
+    ).toEqual([true, false, true, true, false]);
+    expect(
+      [fleetWide, fleetAdminOnly, site2AdminOnly, site3Open].map((r) =>
+        canSeePreset(fleetOperator, r),
+      ),
+    ).toEqual([true, false, false, true]);
     expect(canSeePreset(fleetAdmin, site2AdminOnly)).toBe(true);
   });
 

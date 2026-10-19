@@ -5,8 +5,8 @@ jest.mock('../../utils/crypto', () => ({
   decrypt: (s: string) => s,
 }));
 
-import { computeNameLocked, createDeviceFromBody, loadCredentialPreset } from '../deviceCreation';
 import { query, queryOne } from '../../config/database';
+import { computeNameLocked, createDeviceFromBody, loadCredentialPreset } from '../deviceCreation';
 import { RouterOSClient } from '../mikrotik/RouterOSClient';
 
 /**
@@ -29,16 +29,18 @@ describe('computeNameLocked', () => {
     // typed ("Router.Example.com"), but normalizeDeviceAddress lowercases a
     // hostname before it reaches here ("router.example.com") — that must
     // still be recognised as the placeholder, not a deliberately typed name.
-    expect(computeNameLocked('Router.Example.com', 'router.example.com', 'Core-Switch')).toBe(false);
+    expect(computeNameLocked('Router.Example.com', 'router.example.com', 'Core-Switch')).toBe(
+      false,
+    );
   });
 
-  it('stays unlocked when the router\'s identity could not be read', () => {
+  it("stays unlocked when the router's identity could not be read", () => {
     // Fail open: without something to compare against, assume nothing
     // deliberate happened rather than guessing.
     expect(computeNameLocked('aaa', '192.168.88.1', null)).toBe(false);
   });
 
-  it('stays unlocked when the typed name already matches the router\'s identity', () => {
+  it("stays unlocked when the typed name already matches the router's identity", () => {
     // Nothing to lock — following the identity going forward changes nothing.
     expect(computeNameLocked('Core-Switch', '192.168.88.1', 'Core-Switch')).toBe(false);
   });
@@ -70,8 +72,8 @@ describe('createDeviceFromBody (name_locked wiring)', () => {
 
   /** The INSERT's positional params: (name, name_locked, ip_address, ...). */
   function insertedNameLocked(): unknown {
-    const insertCall = (query as jest.Mock).mock.calls.find(
-      ([sql]: [string]) => /INSERT INTO devices/.test(sql)
+    const insertCall = (query as jest.Mock).mock.calls.find(([sql]: [string]) =>
+      /INSERT INTO devices/.test(sql),
     );
     if (!insertCall) throw new Error('No INSERT INTO devices call was made');
     return insertCall[1][1];
@@ -88,7 +90,7 @@ describe('createDeviceFromBody (name_locked wiring)', () => {
 
     const result = await createDeviceFromBody(
       { name: 'test', ip_address: '192.168.88.1', api_username: 'admin', api_password: 'secret' },
-      null
+      null,
     );
 
     expect(result.ok).toBe(true);
@@ -105,8 +107,13 @@ describe('createDeviceFromBody (name_locked wiring)', () => {
     (queryOne as jest.Mock).mockResolvedValueOnce({ id: 43, name: 'Core-Switch' });
 
     const result = await createDeviceFromBody(
-      { name: 'Core-Switch', ip_address: '192.168.88.1', api_username: 'admin', api_password: 'secret' },
-      null
+      {
+        name: 'Core-Switch',
+        ip_address: '192.168.88.1',
+        api_username: 'admin',
+        api_password: 'secret',
+      },
+      null,
     );
 
     expect(result.ok).toBe(true);
@@ -126,7 +133,7 @@ describe('createDeviceFromBody (name_locked wiring)', () => {
 
     const result = await createDeviceFromBody(
       { name: 'test', ip_address: '192.168.88.1', api_username: 'admin', api_password: 'secret' },
-      null
+      null,
     );
 
     expect(result.ok).toBe(true);
@@ -148,12 +155,21 @@ describe('createDeviceFromBody (API-SSL on any port)', () => {
     (queryOne as jest.Mock).mockResolvedValueOnce({ id: 50, name: 'nat' });
   });
   // The refused-port case returns before reading these; don't leak them onward.
-  afterEach(() => { (queryOne as jest.Mock).mockReset(); (query as jest.Mock).mockReset(); });
+  afterEach(() => {
+    (queryOne as jest.Mock).mockReset();
+    (query as jest.Mock).mockReset();
+  });
 
-  const base = { name: 'nat', ip_address: '203.0.113.5', api_username: 'admin', api_password: 'secret' };
+  const base = {
+    name: 'nat',
+    ip_address: '203.0.113.5',
+    api_username: 'admin',
+    api_password: 'secret',
+  };
   /** RouterOSClient(host, port, user, pass, connectMs, readMs, useTls). */
   const ctorArgs = () => (RouterOSClient as unknown as jest.Mock).mock.calls[0];
-  const insertParams = () => (query as jest.Mock).mock.calls.find(([sql]: [string]) => /INSERT INTO devices/.test(sql))![1];
+  const insertParams = () =>
+    (query as jest.Mock).mock.calls.find(([sql]: [string]) => /INSERT INTO devices/.test(sql))![1];
 
   it('connects with TLS on a custom port when asked, and stores the choice', async () => {
     const result = await createDeviceFromBody({ ...base, api_port: '18729', api_tls: true }, null);
@@ -161,7 +177,9 @@ describe('createDeviceFromBody (API-SSL on any port)', () => {
     expect(ctorArgs()[1]).toBe(18729);
     expect(ctorArgs()[6]).toBe(true);
     expect(insertParams()[insertParams().length - 1]).toBe(true);
-    expect((result as unknown as { body: { connection: { api_ssl: boolean } } }).body.connection.api_ssl).toBe(true);
+    expect(
+      (result as unknown as { body: { connection: { api_ssl: boolean } } }).body.connection.api_ssl,
+    ).toBe(true);
   });
 
   it('keeps the old rule without a choice: plain on a custom port, nothing stored', async () => {
@@ -187,8 +205,13 @@ describe('createDeviceFromBody (API-SSL on any port)', () => {
  */
 describe('loadCredentialPreset (admin-only presets)', () => {
   const restricted = {
-    id: 5, api_username: 'admin', api_password_encrypted: 'pw', api_port: 8728,
-    ssh_username: null, ssh_password_encrypted: null, ssh_port: null,
+    id: 5,
+    api_username: 'admin',
+    api_password_encrypted: 'pw',
+    api_port: 8728,
+    ssh_username: null,
+    ssh_password_encrypted: null,
+    ssh_port: null,
     allow_operator_use: false,
   };
 
@@ -198,11 +221,15 @@ describe('loadCredentialPreset (admin-only presets)', () => {
   });
 
   it('lets an admin use a restricted preset', async () => {
-    await expect(loadCredentialPreset(5, { requestingUserRole: 'admin' })).resolves.toMatchObject({ api_username: 'admin' });
+    await expect(loadCredentialPreset(5, { requestingUserRole: 'admin' })).resolves.toMatchObject({
+      api_username: 'admin',
+    });
   });
 
   it('refuses an operator', async () => {
-    await expect(loadCredentialPreset(5, { requestingUserRole: 'operator' })).rejects.toThrow(/restricted to administrators/);
+    await expect(loadCredentialPreset(5, { requestingUserRole: 'operator' })).rejects.toThrow(
+      /restricted to administrators/,
+    );
   });
 
   it('refuses a caller that passed no role at all', async () => {

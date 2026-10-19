@@ -12,10 +12,12 @@ import type { Device } from '../types';
  */
 export type DisplayState = 'online' | 'degraded' | 'offline' | 'expected-offline' | 'unknown';
 
-export function displayState(d: Pick<Device, 'status'> & {
-  health_status?: string | null;
-  intermittent?: boolean;
-}): DisplayState {
+export function displayState(
+  d: Pick<Device, 'status'> & {
+    health_status?: string | null;
+    intermittent?: boolean;
+  },
+): DisplayState {
   if (d.status === 'online') return d.health_status === 'degraded' ? 'degraded' : 'online';
   if (d.status === 'offline') return d.intermittent ? 'expected-offline' : 'offline';
   return 'unknown';
