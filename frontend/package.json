@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "lint": "eslint src",
     "test": "vitest run",
-    "lint:css": "stylelint 'src/**/*.css'"
+    "lint:css": "stylelint 'src/**/*.css'",
+    "test:coverage": "vitest run --coverage",
+    "coverage:ratchet": "node scripts/coverage-ratchet.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",
@@ -48,6 +50,11 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.2",
     "vite": "^8.2.1",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@vitest/coverage-v8": "^4.1.11",
+    "jsdom": "^26.1.0"
   }
 }

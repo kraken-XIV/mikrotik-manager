@@ -86,3 +86,4 @@ nav:
       - Single sign-on (OIDC): sso-oidc.md
   - Contributing:
       - Architecture: architecture.md
+      - Testing and the coverage ratchet: testing.md
