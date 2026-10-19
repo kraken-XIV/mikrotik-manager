@@ -1,0 +1,32 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main, fork/main]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Fails a PR when its dependency diff introduces a HIGH+ advisory or
+      # (if configured later) a denied license. Dependencies that were already
+      # vulnerable before the PR are reported but do not block — those stay
+      # with the Security Audit lane and the GitHub alert view.
+      #
+      # The action moved from the `github` org to `actions`; the pin points at
+      # the new location and Dependabot keeps it current.
+      - name: Review the PR's dependency changes
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime,development,unknown
+          comment-summary-in-pr: never

@@ -75,9 +75,9 @@ run "frontend: build"      frontend npm run build
 
 if [[ $SKIP_AUDIT -eq 0 ]]; then
   run "frontend: audit (prod)" frontend \
-    npx --yes audit-ci@^7 --high --skip-dev --allowlist GHSA-qwww-vcr4-c8h2
+    npm audit --omit=dev --audit-level=high
   run "backend: audit (prod)"  backend \
-    npx --yes audit-ci@^7 --high --skip-dev
+    npm audit --omit=dev --audit-level=high
 fi
 
 if [[ ${#FAILED[@]} -eq 0 ]]; then
