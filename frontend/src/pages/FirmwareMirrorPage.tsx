@@ -28,11 +28,11 @@ import {
 import { useAuthStore } from '../store/authStore';
 
 const STATUS_STYLE: Record<FirmwareMirror['status'], string> = {
-  new: 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300',
-  deployed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  syncing: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  ready: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  error: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  new: 'bg-surface-3 text-ink-2 dark:bg-surface-3 dark:text-ink-2',
+  deployed: 'bg-accent-soft text-accent dark:bg-accent-soft dark:text-accent',
+  syncing: 'bg-accent-soft text-accent dark:bg-accent-soft dark:text-accent',
+  ready: 'bg-good-bg text-good dark:bg-good-bg dark:text-good',
+  error: 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad',
 };
 const STATUS_LABEL: Record<FirmwareMirror['status'], string> = {
   new: 'Not set up',
@@ -74,7 +74,7 @@ function DiskPicker({
   const chosen = disks.find((d) => d.mount_point === current);
   return (
     <label className="space-y-1">
-      <span className="text-xs text-gray-500 dark:text-slate-400">Store packages on</span>
+      <span className="text-xs text-ink-3">Store packages on</span>
       <select
         className="input w-full"
         value={current ?? ''}
@@ -91,13 +91,13 @@ function DiskPicker({
         ))}
       </select>
       {chosen?.ram && (
-        <span className="block text-xs text-amber-600 dark:text-amber-400">
+        <span className="block text-xs text-warn">
           A RAM disk loses its contents on every reboot; the mirror would need a sync after each
           one.
         </span>
       )}
       {data && disks.length === 1 && (
-        <span className="block text-xs text-gray-500 dark:text-slate-400">
+        <span className="block text-xs text-ink-3">
           No SD card, USB or other disk on this router; packages go on its internal storage.
         </span>
       )}
@@ -156,12 +156,12 @@ export default function FirmwareMirrorPage() {
         <div>
           <Link
             to="/firmware"
-            className="text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+            className="text-xs text-accent hover:underline inline-flex items-center gap-1"
           >
             <ArrowLeft className="w-3 h-3" /> Firmware
           </Link>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Package mirror</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+          <h1 className="text-xl font-bold text-ink">Package mirror</h1>
+          <p className="text-sm text-ink-3 mt-0.5">
             Devices pull RouterOS packages from a router you choose, instead of each downloading
             them from MikroTik
           </p>
@@ -175,7 +175,7 @@ export default function FirmwareMirrorPage() {
       </div>
 
       {isLoading ? (
-        <div className="card p-8 text-center text-sm text-gray-400">
+        <div className="card p-8 text-center text-sm text-ink-4">
           <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
           Loading…
         </div>
@@ -190,7 +190,7 @@ export default function FirmwareMirrorPage() {
                 onCancel={mirrors.length > 0 ? () => setAdding(false) : undefined}
               />
             ) : mirrors.length === 0 ? (
-              <div className="card p-6 text-sm text-gray-500 dark:text-slate-400">
+              <div className="card p-6 text-sm text-ink-3">
                 No package mirror is set up. An administrator can set one up here.
               </div>
             ) : null)}
@@ -258,18 +258,18 @@ function SetupCard({
   return (
     <div className="card p-5 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-          <Server className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <div className="p-2 rounded-lg bg-accent-soft">
+          <Server className="w-5 h-5 text-accent" />
         </div>
-        <div className="text-sm text-gray-600 dark:text-slate-300 space-y-1">
-          <p className="font-semibold text-gray-900 dark:text-white">Set up a package server</p>
+        <div className="text-sm text-ink-2 space-y-1">
+          <p className="font-semibold text-ink">Set up a package server</p>
           <p>
             Pick a router to hold the packages. The manager fetches each RouterOS release once from
             MikroTik, checks it against MikroTik&apos;s checksum, and keeps this router stocked with
             only the architectures and packages your devices run. Devices on RouterOS 7.17 or later
             then pull from it during a rollout.
           </p>
-          <p className="text-xs text-gray-500 dark:text-slate-400">
+          <p className="text-xs text-ink-3">
             It creates a login named <span className="font-mono">mtm-mirror</span> on that router,
             in a group of its own that can read files but not change anything. Because that login
             can read every file on the router, use a router that holds nothing sensitive. Packages
@@ -282,7 +282,7 @@ function SetupCard({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
         <label className="space-y-1">
-          <span className="text-xs text-gray-500 dark:text-slate-400">Serves</span>
+          <span className="text-xs text-ink-3">Serves</span>
           <select
             className="input w-full"
             value={siteId ?? ''}
@@ -300,7 +300,7 @@ function SetupCard({
           </select>
         </label>
         <label className="space-y-1">
-          <span className="text-xs text-gray-500 dark:text-slate-400">Package server</span>
+          <span className="text-xs text-ink-3">Package server</span>
           <DevicePicker
             devices={candidates}
             placeholder="Choose a router…"
@@ -316,9 +316,7 @@ function SetupCard({
           />
         </label>
         <label className="space-y-1">
-          <span className="text-xs text-gray-500 dark:text-slate-400">
-            Address devices reach it on
-          </span>
+          <span className="text-xs text-ink-3">Address devices reach it on</span>
           <input
             className="input w-full"
             value={serveAddress}
@@ -332,7 +330,7 @@ function SetupCard({
           <DiskPicker deviceId={Number(deviceId)} value={disk} onChange={setDisk} />
         )}
         <label className="space-y-1">
-          <span className="text-xs text-gray-500 dark:text-slate-400">Folder on the router</span>
+          <span className="text-xs text-ink-3">Folder on the router</span>
           <input
             className="input w-full font-mono"
             value={folder}
@@ -340,7 +338,7 @@ function SetupCard({
           />
         </label>
         <label className="space-y-1">
-          <span className="text-xs text-gray-500 dark:text-slate-400">Versions kept</span>
+          <span className="text-xs text-ink-3">Versions kept</span>
           <select
             className="input w-full"
             value={keep}
@@ -355,7 +353,7 @@ function SetupCard({
           </select>
         </label>
         <label className="space-y-1">
-          <span className="text-xs text-gray-500 dark:text-slate-400">Release channel</span>
+          <span className="text-xs text-ink-3">Release channel</span>
           <select
             className="input w-full"
             value={channel}
@@ -366,7 +364,7 @@ function SetupCard({
           </select>
         </label>
       </div>
-      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+      <label className="flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
         <input
           type="checkbox"
           className="w-4 h-4 rounded"
@@ -390,7 +388,7 @@ function SetupCard({
           </button>
         )}
         {create.isError && (
-          <span className="text-xs text-red-500 flex items-center gap-1">
+          <span className="text-xs text-bad flex items-center gap-1">
             <AlertTriangle className="w-3.5 h-3.5" />
             {errText(create.error, 'Setup failed')}
           </span>
@@ -431,16 +429,14 @@ function MirrorCard({ mirror: m }: { mirror: FirmwareMirror }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex flex-wrap items-center gap-3">
-        <HardDrive className="w-4 h-4 text-gray-400" />
+      <div className="px-5 py-3 border-b border-line flex flex-wrap items-center gap-3">
+        <HardDrive className="w-4 h-4 text-ink-4" />
         <div>
-          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+          <div className="text-sm font-semibold text-ink">
             {m.server?.name ?? 'Missing device'}{' '}
-            <span className="font-normal text-gray-400 font-mono text-xs">
-              {m.effective_address}
-            </span>
+            <span className="font-normal text-ink-4 font-mono text-xs">{m.effective_address}</span>
           </div>
-          <div className="text-xs text-gray-500 dark:text-slate-400">
+          <div className="text-xs text-ink-3">
             {m.site ? `Site: ${m.site.name}` : 'Whole fleet'} · folder{' '}
             <span className="font-mono">{m.path}/</span> · keeps {m.keep_versions} version
             {m.keep_versions === 1 ? '' : 's'} · {m.channel} ·{' '}
@@ -490,7 +486,7 @@ function MirrorCard({ mirror: m }: { mirror: FirmwareMirror }) {
 
       <div className="px-5 py-4 space-y-4">
         {(m.last_error || sync.isError || remove.isError) && (
-          <div className="flex items-start gap-2 text-xs rounded-lg border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-3 py-2 text-red-700 dark:text-red-300">
+          <div className="flex items-start gap-2 text-xs rounded-lg border border-bad bg-bad-bg dark:border-bad px-3 py-2 text-bad dark:text-bad">
             <AlertTriangle className="w-3.5 h-3.5 mt-px flex-shrink-0" />
             <span>
               {sync.isError
@@ -535,48 +531,42 @@ function MirrorCard({ mirror: m }: { mirror: FirmwareMirror }) {
         {editing && m.can_manage && <SettingsForm mirror={m} onDone={() => setEditing(false)} />}
 
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 mb-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3 mb-2">
             Versions
           </h3>
           {m.versions.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-slate-400">
+            <p className="text-sm text-ink-3">
               Nothing yet. {m.can_manage ? 'Sync now fetches the latest release.' : ''}
             </p>
           ) : (
-            <div className="divide-y divide-gray-100 dark:divide-slate-700/50 rounded-lg border border-gray-200 dark:border-slate-700">
+            <div className="divide-y divide-line/50 rounded-lg border border-line">
               {m.versions.map((v, i) => {
                 const archs = [...new Set(v.files.map((f) => f.architecture))].sort();
                 const pkgs = [...new Set(v.files.map((f) => f.package))].sort();
                 return (
                   <div key={v.version}>
                     <button
-                      className="w-full px-3 py-2 flex flex-wrap items-center gap-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-slate-700/40"
+                      className="w-full px-3 py-2 flex flex-wrap items-center gap-3 text-left text-sm hover:bg-surface-2/40"
                       onClick={() => setOpenVersion(openVersion === v.version ? null : v.version)}
                     >
-                      <span className="font-mono font-semibold text-gray-900 dark:text-white w-16">
-                        {v.version}
-                      </span>
+                      <span className="font-mono font-semibold text-ink w-16">{v.version}</span>
                       {i === 0 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-good-bg text-good dark:bg-good-bg dark:text-good">
                           newest
                         </span>
                       )}
-                      <span className="text-xs text-gray-500 dark:text-slate-400">
+                      <span className="text-xs text-ink-3">
                         {v.files.length} files · {mb(v.total_bytes)}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-slate-400 font-mono">
-                        {archs.join(', ')}
-                      </span>
-                      <span className="text-xs text-gray-400 dark:text-slate-500 truncate">
-                        {pkgs.join(', ')}
-                      </span>
+                      <span className="text-xs text-ink-3 font-mono">{archs.join(', ')}</span>
+                      <span className="text-xs text-ink-3 truncate">{pkgs.join(', ')}</span>
                     </button>
                     {openVersion === v.version && (
-                      <div className="px-3 pb-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 text-xs font-mono text-gray-600 dark:text-slate-400">
+                      <div className="px-3 pb-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 text-xs font-mono text-ink-2">
                         {v.files.map((f) => (
                           <div key={f.filename} className="flex justify-between gap-2 py-0.5">
                             <span className="truncate">{f.filename}</span>
-                            <span className="text-gray-400">{mb(f.size_bytes)}</span>
+                            <span className="text-ink-4">{mb(f.size_bytes)}</span>
                           </div>
                         ))}
                       </div>
@@ -606,17 +596,10 @@ function Stat({
   warn?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2">
-      <div className="text-[11px] text-gray-500 dark:text-slate-400">{label}</div>
-      <div
-        className={clsx(
-          'text-sm font-semibold',
-          warn ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white',
-        )}
-      >
-        {value}
-      </div>
-      {hint && <div className="text-[11px] text-gray-400 dark:text-slate-500">{hint}</div>}
+    <div className="rounded-lg border border-line px-3 py-2">
+      <div className="text-[11px] text-ink-3">{label}</div>
+      <div className={clsx('text-sm font-semibold', warn ? 'text-warn' : 'text-ink')}>{value}</div>
+      {hint && <div className="text-[11px] text-ink-3">{hint}</div>}
     </div>
   );
 }
@@ -656,12 +639,10 @@ function SettingsForm({ mirror: m, onDone }: { mirror: FirmwareMirror; onDone: (
     },
   });
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 space-y-3">
+    <div className="rounded-lg border border-line p-3 space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
         <label className="space-y-1 md:col-span-2">
-          <span className="text-xs text-gray-500 dark:text-slate-400">
-            Address devices reach it on
-          </span>
+          <span className="text-xs text-ink-3">Address devices reach it on</span>
           <input
             className="input w-full"
             value={serveAddress}
@@ -670,7 +651,7 @@ function SettingsForm({ mirror: m, onDone }: { mirror: FirmwareMirror; onDone: (
           />
         </label>
         <label className="space-y-1">
-          <span className="text-xs text-gray-500 dark:text-slate-400">Versions kept</span>
+          <span className="text-xs text-ink-3">Versions kept</span>
           <select
             className="input w-full"
             value={keep}
@@ -684,7 +665,7 @@ function SettingsForm({ mirror: m, onDone }: { mirror: FirmwareMirror; onDone: (
           </select>
         </label>
         <label className="space-y-1">
-          <span className="text-xs text-gray-500 dark:text-slate-400">Release channel</span>
+          <span className="text-xs text-ink-3">Release channel</span>
           <select
             className="input w-full"
             value={channel}
@@ -699,14 +680,14 @@ function SettingsForm({ mirror: m, onDone }: { mirror: FirmwareMirror; onDone: (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <DiskPicker deviceId={m.server.id} value={disk} onChange={setDisk} />
           {moving && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 self-end">
+            <p className="text-xs text-warn self-end">
               Saving removes the packages from {m.disk ?? 'internal storage'}; the next sync puts
               them on {disk ?? 'internal storage'}. Devices keep using the same address.
             </p>
           )}
         </div>
       )}
-      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+      <label className="flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
         <input
           type="checkbox"
           className="w-4 h-4 rounded"
@@ -731,17 +712,17 @@ function SettingsForm({ mirror: m, onDone }: { mirror: FirmwareMirror; onDone: (
         >
           {redeploy.isPending ? 'Working…' : 'New login password'}
         </button>
-        <button className="text-sm text-gray-500 hover:underline" onClick={onDone}>
+        <button className="text-sm text-ink-3 hover:underline" onClick={onDone}>
           Close
         </button>
         {(save.isError || redeploy.isError) && (
-          <span className="text-xs text-red-500">
+          <span className="text-xs text-bad">
             {errText(save.error ?? redeploy.error, 'That didn’t work')}
           </span>
         )}
       </div>
       {notes && notes.length > 0 && (
-        <div className="text-xs text-amber-700 dark:text-amber-300 space-y-0.5">
+        <div className="text-xs text-warn dark:text-warn space-y-0.5">
           <p>These devices couldn&apos;t be updated:</p>
           {notes.map((n) => (
             <p key={n.device_id}>
@@ -801,13 +782,11 @@ function ClientDevices({
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 mb-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
-          Devices
-        </h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3">Devices</h3>
         {m.can_manage && (
           <div className="ml-auto flex items-center gap-2">
             <button
-              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-xs text-accent hover:underline"
               onClick={() => setPicked(new Set(eligible.map((d) => d.id)))}
             >
               Select all eligible ({eligible.length})
@@ -832,12 +811,7 @@ function ClientDevices({
       {results && (
         <div className="mb-2 text-xs space-y-0.5">
           {results.map((r) => (
-            <p
-              key={r.device_id}
-              className={
-                r.ok ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-              }
-            >
+            <p key={r.device_id} className={r.ok ? 'text-good' : 'text-bad'}>
               {r.ok ? (
                 <CheckCircle className="w-3 h-3 inline mr-1" />
               ) : (
@@ -849,15 +823,15 @@ function ClientDevices({
         </div>
       )}
       {change.isError && (
-        <p className="mb-2 text-xs text-red-500">{errText(change.error, 'That didn’t work')}</p>
+        <p className="mb-2 text-xs text-bad">{errText(change.error, 'That didn’t work')}</p>
       )}
       {isLoading ? (
-        <p className="text-sm text-gray-400">Loading devices…</p>
+        <p className="text-sm text-ink-4">Loading devices…</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+        <div className="overflow-x-auto rounded-lg border border-line">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40">
+              <tr className="border-b border-line bg-surface-2/40">
                 {m.can_manage && <th className="table-header px-3 py-2 w-8" />}
                 <th className="table-header px-3 py-2">Device</th>
                 <th className="table-header px-3 py-2">RouterOS</th>
@@ -885,15 +859,13 @@ function ClientDevices({
                     <td className="px-3 py-2 cell-primary">{d.name}</td>
                     <td className="px-3 py-2 font-mono text-xs">{d.ros_version || '—'}</td>
                     <td className="px-3 py-2 font-mono text-xs">{d.architecture || '—'}</td>
-                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-slate-400">
-                      {d.packages.join(', ') || '—'}
-                    </td>
+                    <td className="px-3 py-2 text-xs text-ink-3">{d.packages.join(', ') || '—'}</td>
                     <td
                       className={clsx('px-3 py-2 text-xs', {
-                        'text-green-700 dark:text-green-400': st.tone === 'ok',
-                        'text-amber-700 dark:text-amber-400': st.tone === 'warn',
-                        'text-red-600 dark:text-red-400': st.tone === 'err',
-                        'text-gray-500 dark:text-slate-400': st.tone === 'muted',
+                        'text-good': st.tone === 'ok',
+                        'text-warn': st.tone === 'warn',
+                        'text-bad': st.tone === 'err',
+                        'text-ink-3': st.tone === 'muted',
                       })}
                     >
                       {st.text}

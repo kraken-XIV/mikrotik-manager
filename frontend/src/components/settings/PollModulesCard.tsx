@@ -61,10 +61,10 @@ export default function PollModulesCard({ settings, onChange, saving }: Props) {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-1">
-        <Layers className="w-4 h-4 text-blue-500" />
-        <h3 className="font-semibold text-gray-900 dark:text-white">Collectors</h3>
+        <Layers className="w-4 h-4 text-accent" />
+        <h3 className="font-semibold text-ink">Collectors</h3>
       </div>
-      <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+      <p className="text-xs text-ink-3 mb-4">
         What each poll gathers. Switching one off reduces traffic to every device on every cycle —
         the lever that matters on a large fleet — at the cost of the feature it feeds.
       </p>
@@ -80,14 +80,10 @@ export default function PollModulesCard({ settings, onChange, saving }: Props) {
               className="mt-0.5"
             />
             <span className="min-w-0">
-              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                {m.label}
-              </span>
-              <span className="text-[11px] text-gray-400 dark:text-slate-500"> · {m.cadence}</span>
+              <span className="text-sm font-medium text-ink-2">{m.label}</span>
+              <span className="text-[11px] text-ink-3"> · {m.cadence}</span>
               {!isOn(m.key) && (
-                <span className="block text-[11.5px] text-amber-600 dark:text-amber-400 mt-0.5">
-                  {m.cost}
-                </span>
+                <span className="block text-[11.5px] text-warn mt-0.5">{m.cost}</span>
               )}
             </span>
           </label>
@@ -95,7 +91,7 @@ export default function PollModulesCard({ settings, onChange, saving }: Props) {
       </div>
 
       {anyOff && (
-        <div className="flex items-start gap-2 text-[11.5px] rounded p-2.5 mt-4 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300">
+        <div className="flex items-start gap-2 text-[11.5px] rounded p-2.5 mt-4 bg-warn-bg text-warn dark:text-warn">
           <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" />
           <span>
             Historical data already collected is kept, but stops being refreshed. Pages fed by a

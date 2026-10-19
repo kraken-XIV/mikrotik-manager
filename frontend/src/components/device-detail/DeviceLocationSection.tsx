@@ -67,16 +67,14 @@ function MapEmbed({
 
   return (
     <div className="card overflow-hidden h-full flex flex-col">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-700">
-        <MapPin className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex-1 truncate">
-          {address}
-        </h3>
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-line">
+        <MapPin className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink flex-1 truncate">{address}</h3>
         <a
           href={`https://www.openstreetmap.org/?mlat=${latN}&mlon=${lngN}#map=16/${latN}/${lngN}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-blue-500 hover:text-blue-400 whitespace-nowrap"
+          className="text-xs text-accent hover:text-accent whitespace-nowrap"
         >
           Open map ↗
         </a>
@@ -207,7 +205,7 @@ export default function DeviceLocationSection({ device }: Props) {
       {/* Info / edit card */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Physical Details</h3>
+          <h3 className="text-sm font-semibold text-ink">Physical Details</h3>
           {canWrite && !editing && (
             <button
               onClick={openEdit}
@@ -223,7 +221,7 @@ export default function DeviceLocationSection({ device }: Props) {
             {showSitePicker && (
               <div>
                 <label className="label flex items-center gap-1.5">
-                  <Network className="w-3.5 h-3.5 text-blue-500" /> Site
+                  <Network className="w-3.5 h-3.5 text-accent" /> Site
                 </label>
                 <select
                   className="input"
@@ -241,7 +239,7 @@ export default function DeviceLocationSection({ device }: Props) {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-ink-4 mt-1">
                   Moving a device takes its clients, events and history with it. Applies
                   immediately.
                 </p>
@@ -249,7 +247,7 @@ export default function DeviceLocationSection({ device }: Props) {
             )}
             <div>
               <label className="label flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-blue-500" /> Physical Location
+                <MapPin className="w-3.5 h-3.5 text-accent" /> Physical Location
               </label>
               <input
                 className="input"
@@ -259,7 +257,7 @@ export default function DeviceLocationSection({ device }: Props) {
                   siteAddress ? `From site: ${siteAddress}` : '123 Main St, City, State 00000'
                 }
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-ink-4 mt-1">
                 {siteAddress ? (
                   <>
                     Leave blank to use the site&apos;s address. Only set this if the device is
@@ -272,7 +270,7 @@ export default function DeviceLocationSection({ device }: Props) {
                 <button
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, location_address: '' }))}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
+                  className="text-xs text-accent hover:underline mt-1"
                 >
                   Use the site&apos;s address instead
                 </button>
@@ -281,7 +279,7 @@ export default function DeviceLocationSection({ device }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-blue-500" /> Rack Name
+                  <Building2 className="w-3.5 h-3.5 text-accent" /> Rack Name
                 </label>
                 <input
                   className="input"
@@ -292,7 +290,7 @@ export default function DeviceLocationSection({ device }: Props) {
               </div>
               <div>
                 <label className="label flex items-center gap-1.5">
-                  <Hash className="w-3.5 h-3.5 text-blue-500" /> Rack Slot
+                  <Hash className="w-3.5 h-3.5 text-accent" /> Rack Slot
                 </label>
                 <input
                   className="input"
@@ -304,7 +302,7 @@ export default function DeviceLocationSection({ device }: Props) {
             </div>
             <div>
               <label className="label flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-blue-500" /> Notes
+                <FileText className="w-3.5 h-3.5 text-accent" /> Notes
               </label>
               <textarea
                 className="input resize-none"
@@ -316,9 +314,9 @@ export default function DeviceLocationSection({ device }: Props) {
             </div>
 
             {saveError && (
-              <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-600 dark:text-red-400">{saveError}</p>
+              <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+                <AlertCircle className="w-4 h-4 text-bad shrink-0 mt-0.5" />
+                <p className="text-sm text-bad">{saveError}</p>
               </div>
             )}
 
@@ -350,44 +348,42 @@ export default function DeviceLocationSection({ device }: Props) {
           <div className="space-y-3 text-sm">
             {showSitePicker && (
               <InfoRow
-                icon={<Network className="w-3.5 h-3.5 text-blue-500" />}
+                icon={<Network className="w-3.5 h-3.5 text-accent" />}
                 label="Site"
                 value={currentSite?.name}
                 emptyText="Unassigned"
               />
             )}
             <InfoRow
-              icon={<MapPin className="w-3.5 h-3.5 text-blue-500" />}
+              icon={<MapPin className="w-3.5 h-3.5 text-accent" />}
               label="Location"
               value={effective?.address ?? undefined}
               hint={inherited ? 'From site' : undefined}
               emptyText="No location set"
             />
             <InfoRow
-              icon={<Building2 className="w-3.5 h-3.5 text-blue-500" />}
+              icon={<Building2 className="w-3.5 h-3.5 text-accent" />}
               label="Rack"
               value={device.rack_name}
               emptyText="No rack assigned"
             />
             <InfoRow
-              icon={<Hash className="w-3.5 h-3.5 text-blue-500" />}
+              icon={<Hash className="w-3.5 h-3.5 text-accent" />}
               label="Rack Slot"
               value={device.rack_slot}
               emptyText="—"
             />
-            <div className="pt-1 border-t border-gray-100 dark:border-slate-700">
+            <div className="pt-1 border-t border-line-soft">
               <div className="flex items-start gap-2 mt-2">
-                <FileText className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+                <FileText className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <span className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide block mb-1">
+                  <span className="text-xs font-medium text-ink-3 uppercase tracking-wide block mb-1">
                     Notes
                   </span>
                   {device.notes ? (
-                    <p className="text-gray-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-                      {device.notes}
-                    </p>
+                    <p className="text-ink-2 whitespace-pre-wrap leading-relaxed">{device.notes}</p>
                   ) : (
-                    <p className="text-gray-400 dark:text-slate-500 italic">No notes</p>
+                    <p className="text-ink-3 italic">No notes</p>
                   )}
                 </div>
               </div>
@@ -423,16 +419,16 @@ function InfoRow({
     <div className="flex items-start gap-2">
       <span className="mt-0.5 shrink-0">{icon}</span>
       <div className="flex-1 min-w-0">
-        <span className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide block mb-0.5">
+        <span className="text-xs font-medium text-ink-3 uppercase tracking-wide block mb-0.5">
           {label}
         </span>
         {value ? (
-          <span className="text-gray-900 dark:text-white">{value}</span>
+          <span className="text-ink">{value}</span>
         ) : (
-          <span className="text-gray-400 dark:text-slate-500 italic">{emptyText}</span>
+          <span className="text-ink-3 italic">{emptyText}</span>
         )}
         {value && hint && (
-          <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
+          <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-surface-3 text-ink-3">
             {hint}
           </span>
         )}

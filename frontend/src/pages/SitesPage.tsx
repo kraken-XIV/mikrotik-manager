@@ -71,12 +71,10 @@ function SitesMap({ sites, onSelect }: { sites: Site[]; onSelect: (id: number) =
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-700">
-        <MapPin className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex-1">
-          Site locations
-        </h3>
-        <span className="text-xs text-gray-400">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-line">
+        <MapPin className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink flex-1">Site locations</h3>
+        <span className="text-xs text-ink-4">
           {pinned.length} of {sites.length} mapped
         </span>
       </div>
@@ -214,8 +212,8 @@ export default function SitesPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">All sites</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
+          <h1 className="text-xl font-semibold text-ink">All sites</h1>
+          <p className="text-sm text-ink-3">
             {sites.length} site{sites.length === 1 ? '' : 's'} · {totalDevices} device
             {totalDevices === 1 ? '' : 's'} · {totalOnline} online
           </p>
@@ -228,7 +226,7 @@ export default function SitesPage() {
               setAddress('');
               setError('');
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-500"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-accent text-accent-fg hover:bg-accent"
           >
             <Plus className="w-4 h-4" /> New site
           </button>
@@ -236,7 +234,7 @@ export default function SitesPage() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-sm text-red-700 dark:text-red-300">
+        <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-bad-bg dark:bg-red-950/40 text-sm text-bad dark:text-bad">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <span className="flex-1">{error}</span>
           <button onClick={() => setError('')}>
@@ -247,7 +245,7 @@ export default function SitesPage() {
 
       {(adding || editing) && (
         <div className="card p-4 space-y-3">
-          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+          <div className="text-sm font-semibold text-ink">
             {editing ? `Edit “${editing.name}”` : 'New site'}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -288,7 +286,7 @@ export default function SitesPage() {
               </label>
             )}
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-ink-4">
             {mapsEnabled
               ? 'The address is geocoded so the site appears on the map above.'
               : 'Maps are disabled in Settings, so the address is stored as text only.'}
@@ -297,7 +295,7 @@ export default function SitesPage() {
             <button
               onClick={save}
               disabled={busy}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-accent text-accent-fg hover:bg-accent disabled:opacity-50"
             >
               {busy ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -306,10 +304,7 @@ export default function SitesPage() {
               )}
               {busy ? 'Saving…' : 'Save'}
             </button>
-            <button
-              onClick={cancel}
-              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-slate-600"
-            >
+            <button onClick={cancel} className="px-3 py-1.5 text-sm rounded-lg border border-line">
               Cancel
             </button>
           </div>
@@ -340,7 +335,7 @@ export default function SitesPage() {
       <div className="card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+            <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-line">
               <th className="px-4 py-2.5 font-medium">Site</th>
               {anyGroups && <th className="px-4 py-2.5 font-medium">Group</th>}
               <th className="px-4 py-2.5 font-medium">Address</th>
@@ -352,14 +347,14 @@ export default function SitesPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-ink-4">
                   Loading…
                 </td>
               </tr>
             )}
             {!isLoading && sites.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-ink-4">
                   No sites yet.
                 </td>
               </tr>
@@ -367,37 +362,35 @@ export default function SitesPage() {
             {shownSites.map((s) => (
               <tr
                 key={s.id}
-                className="border-b border-gray-100 dark:border-slate-800 last:border-0 hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer"
+                className="border-b border-line-soft dark:border-line-soft last:border-0 hover:bg-surface-2/50 cursor-pointer"
                 onClick={() => openSite(s.id)}
               >
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <span className="font-medium text-gray-900 dark:text-white">{s.name}</span>
+                    <Building2 className="w-4 h-4 text-ink-4 flex-shrink-0" />
+                    <span className="font-medium text-ink">{s.name}</span>
                     {s.is_default && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-3 text-ink-3">
                         default
                       </span>
                     )}
                   </div>
                 </td>
                 {anyGroups && (
-                  <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
-                    {s.group_name ?? <span className="text-gray-300 dark:text-slate-600">—</span>}
+                  <td className="px-4 py-2.5 text-ink-3">
+                    {s.group_name ?? <span className="text-ink-4">—</span>}
                   </td>
                 )}
-                <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
-                  {s.address || <span className="text-gray-300 dark:text-slate-600">—</span>}
+                <td className="px-4 py-2.5 text-ink-3">
+                  {s.address || <span className="text-ink-4">—</span>}
                 </td>
-                <td className="px-4 py-2.5 text-right text-gray-900 dark:text-white">
-                  {s.device_count}
-                </td>
+                <td className="px-4 py-2.5 text-right text-ink">{s.device_count}</td>
                 <td className="px-4 py-2.5 text-right">
                   <span
                     className={
                       s.online_count === s.device_count && s.device_count > 0
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-gray-500 dark:text-slate-400'
+                        ? 'text-good'
+                        : 'text-ink-3'
                     }
                   >
                     {s.online_count}
@@ -408,14 +401,14 @@ export default function SitesPage() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => startEdit(s)}
-                        className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400"
+                        className="p-1.5 rounded hover:bg-surface-3 text-ink-4"
                         title="Rename"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => removeMutation.mutate(s.id)}
-                        className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-400 hover:text-red-500"
+                        className="p-1.5 rounded hover:bg-bad-bg dark:hover:bg-red-950/40 text-ink-4 hover:text-bad"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

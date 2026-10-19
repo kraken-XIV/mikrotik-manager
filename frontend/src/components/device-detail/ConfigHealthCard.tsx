@@ -21,18 +21,18 @@ import LoadError from '../common/LoadError';
 
 const SEV: Record<ConfigFinding['severity'], { chip: string; card: string; label: string }> = {
   critical: {
-    chip: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-    card: 'border-red-300 dark:border-red-800',
+    chip: 'bg-bad-bg text-bad dark:text-bad',
+    card: 'border-bad dark:border-bad',
     label: 'Broken',
   },
   warning: {
-    chip: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
-    card: 'border-amber-300 dark:border-amber-800',
+    chip: 'bg-warn-bg dark:bg-warn-bg text-warn',
+    card: 'border-warn dark:border-warn',
     label: 'Fragile',
   },
   info: {
-    chip: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-    card: 'border-blue-300 dark:border-blue-800',
+    chip: 'bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent',
+    card: 'border-accent dark:border-accent',
     label: 'Note',
   },
 };
@@ -89,9 +89,9 @@ function Finding({
         className="w-full flex items-start gap-2.5 p-3 text-left"
       >
         {open ? (
-          <ChevronDown className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
+          <ChevronDown className="w-4 h-4 mt-0.5 flex-shrink-0 text-ink-4" />
         ) : (
-          <ChevronRight className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
+          <ChevronRight className="w-4 h-4 mt-0.5 flex-shrink-0 text-ink-4" />
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -103,22 +103,22 @@ function Finding({
             >
               {style.label}
             </span>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">{f.title}</span>
+            <span className="text-sm font-medium text-ink">{f.title}</span>
           </div>
           {!open && f.first_seen && (
-            <div className="mt-0.5 text-xs text-gray-400">{since(f.first_seen)}</div>
+            <div className="mt-0.5 text-xs text-ink-4">{since(f.first_seen)}</div>
           )}
         </div>
       </button>
 
       {open && (
         <div className="px-3 pb-3 pl-9 space-y-2.5">
-          <p className="text-sm text-gray-600 dark:text-slate-300">{f.detail}</p>
+          <p className="text-sm text-ink-2">{f.detail}</p>
 
           {f.remediation && (
-            <div className="flex items-start gap-2 rounded-md bg-gray-50 dark:bg-slate-800/60 p-2.5">
-              <Wrench className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" />
-              <p className="text-sm text-gray-700 dark:text-slate-200 flex-1">{f.remediation}</p>
+            <div className="flex items-start gap-2 rounded-md bg-surface-2/60 p-2.5">
+              <Wrench className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-ink-4" />
+              <p className="text-sm text-ink-2 dark:text-ink flex-1">{f.remediation}</p>
               {f.fix && canWrite && !confirming && (
                 <button
                   onClick={() => setConfirming(true)}
@@ -130,7 +130,7 @@ function Finding({
             </div>
           )}
           {f.fix && confirming && (
-            <div className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-2.5 space-y-2">
+            <div className="rounded-md border border-accent dark:border-accent bg-accent-soft p-2.5 space-y-2">
               <p className="text-sm text-blue-900 dark:text-blue-200">
                 {f.fix.summary}. This runs on the device:
               </p>
@@ -159,7 +159,7 @@ function Finding({
               </div>
             </div>
           )}
-          {fixError && <p className="text-xs text-red-600 dark:text-red-400">{fixError}</p>}
+          {fixError && <p className="text-xs text-bad">{fixError}</p>}
           <GuardedWriteUi
             state={guard}
             deviceId={deviceId}
@@ -167,12 +167,10 @@ function Finding({
             pending={fix.isPending}
           />
           {!f.fix && f.no_fix_reason && (
-            <p className="text-xs text-gray-400 dark:text-slate-500">
-              No one-click fix: {f.no_fix_reason}
-            </p>
+            <p className="text-xs text-ink-3">No one-click fix: {f.no_fix_reason}</p>
           )}
 
-          <div className="flex items-center gap-3 flex-wrap text-xs text-gray-400">
+          <div className="flex items-center gap-3 flex-wrap text-xs text-ink-4">
             {f.objects.length > 0 && <span className="mono">{f.objects.join(' · ')}</span>}
             {f.first_seen && <span>{since(f.first_seen)}</span>}
             {f.doc_url && (
@@ -180,7 +178,7 @@ function Finding({
                 href={f.doc_url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+                className="inline-flex items-center gap-1 text-accent hover:underline"
               >
                 MikroTik docs <ExternalLink className="w-3 h-3" />
               </a>
@@ -236,10 +234,10 @@ export default function ConfigHealthCard({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-            <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+          <div className="w-7 h-7 bg-accent-soft rounded-lg flex items-center justify-center">
+            <Activity className="w-3.5 h-3.5 text-accent" />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Config Health</h3>
+          <h3 className="text-sm font-semibold text-ink">Config Health</h3>
           {critical > 0 && (
             <span
               className={clsx(
@@ -272,33 +270,31 @@ export default function ConfigHealthCard({
         )}
       </div>
 
-      <p className="text-xs text-gray-500 dark:text-slate-400">
+      <p className="text-xs text-ink-3">
         RouterOS applies each command on its own, with no check that the result is coherent — so a
         configuration can be accepted, saved, and still not work. This audit looks for those cases.
       </p>
 
       {scanError && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3">
-          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-500" />
-          <p className="text-sm text-red-800 dark:text-red-300">{scanError}</p>
+        <div className="flex items-start gap-2 rounded-lg border border-bad dark:border-bad bg-bad-bg p-3">
+          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-bad" />
+          <p className="text-sm text-bad dark:text-bad">{scanError}</p>
         </div>
       )}
 
       {isError ? (
         <LoadError what="configuration findings" error={error} />
       ) : isLoading ? (
-        <div className="text-center py-6 text-gray-400 text-sm">
+        <div className="text-center py-6 text-ink-4 text-sm">
           <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
           Loading findings…
         </div>
       ) : findings.length === 0 ? (
         <div className="card p-4 flex items-start gap-2.5">
-          <CircleCheck className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-600 dark:text-green-400" />
+          <CircleCheck className="w-4 h-4 mt-0.5 flex-shrink-0 text-good" />
           <div>
-            <div className="text-sm font-medium text-green-700 dark:text-green-400">
-              No configuration conflicts found
-            </div>
-            <div className="text-xs text-gray-400 mt-0.5">
+            <div className="text-sm font-medium text-good">No configuration conflicts found</div>
+            <div className="text-xs text-ink-4 mt-0.5">
               {data?.checked_at
                 ? `Last audited ${new Date(data.checked_at).toLocaleString()}.`
                 : 'This device has not been audited yet — run one with Re-audit.'}
@@ -318,7 +314,7 @@ export default function ConfigHealthCard({
             ))}
           </div>
           {data?.checked_at && (
-            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <div className="flex items-center gap-1.5 text-xs text-ink-4">
               <ShieldAlert className="w-3 h-3" />
               Last audited {new Date(data.checked_at).toLocaleString()}
             </div>

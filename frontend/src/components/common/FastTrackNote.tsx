@@ -25,7 +25,7 @@ export default function FastTrackNote({
   if (activeFastTrackRules(data).length === 0) return null;
   return (
     <div
-      className={`flex gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 ${compact ? 'p-2 text-[10px]' : 'p-2.5 text-xs'}`}
+      className={`flex gap-2 rounded-lg border border-warn dark:border-warn bg-warn-bg text-warn dark:text-warn ${compact ? 'p-2 text-[10px]' : 'p-2.5 text-xs'}`}
     >
       <AlertTriangle className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} flex-shrink-0 mt-0.5`} />
       <p>

@@ -93,29 +93,28 @@ const STATE_RANK: Record<Cell['state'], number> = {
 
 /** The same on/off dot as the WireGuard and DHCP panels (#212). */
 function ServiceState({ cell }: { cell: Cell }) {
-  if (cell.state === 'unknown')
-    return <span className="text-xs text-gray-400 dark:text-slate-500">—</span>;
+  if (cell.state === 'unknown') return <span className="text-xs text-ink-3">—</span>;
   return (
     <span
       className={clsx(
         'inline-flex items-center gap-1.5 text-xs',
         cell.state === 'on'
-          ? 'text-green-700 dark:text-green-400 font-medium'
+          ? 'text-good font-medium'
           : cell.state === 'partial'
-            ? 'text-amber-700 dark:text-amber-400 font-medium'
-            : 'text-gray-500 dark:text-slate-400',
+            ? 'text-warn font-medium'
+            : 'text-ink-3',
       )}
     >
       <span
         className={clsx(
           'w-1.5 h-1.5 rounded-full',
           cell.state === 'on'
-            ? 'bg-green-500'
+            ? 'bg-good'
             : cell.state === 'partial'
-              ? 'bg-amber-500'
+              ? 'bg-warn'
               : cell.state === 'off'
-                ? 'bg-gray-400'
-                : 'border border-gray-300 dark:border-slate-600',
+                ? 'bg-surface-3'
+                : 'border border-line',
         )}
       />
       {cell.label}
@@ -179,14 +178,12 @@ export default function NetworkServicesOverviewPage() {
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Network Services</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
-            Which services each device runs
-          </p>
+          <h1 className="text-xl font-bold text-ink">Network Services</h1>
+          <p className="text-sm text-ink-3">Which services each device runs</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-4" />
             <input
               className="input pl-8 w-56"
               placeholder="Search devices or tags"
@@ -196,7 +193,7 @@ export default function NetworkServicesOverviewPage() {
             />
           </div>
           <span
-            className="text-xs text-gray-400"
+            className="text-xs text-ink-4"
             title="Shown from what was last read from each device; refreshed a few devices at a time"
           >
             {freshnessLabel(data as LiveRow[])}
@@ -207,7 +204,7 @@ export default function NetworkServicesOverviewPage() {
             }}
             disabled={isFetching}
             title="Read every device again (a few at a time)"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-sm text-ink-2 hover:bg-surface-3 disabled:opacity-50 transition-colors"
           >
             <RefreshCw className={clsx('w-3.5 h-3.5', isFetching && 'animate-spin')} />
             Refresh
@@ -217,11 +214,9 @@ export default function NetworkServicesOverviewPage() {
 
       <div className="card overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-sm text-gray-400 dark:text-slate-500">
-            Loading service status…
-          </div>
+          <div className="p-8 text-center text-sm text-ink-3">Loading service status…</div>
         ) : rows.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-400 dark:text-slate-500">
+          <div className="p-8 text-center text-sm text-ink-3">
             {data.length === 0 ? 'No online devices found.' : 'No devices match your search.'}
           </div>
         ) : (
@@ -265,7 +260,7 @@ export default function NetworkServicesOverviewPage() {
                           <span className="cell-primary">{row.name}</span>
                           <TagChips tags={d?.tags} />
                           {row.error && (
-                            <span className="text-xs text-red-500">couldn&apos;t connect</span>
+                            <span className="text-xs text-bad">couldn&apos;t connect</span>
                           )}
                         </div>
                       </td>

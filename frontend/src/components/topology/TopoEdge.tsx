@@ -89,12 +89,12 @@ export default function TopoEdge({ id, source, target, data, style, markerEnd }:
           >
             {d.hand ? (
               <>
-                <span className="text-[9px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1 rounded">
+                <span className="text-[9px] bg-violet-bg dark:bg-violet-bg text-violet dark:text-violet px-1 rounded">
                   {d.label || 'drawn by hand'}
                 </span>
                 {d.onDelete && (
                   <button
-                    className="w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600"
+                    className="w-4 h-4 rounded-full bg-bad text-white flex items-center justify-center hover:bg-bad"
                     onClick={(ev) => {
                       ev.stopPropagation();
                       d.onDelete?.();
@@ -106,7 +106,7 @@ export default function TopoEdge({ id, source, target, data, style, markerEnd }:
                 )}
               </>
             ) : (
-              <span className="text-[10px] px-1 rounded bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+              <span className="text-[10px] px-1 rounded bg-slate-50/90 dark:bg-slate-800/90 text-ink-3 dark:text-ink-3 whitespace-nowrap">
                 {d.label}
               </span>
             )}

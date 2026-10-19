@@ -220,16 +220,14 @@ export default function FirmwarePage() {
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Firmware</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+          <h1 className="text-xl font-bold text-ink">Firmware</h1>
+          <p className="text-sm text-ink-3 mt-0.5">
             Staged RouterOS upgrades — canary first, wave by wave, with pre-backups and health
             verification
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {checkResult && (
-            <span className="text-xs text-green-600 dark:text-green-400">{checkResult}</span>
-          )}
+          {checkResult && <span className="text-xs text-good">{checkResult}</span>}
           <Link
             to="/firmware/mirror"
             className="btn-secondary flex items-center gap-2"
@@ -253,34 +251,32 @@ export default function FirmwarePage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div className="card p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20">
-            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <div className="p-2 rounded-lg bg-good-bg">
+            <CheckCircle className="w-5 h-5 text-good" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{upToDate}</div>
-            <div className="text-xs text-gray-500 dark:text-slate-400">Up to date</div>
+            <div className="text-2xl font-bold text-ink">{upToDate}</div>
+            <div className="text-xs text-ink-3">Up to date</div>
           </div>
         </div>
         <div className="card p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-            <ArrowUpCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <div className="p-2 rounded-lg bg-warn-bg">
+            <ArrowUpCircle className="w-5 h-5 text-warn" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {devices.filter(hasUpdate).length}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-slate-400">Updates available</div>
+            <div className="text-2xl font-bold text-ink">{devices.filter(hasUpdate).length}</div>
+            <div className="text-xs text-ink-3">Updates available</div>
           </div>
         </div>
         <div className="card p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-            <Rocket className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="p-2 rounded-lg bg-accent-soft">
+            <Rocket className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="text-2xl font-bold text-ink">
               {overview?.runningRolloutId ? 'Running' : '—'}
             </div>
-            <div className="text-xs text-gray-500 dark:text-slate-400">Active rollout</div>
+            <div className="text-xs text-ink-3">Active rollout</div>
           </div>
         </div>
       </div>
@@ -289,11 +285,11 @@ export default function FirmwarePage() {
 
       {/* Fleet table */}
       <div className="card overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Fleet versions</h3>
+        <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-ink">Fleet versions</h3>
           {canWrite && (
             <label
-              className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400"
+              className="flex items-center gap-1.5 text-xs text-ink-3"
               title="RouterBOOT only upgrades the bootloader on devices with one pending, without changing RouterOS (#262)."
             >
               Upgrade
@@ -311,12 +307,12 @@ export default function FirmwarePage() {
             </label>
           )}
           {currentCount > 0 && (
-            <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400 cursor-pointer select-none">
+            <label className="flex items-center gap-1.5 text-xs text-ink-3 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={showCurrent}
                 onChange={(e) => setShowCurrent(e.target.checked)}
-                className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                className="rounded border-line text-accent focus:ring-accent"
               />
               Show up-to-date ({currentCount})
             </label>
@@ -339,7 +335,7 @@ export default function FirmwarePage() {
                 </button>
               ))}
               <button
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-xs text-accent hover:underline"
                 onClick={() =>
                   setSelected(new Map(updatable.map((d, i) => [d.id, i === 0 ? 1 : 2])))
                 }
@@ -350,7 +346,7 @@ export default function FirmwarePage() {
           )}
         </div>
         {isLoading ? (
-          <div className="p-8 text-center text-sm text-gray-400">
+          <div className="p-8 text-center text-sm text-ink-4">
             <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
             Loading…
           </div>
@@ -358,7 +354,7 @@ export default function FirmwarePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40">
+                <tr className="border-b border-line bg-surface-2/40">
                   {canWrite && <th className="table-header px-4 py-[10px] w-8" />}
                   <th className="table-header px-4 py-[10px]">Device</th>
                   <th className="table-header px-4 py-[10px] w-[72px]">Type</th>
@@ -370,13 +366,10 @@ export default function FirmwarePage() {
                   {canWrite && <th className="table-header px-4 py-[10px]">Wave</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
+              <tbody className="divide-y divide-line/50">
                 {tableDevices.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={9}
-                      className="px-4 py-6 text-center text-sm text-gray-400 dark:text-slate-500"
-                    >
+                    <td colSpan={9} className="px-4 py-6 text-center text-sm text-ink-3">
                       All {currentCount} device{currentCount === 1 ? ' is' : 's are'} up to date.
                     </td>
                   </tr>
@@ -409,7 +402,7 @@ export default function FirmwarePage() {
                           <span className="cell-primary">{d.name}</span>
                           <TagChips tags={d.tags} />
                           {d.status !== 'online' && (
-                            <span className="text-[10px] text-red-400">offline</span>
+                            <span className="text-[10px] text-bad">offline</span>
                           )}
                         </div>
                       </td>
@@ -417,16 +410,14 @@ export default function FirmwarePage() {
                       <td className="px-4 py-2.5">
                         <DeviceTypePill type={d.device_type} />
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">
-                        {d.model || '—'}
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-gray-700 dark:text-slate-300">
+                      <td className="px-4 py-2.5 text-xs text-ink-3">{d.model || '—'}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-ink-2">
                         {d.ros_version || '—'}
                       </td>
                       <td className="px-4 py-2.5 font-mono text-xs">
                         {d.mirror_version && (
                           <div
-                            className="text-[11px] text-gray-500 dark:text-slate-400"
+                            className="text-[11px] text-ink-3"
                             title="The newest version on this device's local mirror"
                           >
                             <HardDrive className="w-3 h-3 inline mr-1" />
@@ -436,33 +427,31 @@ export default function FirmwarePage() {
                         {d.latest_ros_version ? (
                           <button
                             onClick={() => setChangelogVersion(d.latest_ros_version)}
-                            className="text-blue-600 dark:text-blue-400 hover:underline"
+                            className="text-accent hover:underline"
                             title={`View MikroTik's release notes for ${d.latest_ros_version}`}
                           >
                             {d.latest_ros_version}
                           </button>
                         ) : (
-                          <span className="text-gray-500 dark:text-slate-400">—</span>
+                          <span className="text-ink-3">—</span>
                         )}
                       </td>
                       <td className="px-4 py-2.5 text-xs">
                         {d.routerboard_upgrade_available ? (
-                          <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-mono">
+                          <span className="px-1.5 py-0.5 rounded bg-warn-bg dark:bg-warn-bg text-warn font-mono">
                             {d.firmware_version} → {d.upgrade_firmware_version}
                           </span>
                         ) : (
-                          <span className="font-mono text-gray-400 dark:text-slate-500">
-                            {d.firmware_version || '—'}
-                          </span>
+                          <span className="font-mono text-ink-3">{d.firmware_version || '—'}</span>
                         )}
                       </td>
                       <td className="px-4 py-2.5">
                         {hasUpdate(d) ? (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-warn-bg dark:bg-warn-bg text-warn">
                             Update available
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-good-bg text-good">
                             Up to date
                           </span>
                         )}
@@ -496,7 +485,7 @@ export default function FirmwarePage() {
 
         {/* Rollout builder bar */}
         {canWrite && selectedCount > 0 && (
-          <div className="px-5 py-4 border-t border-gray-200 dark:border-slate-700 bg-blue-50/40 dark:bg-blue-900/10 space-y-3">
+          <div className="px-5 py-4 border-t border-line bg-accent-soft dark:bg-accent-soft space-y-3">
             <div className="flex flex-wrap items-center gap-3">
               <input
                 className="input w-64"
@@ -504,7 +493,7 @@ export default function FirmwarePage() {
                 value={rolloutName}
                 onChange={(e) => setRolloutName(e.target.value)}
               />
-              <label className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-sm text-ink-2 cursor-pointer">
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded"
@@ -513,7 +502,7 @@ export default function FirmwarePage() {
                 />
                 Pre-upgrade backup
               </label>
-              <label className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-sm text-ink-2 cursor-pointer">
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded"
@@ -525,7 +514,7 @@ export default function FirmwarePage() {
               {rolloutKind === 'routeros' && (
                 <>
                   <label
-                    className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 cursor-pointer"
+                    className="flex items-center gap-1.5 text-sm text-ink-2 cursor-pointer"
                     title="After each RouterOS upgrade verifies, apply any pending RouterBOOT upgrade. This is a second flash and a second reboot per device."
                   >
                     <input
@@ -537,7 +526,7 @@ export default function FirmwarePage() {
                     Then RouterBOOT
                   </label>
                   <label
-                    className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300"
+                    className="flex items-center gap-1.5 text-sm text-ink-2"
                     title="Run a command template on each device once its upgrade is verified, over SSH and under Change Guard. Not on devices that didn't upgrade. If it fails, the upgrade stands but halt-on-failure applies."
                   >
                     Then run
@@ -559,10 +548,10 @@ export default function FirmwarePage() {
                 </>
               )}
               <label
-                className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300"
+                className="flex items-center gap-1.5 text-sm text-ink-2"
                 title="How many devices in the same wave may upgrade at once. 1 upgrades them one at a time."
               >
-                <Zap className="w-4 h-4 text-gray-400" />
+                <Zap className="w-4 h-4 text-ink-4" />
                 At once
                 <select
                   className="input py-1 text-xs w-auto"
@@ -578,10 +567,10 @@ export default function FirmwarePage() {
               </label>
               {rolloutKind === 'routeros' && mirrorSelected > 0 && (
                 <label
-                  className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300"
+                  className="flex items-center gap-1.5 text-sm text-ink-2"
                   title="Devices set up for the local mirror pull their packages from it. Others always download from MikroTik."
                 >
-                  <HardDrive className="w-4 h-4 text-gray-400" />
+                  <HardDrive className="w-4 h-4 text-ink-4" />
                   Packages from
                   <select
                     className="input py-1 text-xs w-auto"
@@ -593,8 +582,8 @@ export default function FirmwarePage() {
                   </select>
                 </label>
               )}
-              <label className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300">
-                <Clock className="w-4 h-4 text-gray-400" />
+              <label className="flex items-center gap-1.5 text-sm text-ink-2">
+                <Clock className="w-4 h-4 text-ink-4" />
                 <input
                   type="datetime-local"
                   className="input py-1 text-xs w-auto"
@@ -604,7 +593,7 @@ export default function FirmwarePage() {
               </label>
               {scheduleAt && (
                 <label
-                  className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-400"
+                  className="flex items-center gap-1.5 text-xs text-ink-2"
                   title="If the manager can't start it by then (it was down, or another rollout ran long), the rollout is marked missed instead of starting late."
                 >
                   Don&apos;t start after
@@ -615,19 +604,19 @@ export default function FirmwarePage() {
                     min={scheduleAt}
                     onChange={(e) => setScheduleUntil(e.target.value)}
                   />
-                  {!scheduleUntil && <span className="text-gray-400">(1 hour later if blank)</span>}
+                  {!scheduleUntil && <span className="text-ink-4">(1 hour later if blank)</span>}
                 </label>
               )}
             </div>
 
             {mirrorSelected > 0 && packageSource === 'mirror' && mirrorSelected < selectedCount && (
-              <p className="text-xs text-gray-500 dark:text-slate-400">
+              <p className="text-xs text-ink-3">
                 {mirrorSelected} of {selectedCount} selected devices pull from the local mirror; the
                 rest download from MikroTik.
               </p>
             )}
             {waveConcurrency > 1 && (
-              <div className="flex items-start gap-2 text-xs rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-3 py-2 text-amber-800 dark:text-amber-300">
+              <div className="flex items-start gap-2 text-xs rounded-lg border border-warn bg-warn-bg dark:border-warn px-3 py-2 text-warn dark:text-warn">
                 <ShieldAlert className="w-3.5 h-3.5 mt-px flex-shrink-0" />
                 <div className="space-y-1">
                   <p>
@@ -673,16 +662,16 @@ export default function FirmwarePage() {
                 {scheduleAt ? 'Schedule rollout' : 'Start rollout now'} ({selectedCount} device
                 {selectedCount !== 1 ? 's' : ''})
               </button>
-              <span className="text-xs text-gray-500 dark:text-slate-400">{waveSummary}</span>
+              <span className="text-xs text-ink-3">{waveSummary}</span>
               {createRollout.isError && (
-                <span className="text-xs text-red-500 flex items-center gap-1">
+                <span className="text-xs text-bad flex items-center gap-1">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   {(createRollout.error as { response?: { data?: { error?: string } } })?.response
                     ?.data?.error || 'Failed to create rollout'}
                 </span>
               )}
               {scheduleAt && (
-                <span className="text-xs text-gray-400 dark:text-slate-500">
+                <span className="text-xs text-ink-3">
                   Tip: schedule inside a maintenance window to avoid disrupting users.
                 </span>
               )}
@@ -697,21 +686,18 @@ export default function FirmwarePage() {
       {/* Past rollouts: the latest few here, everything on its own page (#202). */}
       {rollouts.length > 1 && (
         <div className="card overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">History</h3>
-            <Link
-              to="/firmware/history"
-              className="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline"
-            >
+          <div className="px-5 py-3 border-b border-line flex items-center">
+            <h3 className="text-sm font-semibold text-ink">History</h3>
+            <Link to="/firmware/history" className="ml-auto text-xs text-accent hover:underline">
               All upgrade history
             </Link>
           </div>
-          <div className="divide-y divide-gray-100 dark:divide-slate-700/50">
+          <div className="divide-y divide-line/50">
             {rollouts.slice(0, 5).map((r) => (
               <button
                 key={r.id}
                 onClick={() => setViewRolloutId(r.id)}
-                className="w-full px-5 py-2.5 flex items-center gap-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors"
+                className="w-full px-5 py-2.5 flex items-center gap-3 text-left hover:bg-surface-2/40 transition-colors"
               >
                 <span
                   className={clsx(
@@ -721,14 +707,12 @@ export default function FirmwarePage() {
                 >
                   {r.status}
                 </span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {r.name}
-                </span>
-                <span className="text-xs text-gray-400 dark:text-slate-500">
+                <span className="text-sm font-medium text-ink truncate">{r.name}</span>
+                <span className="text-xs text-ink-3">
                   {r.success_count}/{r.device_count} succeeded
                   {(r.failed_count ?? 0) > 0 ? ` · ${r.failed_count} failed` : ''}
                 </span>
-                <span className="ml-auto text-[11px] text-gray-400 dark:text-slate-500 flex-shrink-0">
+                <span className="ml-auto text-[11px] text-ink-3 flex-shrink-0">
                   {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
                 </span>
               </button>

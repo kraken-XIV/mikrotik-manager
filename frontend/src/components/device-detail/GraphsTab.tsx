@@ -59,8 +59,8 @@ function RangeButtons({
           onClick={() => onChange(r)}
           className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
             value === r
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+              ? 'bg-accent text-accent-fg'
+              : 'bg-surface-3 text-ink-2 hover:bg-surface-3 dark:hover:bg-surface-3'
           }`}
         >
           {r}
@@ -122,7 +122,7 @@ export default function GraphsTab({ deviceId }: Props) {
       {/* ── Interface Traffic ── */}
       <div className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Interface Traffic</h3>
+          <h3 className="font-semibold text-ink">Interface Traffic</h3>
           <div className="flex flex-wrap items-center gap-2">
             <select
               className="input py-1.5 text-sm"
@@ -144,11 +144,11 @@ export default function GraphsTab({ deviceId }: Props) {
         </div>
 
         {!trafficIface ? (
-          <div className="h-48 flex items-center justify-center text-gray-400 dark:text-slate-500 text-sm">
+          <div className="h-48 flex items-center justify-center text-ink-3 text-sm">
             Select an interface to view traffic history
           </div>
         ) : trafficData.length === 0 ? (
-          <div className="h-48 flex items-center justify-center text-gray-400 dark:text-slate-500 text-sm">
+          <div className="h-48 flex items-center justify-center text-ink-3 text-sm">
             No traffic data yet for this interface in the selected range
           </div>
         ) : (
@@ -157,7 +157,7 @@ export default function GraphsTab({ deviceId }: Props) {
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="currentColor"
-                className="text-gray-200 dark:text-slate-600"
+                className="text-ink dark:text-ink-2"
                 opacity={0.5}
               />
               <XAxis dataKey="time" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
@@ -189,7 +189,7 @@ export default function GraphsTab({ deviceId }: Props) {
       {/* ── CPU & Memory ── */}
       <div className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white">CPU & Memory Usage</h3>
+          <h3 className="font-semibold text-ink">CPU & Memory Usage</h3>
           <RangeButtons
             ranges={RESOURCE_RANGES}
             value={resourceRange}
@@ -198,7 +198,7 @@ export default function GraphsTab({ deviceId }: Props) {
         </div>
 
         {resourceData.length === 0 ? (
-          <div className="h-48 flex items-center justify-center text-gray-400 dark:text-slate-500 text-sm">
+          <div className="h-48 flex items-center justify-center text-ink-3 text-sm">
             No resource history available yet — data accumulates over time
           </div>
         ) : (
@@ -207,7 +207,7 @@ export default function GraphsTab({ deviceId }: Props) {
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="currentColor"
-                className="text-gray-200 dark:text-slate-600"
+                className="text-ink dark:text-ink-2"
                 opacity={0.5}
               />
               <XAxis dataKey="time" tick={{ fontSize: 10 }} interval="preserveStartEnd" />

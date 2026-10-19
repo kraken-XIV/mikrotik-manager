@@ -86,10 +86,10 @@ export default function TemplatesPage() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-500" /> Templates
+          <h1 className="text-xl font-semibold text-ink flex items-center gap-2">
+            <FileText className="w-5 h-5 text-accent" /> Templates
           </h1>
-          <p className="text-sm text-gray-600 dark:text-slate-300 mt-1 max-w-2xl">
+          <p className="text-sm text-ink-2 mt-1 max-w-2xl">
             Saved RouterOS commands you run more than once. <strong>Run</strong> opens a template in
             Bulk Commands, where you pick devices or tags and it runs in waves, stopping on failure.
           </p>
@@ -109,9 +109,7 @@ export default function TemplatesPage() {
 
       {draft && (
         <div className="card p-5 space-y-3">
-          <h2 className="font-semibold text-gray-900 dark:text-white">
-            {draft.id ? 'Edit template' : 'New template'}
-          </h2>
+          <h2 className="font-semibold text-ink">{draft.id ? 'Edit template' : 'New template'}</h2>
           <input
             className="input w-full"
             placeholder="Name, e.g. LTE failover defaults"
@@ -135,10 +133,8 @@ export default function TemplatesPage() {
             value={draft.command}
             onChange={(e) => setDraft({ ...draft, command: e.target.value })}
           />
-          <p className="text-xs text-gray-500 dark:text-slate-400">
-            One command per line; they run in order over SSH.
-          </p>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <p className="text-xs text-ink-3">One command per line; they run in order over SSH.</p>
+          {error && <p className="text-sm text-bad">{error}</p>}
           <div className="flex items-center gap-2">
             <button
               className="btn-primary text-sm"
@@ -157,7 +153,7 @@ export default function TemplatesPage() {
       {isFleetAdmin && <SecretsCard />}
 
       <div className="relative max-w-md">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-4" />
         <input
           className="input w-full pl-9"
           placeholder="Search names, descriptions and commands"
@@ -166,7 +162,7 @@ export default function TemplatesPage() {
         />
         {search && (
           <button
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-4"
             onClick={() => setSearch('')}
             aria-label="Clear search"
           >
@@ -176,9 +172,9 @@ export default function TemplatesPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-gray-400">Loading…</p>
+        <p className="text-sm text-ink-4">Loading…</p>
       ) : shown.length === 0 ? (
-        <div className="card p-8 text-center text-sm text-gray-500 dark:text-slate-400">
+        <div className="card p-8 text-center text-sm text-ink-3">
           {templates.length === 0
             ? 'No templates yet. Save one here, or from Bulk Commands with "Save as template".'
             : 'No templates match that search.'}
@@ -190,18 +186,14 @@ export default function TemplatesPage() {
               <div className="flex flex-wrap items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-gray-900 dark:text-white">{t.name}</span>
+                    <span className="font-medium text-ink">{t.name}</span>
                     {t.created_by === 'converted' && (
-                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
+                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-3 text-ink-3">
                         from Config Templates
                       </span>
                     )}
                   </div>
-                  {t.description && (
-                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
-                      {t.description}
-                    </p>
-                  )}
+                  {t.description && <p className="text-sm text-ink-3 mt-0.5">{t.description}</p>}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Link
@@ -226,7 +218,7 @@ export default function TemplatesPage() {
                         <Copy className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        className="text-red-600 p-1"
+                        className="text-bad p-1"
                         title="Delete"
                         disabled={remove.isPending}
                         onClick={() => {
@@ -239,10 +231,10 @@ export default function TemplatesPage() {
                   )}
                 </div>
               </div>
-              <pre className="text-xs font-mono bg-gray-50 dark:bg-slate-900/60 rounded p-2.5 overflow-x-auto whitespace-pre text-gray-700 dark:text-slate-300 max-h-40">
+              <pre className="text-xs font-mono bg-surface-2/60 rounded p-2.5 overflow-x-auto whitespace-pre text-ink-2 max-h-40">
                 {t.command}
               </pre>
-              <div className="text-[11px] text-gray-400">
+              <div className="text-[11px] text-ink-4">
                 Updated {new Date(t.updated_at).toLocaleString()}
                 {t.created_by && t.created_by !== 'converted' ? ` · by ${t.created_by}` : ''}
               </div>

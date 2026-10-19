@@ -42,23 +42,23 @@ const lifetimeLabel = (d: number) =>
 const STATUS: Record<DeviceCertStatus, { label: string; cls: string }> = {
   not_issued: {
     label: 'Not issued',
-    cls: 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300',
+    cls: 'bg-surface-3 text-ink-2 dark:bg-surface-3 dark:text-ink-2',
   },
   valid: {
     label: 'Valid',
-    cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    cls: 'bg-good-bg text-good dark:bg-good-bg dark:text-good',
   },
   renewal_due: {
     label: 'Renewal due',
-    cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    cls: 'bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn',
   },
   renewal_failed: {
     label: 'Renewal failed',
-    cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    cls: 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad',
   },
   expired: {
     label: 'Expired',
-    cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    cls: 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad',
   },
 };
 
@@ -78,8 +78,8 @@ function Note({
       className={clsx(
         'flex items-start gap-2 p-3 rounded-lg border text-sm',
         ok
-          ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-          : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300',
+          ? 'border-good dark:border-good bg-good-bg text-good dark:text-good'
+          : 'border-bad dark:border-bad bg-bad-bg text-bad dark:text-bad',
       )}
     >
       {ok ? (
@@ -143,7 +143,7 @@ function LifetimePicker({
             value={value}
             onChange={(e) => onChange(Number(e.target.value) || 1)}
           />
-          <span className="text-sm text-gray-500">days</span>
+          <span className="text-sm text-ink-3">days</span>
         </div>
       )}
     </div>
@@ -188,10 +188,8 @@ function SetUpCa({ choices, onDone }: { choices: number[]; onDone: () => void })
   return (
     <div className="card p-5 space-y-4">
       <div>
-        <h2 className="font-semibold text-gray-900 dark:text-white">
-          Set up a certificate authority
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <h2 className="font-semibold text-ink">Set up a certificate authority</h2>
+        <p className="text-sm text-ink-3">
           The manager signs a certificate for each device you choose with it. Nothing changes on any
           device until you issue one.
         </p>
@@ -208,8 +206,8 @@ function SetUpCa({ choices, onDone }: { choices: number[]; onDone: () => void })
             className={clsx(
               'px-3 py-1.5 rounded-lg border text-sm',
               mode === m
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300',
+                ? 'border-accent bg-accent-soft text-accent dark:text-accent'
+                : 'border-line text-ink-2',
             )}
           >
             {m === 'create' ? 'Create a new CA' : 'Import an existing CA'}
@@ -243,7 +241,7 @@ function SetUpCa({ choices, onDone }: { choices: number[]; onDone: () => void })
         </div>
       ) : (
         <div className="space-y-3 max-w-3xl">
-          <p className="text-xs text-gray-500 dark:text-slate-400">
+          <p className="text-xs text-ink-3">
             For example an intermediate CA from your organisation’s PKI. Paste the PEM text or
             choose the files. The key is stored encrypted, like device passwords.
           </p>
@@ -367,12 +365,12 @@ function CaCard({
   return (
     <div className="card p-5 space-y-3">
       <div className="flex items-start gap-3 flex-wrap">
-        <div className="w-9 h-9 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-          <ShieldCheck className="w-5 h-5 text-green-600" />
+        <div className="w-9 h-9 rounded-lg bg-good-bg flex items-center justify-center">
+          <ShieldCheck className="w-5 h-5 text-good" />
         </div>
         <div className="flex-1 min-w-[240px]">
-          <h2 className="font-semibold text-gray-900 dark:text-white">{ca.commonName}</h2>
-          <p className="text-xs text-gray-500 dark:text-slate-400">
+          <h2 className="font-semibold text-ink">{ca.commonName}</h2>
+          <p className="text-xs text-ink-3">
             {ca.subject} · {ca.keyType} · {ca.imported ? 'imported' : 'created here'}
             {ca.created_by ? ` by ${ca.created_by}` : ''}
           </p>
@@ -384,7 +382,7 @@ function CaCard({
           <Download className="w-3.5 h-3.5" /> Download CA certificate
         </button>
         <button
-          className="btn-secondary text-sm flex items-center gap-1.5 text-red-600 disabled:opacity-40"
+          className="btn-secondary text-sm flex items-center gap-1.5 text-bad disabled:opacity-40"
           disabled={enrolled > 0 || del.isPending}
           title={enrolled > 0 ? 'Remove the device certificates first' : 'Delete the CA'}
           onClick={() => {
@@ -400,14 +398,14 @@ function CaCard({
         </button>
       </div>
       <dl className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm">
-        <dt className="text-gray-500">Valid</dt>
+        <dt className="text-ink-3">Valid</dt>
         <dd>
           {day(ca.notBefore)} to {day(ca.notAfter)}
         </dd>
-        <dt className="text-gray-500">SHA-256</dt>
+        <dt className="text-ink-3">SHA-256</dt>
         <dd className="font-mono text-xs break-all">{ca.fingerprint.match(/.{2}/g)?.join(':')}</dd>
       </dl>
-      <p className="text-xs text-gray-500 dark:text-slate-400">
+      <p className="text-xs text-ink-3">
         Install the CA certificate as trusted in browsers, scripts or tools, and they can check
         every device certificate it signs. Only trust it where you’d trust the manager: whoever
         holds the CA’s key can sign a certificate for any name.
@@ -432,7 +430,7 @@ function SettingsCard({ data, onSaved }: { data: DeviceCertsOverview; onSaved: (
   });
   return (
     <div className="card p-5 space-y-3">
-      <h3 className="font-semibold text-gray-900 dark:text-white">Device certificate defaults</h3>
+      <h3 className="font-semibold text-ink">Device certificate defaults</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
         <div>
           <label className="label">Lifetime</label>
@@ -453,7 +451,7 @@ function SettingsCard({ data, onSaved }: { data: DeviceCertsOverview; onSaved: (
           />
         </div>
       </div>
-      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+      <label className="flex items-center gap-2 text-sm text-ink-2">
         <input
           type="checkbox"
           checked={f.auto_renew}
@@ -461,7 +459,7 @@ function SettingsCard({ data, onSaved }: { data: DeviceCertsOverview; onSaved: (
         />{' '}
         Renew automatically
       </label>
-      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+      <label className="flex items-center gap-2 text-sm text-ink-2">
         <input
           type="checkbox"
           checked={f.default_www}
@@ -469,7 +467,7 @@ function SettingsCard({ data, onSaved }: { data: DeviceCertsOverview; onSaved: (
         />{' '}
         Use the certificate for WebFig (www-ssl) too, unless chosen otherwise when issuing
       </label>
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-4">
         A lifetime applies when a certificate is issued or renewed. Renewal makes a new key each
         time. A certificate never outlives the CA.
       </p>
@@ -537,16 +535,12 @@ function IssueDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h3 className="font-semibold text-ink">
             {target.reissue ? 'Reissue certificate' : 'Issue certificate'}
             {single ? ` · ${single.name.trim()}` : ` to ${target.rows.length} devices`}
           </h3>
-          <button
-            onClick={onClose}
-            disabled={!!progress}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} disabled={!!progress} className="text-ink-4 hover:text-ink-2">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -564,7 +558,7 @@ function IssueDialog({
                 onChange={(e) => setNames(e.target.value)}
                 placeholder="sw1.example.net, 10.0.0.2"
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-ink-4 mt-1">
                 The certificate always covers <span className="font-mono">{single.ip_address}</span>
                 . Add DNS names or other addresses people use to reach the device.
               </p>
@@ -575,7 +569,7 @@ function IssueDialog({
             it for WebFig (www-ssl) too
           </label>
           {plain.length > 0 && (
-            <div className="flex gap-2 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-800 dark:text-blue-300">
+            <div className="flex gap-2 p-3 rounded-lg border border-accent dark:border-accent bg-accent-soft text-xs text-accent dark:text-accent">
               <KeyRound className="w-4 h-4 shrink-0" />
               <p>
                 {plain.length === 1 && single
@@ -586,13 +580,13 @@ function IssueDialog({
               </p>
             </div>
           )}
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-ink-4">
             The manager makes the key, uploads it encrypted, switches api-ssl to the new certificate
             and logs in afresh to prove it. If that login fails, the device goes back to the
             certificate it had.
           </p>
           {progress && (
-            <div className="flex items-center gap-2 text-blue-600">
+            <div className="flex items-center gap-2 text-accent">
               <Loader2 className="w-4 h-4 animate-spin" /> {progress.current} ({progress.done + 1}{' '}
               of {target.rows.length})
             </div>
@@ -682,9 +676,9 @@ function DevicesCard({ data, onChange }: { data: DeviceCertsOverview; onChange: 
   };
   return (
     <div className="card overflow-hidden">
-      <div className="p-4 flex items-center gap-3 flex-wrap border-b border-gray-200 dark:border-slate-700">
-        <h3 className="font-semibold text-gray-900 dark:text-white">Devices</h3>
-        <span className="text-xs text-gray-400">
+      <div className="p-4 flex items-center gap-3 flex-wrap border-b border-line">
+        <h3 className="font-semibold text-ink">Devices</h3>
+        <span className="text-xs text-ink-4">
           {counts.issued} of {data.devices.length} have a certificate
           {counts.attention ? ` · ${counts.attention} need attention` : ''}
         </span>
@@ -711,7 +705,7 @@ function DevicesCard({ data, onChange }: { data: DeviceCertsOverview; onChange: 
       </div>
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-slate-700 text-left">
+          <tr className="border-b border-line text-left">
             <th className="px-3 py-2 w-8" />
             {['Device', 'Connection', 'Certificate', 'Names', ''].map((h) => (
               <th key={h} className="table-header px-3 py-2">
@@ -720,7 +714,7 @@ function DevicesCard({ data, onChange }: { data: DeviceCertsOverview; onChange: 
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+        <tbody className="divide-y divide-line">
           {rows.map((r) => {
             const st = STATUS[r.cert_status];
             const res = results[r.id];
@@ -743,8 +737,8 @@ function DevicesCard({ data, onChange }: { data: DeviceCertsOverview; onChange: 
                   )}
                 </td>
                 <td className="px-3 py-2.5">
-                  <div className="font-medium text-gray-900 dark:text-white">{r.name.trim()}</div>
-                  <div className="text-xs text-gray-400 font-mono">
+                  <div className="font-medium text-ink">{r.name.trim()}</div>
+                  <div className="text-xs text-ink-4 font-mono">
                     {r.ip_address}
                     {r.site_name ? <span className="font-sans"> · {r.site_name}</span> : null}
                   </div>
@@ -767,33 +761,33 @@ function DevicesCard({ data, onChange }: { data: DeviceCertsOverview; onChange: 
                 </td>
                 <td className="px-3 py-2.5 text-xs">
                   {r.api_ssl ? (
-                    <span className="text-green-600">API-SSL</span>
+                    <span className="text-good">API-SSL</span>
                   ) : (
-                    <span className="text-amber-600">Plain API</span>
+                    <span className="text-warn">Plain API</span>
                   )}
-                  <div className="text-gray-400">RouterOS {r.ros_version ?? '?'}</div>
+                  <div className="text-ink-4">RouterOS {r.ros_version ?? '?'}</div>
                 </td>
                 <td className="px-3 py-2.5">
                   <span className={clsx('px-1.5 py-0.5 rounded text-xs', st.cls)}>{st.label}</span>
                   {r.not_after && (
-                    <div className="text-xs text-gray-500 mt-1" title={day(r.not_after)}>
+                    <div className="text-xs text-ink-3 mt-1" title={day(r.not_after)}>
                       until {day(r.not_after)} (
                       {formatDistanceToNow(new Date(r.not_after), { addSuffix: true })})
                     </div>
                   )}
-                  {r.apply_www && <div className="text-xs text-gray-400">api-ssl + WebFig</div>}
+                  {r.apply_www && <div className="text-xs text-ink-4">api-ssl + WebFig</div>}
                   {r.last_error && (
-                    <div className="text-xs text-red-600 mt-1 max-w-xs" title={r.last_error}>
+                    <div className="text-xs text-bad mt-1 max-w-xs" title={r.last_error}>
                       {r.last_error}
                     </div>
                   )}
                 </td>
-                <td className="px-3 py-2.5 font-mono text-xs text-gray-500">
+                <td className="px-3 py-2.5 font-mono text-xs text-ink-3">
                   {(r.sans ?? []).join(', ') || '—'}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-right">
                   {busy === r.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin inline text-blue-500" />
+                    <Loader2 className="w-4 h-4 animate-spin inline text-accent" />
                   ) : r.cert_status === 'not_issued' ? (
                     <button
                       className="btn-secondary text-xs py-1"
@@ -804,21 +798,21 @@ function DevicesCard({ data, onChange }: { data: DeviceCertsOverview; onChange: 
                   ) : (
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        className="p-1.5 text-gray-400 hover:text-blue-500"
+                        className="p-1.5 text-ink-4 hover:text-accent"
                         title="Renew now"
                         onClick={() => void act(r, 'renew')}
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        className="p-1.5 text-gray-400 hover:text-blue-500"
+                        className="p-1.5 text-ink-4 hover:text-accent"
                         title="Change names, lifetime or WebFig, and reissue"
                         onClick={() => setIssue({ rows: [r], reissue: true })}
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        className="p-1.5 text-gray-400 hover:text-red-500"
+                        className="p-1.5 text-ink-4 hover:text-bad"
                         title="Remove from the device"
                         onClick={() => void act(r, 'remove')}
                       >
@@ -826,7 +820,7 @@ function DevicesCard({ data, onChange }: { data: DeviceCertsOverview; onChange: 
                       </button>
                       {res && !res.ok && (
                         <button
-                          className="text-xs text-gray-500 hover:underline"
+                          className="text-xs text-ink-3 hover:underline"
                           onClick={() => void act(r, 'forget')}
                         >
                           Forget
@@ -840,7 +834,7 @@ function DevicesCard({ data, onChange }: { data: DeviceCertsOverview; onChange: 
           })}
           {rows.length === 0 && (
             <tr>
-              <td colSpan={6} className="px-3 py-6 text-center text-gray-400">
+              <td colSpan={6} className="px-3 py-6 text-center text-ink-4">
                 No devices match.
               </td>
             </tr>
@@ -880,14 +874,14 @@ export default function CertificatesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <h1 className="text-xl font-bold text-ink flex items-center gap-2">
           <ShieldCheck className="w-5 h-5" /> Certificates
         </h1>
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <p className="text-sm text-ink-3">
           Give devices certificates from your own CA, so the manager, browsers and tools can check
           them properly instead of trusting a self-signed certificate. Optional, device by device.{' '}
           <a
-            className="text-blue-500 hover:underline"
+            className="text-accent hover:underline"
             href={docsUrl('certificates/')}
             target="_blank"
             rel="noreferrer"
@@ -897,13 +891,11 @@ export default function CertificatesPage() {
         </p>
       </div>
       {!isFleetAdmin ? (
-        <div className="card p-5 text-sm text-gray-500">
-          Certificates are managed by fleet admins.
-        </div>
+        <div className="card p-5 text-sm text-ink-3">Certificates are managed by fleet admins.</div>
       ) : isLoading ? (
-        <div className="text-center py-8 text-gray-400">Loading…</div>
+        <div className="text-center py-8 text-ink-4">Loading…</div>
       ) : error || !data ? (
-        <div className="card p-5 text-sm text-red-500">{errText(error)}</div>
+        <div className="card p-5 text-sm text-bad">{errText(error)}</div>
       ) : !data.ca ? (
         <SetUpCa choices={data.limits.ca_day_choices} onDone={refresh} />
       ) : (

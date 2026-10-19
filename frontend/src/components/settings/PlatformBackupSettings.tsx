@@ -59,8 +59,8 @@ function Note({ ok, text, onClose }: { ok: boolean; text: string; onClose?: () =
       className={clsx(
         'flex items-start gap-2 p-3 rounded-lg border text-sm',
         ok
-          ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-          : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300',
+          ? 'border-good dark:border-good bg-good-bg text-good dark:text-good'
+          : 'border-bad dark:border-bad bg-bad-bg text-bad dark:text-bad',
       )}
     >
       {ok ? (
@@ -103,7 +103,7 @@ function PassphraseInput({
       />
       <button
         type="button"
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-4"
         onClick={() => setShow((s) => !s)}
         title={show ? 'Hide' : 'Show'}
       >
@@ -124,13 +124,13 @@ function DestinationPicker({
 }) {
   if (!all.length)
     return (
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-4">
         Only this server. Add a destination below to also copy backups off it.
       </p>
     );
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1">
-      <span className="flex items-center gap-1.5 text-sm text-gray-500">
+      <span className="flex items-center gap-1.5 text-sm text-ink-3">
         <input type="checkbox" checked disabled /> This server
       </span>
       {all.map((d) => {
@@ -139,7 +139,7 @@ function DestinationPicker({
           <label
             key={d.id}
             className={clsx(
-              'flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300',
+              'flex items-center gap-1.5 text-sm text-ink-2',
               !d.enabled && 'opacity-50',
             )}
           >
@@ -151,7 +151,7 @@ function DestinationPicker({
                 onChange(e.target.checked ? [...chosen, d.id] : chosen.filter((x) => x !== d.id))
               }
             />
-            <Icon className="w-3.5 h-3.5 text-gray-400" /> {d.name}
+            <Icon className="w-3.5 h-3.5 text-ink-4" /> {d.name}
           </label>
         );
       })}
@@ -193,23 +193,23 @@ function BackupNowCard({
   });
   return (
     <div className="card p-5 space-y-4">
-      <h3 className="font-semibold text-gray-900 dark:text-white">Back up now</h3>
+      <h3 className="font-semibold text-ink">Back up now</h3>
       <div className="flex flex-wrap gap-4 text-sm">
         {(Object.keys(CONTENTS_LABEL) as PlatformBackupContents[]).map((c) => (
-          <label key={c} className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
+          <label key={c} className="flex items-center gap-2 text-ink-2">
             <input type="radio" checked={contents === c} onChange={() => setContents(c)} />{' '}
             {CONTENTS_LABEL[c]}
           </label>
         ))}
       </div>
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-4">
         {contents === 'config'
           ? 'Devices and their stored logins, sites, users and roles, settings, alerting, templates, secrets, tags and topology layout. Small; no history.'
           : 'Everything in the database, history included (events, clients, change history). Larger, and slower to make.'}
       </p>
       <div className="space-y-2">
         {hasSaved && (
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-ink-2">
             <input
               type="checkbox"
               checked={useSaved}
@@ -291,15 +291,15 @@ function ScheduleCard({
   return (
     <div className="card p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <Clock className="w-4 h-4 text-blue-500" />
-        <h3 className="font-semibold text-gray-900 dark:text-white">Schedule</h3>
+        <Clock className="w-4 h-4 text-accent" />
+        <h3 className="font-semibold text-ink">Schedule</h3>
         {schedule.last_run_at && (
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-ink-4">
             last ran {formatDistanceToNow(new Date(schedule.last_run_at), { addSuffix: true })}
           </span>
         )}
       </div>
-      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+      <label className="flex items-center gap-2 text-sm text-ink-2">
         <input
           type="checkbox"
           checked={f.enabled}
@@ -386,7 +386,7 @@ function ScheduleCard({
           />
         </div>
       </div>
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-4">
         The time is in the app’s time zone (Settings → General). Keep is how many scheduled and
         manual backups stay on this server; each destination keeps its own number.
       </p>
@@ -412,7 +412,7 @@ function ScheduleCard({
           <PassphraseInput value={pass2} onChange={setPass2} />
         </div>
       </div>
-      <div className="flex gap-2 p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-800 dark:text-amber-300">
+      <div className="flex gap-2 p-3 rounded-lg border border-warn dark:border-warn bg-warn-bg text-xs text-warn dark:text-warn">
         <AlertTriangle className="w-4 h-4 shrink-0" />
         <p>
           Backups are encrypted with this passphrase, and it’s the only way to open them. Keep a
@@ -437,9 +437,7 @@ function ScheduleCard({
         )}{' '}
         Save schedule
       </button>
-      {passMismatch && (
-        <span className="text-xs text-red-500 ml-2">The passphrases don’t match.</span>
-      )}
+      {passMismatch && <span className="text-xs text-bad ml-2">The passphrases don’t match.</span>}
     </div>
   );
 }
@@ -503,11 +501,11 @@ function DestinationModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h3 className="font-semibold text-ink">
             {editing ? 'Edit destination' : 'Add destination'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -524,8 +522,8 @@ function DestinationModal({
                     className={clsx(
                       'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-sm',
                       f.type === t
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300',
+                        ? 'border-accent bg-accent-soft text-accent dark:text-accent'
+                        : 'border-line text-ink-2',
                     )}
                   >
                     <Icon className="w-4 h-4" /> {TYPE_LABEL[t]}
@@ -614,7 +612,7 @@ function DestinationModal({
                   />
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+              <label className="flex items-center gap-2 text-sm text-ink-2">
                 <input
                   type="checkbox"
                   checked={!!f.config.pathStyle}
@@ -693,12 +691,12 @@ function DestinationModal({
                 </div>
               )}
               {cfg('hostKey') && (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-ink-4">
                   Host key saved: <span className="font-mono break-all">{cfg('hostKey')}</span>.
                   Uploads are refused if the server presents a different one.{' '}
                   <button
                     type="button"
-                    className="text-blue-500 hover:underline"
+                    className="text-accent hover:underline"
                     onClick={() => setCfg('hostKey', '')}
                   >
                     Forget it
@@ -740,13 +738,13 @@ function DestinationModal({
                   placeholder="backups@example.com"
                 />
               </div>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-ink-4">
                 For configuration backups: a full database backup is usually too big for email (over
                 20 MB is refused).
               </p>
             </>
           )}
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-ink-2">
             <input
               type="checkbox"
               checked={f.enabled}
@@ -802,7 +800,7 @@ function DestinationsCard({
   return (
     <div className="card p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900 dark:text-white">Destinations</h3>
+        <h3 className="font-semibold text-ink">Destinations</h3>
         <button
           className="btn-secondary text-sm flex items-center gap-1.5"
           onClick={() =>
@@ -812,11 +810,11 @@ function DestinationsCard({
           <Plus className="w-3.5 h-3.5" /> Add destination
         </button>
       </div>
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-4">
         Every backup stays on this server. A destination also copies it off the server, so it
         survives losing the server.
       </p>
-      {destinations.length === 0 && <p className="text-sm text-gray-400">No destinations yet.</p>}
+      {destinations.length === 0 && <p className="text-sm text-ink-4">No destinations yet.</p>}
       {destinations.map((d) => {
         const Icon = TYPE_ICON[d.type];
         const where =
@@ -828,18 +826,15 @@ function DestinationsCard({
                 ? (d.config.recipients as string[]).join(', ')
                 : 'the channel’s recipients';
         return (
-          <div
-            key={d.id}
-            className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 space-y-2"
-          >
+          <div key={d.id} className="rounded-lg border border-line p-3 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <Icon className="w-4 h-4 text-gray-400" />
-              <span className="font-medium text-gray-900 dark:text-white">{d.name}</span>
-              <span className="text-xs text-gray-400">
+              <Icon className="w-4 h-4 text-ink-4" />
+              <span className="font-medium text-ink">{d.name}</span>
+              <span className="text-xs text-ink-4">
                 {TYPE_LABEL[d.type]} · <span className="font-mono">{where}</span>
                 {d.type !== 'email' ? ` · keeps ${d.keep}` : ''}
               </span>
-              {!d.enabled && <span className="text-xs text-gray-400">(disabled)</span>}
+              {!d.enabled && <span className="text-xs text-ink-4">(disabled)</span>}
               <div className="ml-auto flex items-center gap-1">
                 <button
                   className="btn-secondary text-xs py-1"
@@ -853,7 +848,7 @@ function DestinationsCard({
                   )}
                 </button>
                 <button
-                  className="p-1.5 text-gray-400 hover:text-blue-500"
+                  className="p-1.5 text-ink-4 hover:text-accent"
                   title="Edit"
                   onClick={() =>
                     setModal({
@@ -870,7 +865,7 @@ function DestinationsCard({
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  className="p-1.5 text-gray-400 hover:text-red-500"
+                  className="p-1.5 text-ink-4 hover:text-bad"
                   title="Delete"
                   onClick={() => {
                     if (confirm(`Delete destination ${d.name}? Backups already there stay there.`))
@@ -932,12 +927,12 @@ function CompareView({ result, mode }: { result: PlatformBackupCompare; mode: 'c
       .filter(Boolean)
       .join(', ');
   return (
-    <div className="rounded-md border border-gray-200 dark:border-slate-700 p-3 space-y-2 max-h-72 overflow-y-auto">
-      <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">
+    <div className="rounded-md border border-line p-3 space-y-2 max-h-72 overflow-y-auto">
+      <p className="text-xs font-semibold text-ink-2 dark:text-ink">
         Restoring this backup would change:
       </p>
       {result.identical ? (
-        <p className="text-xs text-green-700 dark:text-green-400">
+        <p className="text-xs text-good">
           Nothing in the configuration: it matches this server
           {mode === 'full' && result.history.length ? ' (history differs, below)' : ''}.
         </p>
@@ -949,24 +944,24 @@ function CompareView({ result, mode }: { result: PlatformBackupCompare; mode: 'c
               className="flex items-center gap-1 w-full text-left hover:underline"
               onClick={() => setOpen(open === d.table ? null : d.table)}
             >
-              <span className="font-medium text-gray-800 dark:text-slate-200">{d.label}</span>
-              <span className="text-gray-500">{counts(d)}</span>
+              <span className="font-medium text-ink">{d.label}</span>
+              <span className="text-ink-3">{counts(d)}</span>
             </button>
             {open === d.table && (
-              <ul className="ml-3 mt-1 space-y-0.5 text-gray-600 dark:text-slate-400">
+              <ul className="ml-3 mt-1 space-y-0.5 text-ink-2">
                 {d.samples.added.map((r) => (
                   <li key={`a${r}`}>
-                    <span className="text-green-600">+</span> {r}
+                    <span className="text-good">+</span> {r}
                   </li>
                 ))}
                 {d.samples.removed.map((r) => (
                   <li key={`r${r}`}>
-                    <span className="text-red-600">−</span> {r}
+                    <span className="text-bad">−</span> {r}
                   </li>
                 ))}
                 {d.samples.changed.map((c) => (
                   <li key={`c${c.row}`}>
-                    <span className="text-amber-600">~</span> {c.row}: {c.fields.join(', ')}
+                    <span className="text-warn">~</span> {c.row}: {c.fields.join(', ')}
                   </li>
                 ))}
                 {d.added + d.removed + d.changed >
@@ -979,7 +974,7 @@ function CompareView({ result, mode }: { result: PlatformBackupCompare; mode: 'c
         ))
       )}
       {mode === 'full' && result.history.length > 0 && (
-        <div className="text-xs text-gray-500 dark:text-slate-400 pt-1 border-t border-gray-100 dark:border-slate-700">
+        <div className="text-xs text-ink-3 pt-1 border-t border-line-soft">
           History replaced too:{' '}
           {result.history
             .slice(0, 6)
@@ -989,13 +984,13 @@ function CompareView({ result, mode }: { result: PlatformBackupCompare; mode: 'c
         </div>
       )}
       {mode === 'config' && (
-        <p className="text-[11px] text-gray-400">
+        <p className="text-[11px] text-ink-4">
           Live state polling keeps up to date (status, versions, last seen) isn’t counted. Devices
           the backup doesn’t have go with their history.
         </p>
       )}
       {result.skippedTables.length > 0 && (
-        <p className="text-[11px] text-gray-400">
+        <p className="text-[11px] text-ink-4">
           Not restored here (this version doesn’t have them): {result.skippedTables.join(', ')}
         </p>
       )}
@@ -1048,29 +1043,25 @@ function RestoreDialog({
   });
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="card w-full max-w-lg mx-4 border-2 border-red-500">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
+      <div className="card w-full max-w-lg mx-4 border-2 border-bad">
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h3 className="text-lg font-semibold text-bad flex items-center gap-2">
             <RotateCcw className="w-5 h-5" /> Restore a platform backup
           </h3>
-          <button
-            onClick={onClose}
-            disabled={go.isPending}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} disabled={go.isPending} className="text-ink-4 hover:text-ink-2">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="p-5 space-y-4 text-sm">
           <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1">
-            <dt className="text-gray-500">Backup</dt>
+            <dt className="text-ink-3">Backup</dt>
             <dd className="font-mono text-xs break-all">{source.label}</dd>
-            <dt className="text-gray-500">Made</dt>
+            <dt className="text-ink-3">Made</dt>
             <dd>
               {new Date(source.header.created_at).toLocaleString()} by MikroTik Manager{' '}
               {source.header.app_version}
             </dd>
-            <dt className="text-gray-500">Holds</dt>
+            <dt className="text-ink-3">Holds</dt>
             <dd>{CONTENTS_LABEL[source.header.contents]}</dd>
           </dl>
           <div>
@@ -1095,7 +1086,7 @@ function RestoreDialog({
               <span>
                 <span className="font-medium">Configuration only</span>
                 <br />
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-ink-3">
                   Replaces devices, users, settings and the rest of the setup. History is kept for
                   devices that are in the backup; devices that aren’t are removed with their
                   history.
@@ -1118,14 +1109,14 @@ function RestoreDialog({
               <span>
                 <span className="font-medium">Everything</span>
                 <br />
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-ink-3">
                   Replaces the whole database with the backup, history included. Use this to move
                   MikroTik Manager to a new server.
                 </span>
               </span>
             </label>
           </div>
-          <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+          <div className="rounded-md bg-bad-bg border border-bad dark:border-bad p-3 text-xs text-bad dark:text-bad space-y-1">
             <p>
               The current state is backed up first (with this passphrase), so you can go back.
               MikroTik Manager then pauses, restores, and restarts; everyone is signed out.
@@ -1242,16 +1233,16 @@ function RestoreProgress({ initial }: { initial: PlatformRestoreState }) {
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div className="card w-full max-w-md mx-4 p-6 text-center space-y-4">
         {back ? (
-          <CheckCircle2 className="w-10 h-10 mx-auto text-green-500" />
+          <CheckCircle2 className="w-10 h-10 mx-auto text-good" />
         ) : state.phase === 'failed' ? (
-          <XCircle className="w-10 h-10 mx-auto text-red-500" />
+          <XCircle className="w-10 h-10 mx-auto text-bad" />
         ) : (
-          <Loader2 className="w-10 h-10 mx-auto animate-spin text-blue-500" />
+          <Loader2 className="w-10 h-10 mx-auto animate-spin text-accent" />
         )}
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-ink">
           {back ? 'Restored' : state.phase === 'failed' ? 'The restore failed' : 'Restoring'}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-slate-300">
+        <p className="text-sm text-ink-2">
           {back
             ? 'MikroTik Manager is back with the restored data. Sign in again to continue.'
             : state.phase === 'failed'
@@ -1335,16 +1326,16 @@ export default function PlatformBackupSettings() {
     if (data?.restore && data.restore.phase !== 'idle' && !restoring) setRestoring(data.restore);
   }, [data?.restore, restoring]);
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
-  if (error || !data) return <div className="card p-5 text-sm text-red-500">{errText(error)}</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading…</div>;
+  if (error || !data) return <div className="card p-5 text-sm text-bad">{errText(error)}</div>;
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-ink flex items-center gap-2">
           <HardDrive className="w-5 h-5" /> Backup &amp; Restore
         </h2>
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <p className="text-sm text-ink-3">
           Backups of MikroTik Manager itself, to restore it here or move it to a new server. Device
           config backups and metrics aren’t included.
         </p>
@@ -1373,7 +1364,7 @@ export default function PlatformBackupSettings() {
 
       <div className="card p-5 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Backups</h3>
+          <h3 className="font-semibold text-ink">Backups</h3>
           <div className="flex items-center gap-2">
             <button className="btn-secondary text-sm flex items-center gap-1.5" onClick={refresh}>
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
@@ -1403,11 +1394,11 @@ export default function PlatformBackupSettings() {
           </div>
         </div>
         {data.backups.length === 0 ? (
-          <p className="text-sm text-gray-400">No platform backups yet.</p>
+          <p className="text-sm text-ink-4">No platform backups yet.</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700 text-left">
+              <tr className="border-b border-line text-left">
                 {['Made', 'What', 'How', 'Size', 'Result', ''].map((h) => (
                   <th key={h} className="table-header px-3 py-2">
                     {h}
@@ -1415,12 +1406,12 @@ export default function PlatformBackupSettings() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-line">
               {data.backups.map((b) => (
                 <tr key={b.id}>
                   <td className="px-3 py-2" title={b.file_name}>
                     {new Date(b.created_at).toLocaleString()}
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-ink-4">
                       {b.app_version}
                       {b.created_by ? ` · ${b.created_by}` : ''}
                     </div>
@@ -1432,18 +1423,18 @@ export default function PlatformBackupSettings() {
                   </td>
                   <td className="px-3 py-2">
                     {b.status === 'running' && (
-                      <span className="flex items-center gap-1 text-blue-600">
+                      <span className="flex items-center gap-1 text-accent">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" /> Running
                       </span>
                     )}
                     {b.status === 'failed' && (
-                      <span className="text-red-600" title={b.error ?? ''}>
+                      <span className="text-bad" title={b.error ?? ''}>
                         Failed: {b.error}
                       </span>
                     )}
                     {b.status === 'success' && (
                       <div className="flex flex-wrap gap-1">
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-good-bg text-good dark:bg-good-bg dark:text-good">
                           this server
                         </span>
                         {b.destinations.map((d) => (
@@ -1453,8 +1444,8 @@ export default function PlatformBackupSettings() {
                             className={clsx(
                               'px-1.5 py-0.5 rounded text-xs',
                               d.ok
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                                ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good'
+                                : 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad',
                             )}
                           >
                             {d.name}
@@ -1468,14 +1459,14 @@ export default function PlatformBackupSettings() {
                     {b.status === 'success' && (
                       <>
                         <button
-                          className="p-1.5 text-gray-400 hover:text-blue-500"
+                          className="p-1.5 text-ink-4 hover:text-accent"
                           title="Download"
                           onClick={() => void download(b)}
                         >
                           <Download className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          className="p-1.5 text-gray-400 hover:text-orange-500"
+                          className="p-1.5 text-ink-4 hover:text-warn"
                           title="Restore"
                           onClick={() =>
                             setRestoreFrom({
@@ -1496,7 +1487,7 @@ export default function PlatformBackupSettings() {
                     )}
                     {b.status !== 'running' && (
                       <button
-                        className="p-1.5 text-gray-400 hover:text-red-500"
+                        className="p-1.5 text-ink-4 hover:text-bad"
                         title="Delete"
                         onClick={() => {
                           if (

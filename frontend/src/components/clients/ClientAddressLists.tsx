@@ -169,7 +169,7 @@ export default function ClientAddressLists({
     >
       <div className="space-y-3 text-sm">
         <div className="flex items-center gap-2">
-          <span className="text-gray-500 dark:text-slate-400">On</span>
+          <span className="text-ink-3">On</span>
           <DevicePicker
             className="py-1 flex-1"
             devices={choices}
@@ -184,13 +184,13 @@ export default function ClientAddressLists({
             }}
           />
         </div>
-        <p className="text-xs text-gray-500 dark:text-slate-400">
+        <p className="text-xs text-ink-3">
           Address <span className="font-mono">{address}</span>. Tick the lists it should be in; an
           address can be in several.
         </p>
 
         {view?.lease && !view.lease.static && (
-          <div className="flex gap-2 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-800 dark:text-amber-300">
+          <div className="flex gap-2 p-2.5 rounded-lg border border-warn dark:border-warn bg-warn-bg text-xs text-warn dark:text-warn">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             <span>
               This is a dynamic DHCP lease on {deviceName}. If the client gets a different address,
@@ -200,16 +200,14 @@ export default function ClientAddressLists({
           </div>
         )}
 
-        {isLoading && <p className="text-gray-400">Reading address lists…</p>}
-        {isError && <p className="text-red-600 dark:text-red-400 text-xs">{errText(error)}</p>}
+        {isLoading && <p className="text-ink-4">Reading address lists…</p>}
+        {isError && <p className="text-bad text-xs">{errText(error)}</p>}
         {view && (
           <>
             {view.lists.length === 0 && (
-              <p className="text-xs text-gray-500 dark:text-slate-400">
-                No address lists on {deviceName} yet.
-              </p>
+              <p className="text-xs text-ink-3">No address lists on {deviceName} yet.</p>
             )}
-            <div className="rounded-lg border border-gray-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700 max-h-72 overflow-y-auto">
+            <div className="rounded-lg border border-line divide-y divide-line max-h-72 overflow-y-auto">
               {view.lists.map((list) => {
                 const m = view.member.find((x) => x.list === list);
                 const locked = !!m?.dynamic;
@@ -218,9 +216,7 @@ export default function ClientAddressLists({
                     key={list}
                     className={clsx(
                       'flex items-center gap-2 px-3 py-2',
-                      locked
-                        ? 'opacity-60'
-                        : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/30',
+                      locked ? 'opacity-60' : 'cursor-pointer hover:bg-surface-2/30',
                     )}
                     title={
                       locked
@@ -238,7 +234,7 @@ export default function ClientAddressLists({
                     <span className="font-mono text-xs flex-1">{list}</span>
                     {view.referenced.includes(list) && (
                       <span
-                        className="inline-flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-400"
+                        className="inline-flex items-center gap-1 text-[11px] text-warn"
                         title="A firewall rule matches on this list; Change Guard checks the change first"
                       >
                         <ShieldAlert className="w-3 h-3" />
@@ -246,7 +242,7 @@ export default function ClientAddressLists({
                       </span>
                     )}
                     {locked && (
-                      <span className="text-[11px] text-gray-400">
+                      <span className="text-[11px] text-ink-4">
                         dynamic{m?.timeout ? ` · ${m.timeout}` : ''}
                       </span>
                     )}
@@ -255,9 +251,7 @@ export default function ClientAddressLists({
               })}
             </div>
             <label className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-slate-400 flex-shrink-0">
-                Add to a new list
-              </span>
+              <span className="text-xs text-ink-3 flex-shrink-0">Add to a new list</span>
               <input
                 className="input py-1 text-xs font-mono flex-1"
                 value={newList}
@@ -279,7 +273,7 @@ export default function ClientAddressLists({
               </button>
               {dirty && !busy && (
                 <button
-                  className="text-sm text-gray-500 hover:underline"
+                  className="text-sm text-ink-3 hover:underline"
                   onClick={() => {
                     setWanted(null);
                     setNewList('');
@@ -292,15 +286,7 @@ export default function ClientAddressLists({
             {notes.length > 0 && (
               <div className="space-y-0.5">
                 {notes.map((n, i) => (
-                  <p
-                    key={i}
-                    className={clsx(
-                      'text-xs',
-                      n.ok
-                        ? 'text-green-700 dark:text-green-400'
-                        : 'text-amber-700 dark:text-amber-400',
-                    )}
-                  >
+                  <p key={i} className={clsx('text-xs', n.ok ? 'text-good' : 'text-warn')}>
                     {n.text}
                   </p>
                 ))}

@@ -40,11 +40,11 @@ const RANGES = ['1h', '6h', '24h', '7d', '30d'] as const;
 type Quality = NonNullable<LteInterface['quality']>;
 
 const QUALITY_STYLE: Record<Quality, string> = {
-  excellent: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-  good: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-  fair: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-  poor: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-  unknown: 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300',
+  excellent: 'bg-good-bg text-good dark:bg-good-bg dark:text-good',
+  good: 'bg-accent-soft text-accent dark:bg-accent-soft dark:text-accent',
+  fair: 'bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn',
+  poor: 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad',
+  unknown: 'bg-surface-3 text-ink-2 dark:bg-surface-3 dark:text-ink-2',
 };
 
 /**
@@ -92,15 +92,15 @@ function Metric({
   hint?: string;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3">
-      <div className="text-xs text-gray-500 dark:text-slate-400">{label}</div>
-      <div className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
+    <div className="rounded-lg border border-line p-3">
+      <div className="text-xs text-ink-3">{label}</div>
+      <div className="text-lg font-semibold text-ink tabular-nums">
         {value == null || value === '' ? '—' : value}
         {value != null && value !== '' && unit ? (
-          <span className="text-xs font-normal text-gray-500 dark:text-slate-400 ml-1">{unit}</span>
+          <span className="text-xs font-normal text-ink-3 ml-1">{unit}</span>
         ) : null}
       </div>
-      {hint && <div className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">{hint}</div>}
+      {hint && <div className="text-[11px] text-ink-3 mt-0.5">{hint}</div>}
     </div>
   );
 }
@@ -113,7 +113,7 @@ function BandChips({ iface }: { iface: LteInterface }) {
   ];
 
   if (carriers.length === 0) {
-    return <span className="text-sm text-gray-500 dark:text-slate-400">No band reported</span>;
+    return <span className="text-sm text-ink-3">No band reported</span>;
   }
 
   return (
@@ -123,19 +123,17 @@ function BandChips({ iface }: { iface: LteInterface }) {
           key={`${c.band}-${c.earfcn ?? i}`}
           className={`rounded-lg border px-3 py-1.5 ${
             c.primary
-              ? 'border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30'
-              : 'border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800'
+              ? 'border-accent bg-accent-soft dark:border-accent dark:bg-accent-soft'
+              : 'border-line bg-surface-2 dark:border-line dark:bg-surface-2'
           }`}
         >
           <div className="flex items-baseline gap-2">
-            <span className="font-semibold text-gray-900 dark:text-white">B{c.band}</span>
+            <span className="font-semibold text-ink">B{c.band}</span>
             {c.bandwidthMhz != null && (
-              <span className="text-xs text-gray-600 dark:text-slate-300">
-                {c.bandwidthMhz} MHz
-              </span>
+              <span className="text-xs text-ink-2">{c.bandwidthMhz} MHz</span>
             )}
           </div>
-          <div className="text-[11px] text-gray-500 dark:text-slate-400">
+          <div className="text-[11px] text-ink-3">
             {c.primary ? 'Primary' : 'Aggregated'}
             {c.earfcn != null && ` · EARFCN ${c.earfcn}`}
           </div>
@@ -165,7 +163,7 @@ function fmtDwell(seconds: number): string {
  */
 function DwellList({ rows, emptyText }: { rows: LteDwellTotal[]; emptyText: string }) {
   if (rows.length === 0) {
-    return <p className="text-xs text-gray-500 dark:text-slate-400">{emptyText}</p>;
+    return <p className="text-xs text-ink-3">{emptyText}</p>;
   }
   const widest = Math.max(...rows.map((r) => r.seconds), 1);
   return (
@@ -173,19 +171,19 @@ function DwellList({ rows, emptyText }: { rows: LteDwellTotal[]; emptyText: stri
       {rows.map((r) => (
         <li key={r.key}>
           <div className="flex items-baseline justify-between gap-2 text-xs">
-            <span className="font-medium text-gray-900 dark:text-white truncate">{r.label}</span>
-            <span className="tabular-nums text-gray-600 dark:text-slate-300 shrink-0">
+            <span className="font-medium text-ink truncate">{r.label}</span>
+            <span className="tabular-nums text-ink-2 shrink-0">
               {fmtDwell(r.seconds)} · {r.pct}%
             </span>
           </div>
-          <div className="mt-0.5 h-1.5 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
+          <div className="mt-0.5 h-1.5 rounded-full bg-surface-3 overflow-hidden">
             <div
-              className="h-full rounded-full bg-blue-500"
+              className="h-full rounded-full bg-accent"
               style={{ width: `${Math.max(2, (r.seconds / widest) * 100)}%` }}
             />
           </div>
           {/* Six brief visits and one long stay are different situations. */}
-          <div className="mt-0.5 text-[11px] text-gray-400 dark:text-slate-500">
+          <div className="mt-0.5 text-[11px] text-ink-3">
             {r.visits} {r.visits === 1 ? 'stretch' : 'stretches'}
           </div>
         </li>
@@ -209,7 +207,7 @@ const EVENT_LABEL = {
 function HistoryList({ events }: { events: LteHistoryEvent[] }) {
   if (events.length === 0) {
     return (
-      <p className="text-sm text-gray-500 dark:text-slate-400">
+      <p className="text-sm text-ink-3">
         No tower or band changes recorded in this window — a stable link looks exactly like this.
       </p>
     );
@@ -220,20 +218,13 @@ function HistoryList({ events }: { events: LteHistoryEvent[] }) {
         const Icon = EVENT_ICON[e.kind] ?? Radio;
         return (
           <li key={i} className="flex gap-3 text-sm">
-            <Icon className="w-4 h-4 mt-0.5 shrink-0 text-gray-400 dark:text-slate-500" />
+            <Icon className="w-4 h-4 mt-0.5 shrink-0 text-ink-3" />
             <div className="min-w-0">
-              <span className="font-medium text-gray-900 dark:text-white">
-                {EVENT_LABEL[e.kind] ?? e.kind}
-              </span>
-              <span className="text-gray-500 dark:text-slate-400">
-                {' '}
-                · {formatTime(e.at, false)}
-              </span>
-              {e.detail && (
-                <div className="text-gray-600 dark:text-slate-300 break-words">{e.detail}</div>
-              )}
+              <span className="font-medium text-ink">{EVENT_LABEL[e.kind] ?? e.kind}</span>
+              <span className="text-ink-3"> · {formatTime(e.at, false)}</span>
+              {e.detail && <div className="text-ink-2 break-words">{e.detail}</div>}
               {(e.rsrp != null || e.sinr != null) && (
-                <div className="text-[11px] text-gray-400 dark:text-slate-500">
+                <div className="text-[11px] text-ink-3">
                   {e.rsrp != null && `RSRP ${e.rsrp} dBm`}
                   {e.rsrp != null && e.sinr != null && ' · '}
                   {e.sinr != null && `SINR ${e.sinr} dB`}
@@ -291,13 +282,13 @@ export default function LteTab({ deviceId }: Props) {
   });
 
   if (isLoading) {
-    return <div className="text-sm text-gray-500 dark:text-slate-400">Loading cellular state…</div>;
+    return <div className="text-sm text-ink-3">Loading cellular state…</div>;
   }
 
   const interfaces = state?.interfaces ?? [];
   if (interfaces.length === 0) {
     return (
-      <div className="text-sm text-gray-500 dark:text-slate-400">
+      <div className="text-sm text-ink-3">
         No cellular data yet. It appears after the next poll of an LTE interface.
       </div>
     );
@@ -323,40 +314,38 @@ export default function LteTab({ deviceId }: Props) {
         return (
           <div
             key={iface.interface_name}
-            className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 space-y-4"
+            className="bg-surface rounded-lg border border-line p-4 space-y-4"
           >
             {/* Header: what the link is doing, in words before numbers */}
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-start gap-3">
-                <Signal className="w-5 h-5 mt-1 text-gray-400 dark:text-slate-500" />
+                <Signal className="w-5 h-5 mt-1 text-ink-3" />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      {iface.interface_name}
-                    </h3>
+                    <h3 className="font-semibold text-ink">{iface.interface_name}</h3>
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${QUALITY_STYLE[quality]}`}
                     >
                       {connected ? quality : 'not connected'}
                     </span>
                     {carriers > 1 && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-violet-bg text-violet dark:bg-violet-bg dark:text-violet">
                         {carriers}× carrier aggregation
                         {iface.total_bandwidth_mhz > 0 && ` · ${iface.total_bandwidth_mhz} MHz`}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-slate-300 mt-0.5">
+                  <p className="text-sm text-ink-2 mt-0.5">
                     {connected ? QUALITY_TEXT[quality] : 'The modem is not attached to a network.'}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  <p className="text-xs text-ink-3 mt-1">
                     {[iface.operator, iface.data_class, iface.modem_model]
                       .filter(Boolean)
                       .join(' · ') || 'Modem details not reported'}
                   </p>
                 </div>
               </div>
-              <div className="text-right text-xs text-gray-500 dark:text-slate-400">
+              <div className="text-right text-xs text-ink-3">
                 <div>Session up {formatUptime(uptime)}</div>
                 <div>Updated {formatTime(iface.updated_at, true)}</div>
               </div>
@@ -383,21 +372,19 @@ export default function LteTab({ deviceId }: Props) {
             {/* Bands */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <RadioTower className="w-4 h-4 text-gray-400 dark:text-slate-500" />
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                  Carriers in use
-                </h4>
+                <RadioTower className="w-4 h-4 text-ink-3" />
+                <h4 className="text-sm font-medium text-ink">Carriers in use</h4>
               </div>
               <BandChips iface={iface} />
 
               {iface.uplink_anchor && (
-                <div className="mt-3 flex gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-700/60 dark:bg-amber-900/20">
-                  <ArrowUpFromLine className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div className="mt-3 flex gap-2 rounded-lg border border-warn bg-warn-bg p-3 dark:border-warn dark:bg-warn-bg">
+                  <ArrowUpFromLine className="mt-0.5 h-4 w-4 shrink-0 text-warn" />
                   <div className="text-xs">
-                    <div className="font-medium text-amber-900 dark:text-amber-200">
+                    <div className="font-medium text-warn dark:text-warn">
                       Upload is limited by the primary carrier
                     </div>
-                    <p className="mt-0.5 text-amber-800 dark:text-amber-300">
+                    <p className="mt-0.5 text-warn dark:text-warn">
                       The uplink runs on B{iface.uplink_anchor.primaryBand} alone at{' '}
                       {iface.uplink_anchor.primaryMhz} MHz, while B{iface.uplink_anchor.widestBand}{' '}
                       is being aggregated at {iface.uplink_anchor.widestMhz} MHz for download. Left
@@ -411,20 +398,16 @@ export default function LteTab({ deviceId }: Props) {
 
               <div className="mt-3 grid sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-gray-500 dark:text-slate-400">
-                    Allowed by configuration:{' '}
-                  </span>
-                  <span className="text-gray-900 dark:text-white font-medium">
+                  <span className="text-ink-3">Allowed by configuration: </span>
+                  <span className="text-ink font-medium">
                     {iface.allowed_bands.length > 0
                       ? iface.allowed_bands.map((b) => `B${b}`).join(', ')
                       : 'Any (modem chooses)'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-slate-400">
-                    Seen serving this device:{' '}
-                  </span>
-                  <span className="text-gray-900 dark:text-white font-medium">
+                  <span className="text-ink-3">Seen serving this device: </span>
+                  <span className="text-ink font-medium">
                     {iface.observed_bands.length > 0
                       ? iface.observed_bands.map((o) => `B${o.band}`).join(', ')
                       : 'Nothing recorded yet'}
@@ -432,7 +415,7 @@ export default function LteTab({ deviceId }: Props) {
                 </div>
               </div>
               {iface.observed_bands.length > 0 && (
-                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
+                <p className="text-[11px] text-ink-3 mt-1">
                   Observed bands accumulate from polling. They are the evidence a future band lock
                   will be checked against — scanning costs service to run and comes back empty where
                   a site has only one base station, so history is the safer source.
@@ -462,7 +445,7 @@ export default function LteTab({ deviceId }: Props) {
 
       {modemNames.length > 1 && (
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-gray-500 dark:text-slate-400">Graphs and history for</span>
+          <span className="text-ink-3">Graphs and history for</span>
           <select
             className="input py-1 text-sm w-auto"
             value={activeModem}
@@ -478,9 +461,9 @@ export default function LteTab({ deviceId }: Props) {
       )}
 
       {/* Signal over time */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
+      <div className="bg-surface rounded-lg border border-line p-4">
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Signal over time</h3>
+          <h3 className="font-semibold text-ink">Signal over time</h3>
           <div className="flex gap-1">
             {RANGES.map((r) => (
               <button
@@ -488,8 +471,8 @@ export default function LteTab({ deviceId }: Props) {
                 onClick={() => setRange(r)}
                 className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
                   range === r
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+                    ? 'bg-accent text-accent-fg'
+                    : 'bg-surface-3 text-ink-2 hover:bg-surface-3 dark:hover:bg-surface-3'
                 }`}
               >
                 {r}
@@ -499,9 +482,7 @@ export default function LteTab({ deviceId }: Props) {
         </div>
 
         {chartData.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-slate-400">
-            No samples in this window yet.
-          </p>
+          <p className="text-sm text-ink-3">No samples in this window yet.</p>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={chartData}>
@@ -573,15 +554,13 @@ export default function LteTab({ deviceId }: Props) {
       </div>
 
       {/* Where the link actually spends its time */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4">
+      <div className="bg-surface rounded-lg border border-line p-4">
         <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
           <div className="flex items-start gap-3">
-            <Clock className="w-5 h-5 mt-0.5 text-gray-400 dark:text-slate-500" />
+            <Clock className="w-5 h-5 mt-0.5 text-ink-3" />
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Where this link spends its time
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+              <h3 className="font-semibold text-ink">Where this link spends its time</h3>
+              <p className="text-xs text-ink-3 mt-0.5">
                 Reconstructed from handovers and band changes. Aggregated carriers each count for
                 the whole stretch, so band shares describe usage rather than dividing the window.
               </p>
@@ -594,8 +573,8 @@ export default function LteTab({ deviceId }: Props) {
                 onClick={() => setDwellRange(r)}
                 className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
                   dwellRange === r
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+                    ? 'bg-accent text-accent-fg'
+                    : 'bg-surface-3 text-ink-2 hover:bg-surface-3 dark:hover:bg-surface-3'
                 }`}
               >
                 {r}
@@ -605,7 +584,7 @@ export default function LteTab({ deviceId }: Props) {
         </div>
 
         {dwell && dwell.truncated && (
-          <p className="mb-3 text-[11px] text-amber-700 dark:text-amber-400">
+          <p className="mb-3 text-[11px] text-warn">
             Records only begin {new Date(dwell.earliest_record!).toLocaleDateString()}, so this
             covers less than the full {dwellRange}.
           </p>
@@ -613,14 +592,14 @@ export default function LteTab({ deviceId }: Props) {
 
         <div className="grid sm:grid-cols-2 gap-6">
           <div>
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">By band</h4>
+            <h4 className="text-sm font-medium text-ink mb-2">By band</h4>
             <DwellList
               rows={dwell?.bands ?? []}
               emptyText="No band changes recorded yet — the modem has stayed on one set of carriers."
             />
           </div>
           <div>
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">By cell</h4>
+            <h4 className="text-sm font-medium text-ink mb-2">By cell</h4>
             <DwellList
               rows={dwell?.cells ?? []}
               emptyText="No handovers recorded yet — the modem has stayed on one cell."
@@ -632,7 +611,7 @@ export default function LteTab({ deviceId }: Props) {
             made it hard to read as the primary view. */}
         <button
           onClick={() => setShowEvents((v) => !v)}
-          className="mt-4 flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white"
+          className="mt-4 flex items-center gap-1.5 text-xs text-ink-2 hover:text-ink dark:hover:text-white"
         >
           {showEvents ? (
             <ChevronDown className="w-3.5 h-3.5" />
@@ -643,8 +622,8 @@ export default function LteTab({ deviceId }: Props) {
           {dwell ? ` (${dwell.changes} in ${dwellRange})` : ''}
         </button>
         {showEvents && (
-          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
-            <p className="text-xs text-gray-500 dark:text-slate-400 mb-2">
+          <div className="mt-3 pt-3 border-t border-line-soft">
+            <p className="text-xs text-ink-3 mb-2">
               A session uptime that runs backwards means the modem re-registered; a changed cell
               means it handed over.
             </p>

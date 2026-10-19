@@ -55,11 +55,11 @@ function formatBytes(bytes: number): string {
 }
 
 function signalColor(dbm: number | null): string {
-  if (dbm === null) return 'text-gray-400 dark:text-slate-500';
-  if (dbm >= -55) return 'text-green-600 dark:text-green-400';
-  if (dbm >= -65) return 'text-lime-600 dark:text-lime-400';
-  if (dbm >= -75) return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-red-500 dark:text-red-400';
+  if (dbm === null) return 'text-ink-3';
+  if (dbm >= -55) return 'text-good';
+  if (dbm >= -65) return 'text-good dark:text-good';
+  if (dbm >= -75) return 'text-warn';
+  return 'text-bad';
 }
 
 function signalLabel(dbm: number | null): string {
@@ -100,17 +100,17 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
     <div className="card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-800 dark:text-white">Connectivity</h2>
+          <Clock className="w-4 h-4 text-ink-4" />
+          <h2 className="text-sm font-semibold text-ink dark:text-white">Connectivity</h2>
           {uptimePct !== null && (
             <span
               className={clsx(
                 'text-xs font-medium px-1.5 py-0.5 rounded',
                 uptimePct >= 90
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  ? 'bg-good-bg text-good'
                   : uptimePct >= 70
-                    ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+                    ? 'bg-warn-bg dark:bg-warn-bg text-warn dark:text-warn'
+                    : 'bg-bad-bg text-bad dark:text-bad',
               )}
             >
               {uptimePct}% uptime
@@ -124,9 +124,7 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
               onClick={() => setRange(r.value)}
               className={clsx(
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
-                range === r.value
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
+                range === r.value ? 'bg-accent text-accent-fg' : 'text-ink-3 hover:bg-surface-3',
               )}
             >
               {r.label}
@@ -136,9 +134,9 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
       </div>
 
       {isLoading ? (
-        <div className="h-8 bg-gray-100 dark:bg-slate-700 rounded animate-pulse" />
+        <div className="h-8 bg-surface-3 rounded animate-pulse" />
       ) : points.length === 0 ? (
-        <div className="h-8 flex items-center justify-center text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-800 rounded">
+        <div className="h-8 flex items-center justify-center text-xs text-ink-3 bg-surface-2 rounded">
           No presence data yet — data accumulates as the client is polled
         </div>
       ) : (
@@ -150,12 +148,12 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
                 title={`${format(parseISO(p.time), 'MMM d HH:mm')} — ${p.online ? 'Online' : 'Offline'}`}
                 className={clsx(
                   'flex-1 transition-colors',
-                  p.online ? 'bg-green-500 dark:bg-green-600' : 'bg-gray-200 dark:bg-slate-700',
+                  p.online ? 'bg-good dark:bg-good' : 'bg-surface-3 dark:bg-surface-3',
                 )}
               />
             ))}
           </div>
-          <div className="flex justify-between text-[10px] text-gray-400 dark:text-slate-500">
+          <div className="flex justify-between text-[10px] text-ink-3">
             <span>
               {points.length > 0
                 ? format(parseISO(points[0].time), range === '7d' ? 'MMM d' : 'HH:mm')
@@ -163,13 +161,13 @@ function ConnectivityTimeline({ mac }: { mac: string }) {
             </span>
             <span>now</span>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-gray-500 dark:text-slate-400">
+          <div className="flex items-center gap-3 text-[10px] text-ink-3">
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm bg-green-500 inline-block" />
+              <span className="w-2 h-2 rounded-sm bg-good inline-block" />
               Online
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm bg-gray-200 dark:bg-slate-700 inline-block" />
+              <span className="w-2 h-2 rounded-sm bg-surface-3 dark:bg-surface-3 inline-block" />
               Offline
             </span>
           </div>
@@ -192,8 +190,8 @@ function ConnectionDiagram({ client }: { client: ClientDetail }) {
 
   return (
     <div className="card p-4 space-y-3">
-      <h2 className="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-        <Activity className="w-4 h-4 text-gray-400" />
+      <h2 className="text-sm font-semibold text-ink dark:text-white flex items-center gap-2">
+        <Activity className="w-4 h-4 text-ink-4" />
         Connection Path
       </h2>
 
@@ -203,64 +201,53 @@ function ConnectionDiagram({ client }: { client: ClientDetail }) {
           <div
             className={clsx(
               'w-10 h-10 rounded-xl flex items-center justify-center',
-              client.active ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-slate-700',
+              client.active ? 'bg-good-bg' : 'bg-surface-3',
             )}
           >
-            <ClientIcon
-              className={clsx(
-                'w-5 h-5',
-                client.active ? 'text-green-600 dark:text-green-400' : 'text-gray-400',
-              )}
-            />
+            <ClientIcon className={clsx('w-5 h-5', client.active ? 'text-good' : 'text-ink-4')} />
           </div>
-          <span className="text-[11px] text-center text-gray-700 dark:text-slate-300 font-medium max-w-[90px] truncate">
+          <span className="text-[11px] text-center text-ink-2 font-medium max-w-[90px] truncate">
             {clientName}
           </span>
           {client.ip_address && (
-            <span className="text-[10px] font-mono text-gray-400 dark:text-slate-500">
-              {client.ip_address}
-            </span>
+            <span className="text-[10px] font-mono text-ink-3">{client.ip_address}</span>
           )}
         </div>
 
         {/* Arrow */}
-        <ChevronRight className="w-4 h-4 text-gray-300 dark:text-slate-600 flex-shrink-0" />
+        <ChevronRight className="w-4 h-4 text-ink-4 flex-shrink-0" />
 
         {/* Connected device (AP/switch) */}
         <div className="flex flex-col items-center gap-1 min-w-[80px]">
-          <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-accent-soft dark:bg-accent-soft flex items-center justify-center">
             {/* eslint-disable-next-line react-hooks/static-components */}
-            <DeviceIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <DeviceIcon className="w-5 h-5 text-accent" />
           </div>
-          <span className="text-[11px] text-center text-gray-700 dark:text-slate-300 font-medium max-w-[90px] truncate">
+          <span className="text-[11px] text-center text-ink-2 font-medium max-w-[90px] truncate">
             {client.device_name || 'Unknown'}
           </span>
           {client.ssid && (
-            <span className="text-[10px] text-blue-500 dark:text-blue-400 font-medium">
-              {client.ssid}
-            </span>
+            <span className="text-[10px] text-accent font-medium">{client.ssid}</span>
           )}
           {client.interface_name && !client.ssid && (
-            <span className="text-[10px] font-mono text-gray-400 dark:text-slate-500">
-              {client.interface_name}
-            </span>
+            <span className="text-[10px] font-mono text-ink-3">{client.interface_name}</span>
           )}
         </div>
 
         {/* Upstream device (if known) */}
         {client.upstream_device_name && (
           <>
-            <ChevronRight className="w-4 h-4 text-gray-300 dark:text-slate-600 flex-shrink-0" />
+            <ChevronRight className="w-4 h-4 text-ink-4 flex-shrink-0" />
             <div className="flex flex-col items-center gap-1 min-w-[80px]">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-violet-bg dark:bg-violet-bg flex items-center justify-center">
                 {/* eslint-disable-next-line react-hooks/static-components */}
-                <UpstreamIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <UpstreamIcon className="w-5 h-5 text-violet dark:text-violet" />
               </div>
-              <span className="text-[11px] text-center text-gray-700 dark:text-slate-300 font-medium max-w-[90px] truncate">
+              <span className="text-[11px] text-center text-ink-2 font-medium max-w-[90px] truncate">
                 {client.upstream_device_name}
               </span>
               {client.upstream_device_ip && (
-                <span className="text-[10px] font-mono text-gray-400 dark:text-slate-500">
+                <span className="text-[10px] font-mono text-ink-3">
                   {client.upstream_device_ip}
                 </span>
               )}
@@ -276,9 +263,9 @@ function ConnectionDiagram({ client }: { client: ClientDetail }) {
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 dark:border-slate-700/50 last:border-0">
-      <span className="text-xs text-gray-500 dark:text-slate-400 shrink-0 pt-0.5">{label}</span>
-      <div className="text-xs text-gray-800 dark:text-slate-200 text-right">{children}</div>
+    <div className="flex items-start justify-between gap-4 py-2 border-b border-line-soft/50 last:border-0">
+      <span className="text-xs text-ink-3 shrink-0 pt-0.5">{label}</span>
+      <div className="text-xs text-ink text-right">{children}</div>
     </div>
   );
 }
@@ -319,21 +306,19 @@ function LimitBandwidth({ deviceId, ip, name }: { deviceId: number; ip: string; 
   return (
     <div className="pt-1">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
-          Bandwidth limit
-        </span>
+        <span className="text-xs font-medium text-ink-2">Bandwidth limit</span>
       </div>
       {!open ? (
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-good-bg dark:bg-good-bg text-good dark:text-good hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
         >
           <Gauge className="w-3.5 h-3.5" /> Limit this client
         </button>
       ) : (
-        <div className="space-y-2 border border-emerald-200 dark:border-emerald-800 rounded-lg p-2.5">
+        <div className="space-y-2 border border-good dark:border-good rounded-lg p-2.5">
           <div className="grid grid-cols-2 gap-2">
-            <label className="text-[10px] text-gray-500 dark:text-slate-400">
+            <label className="text-[10px] text-ink-3">
               Upload
               <input
                 className="input font-mono mt-0.5 py-1 text-xs"
@@ -342,7 +327,7 @@ function LimitBandwidth({ deviceId, ip, name }: { deviceId: number; ip: string; 
                 placeholder="10M"
               />
             </label>
-            <label className="text-[10px] text-gray-500 dark:text-slate-400">
+            <label className="text-[10px] text-ink-3">
               Download
               <input
                 className="input font-mono mt-0.5 py-1 text-xs"
@@ -353,12 +338,12 @@ function LimitBandwidth({ deviceId, ip, name }: { deviceId: number; ip: string; 
             </label>
           </div>
           <FastTrackNote deviceId={deviceId} compact />
-          {error && <p className="text-[10px] text-red-500">{error}</p>}
+          {error && <p className="text-[10px] text-bad">{error}</p>}
           <div className="flex items-center gap-2">
             <button
               onClick={apply}
               disabled={status === 'saving'}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-good text-white hover:bg-emerald-700 disabled:opacity-50"
             >
               {status === 'done' ? (
                 <>
@@ -376,12 +361,12 @@ function LimitBandwidth({ deviceId, ip, name }: { deviceId: number; ip: string; 
                 setStatus('idle');
                 setError('');
               }}
-              className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-slate-300"
+              className="text-xs text-ink-3 hover:text-ink-2 dark:hover:text-ink-2"
             >
               Cancel
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 dark:text-slate-500">
+          <p className="text-[10px] text-ink-3">
             Creates a simple queue on the device for <span className="font-mono">{ip}</span>. Manage
             it later under the device&apos;s Bandwidth tab.
           </p>
@@ -445,19 +430,19 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
 
   return (
     <div className="card p-4 space-y-4">
-      <h2 className="text-sm font-semibold text-gray-800 dark:text-white">Client Details</h2>
+      <h2 className="text-sm font-semibold text-ink dark:text-white">Client Details</h2>
 
       <div className="space-y-0">
         {/* Editable name row */}
-        <div className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 dark:border-slate-700/50">
-          <span className="text-xs text-gray-500 dark:text-slate-400 shrink-0 pt-0.5">Name</span>
+        <div className="flex items-start justify-between gap-4 py-2 border-b border-line-soft/50">
+          <span className="text-xs text-ink-3 shrink-0 pt-0.5">Name</span>
           <div className="flex-1 flex items-center justify-end gap-1 min-w-0">
             {editingName ? (
               <>
                 <input
                   autoFocus
                   type="text"
-                  className="flex-1 min-w-0 rounded border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-gray-800 dark:text-slate-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 min-w-0 rounded border border-line bg-surface text-xs text-ink px-2 py-1 focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder={client.hostname || 'e.g. Office Printer'}
                   value={nameValue}
                   onChange={(e) => setNameValue(e.target.value)}
@@ -469,7 +454,7 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
                 <button
                   onClick={() => nameMutation.mutate()}
                   disabled={nameMutation.isPending}
-                  className="p-1 rounded text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                  className="p-1 rounded text-accent hover:bg-accent-soft dark:hover:bg-accent-soft"
                   title="Save"
                 >
                   <Save className="w-3.5 h-3.5" />
@@ -479,7 +464,7 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
                     setEditingName(false);
                     setNameValue(client.custom_name || '');
                   }}
-                  className="p-1 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  className="p-1 rounded text-ink-4 hover:bg-surface-3"
                   title="Cancel"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -487,18 +472,18 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
               </>
             ) : (
               <>
-                <span className="text-xs text-gray-800 dark:text-slate-200 truncate">
+                <span className="text-xs text-ink truncate">
                   {client.custom_name || client.hostname || (
-                    <span className="italic text-gray-400 dark:text-slate-500">No name</span>
+                    <span className="italic text-ink-3">No name</span>
                   )}
                   {client.custom_name && (
-                    <span className="ml-1.5 text-[10px] text-blue-500">custom</span>
+                    <span className="ml-1.5 text-[10px] text-accent">custom</span>
                   )}
                 </span>
                 {canWrite && (
                   <button
                     onClick={() => setEditingName(true)}
-                    className="p-1 rounded text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 flex-shrink-0"
+                    className="p-1 rounded text-ink-4 hover:text-ink-3 dark:hover:text-ink-3 hover:bg-surface-3 flex-shrink-0"
                     title="Edit name"
                   >
                     <Pencil className="w-3 h-3" />
@@ -508,23 +493,19 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
             )}
           </div>
         </div>
-        {nameMutation.isError && (
-          <p className="text-[11px] text-red-500 pb-1">Failed to save name.</p>
-        )}
+        {nameMutation.isError && <p className="text-[11px] text-bad pb-1">Failed to save name.</p>}
 
         <DetailRow label="Status">
           <span
             className={clsx(
               'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium',
-              client.active
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
+              client.active ? 'bg-good-bg text-good' : 'bg-surface-3 text-ink-3',
             )}
           >
             <span
               className={clsx(
                 'w-1.5 h-1.5 rounded-full',
-                client.active ? 'bg-green-500' : 'bg-gray-400',
+                client.active ? 'bg-good' : 'bg-surface-3',
               )}
             />
             {client.active ? 'Online' : 'Offline'}
@@ -538,7 +519,7 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
             <button
               type="button"
               onClick={() => setListsOpen(true)}
-              className="ml-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              className="ml-2 text-xs text-accent hover:underline"
             >
               Address lists
             </button>
@@ -585,13 +566,13 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
             )}
             {client.custom_category && (
               <span
-                className="text-xs px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex-shrink-0"
+                className="text-xs px-1.5 py-0.5 rounded bg-accent-soft dark:bg-accent-soft text-accent flex-shrink-0"
                 title={`Auto-detected as: ${CATEGORY_META[client.auto_category ?? 'unknown']?.label ?? 'Unknown'}`}
               >
                 manual
               </span>
             )}
-            {categoryMutation.isPending && <span className="text-xs text-gray-400">saving…</span>}
+            {categoryMutation.isPending && <span className="text-xs text-ink-4">saving…</span>}
           </div>
         </DetailRow>
 
@@ -599,9 +580,7 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
           <span
             className={clsx(
               'capitalize',
-              client.client_type === 'wireless'
-                ? 'text-purple-600 dark:text-purple-400'
-                : 'text-blue-600 dark:text-blue-400',
+              client.client_type === 'wireless' ? 'text-violet dark:text-violet' : 'text-accent',
             )}
           >
             {client.client_type || '—'}
@@ -632,9 +611,7 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
             <span className="font-mono">
               {client.vlan_id}
               {client.vlan_name && (
-                <span className="ml-1.5 font-sans text-gray-500 dark:text-slate-400">
-                  ({client.vlan_name})
-                </span>
+                <span className="ml-1.5 font-sans text-ink-3">({client.vlan_name})</span>
               )}
             </span>
           </DetailRow>
@@ -657,9 +634,7 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
       {canWrite && (
         <div className="pt-1">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
-              Wake on LAN
-            </span>
+            <span className="text-xs font-medium text-ink-2">Wake on LAN</span>
           </div>
           <button
             onClick={handleWol}
@@ -667,10 +642,10 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
             className={clsx(
               'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
               wolStatus === 'sent'
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                ? 'bg-good-bg text-good'
                 : wolStatus === 'error'
-                  ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50',
+                  ? 'bg-bad-bg text-bad dark:text-bad'
+                  : 'bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent hover:bg-accent-soft dark:hover:bg-blue-900/50',
             )}
           >
             <Power className="w-3.5 h-3.5" />
@@ -682,7 +657,7 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
                   ? 'Failed to send'
                   : 'Send magic packet'}
           </button>
-          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-1">
+          <p className="text-[10px] text-ink-3 mt-1">
             Sends a UDP broadcast magic packet to wake this client.
           </p>
         </div>
@@ -699,14 +674,12 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
 
       {/* Notes */}
       <div className="pt-1">
-        <label className="text-xs font-medium text-gray-700 dark:text-slate-300 block mb-1.5">
-          Notes
-        </label>
+        <label className="text-xs font-medium text-ink-2 block mb-1.5">Notes</label>
         <textarea
           rows={3}
           readOnly={!canWrite}
           className={clsx(
-            'w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs text-gray-800 dark:text-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300 dark:placeholder-slate-600',
+            'w-full rounded-lg border border-line bg-surface text-xs text-ink px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-accent placeholder-gray-300 dark:placeholder-slate-600',
             !canWrite && 'opacity-60 cursor-not-allowed',
           )}
           placeholder={canWrite ? 'Add notes about this client…' : 'No notes'}
@@ -722,14 +695,14 @@ function ClientDetailsCard({ client, canWrite }: { client: ClientDetail; canWrit
           <button
             onClick={() => notesMutation.mutate()}
             disabled={notesMutation.isPending}
-            className="mt-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            className="mt-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-accent text-accent-fg hover:bg-accent transition-colors"
           >
             <Save className="w-3.5 h-3.5" />
             {notesMutation.isPending ? 'Saving…' : 'Save notes'}
           </button>
         )}
         {notesMutation.isError && (
-          <p className="mt-1 text-[11px] text-red-500">Failed to save notes.</p>
+          <p className="mt-1 text-[11px] text-bad">Failed to save notes.</p>
         )}
       </div>
     </div>
@@ -763,8 +736,8 @@ function TrafficCard({ mac }: { mac: string }) {
   return (
     <div className="card p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-          <Activity className="w-4 h-4 text-gray-400" />
+        <h2 className="text-sm font-semibold text-ink dark:text-white flex items-center gap-2">
+          <Activity className="w-4 h-4 text-ink-4" />
           Wireless Usage
         </h2>
         <div className="flex gap-1">
@@ -774,9 +747,7 @@ function TrafficCard({ mac }: { mac: string }) {
               onClick={() => setRange(r.value)}
               className={clsx(
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
-                range === r.value
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
+                range === r.value ? 'bg-accent text-accent-fg' : 'text-ink-3 hover:bg-surface-3',
               )}
             >
               {r.label}
@@ -786,9 +757,9 @@ function TrafficCard({ mac }: { mac: string }) {
       </div>
 
       {isLoading ? (
-        <div className="h-48 bg-gray-100 dark:bg-slate-700/40 rounded animate-pulse" />
+        <div className="h-48 bg-surface-3/40 rounded animate-pulse" />
       ) : chartData.length === 0 ? (
-        <div className="h-48 flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-slate-500 text-xs bg-gray-50 dark:bg-slate-800/50 rounded">
+        <div className="h-48 flex flex-col items-center justify-center gap-2 text-ink-3 text-xs bg-surface-2/50 rounded">
           <Activity className="w-6 h-6 opacity-30" />
           No traffic data yet for this range
         </div>
@@ -799,13 +770,13 @@ function TrafficCard({ mac }: { mac: string }) {
             <XAxis
               dataKey="label"
               tick={{ fontSize: 10, fill: 'currentColor' }}
-              className="text-gray-400 dark:text-slate-500"
+              className="text-ink-3"
               interval="preserveStartEnd"
             />
             <YAxis
               tickFormatter={(v) => formatBytes(v)}
               tick={{ fontSize: 10, fill: 'currentColor' }}
-              className="text-gray-400 dark:text-slate-500"
+              className="text-ink-3"
               width={60}
             />
             <Tooltip
@@ -899,10 +870,10 @@ function AppTrafficCard({ mac }: { mac: string }) {
   return (
     <div className="card p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-          <Activity className="w-4 h-4 text-gray-400" />
+        <h2 className="text-sm font-semibold text-ink dark:text-white flex items-center gap-2">
+          <Activity className="w-4 h-4 text-ink-4" />
           App Traffic
-          <span className="text-xs font-normal text-gray-400 dark:text-slate-500">(NetFlow)</span>
+          <span className="text-xs font-normal text-ink-3">(NetFlow)</span>
         </h2>
         <div className="flex gap-1">
           {ranges.map((r) => (
@@ -911,9 +882,7 @@ function AppTrafficCard({ mac }: { mac: string }) {
               onClick={() => setRange(r.value)}
               className={clsx(
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
-                range === r.value
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
+                range === r.value ? 'bg-accent text-accent-fg' : 'text-ink-3 hover:bg-surface-3',
               )}
             >
               {r.label}
@@ -923,9 +892,9 @@ function AppTrafficCard({ mac }: { mac: string }) {
       </div>
 
       {isLoading ? (
-        <div className="h-48 bg-gray-100 dark:bg-slate-700/40 rounded animate-pulse" />
+        <div className="h-48 bg-surface-3/40 rounded animate-pulse" />
       ) : chartData.length === 0 && apps.length === 0 ? (
-        <div className="h-48 flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-slate-500 text-xs bg-gray-50 dark:bg-slate-800/50 rounded">
+        <div className="h-48 flex flex-col items-center justify-center gap-2 text-ink-3 text-xs bg-surface-2/50 rounded">
           <Activity className="w-6 h-6 opacity-30" />
           No traffic data yet for this range
         </div>
@@ -938,13 +907,13 @@ function AppTrafficCard({ mac }: { mac: string }) {
                 <XAxis
                   dataKey="label"
                   tick={{ fontSize: 10, fill: 'currentColor' }}
-                  className="text-gray-400 dark:text-slate-500"
+                  className="text-ink-3"
                   interval="preserveStartEnd"
                 />
                 <YAxis
                   tickFormatter={(v) => formatBytes(v)}
                   tick={{ fontSize: 10, fill: 'currentColor' }}
-                  className="text-gray-400 dark:text-slate-500"
+                  className="text-ink-3"
                   width={60}
                 />
                 <Tooltip
@@ -985,11 +954,11 @@ function AppTrafficCard({ mac }: { mac: string }) {
                     className="w-2 h-2 rounded-sm flex-shrink-0"
                     style={{ backgroundColor: APP_COLORS[i % APP_COLORS.length] }}
                   />
-                  <span className="text-gray-700 dark:text-slate-300 flex-1 truncate">{a.app}</span>
-                  <span className="text-gray-400 dark:text-slate-500">
+                  <span className="text-ink-2 flex-1 truncate">{a.app}</span>
+                  <span className="text-ink-3">
                     {totalAppBytes > 0 ? `${((a.bytes / totalAppBytes) * 100).toFixed(1)}%` : ''}
                   </span>
-                  <span className="font-medium text-gray-900 dark:text-white w-16 text-right">
+                  <span className="font-medium text-ink w-16 text-right">
                     {formatBytes(a.bytes)}
                   </span>
                 </div>
@@ -1048,8 +1017,8 @@ function SignalCard({ mac }: { mac: string }) {
   return (
     <div className="card p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-          <Activity className="w-4 h-4 text-gray-400" />
+        <h2 className="text-sm font-semibold text-ink dark:text-white flex items-center gap-2">
+          <Activity className="w-4 h-4 text-ink-4" />
           Signal Strength
         </h2>
         <div className="flex gap-1">
@@ -1059,9 +1028,7 @@ function SignalCard({ mac }: { mac: string }) {
               onClick={() => setRange(r.value)}
               className={clsx(
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
-                range === r.value
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700',
+                range === r.value ? 'bg-accent text-accent-fg' : 'text-ink-3 hover:bg-surface-3',
               )}
             >
               {r.label}
@@ -1071,9 +1038,9 @@ function SignalCard({ mac }: { mac: string }) {
       </div>
 
       {isLoading ? (
-        <div className="h-48 bg-gray-100 dark:bg-slate-700/40 rounded animate-pulse" />
+        <div className="h-48 bg-surface-3/40 rounded animate-pulse" />
       ) : chartData.length === 0 ? (
-        <div className="h-48 flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-slate-500 text-xs bg-gray-50 dark:bg-slate-800/50 rounded">
+        <div className="h-48 flex flex-col items-center justify-center gap-2 text-ink-3 text-xs bg-surface-2/50 rounded">
           <Activity className="w-6 h-6 opacity-30" />
           No signal data yet for this range
         </div>
@@ -1085,14 +1052,14 @@ function SignalCard({ mac }: { mac: string }) {
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 10, fill: 'currentColor' }}
-                className="text-gray-400 dark:text-slate-500"
+                className="text-ink-3"
                 interval="preserveStartEnd"
               />
               <YAxis
                 domain={[0, yDomainMax]}
                 tickFormatter={(v) => `${v + BASELINE}`}
                 tick={{ fontSize: 10, fill: 'currentColor' }}
-                className="text-gray-400 dark:text-slate-500"
+                className="text-ink-3"
                 width={46}
                 unit=" dBm"
               />
@@ -1143,18 +1110,18 @@ function SignalCard({ mac }: { mac: string }) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <div className="flex items-center gap-4 text-[10px] text-gray-500 dark:text-slate-400">
+          <div className="flex items-center gap-4 text-[10px] text-ink-3">
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm bg-green-500 inline-block" />≥ −55 dBm Excellent
+              <span className="w-2 h-2 rounded-sm bg-good inline-block" />≥ −55 dBm Excellent
             </span>
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-sm bg-lime-500 inline-block" />≥ −65 Good
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm bg-yellow-500 inline-block" />≥ −75 Fair
+              <span className="w-2 h-2 rounded-sm bg-warn inline-block" />≥ −75 Fair
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-sm bg-red-500 inline-block" />
+              <span className="w-2 h-2 rounded-sm bg-bad inline-block" />
               Poor
             </span>
           </div>
@@ -1187,14 +1154,12 @@ export default function ClientDetailPage() {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-400">Loading client…</div>
-    );
+    return <div className="flex items-center justify-center h-64 text-ink-4">Loading client…</div>;
   }
 
   if (isError || !client) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
+      <div className="flex flex-col items-center justify-center h-64 gap-3 text-ink-4">
         <AlertCircle className="w-8 h-8" />
         <p>Client not found.</p>
         <button onClick={() => navigate(-1)} className="btn-secondary text-sm">
@@ -1209,25 +1174,20 @@ export default function ClientDetailPage() {
   return (
     <div className="space-y-4">
       {/* Breadcrumb / back */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
+      <div className="flex items-center gap-2 text-sm text-ink-3">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+          className="flex items-center gap-1 hover:text-ink-2 dark:hover:text-ink transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
         <span>/</span>
-        <Link
-          to="/clients"
-          className="hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
-        >
+        <Link to="/clients" className="hover:text-ink-2 dark:hover:text-ink transition-colors">
           Clients
         </Link>
         <span>/</span>
-        <span className="text-gray-700 dark:text-slate-200 font-medium truncate">
-          {displayName}
-        </span>
+        <span className="text-ink-2 dark:text-ink font-medium truncate">{displayName}</span>
       </div>
 
       {/* Header */}
@@ -1235,37 +1195,23 @@ export default function ClientDetailPage() {
         <div
           className={clsx(
             'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
-            client.active ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-slate-700',
+            client.active ? 'bg-good-bg' : 'bg-surface-3',
           )}
         >
           {client.client_type === 'wireless' ? (
-            <Wifi
-              className={clsx(
-                'w-5 h-5',
-                client.active ? 'text-green-600 dark:text-green-400' : 'text-gray-400',
-              )}
-            />
+            <Wifi className={clsx('w-5 h-5', client.active ? 'text-good' : 'text-ink-4')} />
           ) : (
-            <Network
-              className={clsx(
-                'w-5 h-5',
-                client.active ? 'text-green-600 dark:text-green-400' : 'text-gray-400',
-              )}
-            />
+            <Network className={clsx('w-5 h-5', client.active ? 'text-good' : 'text-ink-4')} />
           )}
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">{displayName}</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 font-mono">
-            {client.mac_address}
-          </p>
+          <h1 className="text-xl font-bold text-ink">{displayName}</h1>
+          <p className="text-sm text-ink-3 font-mono">{client.mac_address}</p>
         </div>
         <span
           className={clsx(
             'ml-auto px-2.5 py-1 rounded-full text-xs font-semibold',
-            client.active
-              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-              : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
+            client.active ? 'bg-good-bg text-good' : 'bg-surface-3 text-ink-3',
           )}
         >
           {client.active ? 'Online' : 'Offline'}

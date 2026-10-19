@@ -79,17 +79,17 @@ export default function BulkCredentialsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h2 className="text-lg font-semibold text-ink flex items-center gap-2">
             <KeyRound className="w-4 h-4" /> Change login for {devices.length} device
             {devices.length === 1 ? '' : 's'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-xs text-gray-500 dark:text-slate-400">
+          <p className="text-xs text-ink-3">
             The login the manager uses to reach these devices. Nothing changes on the devices
             themselves. Each one is logged in to with the new login first, and keeps its current
             login if that fails.
@@ -136,7 +136,7 @@ export default function BulkCredentialsModal({
                       autoComplete="new-password"
                     />
                   </div>
-                  <label className="col-span-2 flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+                  <label className="col-span-2 flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={replaceSsh}
@@ -173,31 +173,29 @@ export default function BulkCredentialsModal({
           )}
 
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+              <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-bad">{error}</p>
             </div>
           )}
 
           {out && (
             <div className="space-y-2">
-              <p className="text-sm text-gray-700 dark:text-slate-200">
+              <p className="text-sm text-ink-2 dark:text-ink">
                 Changed on {out.updated} of {out.results.length}.
                 {out.failed ? ` ${out.failed} kept their current login.` : ''}
               </p>
-              <div className="max-h-64 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg">
+              <div className="max-h-64 overflow-y-auto divide-y divide-line border border-line rounded-lg">
                 {out.results.map((r) => (
                   <div key={r.id} className="flex items-start gap-2 px-3 py-2 text-sm">
                     {r.ok ? (
-                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <CheckCircle className="w-4 h-4 text-good flex-shrink-0 mt-0.5" />
                     ) : (
-                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
                     )}
                     <div>
-                      <div className="text-gray-900 dark:text-white">{r.name}</div>
-                      {r.error && (
-                        <div className="text-xs text-red-600 dark:text-red-400">{r.error}</div>
-                      )}
+                      <div className="text-ink">{r.name}</div>
+                      {r.error && <div className="text-xs text-bad">{r.error}</div>}
                     </div>
                   </div>
                 ))}
