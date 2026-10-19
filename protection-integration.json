@@ -5,7 +5,8 @@
       "Deployment files in sync",
       "Frontend — Lint, Type-check, Test & Build",
       "Backend — Lint, Type-check, Test & Build",
-      "Security Audit"
+      "Security Audit",
+      "Analyze (javascript-typescript)"
     ]
   },
   "enforce_admins": false,
