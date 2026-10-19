@@ -115,7 +115,14 @@ router.post('/regenerate', requireAdmin, async (_req: Request, res: Response) =>
 router.post('/upload', requireAdmin, async (req: Request, res: Response) => {
   const { certificate, private_key } = req.body as { certificate?: string; private_key?: string };
 
-  if (!certificate || !private_key) {
+  if (
+    typeof certificate !== 'string' ||
+    typeof private_key !== 'string' ||
+    !certificate ||
+    !private_key ||
+    certificate.length > 65536 ||
+    private_key.length > 65536
+  ) {
     return res.status(400).json({ error: 'Both certificate and private_key are required' });
   }
 

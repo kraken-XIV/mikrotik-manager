@@ -8,8 +8,11 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint src",
-    "test": "vitest run",
-    "lint:css": "stylelint 'src/**/*.css'"
+    "test": "node --no-experimental-webstorage node_modules/vitest/vitest.mjs run",
+    "lint:css": "stylelint 'src/**/*.css'",
+    "test:coverage": "node --no-experimental-webstorage node_modules/vitest/vitest.mjs run --coverage",
+    "coverage:ratchet": "node scripts/coverage-ratchet.mjs",
+    "postinstall": "node ../backend/scripts/harden-braces.cjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",
@@ -48,6 +51,14 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.2",
     "vite": "^8.2.1",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@vitest/coverage-v8": "^4.1.11",
+    "jsdom": "^26.1.0"
+  },
+  "overrides": {
+    "postcss-selector-parser": "^7.1.6"
   }
 }

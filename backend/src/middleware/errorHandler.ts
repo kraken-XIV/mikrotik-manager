@@ -1,7 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
 
+import { logSafe } from '../utils/logSafe';
+
 export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
-  console.error(`[${req.method} ${req.path.replace(/[\r\n]/g, '_')}]`, err.message);
+  console.error(
+    '[HTTP request failed]',
+    logSafe(req.method),
+    logSafe(req.path),
+    logSafe(err.message),
+  );
 
   if (res.headersSent) return;
 

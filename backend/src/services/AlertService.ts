@@ -1,3 +1,4 @@
+import escapeHtml from 'escape-html';
 import * as http from 'http';
 import * as https from 'https';
 import nodemailer from 'nodemailer';
@@ -281,13 +282,13 @@ export class AlertService {
       port,
       secure,
       auth: user && pass ? { user, pass } : undefined,
-      tls: { rejectUnauthorized: false },
+      tls: { rejectUnauthorized: true },
     });
 
     const label = EVENT_LABELS[eventType] ?? eventType;
     const subject = `[Mikrotik Manager] ${label}`;
-    const device = ctx.deviceName ? `<b>Device:</b> ${ctx.deviceName}<br>` : '';
-    const details = ctx.details ? `<br><pre>${ctx.details}</pre>` : '';
+    const device = ctx.deviceName ? `<b>Device:</b> ${escapeHtml(ctx.deviceName)}<br>` : '';
+    const details = ctx.details ? `<br><pre>${escapeHtml(ctx.details)}</pre>` : '';
 
     const html = `
 <div style="font-family:sans-serif;max-width:600px">
@@ -295,8 +296,8 @@ export class AlertService {
     <strong>Mikrotik Manager Alert</strong>
   </div>
   <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px">
-    <h2 style="margin:0 0 12px;color:#1f2937">${EVENT_EMOJI[eventType] ?? '🔔'} ${label}</h2>
-    <p style="color:#374151">${message}</p>
+    <h2 style="margin:0 0 12px;color:#1f2937">${EVENT_EMOJI[eventType] ?? '🔔'} ${escapeHtml(label)}</h2>
+    <p style="color:#374151">${escapeHtml(message)}</p>
     <div style="color:#6b7280;font-size:13px">${device}${details}</div>
     <hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb">
     <p style="font-size:12px;color:#9ca3af">Sent by Mikrotik Manager · ${new Date().toUTCString()}</p>

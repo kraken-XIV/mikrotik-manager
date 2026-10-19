@@ -75,6 +75,14 @@ maybe('RouterOSClient TLS pinning', () => {
     RouterOSClient.tlsVerifier = null;
   });
 
+  it('fails closed without an identity verifier and sends no credentials', async () => {
+    RouterOSClient.tlsVerifier = null;
+    const client = new RouterOSClient('127.0.0.1', port, 'admin', 'secret', 5000, 5000, true);
+    await expect(client.connect()).rejects.toThrow(/requires a certificate identity verifier/);
+    await new Promise((r) => setTimeout(r, 100));
+    expect(Buffer.concat(received)).toHaveLength(0);
+  });
+
   it('sends nothing, not even the login, when the verifier refuses the certificate', async () => {
     let seen = '';
     RouterOSClient.tlsVerifier = async (_h, _p, fp) => {

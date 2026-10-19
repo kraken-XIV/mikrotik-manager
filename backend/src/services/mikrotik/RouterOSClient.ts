@@ -1,4 +1,4 @@
-import * as crypto from 'crypto';
+import { createHash } from 'crypto';
 import { EventEmitter } from 'events';
 import * as net from 'net';
 import * as tls from 'tls';
@@ -108,6 +108,7 @@ export class RouterOSClient extends EventEmitter {
   }
 
   private readonly useTls: boolean;
+  private certificateVerified = false;
 
   constructor(
     private readonly host: string,
@@ -157,6 +158,7 @@ export class RouterOSClient extends EventEmitter {
     // A fresh connection starts trusted, so a client that was abandoned earlier
     // can be reconnected and used again.
     this.poisoned = false;
+    this.certificateVerified = false;
     this.sentenceQueue = [];
 
     await new Promise<void>((resolve, reject) => {
@@ -192,6 +194,9 @@ export class RouterOSClient extends EventEmitter {
                 const fp = cert?.fingerprint256;
                 if (!fp) throw new RouterOSError('The device presented no certificate on API-SSL');
                 this.tlsFingerprint = fp.replace(/:/g, '').toLowerCase();
+                if (!RouterOSClient.tlsVerifier) {
+                  throw new RouterOSError('API-SSL requires a certificate identity verifier');
+                }
                 if (RouterOSClient.tlsVerifier) {
                   await RouterOSClient.tlsVerifier(
                     this.host,
@@ -199,6 +204,7 @@ export class RouterOSClient extends EventEmitter {
                     this.tlsFingerprint,
                     cert.raw,
                   );
+                  this.certificateVerified = true;
                 }
               } catch (err) {
                 clearTimeout(timer);
@@ -246,6 +252,7 @@ export class RouterOSClient extends EventEmitter {
       });
 
       this.socket.on('error', (err) => {
+        this.certificateVerified = false;
         clearTimeout(timer);
         this.connected = false;
         this.authenticated = false;
@@ -257,6 +264,7 @@ export class RouterOSClient extends EventEmitter {
       });
 
       this.socket.on('close', () => {
+        this.certificateVerified = false;
         this.connected = false;
         this.authenticated = false;
         if (this.pendingRead) {
@@ -488,6 +496,7 @@ export class RouterOSClient extends EventEmitter {
   }
 
   disconnect(): void {
+    this.certificateVerified = false;
     this.connected = false;
     this.authenticated = false;
     this.socket?.destroy();
@@ -513,47 +522,79 @@ export class RouterOSClient extends EventEmitter {
 
   // ─── RouterOS API Protocol ────────────────────────────────────────────────
 
-  private async authenticate(): Promise<void> {
-    // Try plain-text login (RouterOS 6.49+ and RouterOS 7.x)
-    await this.sendSentence(['/login', `=name=${this.username}`, `=password=${this.password}`]);
-    const first = await this.readNextSentence();
-
-    if (first.type === '!done') {
-      return; // v7 / newer v6 plain-text login succeeded
-    }
-
-    if (first.type === '!re' && first.words['ret']) {
-      // Legacy v6 challenge-response
-      const challengeHex = first.words['ret'];
-      // Drain the !done that follows the !re
-      await this.readNextSentence();
-
-      const challenge = Buffer.from(challengeHex, 'hex');
-      const md5 = crypto.createHash('md5');
-      md5.update(Buffer.from([0x00]));
-      md5.update(Buffer.from(this.password, 'utf8'));
-      md5.update(challenge);
-      const responseHex = '00' + md5.digest('hex');
-
-      await this.sendSentence(['/login', `=name=${this.username}`, `=response=${responseHex}`]);
-      const result = await this.readNextSentence();
-      if (result.type !== '!done') {
-        throw new RouterOSError(
-          result.words['message'] || 'Authentication failed (legacy MD5)',
-          result.words['category'],
-        );
+  /** Drain the complete exchange: old routers may put ret in !re or !done. */
+  private async loginReply(): Promise<{ challenge?: string; error?: RouterOSError }> {
+    let challenge: string | undefined;
+    let error: RouterOSError | undefined;
+    for (let i = 0; i < 16; i++) {
+      const sentence = await this.readNextSentence();
+      if (sentence.type === '!fatal') {
+        throw new RouterOSError(sentence.words['message'] || 'Fatal login error');
       }
-      return;
+      const ret = sentence.words['ret'];
+      if (ret !== undefined) {
+        if (challenge !== undefined && challenge !== ret) {
+          throw new RouterOSError('Conflicting legacy login challenges');
+        }
+        challenge = ret;
+      }
+      if (sentence.type === '!trap') {
+        error = new RouterOSError(
+          sentence.words['message'] || 'Authentication failed',
+          sentence.words['category'],
+        );
+      } else if (sentence.type === '!done') {
+        return { challenge, error };
+      } else if (sentence.type !== '!re') {
+        throw new RouterOSError(`Unexpected login response: ${sentence.type}`);
+      }
     }
+    throw new RouterOSError('Too many login response sentences');
+  }
 
-    if (first.type === '!trap') {
+  private async answerLegacyChallenge(challenge: string): Promise<void> {
+    // MD5 here is the fixed RouterOS wire protocol, never password storage.
+    // It is permitted only inside this connection's verified TLS channel.
+    if (
+      !this.useTls ||
+      !this.certificateVerified ||
+      !(this.socket instanceof tls.TLSSocket) ||
+      this.socket.destroyed
+    ) {
       throw new RouterOSError(
-        first.words['message'] || 'Authentication failed',
-        first.words['category'],
+        'Legacy RouterOS login requires identity-verified API-SSL; enable API-SSL instead of upgrading solely for login compatibility',
       );
     }
+    if (!/^[0-9a-fA-F]{32}$/.test(challenge)) {
+      throw new RouterOSError('Malformed legacy RouterOS login challenge');
+    }
+    const digest = createHash('md5')
+      .update(Buffer.from([0]))
+      .update(Buffer.from(this.password, 'utf8'))
+      .update(Buffer.from(challenge, 'hex'))
+      .digest('hex');
+    await this.sendSentence(['/login', `=name=${this.username}`, `=response=00${digest}`]);
+    const reply = await this.loginReply();
+    if (reply.error) throw reply.error;
+    if (reply.challenge !== undefined)
+      throw new RouterOSError('Unexpected repeated login challenge');
+  }
 
-    throw new RouterOSError(`Unexpected login response: ${first.type}`);
+  private async authenticate(): Promise<void> {
+    // Never send a password merely to discover an old device's protocol.
+    await this.sendSentence(['/login']);
+    const probe = await this.loginReply();
+    if (probe.challenge !== undefined) {
+      if (probe.error) throw probe.error;
+      await this.answerLegacyChallenge(probe.challenge);
+      return;
+    }
+    // Modern RouterOS rejects the credential-free probe (or returns !done).
+    // Its entire !trap/!done exchange was drained before the actual login.
+    await this.sendSentence(['/login', `=name=${this.username}`, `=password=${this.password}`]);
+    const reply = await this.loginReply();
+    if (reply.error) throw reply.error;
+    if (reply.challenge !== undefined) await this.answerLegacyChallenge(reply.challenge);
   }
 
   private encodeLength(len: number): Buffer {
