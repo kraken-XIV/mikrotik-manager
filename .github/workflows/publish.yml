@@ -25,10 +25,42 @@ permissions:
   contents: read
 
 jobs:
+  verify-source:
+    name: Verify trusted publishing source
+    runs-on: ubuntu-latest
+    # A successful PR CI run is NOT authority to execute with publishing tokens.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository &&
+       github.event.workflow_run.head_branch == 'main')
+    permissions:
+      contents: read
+    outputs:
+      sha: ${{ steps.verify.outputs.sha }}
+    steps:
+      # No checkout or repository code before trust verification. Check immutable
+      # SHA ancestry via GitHub, then pass only that SHA into privileged jobs.
+      - name: Verify tested commit belongs to trusted main history
+        id: verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          STATUS=$(gh api "repos/$GITHUB_REPOSITORY/compare/main...$CANDIDATE_SHA" --jq .status)
+          case "$STATUS" in
+            identical|behind) ;;
+            *) echo 'Refusing a commit outside trusted main history' >&2; exit 1 ;;
+          esac
+          echo "sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+
   publish-backend:
     name: Build & Push Backend
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    needs: verify-source
     permissions:
       contents: read
       packages: write
@@ -39,7 +71,7 @@ jobs:
       - name: Checkout the commit CI tested
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ needs.verify-source.outputs.sha }}
 
       # :latest only moves if this commit is still the tip of main, so a slow
       # CI run for an older commit can't publish over a newer one. Every build
@@ -47,7 +79,7 @@ jobs:
       - name: Work out tags
         id: tags
         env:
-          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          SHA: ${{ needs.verify-source.outputs.sha }}
         run: |
           echo "version=$(node -p "require('./backend/package.json').version")" >> "$GITHUB_OUTPUT"
           echo "short=${SHA:0:7}" >> "$GITHUB_OUTPUT"
@@ -109,7 +141,7 @@ jobs:
   publish-nginx:
     name: Build & Push Nginx (Frontend)
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    needs: verify-source
     permissions:
       contents: read
       packages: write
@@ -120,7 +152,7 @@ jobs:
       - name: Checkout the commit CI tested
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ needs.verify-source.outputs.sha }}
 
       # :latest only moves if this commit is still the tip of main, so a slow
       # CI run for an older commit can't publish over a newer one. Every build
@@ -128,7 +160,7 @@ jobs:
       - name: Work out tags
         id: tags
         env:
-          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          SHA: ${{ needs.verify-source.outputs.sha }}
         run: |
           echo "version=$(node -p "require('./backend/package.json').version")" >> "$GITHUB_OUTPUT"
           echo "short=${SHA:0:7}" >> "$GITHUB_OUTPUT"

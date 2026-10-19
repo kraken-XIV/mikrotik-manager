@@ -44,6 +44,13 @@ CodeQL upload, release, documentation deployment and image signing retain their
 necessary **job-level** grants, not workflow-wide write defaults. Nothing in the
 Phase 3 PR runs a production deployment. PRs do not run publishing jobs.
 
+The existing image publisher now first verifies source with a read-only job:
+only successful **same-repository push** CI on `main`, or manual dispatch from
+`main`, is eligible. GitHub must confirm that the tested immutable SHA is in
+trusted `main` history before either privileged build/sign job receives it.
+Successful fork/PR CI, manual feature-branch dispatch and foreign/diverged SHAs
+cannot authorize publishing. No repository code executes in the verifier.
+
 ## Exact Gitleaks false-positive exceptions
 
 `.gitleaks.toml` extends all default rules. Each supported `targetRules` entry
