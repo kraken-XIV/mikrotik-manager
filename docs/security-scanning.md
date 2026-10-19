@@ -109,13 +109,15 @@ trivy fs --scanners vuln --include-dev-deps --severity HIGH,CRITICAL \
   --skip-dirs '**/node_modules/**' --ignorefile .trivyignore.yaml --no-progress .
 ```
 
-The 14 regression tests run the **actual** scanners in temporary directories,
+The 16 regression tests run the **actual** scanners in temporary directories,
 first without exceptions to prove each fixture triggers, then with the production
 configuration to prove only the reviewed findings disappear. Trivy's negative
 fixtures exercise backend/root regressions, lookalike paths and another HIGH
 finding in the same nginx file. A vulnerable-package fixture proves that the
 same HIGH advisory remains visible in both nginx and backend lockfile paths. Gitleaks tests cover exact-value/file/rule
-boundaries. Nonzero genuine-finding exits are asserted, not ignored. Synthetic
+boundaries. Nonzero genuine-finding exits are asserted, not ignored. Publisher regressions
+exercise the actual workflow event condition and verifier shell against
+untrusted PR/fork/branch events, invalid SHAs, diverged history and API errors. Synthetic
 findings are generated at runtime, never staged in the repository. The optional
 Husky guard scans the staged diff if Gitleaks is installed; mandatory CI does not
 skip when tools are missing.

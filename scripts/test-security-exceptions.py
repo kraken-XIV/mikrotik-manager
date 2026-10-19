@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Real-scanner boundary tests: deliberately synthetic, temporary findings only."""
+import ast
 import json
+import os
 import re
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE_PATH = 'backend/src/services/platformBackup/__tests__/roundtrip.pg.test.ts'
@@ -158,6 +161,62 @@ class WorkflowPolicy(unittest.TestCase):
             self.assertNotRegex(text, r'permissions:\s*(read-all|write-all)')
             self.assertNotRegex(text, r'continue-on-error:\s*true')
             self.assertNotIn('pull_request_target:', text)
+
+
+class PublishingTrustBoundaries(unittest.TestCase):
+    def test_actual_event_condition_rejects_untrusted_sources(self):
+        workflow = (ROOT / '.github/workflows/publish.yml').read_text()
+        block = workflow.split('  verify-source:', 1)[1].split('    permissions:', 1)[0]
+        expression = ' '.join(block.split('    if: >-', 1)[1].split())
+        expression = expression.replace('&&', 'and').replace('||', 'or')
+        tree = ast.parse(expression, mode='eval')
+        allowed = (ast.Expression, ast.BoolOp, ast.And, ast.Or, ast.Compare,
+                   ast.Eq, ast.Attribute, ast.Name, ast.Load, ast.Constant)
+        self.assertTrue(all(isinstance(node, allowed) for node in ast.walk(tree)))
+        cases = [
+            ('workflow_run', 'push', 'owner/repo', 'main', 'success', 'refs/heads/fork/main', True),
+            ('workflow_run', 'pull_request', 'owner/repo', 'main', 'success', 'refs/heads/fork/main', False),
+            ('workflow_run', 'push', 'attacker/repo', 'main', 'success', 'refs/heads/fork/main', False),
+            ('workflow_run', 'push', 'owner/repo', 'feature', 'success', 'refs/heads/fork/main', False),
+            ('workflow_run', 'push', 'owner/repo', 'main', 'failure', 'refs/heads/fork/main', False),
+            ('workflow_dispatch', 'push', 'owner/repo', 'main', 'success', 'refs/heads/main', True),
+            ('workflow_dispatch', 'push', 'owner/repo', 'main', 'success', 'refs/heads/feature', False),
+        ]
+        for event, trigger, repository, branch, conclusion, ref, expected in cases:
+            github = SimpleNamespace(event_name=event, ref=ref, repository='owner/repo',
+                event=SimpleNamespace(workflow_run=SimpleNamespace(event=trigger,
+                    conclusion=conclusion, head_branch=branch,
+                    head_repository=SimpleNamespace(full_name=repository))))
+            actual = eval(compile(tree, '<workflow-condition>', 'eval'), {'__builtins__': {}}, {'github': github})
+            self.assertEqual(actual, expected, (event, trigger, repository, branch, ref))
+
+    def test_actual_read_only_verifier_fails_closed(self):
+        import textwrap
+        workflow = (ROOT / '.github/workflows/publish.yml').read_text()
+        block = workflow.split('  verify-source:', 1)[1].split('  publish-backend:', 1)[0]
+        script = textwrap.dedent(block.split('        run: |', 1)[1])
+        with tempfile.TemporaryDirectory(prefix='mtm-publish-trust-') as tmp:
+            tmp = Path(tmp)
+            gh = tmp / 'gh'
+            gh.write_text('#!/bin/sh\nprintf "%s\\n" "$MTM_COMPARE_STATUS"\nexit "${MTM_COMPARE_EXIT:-0}"\n')
+            gh.chmod(0o700)
+            output = tmp / 'output'
+            for status, api_exit, sha, accepted in [
+                ('identical', '0', 'a' * 40, True),
+                ('behind', '0', 'b' * 40, True),
+                ('ahead', '0', 'a' * 40, False),
+                ('diverged', '0', 'a' * 40, False),
+                ('', '1', 'a' * 40, False),
+                ('identical', '0', '../../untrusted', False),
+            ]:
+                output.write_text('')
+                env = dict(os.environ, PATH=str(tmp) + os.pathsep + os.environ['PATH'],
+                           MTM_COMPARE_STATUS=status, MTM_COMPARE_EXIT=api_exit,
+                           GITHUB_REPOSITORY='owner/repo', GITHUB_OUTPUT=str(output), CANDIDATE_SHA=sha)
+                result = subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', script],
+                                        env=env, capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode == 0, accepted, (status, api_exit, sha))
+                self.assertEqual(output.read_text(), f'sha={sha}\n' if accepted else '')
 
 
 if __name__ == '__main__':
