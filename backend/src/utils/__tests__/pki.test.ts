@@ -1,4 +1,6 @@
-// '../pki' first: it loads the reflect-metadata polyfill @peculiar/x509 needs.
+// Load the polyfill explicitly before x509, independently of sorted value imports.
+import 'reflect-metadata';
+
 import * as x509 from '@peculiar/x509';
 import { createPrivateKey, generateKeyPairSync, X509Certificate } from 'crypto';
 

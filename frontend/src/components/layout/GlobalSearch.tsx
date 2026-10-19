@@ -59,9 +59,9 @@ export default function GlobalSearch() {
   // Fetch when debounced query is long enough
   useEffect(() => {
     if (debouncedQuery.length < 2) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing
       // stale results on input change is the intended behaviour here; the
       // debounce above keeps this from cascading on every keystroke.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults(null);
       return;
     }

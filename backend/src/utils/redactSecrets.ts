@@ -36,6 +36,8 @@ const SECRET_KEYS = new Set([
   'secret',
   'authentication-password',
   'encryption-password',
+  // RoMON (#311)
+  'secrets',
   // SNMP v1/v2c: the community name is the credential
   'community_name',
 ]);

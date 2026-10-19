@@ -60,6 +60,7 @@ const COLUMNS: Array<{ table: string; id: string; column: string; label: string 
     column: 'private_key_encrypted',
     label: 'Device SSH private keys',
   },
+  { table: 'romon_settings', id: 'id', column: 'secret_encrypted', label: 'RoMON secrets' },
 ];
 
 const OIDC_KEY = 'oidc_config';

@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 
 import PollOverridesCard from '../components/common/PollOverridesCard';
 import GroupsCard from '../components/sites/GroupsCard';
+import RomonCard from '../components/sites/RomonCard';
 import { useCanWrite, useIsSiteScoped } from '../hooks/useCanWrite';
 import { settingsApi, siteGroupsApi, sitesApi } from '../services/api';
 import { type Site, useSiteStore } from '../store/siteStore';
@@ -322,6 +323,9 @@ export default function SitesPage() {
 
       {/* Groups of sites, one per customer (#306) */}
       <GroupsCard sites={sites} canManage={canWrite && !isScoped} onOpen={openGroup} />
+
+      {/* RoMON per site or group (#311) */}
+      <RomonCard sites={sites} />
 
       {sites.length > 10 && (
         <input

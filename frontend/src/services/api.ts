@@ -365,7 +365,7 @@ export interface SecurityCheck {
   detail: string;
   serviceId?: string;
   /** A one-click fix the manager can apply (outside review P1-4; www-ssl #234). */
-  fix?: 'api-ssl' | 'www-ssl' | 'api-off';
+  fix?: 'api-ssl' | 'www-ssl' | 'api-off' | 'romon';
   /** Operator judged this inapplicable — still shown, but excluded from the score. */
   suppressed?: boolean;
   suppressed_scope?: 'device' | 'fleet';
@@ -1285,6 +1285,8 @@ export const devicesApi = {
       { timeout: 120_000 },
     ),
   /** WebFig over HTTPS (#234); plain www goes off only once HTTPS answers. Same result shape. */
+  /** Apply the device's RoMON setting: its site's, group's or the fleet default (#311). */
+  applyRomon: (id: number) => api.post<{ message: string }>(`/devices/${id}/romon`),
   enableWwwSsl: (id: number) =>
     api.post<ApiSslResult & { url?: string }>(`/devices/${id}/www-ssl`, undefined, {
       timeout: 240_000,
@@ -3084,6 +3086,27 @@ export interface SitePayload {
   /** The group it belongs to; null for none (#306). */
   group_id?: number | null;
 }
+
+/** RoMON settings: a fleet default, and per group or site (#311). Secrets are write-only. */
+export interface RomonSettingRow {
+  scope: 'fleet' | 'group' | 'site';
+  id: number | null;
+  name: string | null;
+  enabled: boolean;
+  has_secret: boolean;
+}
+export const romonApi = {
+  list: () => api.get<RomonSettingRow[]>('/romon/settings'),
+  /** `secret`: omit to keep, null to remove, text to set. */
+  save: (payload: {
+    scope: RomonSettingRow['scope'];
+    id?: number | null;
+    enabled: boolean;
+    secret?: string | null;
+  }) => api.put<{ ok: boolean }>('/romon/settings', payload),
+  remove: (scope: RomonSettingRow['scope'], id?: number | null) =>
+    api.delete<{ ok: boolean }>('/romon/settings', { data: { scope, id } }),
+};
 
 /** Groups of sites, one customer each (#306). */
 export const siteGroupsApi = {

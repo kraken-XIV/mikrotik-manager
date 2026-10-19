@@ -85,6 +85,7 @@ const TABLE_LABEL: Record<string, string> = {
   user_site_roles: 'Site roles',
   site_groups: 'Groups',
   user_group_roles: 'Group roles',
+  romon_settings: 'RoMON settings',
   api_tokens: 'API tokens',
   device_tags: 'Device tags',
   device_ssh_keys: 'Device SSH keys',

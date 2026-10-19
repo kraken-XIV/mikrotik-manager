@@ -523,7 +523,7 @@ router.get('/summary', async (req: Request, res: Response) => {
   const devFilter = siteScopeDevices(siteId);
   const cliFilter = siteScopeByDevice(siteId, 'device_id');
   const evtFilter = siteScopeByNullableDevice(siteId, 'device_id');
-  const [deviceStats, clientStats, alertStats, availStats] = await Promise.all([
+  const [deviceStats, clientStats, alertStats, availStats, rebootStats] = await Promise.all([
     query<{
       total: string;
       online: string;
@@ -563,6 +563,11 @@ router.get('/summary', async (req: Request, res: Response) => {
        WHERE ${outageOverlapsSql(`INTERVAL '30 days'`)}
          ${cliFilter ? `AND ${cliFilter}` : ''}`,
     ),
+    // Reboots the polls didn't see as outages (#326).
+    query<{ n: string }>(
+      `SELECT COUNT(*)::text AS n FROM device_reboots
+        WHERE boot_at > NOW() - INTERVAL '30 days' ${cliFilter ? `AND ${cliFilter}` : ''}`,
+    ).catch(() => [{ n: '0' }]),
   ]);
 
   const deviceTotal = parseInt(deviceStats[0]?.total || '0', 10);
@@ -593,6 +598,7 @@ router.get('/summary', async (req: Request, res: Response) => {
     },
     availability: {
       fleetUptimePct30d: fleetUptimePct,
+      reboots30d: parseInt(rebootStats[0]?.n || '0', 10),
     },
   });
 });
