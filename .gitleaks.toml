@@ -1,0 +1,23 @@
+# Gitleaks rules: the default set plus the allowlist for the only three matches
+# in the full-history scan (gitleaks 8.30.1, 115 commits, 2026-10-19).
+#
+# Policy for every allowlist entry:
+#   - it names the exact file (paths are regexes) and states why the match is
+#     not a secret;
+#   - it dies with the code it explains — delete the entry the moment the
+#     matching line disappears;
+#   - a new entry requires the same scrutiny as the finding it silences.
+[extend]
+useDefault = true
+
+[[allowlists]]
+condition = 'AND'
+targetRuleID = 'generic-api-key'
+paths = ['''backend/src/services/platformBackup/__tests__/roundtrip\.pg\.test\.ts''']
+description = 'E2E fixture: the round-trip test generates throwaway keys (e2e-key-a-…, e2e-key-b-…) for a disposable PostgreSQL it starts itself.'
+
+[[allowlists]]
+condition = 'AND'
+targetRuleID = 'curl-auth-header'
+paths = ['''docs/api\.md''']
+description = 'Documentation example: the Bearer token is the literal placeholder "mtm_your_token_here".'

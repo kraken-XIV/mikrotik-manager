@@ -1,0 +1,37 @@
+name: Secrets Scan (gitleaks)
+
+on:
+  push:
+    branches: [main, fork/main]
+  pull_request:
+    branches: [main, fork/main]
+  schedule:
+    # Weekly full-history sweep, an hour before CodeQL's Monday run.
+    - cron: '23 7 * * 1'
+
+# Read-only: findings fail the job and print in the log. Rotation, not
+# redaction, is the response — see docs/security-scanning.md.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gitleaks:
+    name: Secrets — gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      # Full history so the weekly sweep scans every commit, not just the tip;
+      # push and PR runs only look at their own commits.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      # Rules: default set, plus the allowlist in .gitleaks.toml at the repo
+      # root. Every allowlist entry names its file and states why the match is
+      # not a secret; an entry must not outlive the code it explains.
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
