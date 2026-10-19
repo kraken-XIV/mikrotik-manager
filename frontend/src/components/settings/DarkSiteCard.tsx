@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Moon, Loader2 } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { systemApi, settingsApi } from '../../services/api';
+import { Loader2, Moon } from 'lucide-react';
+
+import { settingsApi, systemApi } from '../../services/api';
 
 /**
  * Dark Site Mode: every feature that reaches the internet, in one place.

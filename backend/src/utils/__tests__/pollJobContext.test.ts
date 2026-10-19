@@ -1,4 +1,4 @@
-import { runPollJob, registerPollSession, pollJobAborted } from '../pollJobContext';
+import { pollJobAborted, registerPollSession, runPollJob } from '../pollJobContext';
 
 describe('poll job cancellation', () => {
   it('aborts every session opened inside the job, including ones opened in callbacks', async () => {

@@ -2,15 +2,16 @@
 // signature so receivers can verify authenticity. Fired from the alert
 // pipeline (all alert event types) and the firmware orchestrator.
 
-import { unseal } from '../utils/sealed';
 import { createHmac } from 'crypto';
-import * as https from 'https';
-import * as http from 'http';
 import * as dns from 'dns';
+import * as http from 'http';
+import * as https from 'https';
 import { isIP } from 'net';
 import { URL } from 'url';
+
 import { query } from '../config/database';
 import { isBlockedAddress } from '../utils/deviceAddress';
+import { unseal } from '../utils/sealed';
 
 const dnsLookup = dns.promises.lookup;
 

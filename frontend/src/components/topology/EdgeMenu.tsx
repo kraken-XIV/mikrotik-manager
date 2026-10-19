@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { SIDES, type Side } from '../../utils/topologyGeometry';
+import { useEffect, useState } from 'react';
+
+import { type Side, SIDES } from '../../utils/topologyGeometry';
 
 /**
  * What clicking a link offers (#147): which side of each card it attaches to,

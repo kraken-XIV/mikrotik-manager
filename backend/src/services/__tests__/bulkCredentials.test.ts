@@ -8,9 +8,9 @@ jest.mock('../deviceCreation', () => ({ loadCredentialPreset: jest.fn() }));
 jest.mock('../sshOnly', () => ({ readSshInfo: jest.fn() }));
 
 import { query } from '../../config/database';
-import { RouterOSClient } from '../mikrotik/RouterOSClient';
-import { loadCredentialPreset } from '../deviceCreation';
 import { bulkUpdateCredentials } from '../bulkCredentials';
+import { loadCredentialPreset } from '../deviceCreation';
+import { RouterOSClient } from '../mikrotik/RouterOSClient';
 
 const device = (id: number, name: string, over: Record<string, unknown> = {}) => ({
   id,

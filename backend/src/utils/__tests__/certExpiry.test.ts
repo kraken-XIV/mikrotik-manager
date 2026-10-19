@@ -1,4 +1,4 @@
-import { certExpiryState, needsAttention, describeCert } from '../certExpiry';
+import { certExpiryState, describeCert, needsAttention } from '../certExpiry';
 
 const NOW = new Date('2026-09-16T12:00:00Z');
 const inDays = (n: number) => new Date(NOW.getTime() + n * 86_400_000);

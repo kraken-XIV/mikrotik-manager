@@ -6,14 +6,15 @@
  * wherever a change could cut the manager off (outside review P2-8).
  */
 import type { Request, Response } from 'express';
+
 import { queryOne } from '../../config/database';
-import { DeviceCollector, type DeviceRow } from '../mikrotik/DeviceCollector';
-import { captureSnapshot } from './pathModel';
-import { analyzeChange, type PlannedChange } from './analyzeChange';
-import { withSafeApply, GuardRequiredError, type GuardDevice } from './ChangeGuard';
-import { PartialApplyRevertError } from './partialApply';
 import { logSafe } from '../../utils/logSafe';
 import { previewContext } from '../../utils/previewContext';
+import { DeviceCollector, type DeviceRow } from '../mikrotik/DeviceCollector';
+import { analyzeChange, type PlannedChange } from './analyzeChange';
+import { type GuardDevice, GuardRequiredError, withSafeApply } from './ChangeGuard';
+import { PartialApplyRevertError } from './partialApply';
+import { captureSnapshot } from './pathModel';
 
 /**
  * Run a device mutation under the Change Guard safety net (see

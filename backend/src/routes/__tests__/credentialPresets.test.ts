@@ -25,10 +25,11 @@ jest.mock('../../utils/crypto', () => ({
   encrypt: (s: string) => `enc:${s}`,
 }));
 
-import request from 'supertest';
 import express from 'express';
-import credentialPresetsRoutes from '../credentialPresets';
+import request from 'supertest';
+
 import { query, queryOne } from '../../config/database';
+import credentialPresetsRoutes from '../credentialPresets';
 
 const mockedQuery = jest.mocked(query);
 const mockedQueryOne = jest.mocked(queryOne);

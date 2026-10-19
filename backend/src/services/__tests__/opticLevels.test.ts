@@ -9,7 +9,7 @@ jest.mock('../AlertService', () => ({
   },
 }));
 
-import { recordOptics, checkOptics } from '../opticLevels';
+import { checkOptics, recordOptics } from '../opticLevels';
 
 beforeEach(() => {
   queryMock.mockReset();

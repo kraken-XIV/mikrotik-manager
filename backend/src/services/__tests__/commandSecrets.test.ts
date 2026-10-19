@@ -5,15 +5,15 @@ jest.mock('../../utils/crypto', () => ({
 }));
 
 import { query } from '../../config/database';
-import {
-  secretNames,
-  fillSecrets,
-  maskSecrets,
-  generateSecret,
-  missingSecrets,
-  MASK,
-} from '../commandSecrets';
 import { refuseSecrets } from '../../utils/secretAccess';
+import {
+  fillSecrets,
+  generateSecret,
+  MASK,
+  maskSecrets,
+  missingSecrets,
+  secretNames,
+} from '../commandSecrets';
 
 const cmd =
   '/user add name=mtm group=full password="{{secret:mtm_pw}}" address={{ secret:mgmt_net }}; :log info "{{secret:mtm_pw}}"';

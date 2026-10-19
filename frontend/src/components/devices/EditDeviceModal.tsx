@@ -1,27 +1,28 @@
-import { useEffect, useMemo, useState, FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  X,
-  CheckCircle,
   AlertCircle,
   AlertTriangle,
+  CheckCircle,
   Loader2,
   Network,
   RotateCcw,
+  X,
 } from 'lucide-react';
-import { devicesApi, credentialPresetsApi } from '../../services/api';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+
 import { presetsForSite } from '../../hooks/useSitePresets';
-import PollOverridesCard from '../common/PollOverridesCard';
+import { credentialPresetsApi, devicesApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { parsePort } from '../../utils/parsePort';
+import type { Device, DeviceType, IpAddress } from '../../types';
 import { API_SSL_PORT, portFieldError } from '../../utils/apiTls';
 import {
-  isValidDeviceAddress,
-  classifyAddress,
   addressFieldValue,
+  classifyAddress,
+  isValidDeviceAddress,
   sameAddress,
 } from '../../utils/deviceAddress';
-import type { Device, DeviceType, IpAddress } from '../../types';
+import { parsePort } from '../../utils/parsePort';
+import PollOverridesCard from '../common/PollOverridesCard';
 
 interface Props {
   device: Device;

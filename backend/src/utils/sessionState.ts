@@ -15,10 +15,10 @@
  * Accounts are cached for a few seconds, and the cache entry is dropped the
  * moment the account changes, so revocation is immediate on this server.
  */
-import { loadSiteRoles } from './siteRoles';
 import { query, queryOne } from '../config/database';
 import { redis } from '../config/redis';
 import type { AuthPayload } from '../middleware/auth';
+import { loadSiteRoles } from './siteRoles';
 
 interface SessionAccount {
   username: string;

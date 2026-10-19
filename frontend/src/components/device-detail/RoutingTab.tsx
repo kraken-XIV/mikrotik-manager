@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import ReviewChangesButton from '../common/ReviewChangesButton';
-import { LockoutVerdictDialog, lockoutVerdictOf, type LockoutVerdict } from '../ChangeGuardDialog';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, AlertCircle, RefreshCw } from 'lucide-react';
-import { devicesApi } from '../../services/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import { AlertCircle, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { devicesApi } from '../../services/api';
+import { type LockoutVerdict, LockoutVerdictDialog, lockoutVerdictOf } from '../ChangeGuardDialog';
+import ReviewChangesButton from '../common/ReviewChangesButton';
 
 // ─── Extended devicesApi type (routing protocol methods added at runtime) ──────
 const dApi = devicesApi as typeof devicesApi & {

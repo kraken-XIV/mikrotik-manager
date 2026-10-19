@@ -1,14 +1,15 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { format, formatDistanceToNow } from 'date-fns';
-import { firmwareApi } from '../services/api';
-import { useCanWrite } from '../hooks/useCanWrite';
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+
+import LoadError from '../components/common/LoadError';
 import RolloutPanel from '../components/firmware/RolloutPanel';
 import { ROLLOUT_STATUS } from '../components/firmware/rolloutStatus';
-import LoadError from '../components/common/LoadError';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { firmwareApi } from '../services/api';
 
 const PAGE = 25;
 

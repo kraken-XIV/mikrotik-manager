@@ -1,7 +1,7 @@
 import {
-  parseRosVersion,
   compareRosVersions,
   isNewerRosVersion,
+  parseRosVersion,
   updateAvailable,
 } from '../rosVersion';
 

@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { sitesApi, siteGroupsApi } from '../../services/api';
-import { useSiteStore } from '../../store/siteStore';
+import { useEffect } from 'react';
+
+import { siteGroupsApi, sitesApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { useSiteStore } from '../../store/siteStore';
 
 /** Where a device being added goes (#306): an existing site, or a new one by name. */
 export interface SiteFieldValue {

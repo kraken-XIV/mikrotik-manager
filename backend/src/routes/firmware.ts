@@ -1,25 +1,26 @@
-import { loadBondMembers } from '../services/topology/bondMembers';
-import { decodedPath } from '../utils/requestPath';
-import { Router, Request, Response } from 'express';
-import { resourceSiteAccess } from '../utils/siteAccess';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne } from '../config/database';
-import { isUpdateChannel, UPDATE_CHANNELS } from '../utils/updateChannel';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { siteScopeDevices, siteScopeByDevice } from '../utils/siteScope';
 import { activeSite, writableScope } from '../middleware/site';
-import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
 import { firmwareOrchestrator } from '../services/FirmwareOrchestrator';
+import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
+import { loadBondMembers } from '../services/topology/bondMembers';
 import {
   clampConcurrency,
+  FLEET_ACTION_CONCURRENCY,
   MAX_WAVE_CONCURRENCY,
   settleWithConcurrency,
-  FLEET_ACTION_CONCURRENCY,
 } from '../utils/concurrency';
-import { updateAvailable, isNewerRosVersion } from '../utils/rosVersion';
 import { newestCompleteFrom } from '../utils/firmwareMirror';
+import { decodedPath } from '../utils/requestPath';
 import { findUpstreamWithinSelection } from '../utils/rolloutTopology';
-import type { StpBridge } from '../utils/stpUpstream';
+import { isNewerRosVersion, updateAvailable } from '../utils/rosVersion';
 import { refuseSecrets } from '../utils/secretAccess';
+import { resourceSiteAccess } from '../utils/siteAccess';
+import { siteScopeByDevice, siteScopeDevices } from '../utils/siteScope';
+import type { StpBridge } from '../utils/stpUpstream';
+import { isUpdateChannel, UPDATE_CHANNELS } from '../utils/updateChannel';
 
 const router = Router();
 router.use(requireAuth);

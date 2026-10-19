@@ -1,20 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import clsx from 'clsx';
 import {
-  Wifi,
   CheckCircle,
-  XCircle,
-  HelpCircle,
-  Users,
-  RefreshCw,
   ExternalLink,
+  HelpCircle,
+  RefreshCw,
+  Users,
+  Wifi,
+  XCircle,
 } from 'lucide-react';
-import { wirelessApi } from '../services/api';
-import type { WirelessAP } from '../types';
+import { Link } from 'react-router-dom';
+
+import CapsmanPanel from '../components/wireless/CapsmanPanel';
 import RfHealth from '../components/wireless/RfHealth';
 import RogueApsCard from '../components/wireless/RogueApsCard';
-import CapsmanPanel from '../components/wireless/CapsmanPanel';
-import clsx from 'clsx';
+import { wirelessApi } from '../services/api';
+import type { WirelessAP } from '../types';
 
 function timeAgo(ts: string | undefined): string {
   if (!ts) return 'Never';

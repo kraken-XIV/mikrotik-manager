@@ -1,8 +1,9 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
-import { encryptionApi, type EncryptionOverview } from '../../services/api';
 import clsx from 'clsx';
+import { AlertTriangle, KeyRound, RefreshCw, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+
+import { encryptionApi, type EncryptionOverview } from '../../services/api';
 
 /**
  * The key that protects stored credentials (outside review P2-29): where it

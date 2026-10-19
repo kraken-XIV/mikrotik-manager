@@ -1,10 +1,11 @@
-import { seal } from '../utils/sealed';
-import { Router, Request, Response } from 'express';
-import { randomBytes, createHash } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne } from '../config/database';
-import { requireAuth, requireAdmin, requireWrite } from '../middleware/auth';
-import { webhookService, WEBHOOK_EVENTS } from '../services/WebhookService';
-import { reportService, computeNextRun } from '../services/ReportService';
+import { requireAdmin, requireAuth, requireWrite } from '../middleware/auth';
+import { computeNextRun, reportService } from '../services/ReportService';
+import { WEBHOOK_EVENTS, webhookService } from '../services/WebhookService';
+import { seal } from '../utils/sealed';
 
 const router = Router();
 router.use(requireAuth);

@@ -1,9 +1,9 @@
 import {
+  allowedCovers,
   managementTunnel,
   prefixContains,
-  allowedCovers,
-  tunnelWriteRule,
   type TunnelState,
+  tunnelWriteRule,
 } from '../wireguardPath';
 
 const wg = [

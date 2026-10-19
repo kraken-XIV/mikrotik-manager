@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Router, Wifi, AlertTriangle, X } from 'lucide-react';
-import { searchApi } from '../../services/api';
-import { format } from 'date-fns';
 import clsx from 'clsx';
+import { format } from 'date-fns';
+import { AlertTriangle, Router, Search, Wifi, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { searchApi } from '../../services/api';
 
 type SearchDevice = {
   id: number;

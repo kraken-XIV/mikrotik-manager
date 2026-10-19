@@ -1,5 +1,5 @@
-import { passwordLoginEnabled, passwordLoginRequestedOff } from '../passwordLogin';
 import { loadOidcConfig } from '../../services/oidc/oidcConfig';
+import { passwordLoginEnabled, passwordLoginRequestedOff } from '../passwordLogin';
 
 jest.mock('../../services/oidc/oidcConfig', () => ({ loadOidcConfig: jest.fn() }));
 const mockSso = loadOidcConfig as jest.MockedFunction<typeof loadOidcConfig>;

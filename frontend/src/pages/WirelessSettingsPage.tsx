@@ -1,27 +1,28 @@
-import { useState, useEffect } from 'react';
-import ReviewChangesButton from '../components/common/ReviewChangesButton';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  Plus,
-  Pencil,
-  Trash2,
-  RefreshCw,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
   Eye,
   EyeOff,
-  CheckCircle,
-  XCircle,
+  Pencil,
+  Plus,
   Power,
-  ScanLine,
   Radio,
+  RefreshCw,
+  ScanLine,
+  Trash2,
+  XCircle,
 } from 'lucide-react';
-import { wirelessApi, settingsApi } from '../services/api';
-import { useCanWrite, useIsFleetAdmin } from '../hooks/useCanWrite';
-import { useGuardedWrite, GuardedWriteUi } from '../components/ChangeGuardDialog';
-import type { WirelessAP } from '../types';
-import clsx from 'clsx';
+import { useEffect, useState } from 'react';
+
+import { GuardedWriteUi, useGuardedWrite } from '../components/ChangeGuardDialog';
 import DevicePicker from '../components/common/DevicePicker';
+import ReviewChangesButton from '../components/common/ReviewChangesButton';
+import { useCanWrite, useIsFleetAdmin } from '../hooks/useCanWrite';
+import { settingsApi, wirelessApi } from '../services/api';
+import type { WirelessAP } from '../types';
 
 // ─── Radio helpers ────────────────────────────────────────────────────────────
 

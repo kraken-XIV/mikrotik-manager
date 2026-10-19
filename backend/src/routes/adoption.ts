@@ -1,11 +1,12 @@
-import { Router, Request, Response } from 'express';
-import { roleAtLeast, roleOnDevice } from '../utils/siteAccess';
-import { requireAuth, requireWrite, fleetOnly } from '../middleware/auth';
+import { Request, Response, Router } from 'express';
+
+import { query } from '../config/database';
+import { fleetOnly, requireAuth, requireWrite } from '../middleware/auth';
 import { activeSite, targetSite } from '../middleware/site';
 import { DeviceAdoptionService } from '../services/DeviceAdoptionService';
-import type { AddressPlan } from '../utils/adoption';
 import type { PollerService } from '../services/PollerService';
-import { query } from '../config/database';
+import type { AddressPlan } from '../utils/adoption';
+import { roleAtLeast, roleOnDevice } from '../utils/siteAccess';
 
 /**
  * Adoption of factory-default devices (see utils/adoption.ts for the why).

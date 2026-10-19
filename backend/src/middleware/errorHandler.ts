@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
   console.error(`[${req.method} ${req.path.replace(/[\r\n]/g, '_')}]`, err.message);

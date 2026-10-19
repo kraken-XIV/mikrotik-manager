@@ -8,11 +8,12 @@ jest.mock('../../services/ProxyUsageService', () => ({
   useProxySourcesTable: jest.fn(),
 }));
 
-import request from 'supertest';
 import express from 'express';
-import proxyRoutes from '../proxy';
+import request from 'supertest';
+
 import { query } from '../../config/database';
-import { useProxyUsageRollup, useProxySourcesTable } from '../../services/ProxyUsageService';
+import { useProxySourcesTable, useProxyUsageRollup } from '../../services/ProxyUsageService';
+import proxyRoutes from '../proxy';
 
 const mockedQuery = jest.mocked(query);
 const mockedUse = jest.mocked(useProxyUsageRollup);

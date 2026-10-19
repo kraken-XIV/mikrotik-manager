@@ -2,10 +2,11 @@
 // top clients, updates, backups) delivered over the SMTP settings of the first
 // enabled email alert channel. An hourly scheduler sends whatever is due.
 
-import { outageOverlapsSql, outageSecondsSql } from '../utils/outageWindow';
-import { openConfig } from '../utils/alertChannelSecrets';
 import nodemailer from 'nodemailer';
+
 import { query, queryOne } from '../config/database';
+import { openConfig } from '../utils/alertChannelSecrets';
+import { outageOverlapsSql, outageSecondsSql } from '../utils/outageWindow';
 
 interface ScheduleRow {
   id: number;

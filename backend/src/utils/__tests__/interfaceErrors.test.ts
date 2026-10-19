@@ -1,10 +1,10 @@
 import {
-  readCounters,
   counterDelta,
-  isEmpty,
-  summarise,
   describeErrors,
   type ErrorEvent,
+  isEmpty,
+  readCounters,
+  summarise,
 } from '../interfaceErrors';
 
 // Field names and shapes as a CRS518 and a wAP ax (RouterOS 7.24.5) report them.

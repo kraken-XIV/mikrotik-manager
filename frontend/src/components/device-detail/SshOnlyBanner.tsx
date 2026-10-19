@@ -1,8 +1,9 @@
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { TerminalSquare, RefreshCw, CheckCircle } from 'lucide-react';
-import { devicesApi } from '../../services/api';
+import { CheckCircle, RefreshCw, TerminalSquare } from 'lucide-react';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { devicesApi } from '../../services/api';
 import type { Device } from '../../types';
 
 /**

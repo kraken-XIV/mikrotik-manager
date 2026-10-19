@@ -1,10 +1,11 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Copy, FileText, Pencil, Play, Plus, Search, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileText, Plus, Play, Pencil, Copy, Trash2, Search, X } from 'lucide-react';
-import { commandTemplatesApi, type CommandTemplate } from '../services/api';
-import { useCanWrite } from '../hooks/useCanWrite';
+
 import SecretsCard from '../components/templates/SecretsCard';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { type CommandTemplate, commandTemplatesApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
 /**

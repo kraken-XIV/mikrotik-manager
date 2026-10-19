@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { X, FileText, GitCompare, Download, Loader2, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
 import clsx from 'clsx';
+import { format } from 'date-fns';
+import { AlertCircle, Download, FileText, GitCompare, Loader2, X } from 'lucide-react';
+
 import { backupsApi } from '../../services/api';
 import { lineDiff } from '../../utils/lineDiff';
 

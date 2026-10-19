@@ -1,14 +1,14 @@
-import {
-  evaluateInputChain,
-  addressMatches,
-  portMatches,
-  ruleMatches,
-  referencedAddressLists,
-  type MgmtConnection,
-} from '../firewallPath';
 import { analyzeChange } from '../analyzeChange';
-import type { DeviceSnapshot, RosRow } from '../pathModel';
 import type { GuardDevice } from '../ChangeGuard';
+import {
+  addressMatches,
+  evaluateInputChain,
+  type MgmtConnection,
+  portMatches,
+  referencedAddressLists,
+  ruleMatches,
+} from '../firewallPath';
+import type { DeviceSnapshot, RosRow } from '../pathModel';
 
 const device: GuardDevice = {
   id: 1,

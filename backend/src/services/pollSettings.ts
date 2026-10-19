@@ -5,10 +5,10 @@
 import { query, queryOne } from '../config/database';
 import {
   cleanOverrides,
-  resolveEffective,
-  effectiveValues,
   type Effective,
+  effectiveValues,
   type Overrides,
+  resolveEffective,
 } from '../utils/pollOverrides';
 
 export async function globalSettings(): Promise<Record<string, unknown>> {

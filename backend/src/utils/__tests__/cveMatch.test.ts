@@ -1,14 +1,14 @@
-import fixture from './fixtures-nvd-routeros.json';
 import {
-  parseNvdResponse,
-  parseKevResponse,
   affects,
-  fixedIn,
-  versionInRange,
-  rangeFromCpeMatch,
-  matchUncertainty,
   correctedAway,
+  fixedIn,
+  matchUncertainty,
+  parseKevResponse,
+  parseNvdResponse,
+  rangeFromCpeMatch,
+  versionInRange,
 } from '../cveMatch';
+import fixture from './fixtures-nvd-routeros.json';
 
 // Real NVD 2.0 entries for RouterOS (fetched 2026-09-28).
 const cves = parseNvdResponse(fixture);

@@ -1,21 +1,22 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Clock,
-  HardDrive,
-  ShieldAlert,
-  Rocket,
-  Ban,
-  ChevronRight,
-  Cpu,
-  Zap,
-  Server,
-} from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  Ban,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  Cpu,
+  HardDrive,
+  RefreshCw,
+  Rocket,
+  Server,
+  ShieldAlert,
+  XCircle,
+  Zap,
+} from 'lucide-react';
+import { useState } from 'react';
+
 import { firmwareApi, type FirmwareRolloutDevice } from '../../services/api';
 import { ITEM_STATUS, ROLLOUT_STATUS } from './rolloutStatus';
 

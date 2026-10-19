@@ -1,9 +1,10 @@
-import * as net from 'net';
-import * as tls from 'tls';
 import * as crypto from 'crypto';
 import { EventEmitter } from 'events';
-import { previewContext, type PreviewContext } from '../../utils/previewContext';
-import { isReadCommand, targetQuery, describeWrite } from '../../utils/changePreview';
+import * as net from 'net';
+import * as tls from 'tls';
+
+import { describeWrite, isReadCommand, targetQuery } from '../../utils/changePreview';
+import { type PreviewContext, previewContext } from '../../utils/previewContext';
 
 /**
  * Key under which repeated attributes from one sentence are preserved as JSON.

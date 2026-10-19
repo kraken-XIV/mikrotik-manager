@@ -1,21 +1,21 @@
 import {
-  hostRole,
-  tempAddressCandidates,
-  jumpInterface,
   detectDeviceType,
   hasMac,
+  hostRole,
+  jumpInterface,
+  tempAddressCandidates,
   validatePlan as vp,
 } from '../adoption';
 import {
-  collectCandidates,
-  needsJumpHost,
-  pickTempAddress,
-  validateTargetAddress,
   buildAdoptionOps,
-  fetchAuthHeader,
-  sameSubnet,
+  collectCandidates,
   FACTORY_ADDRESS,
+  fetchAuthHeader,
+  needsJumpHost,
   type NeighborRow,
+  pickTempAddress,
+  sameSubnet,
+  validateTargetAddress,
 } from '../adoption';
 
 /**
@@ -245,7 +245,7 @@ describe('sameSubnet', () => {
  * switches; scenario 2 is one new device arriving in a working environment.
  * Only the second should ever be written to.
  */
-import { recommendMode, assessFactoryState, FACTORY_IDENTITY } from '../adoption';
+import { assessFactoryState, FACTORY_IDENTITY, recommendMode } from '../adoption';
 
 describe('recommendMode', () => {
   it('adopts a device showing both factory markers', () => {
@@ -360,13 +360,13 @@ describe('assessFactoryState', () => {
  * got wrong.
  */
 import {
-  validatePlan,
-  buildPlanOps,
-  planInterface,
-  leasedAddress,
-  judgeConflict,
-  arpRowResolved,
   type AddressPlan,
+  arpRowResolved,
+  buildPlanOps,
+  judgeConflict,
+  leasedAddress,
+  planInterface,
+  validatePlan,
 } from '../adoption';
 
 describe('validatePlan', () => {

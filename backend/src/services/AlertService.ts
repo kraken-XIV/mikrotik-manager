@@ -1,11 +1,12 @@
-import nodemailer from 'nodemailer';
-import * as https from 'https';
 import * as http from 'http';
+import * as https from 'https';
+import nodemailer from 'nodemailer';
+
 import { query } from '../config/database';
-import { buildGotifyRequest } from '../utils/gotify';
+import { isDeviceInMaintenance } from '../routes/maintenanceWindows';
 import { openConfig } from '../utils/alertChannelSecrets';
 import { resolveAlertTarget } from '../utils/alertTarget';
-import { isDeviceInMaintenance } from '../routes/maintenanceWindows';
+import { buildGotifyRequest } from '../utils/gotify';
 
 export type AlertEventType =
   | 'device_offline'

@@ -1,8 +1,8 @@
 jest.mock('../../../config/database', () => ({ query: jest.fn(), queryOne: jest.fn(), pool: {} }));
 jest.mock('../../AlertService', () => ({ alertService: { dispatch: jest.fn() } }));
-import { scheduleCron } from '../service';
-import { versionNotNewer } from '../engine';
 import { cronMatches } from '../../../utils/cron';
+import { versionNotNewer } from '../engine';
+import { scheduleCron } from '../service';
 
 describe('platform backup schedule', () => {
   it('turns the schedule into a cron expression', () => {

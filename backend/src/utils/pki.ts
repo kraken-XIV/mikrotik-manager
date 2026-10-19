@@ -15,8 +15,9 @@
  *   passphrase, and is not kept: renewal makes a new key.
  */
 import 'reflect-metadata';
+
 import * as x509 from '@peculiar/x509';
-import { webcrypto, createPrivateKey, randomBytes, X509Certificate, KeyObject } from 'crypto';
+import { createPrivateKey, KeyObject, randomBytes, webcrypto, X509Certificate } from 'crypto';
 
 type CryptoKey = webcrypto.CryptoKey;
 type CryptoKeyPair = webcrypto.CryptoKeyPair;

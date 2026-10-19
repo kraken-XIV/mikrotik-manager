@@ -5,8 +5,8 @@ jest.mock('../../utils/crypto', () => ({
   decrypt: (s: string) => s,
 }));
 
-import { computeNameLocked, createDeviceFromBody, loadCredentialPreset } from '../deviceCreation';
 import { query, queryOne } from '../../config/database';
+import { computeNameLocked, createDeviceFromBody, loadCredentialPreset } from '../deviceCreation';
 import { RouterOSClient } from '../mikrotik/RouterOSClient';
 
 /**

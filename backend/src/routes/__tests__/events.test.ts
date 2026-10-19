@@ -4,10 +4,11 @@ jest.mock('../../middleware/auth', () => ({
   requireWrite: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
-import request from 'supertest';
 import express from 'express';
-import eventsRoutes, { EVENTS_COUNT_CAP } from '../events';
+import request from 'supertest';
+
 import { query } from '../../config/database';
+import eventsRoutes, { EVENTS_COUNT_CAP } from '../events';
 
 const mockedQuery = jest.mocked(query);
 

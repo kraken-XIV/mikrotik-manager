@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Cpu, AlertTriangle, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
-import { devicesApi } from '../../services/api';
+import { AlertTriangle, Cpu, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { devicesApi } from '../../services/api';
 
 /**
  * L3 hardware offloading on the switch chip (#254): whether routing between

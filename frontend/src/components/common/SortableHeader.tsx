@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 
 export type SortDir = 'asc' | 'desc';
 

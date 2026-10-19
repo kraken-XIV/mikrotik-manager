@@ -1,14 +1,15 @@
-import { loadBondMembers } from '../services/topology/bondMembers';
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { siteScopeDevices, siteScopeByDevice } from '../utils/siteScope';
-import { stpDomains, resolveStpUpstreams } from '../utils/stpUpstream';
-import { activeSite, writableScope, targetSite } from '../middleware/site';
-import { roleInSite, roleAtLeast, roleOnDevice } from '../utils/siteAccess';
-import { clientAttachments, vlanLabel, type ClientSighting } from '../utils/topologyClients';
+import { activeSite, targetSite, writableScope } from '../middleware/site';
 import { PollerService } from '../services/PollerService';
+import { loadBondMembers } from '../services/topology/bondMembers';
 import { buildTopology, type LinkRow, type TopoDevice } from '../services/topology/buildTopology';
+import { roleAtLeast, roleInSite, roleOnDevice } from '../utils/siteAccess';
+import { siteScopeByDevice, siteScopeDevices } from '../utils/siteScope';
+import { resolveStpUpstreams, stpDomains } from '../utils/stpUpstream';
+import { clientAttachments, type ClientSighting, vlanLabel } from '../utils/topologyClients';
 
 const router = Router();
 router.use(requireAuth);

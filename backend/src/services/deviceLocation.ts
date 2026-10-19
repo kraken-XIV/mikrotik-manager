@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { effectiveLocation, type EffectiveLocation } from '../utils/effectiveLocation';
+import { type EffectiveLocation, effectiveLocation } from '../utils/effectiveLocation';
 
 type SiteLoc = {
   id: number;

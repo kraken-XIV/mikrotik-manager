@@ -1,24 +1,26 @@
-import { useState, useEffect, useRef } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  MapPin,
-  Building2,
-  Hash,
-  FileText,
-  Pencil,
-  Check,
-  X,
-  RefreshCw,
-  AlertCircle,
-} from 'lucide-react';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import L from 'leaflet';
+import {
+  AlertCircle,
+  Building2,
+  Check,
+  FileText,
+  Hash,
+  MapPin,
+  Pencil,
+  RefreshCw,
+  X,
+} from 'lucide-react';
+import { Network } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
 import { devicesApi, settingsApi, sitesApi } from '../../services/api';
 import type { Device } from '../../types';
-import { useCanWrite } from '../../hooks/useCanWrite';
-import { geocodeAddress, OSM_TILE_URL, OSM_ATTRIBUTION } from '../../utils/geocode';
 import { escapeHtml } from '../../utils/escapeHtml';
-import { Network } from 'lucide-react';
+import { geocodeAddress, OSM_ATTRIBUTION, OSM_TILE_URL } from '../../utils/geocode';
 
 interface Props {
   device: Device;

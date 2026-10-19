@@ -1,8 +1,8 @@
 import {
-  legacyAuthTypes,
-  legacyProfileParams,
-  legacyProfileName,
   guestSsidTag,
+  legacyAuthTypes,
+  legacyProfileName,
+  legacyProfileParams,
 } from '../legacySecurity';
 
 describe('legacySecurity', () => {

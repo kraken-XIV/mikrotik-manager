@@ -1,6 +1,7 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
-import { requireAuth, requireWrite, requireAdmin } from '../middleware/auth';
+import { requireAdmin, requireAuth, requireWrite } from '../middleware/auth';
 import { windowCovers } from '../utils/maintenance';
 
 const router = Router();

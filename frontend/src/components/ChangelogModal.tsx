@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, RefreshCw, AlertCircle, ExternalLink, FileText } from 'lucide-react';
+import { AlertCircle, ExternalLink, FileText, RefreshCw, X } from 'lucide-react';
+import { useEffect } from 'react';
+
 import { firmwareApi } from '../services/api';
 
 /**

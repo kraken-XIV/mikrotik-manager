@@ -1,4 +1,4 @@
-import { usesRemoteLogFormat, toSyslogActionParams, isBsdSyslog } from '../syslogAction';
+import { isBsdSyslog, toSyslogActionParams, usesRemoteLogFormat } from '../syslogAction';
 
 describe('syslog actions across RouterOS versions (C7)', () => {
   const form = {

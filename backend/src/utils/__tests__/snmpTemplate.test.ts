@@ -1,4 +1,4 @@
-import { renderSnmpTemplate, unknownVariables, fieldToWrite } from '../snmpTemplate';
+import { fieldToWrite, renderSnmpTemplate, unknownVariables } from '../snmpTemplate';
 
 const dev = {
   identity: 'core-sw-01',

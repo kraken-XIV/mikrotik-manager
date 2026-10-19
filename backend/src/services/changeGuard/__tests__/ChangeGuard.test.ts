@@ -5,16 +5,16 @@ jest.mock('../../../config/redis', () => ({
 jest.mock('../../../utils/crypto', () => ({ decrypt: () => 'pw' }));
 jest.mock('../../mikrotik/RouterOSClient');
 
-import {
-  withSafeApply,
-  probeCapability,
-  GuardRequiredError,
-  type GuardDevice,
-} from '../ChangeGuard';
-import { PartialApplyError, PartialApplyRevertError } from '../partialApply';
-import { RouterOSClient } from '../../mikrotik/RouterOSClient';
 import { query, queryOne } from '../../../config/database';
 import { redis } from '../../../config/redis';
+import { RouterOSClient } from '../../mikrotik/RouterOSClient';
+import {
+  type GuardDevice,
+  GuardRequiredError,
+  probeCapability,
+  withSafeApply,
+} from '../ChangeGuard';
+import { PartialApplyError, PartialApplyRevertError } from '../partialApply';
 
 const mockedQuery = jest.mocked(query);
 /** redis.set calls as plain values (its overloads defeat direct comparison). */

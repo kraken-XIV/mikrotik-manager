@@ -1,15 +1,15 @@
 jest.mock('../../config/database', () => ({ query: jest.fn() }));
 jest.mock('../AlertService', () => ({ alertService: { getRule: jest.fn(), dispatch: jest.fn() } }));
-import {
-  stalePeers,
-  peerLabel,
-  humanAge,
-  checkWireGuardStale,
-  type PeerRow,
-} from '../wireguardStale';
 import { query } from '../../config/database';
-import { alertService } from '../AlertService';
 import { rosDurationSeconds } from '../../utils/rosDuration';
+import { alertService } from '../AlertService';
+import {
+  checkWireGuardStale,
+  humanAge,
+  peerLabel,
+  type PeerRow,
+  stalePeers,
+} from '../wireguardStale';
 
 const row = (over: Partial<PeerRow>): PeerRow => ({
   device_id: 1,

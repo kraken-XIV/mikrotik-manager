@@ -1,6 +1,7 @@
+import { AlertTriangle, ShieldAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ShieldAlert } from 'lucide-react';
+
 import { authApi } from '../services/api';
 
 interface SecurityStatus {

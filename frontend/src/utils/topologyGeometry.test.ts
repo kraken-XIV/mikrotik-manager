@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { borderToward, sidePoint, linkEnds, sideOf } from './topologyGeometry';
+import { describe, expect, it } from 'vitest';
+
+import { borderToward, linkEnds, sideOf, sidePoint } from './topologyGeometry';
 
 const card = (x: number, y: number) => ({ x, y, w: 160, h: 60 });
 

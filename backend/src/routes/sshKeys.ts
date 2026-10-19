@@ -1,18 +1,19 @@
-import { Router, Request, Response } from 'express';
 import { randomUUID } from 'crypto';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
-import { requireAuth, requireAdmin } from '../middleware/auth';
-import { siteScopeDevices } from '../utils/siteScope';
+import { requireAdmin, requireAuth } from '../middleware/auth';
 import { activeSite } from '../middleware/site';
-import { classifyKeyTarget } from '../utils/sshKeyCredentials';
-import { SSH_TARGET_COLS, type SshTarget } from '../services/SshKeyService';
 import {
+  cancelFleetKeyJob,
   enqueueFleetKeyJob,
   getFleetKeyJob,
-  cancelFleetKeyJob,
-  initFleetKeyJob,
   HALT_AFTER,
+  initFleetKeyJob,
 } from '../services/SshKeyFleetWorker';
+import { SSH_TARGET_COLS, type SshTarget } from '../services/SshKeyService';
+import { siteScopeDevices } from '../utils/siteScope';
+import { classifyKeyTarget } from '../utils/sshKeyCredentials';
 
 /**
  * Fleet-wide SSH key deployment: preview, then run as a background job.

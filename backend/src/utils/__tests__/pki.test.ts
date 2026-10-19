@@ -1,15 +1,16 @@
 // '../pki' first: it loads the reflect-metadata polyfill @peculiar/x509 needs.
+import * as x509 from '@peculiar/x509';
+import { createPrivateKey, generateKeyPairSync, X509Certificate } from 'crypto';
+
 import {
+  caInfo,
   createCa,
+  deviceSans,
   importCa,
   issueDeviceCert,
-  deviceSans,
-  signedBy,
-  caInfo,
   PkiError,
+  signedBy,
 } from '../pki';
-import * as x509 from '@peculiar/x509';
-import { X509Certificate, createPrivateKey, generateKeyPairSync } from 'crypto';
 
 jest.setTimeout(30_000);
 

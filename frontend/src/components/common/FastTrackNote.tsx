@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
+
 import { devicesApi } from '../../services/api';
 import { activeFastTrackRules } from '../../utils/fastTrack';
 

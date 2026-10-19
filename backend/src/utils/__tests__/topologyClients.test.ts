@@ -1,4 +1,4 @@
-import { clientAttachments, isPortLike, type ClientSighting } from '../topologyClients';
+import { clientAttachments, type ClientSighting, isPortLike } from '../topologyClients';
 
 const s = (over: Partial<ClientSighting>): ClientSighting => ({
   mac_address: 'AA:BB:CC:00:00:01',

@@ -1,23 +1,23 @@
-import { query, pool } from '../config/database';
-import { internetAllowed } from '../utils/darkSite';
-import { siteScopeDevices, type SiteScope } from '../utils/siteScope';
+import { pool, query } from '../config/database';
 import {
-  parseNvdResponse,
-  parseKevResponse,
   affects,
-  fixedIn,
-  severityRank,
   correctedAway,
+  fixedIn,
   matchUncertainty,
   type ParsedCve,
+  parseKevResponse,
+  parseNvdResponse,
+  severityRank,
   type VersionRange,
 } from '../utils/cveMatch';
+import { internetAllowed } from '../utils/darkSite';
 import { releaseNoteFixes } from '../utils/releaseNoteCves';
+import { type SiteScope, siteScopeDevices } from '../utils/siteScope';
 import {
-  refreshReleaseNotes,
   refreshCveDetails,
-  storedReleaseNotes,
+  refreshReleaseNotes,
   storedCveDetails,
+  storedReleaseNotes,
 } from './releaseNotes';
 
 /**

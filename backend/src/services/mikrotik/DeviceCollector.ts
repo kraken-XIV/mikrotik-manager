@@ -1,47 +1,48 @@
-import type { BgpConnectionInput } from '../../utils/bgpConnection';
-import { routingPeersFrom } from '../../utils/routingPeers';
-import { PartialApplyError, stepFailure } from '../changeGuard/partialApply';
+import { Point } from '@influxdata/influxdb-client';
 import { createHash } from 'crypto';
-import { ApiNotEnabledError } from '../../utils/sshOnly';
-import { lease, dropSessions, type Lease, type SessionLane } from './sessionPool';
-import { RouterOSClient, RouterOSTrapError, type ReadSpec } from './RouterOSClient';
-import { usesApiTls } from '../../utils/apiTls';
+
 import { query, queryOne } from '../../config/database';
 import { getWriteApi } from '../../config/influxdb';
-import { Point } from '@influxdata/influxdb-client';
-import { verifyDeviceSerial, IdentityMismatchError } from '../identityPins';
+import { usesApiTls } from '../../utils/apiTls';
+import type { BgpConnectionInput } from '../../utils/bgpConnection';
+import { decrypt } from '../../utils/crypto';
 import { fit, normalizeMac } from '../../utils/fit';
+import { lookupVendor } from '../../utils/oui';
 import { rosDurationSeconds } from '../../utils/rosDuration';
+import { routingPeersFrom } from '../../utils/routingPeers';
+import { buildServerArpMap } from '../../utils/serverArp';
+import { ApiNotEnabledError } from '../../utils/sshOnly';
+import { aggregateBridgeVlans, expandVlanIds, portVlanMembership, rosList } from '../../utils/vlan';
+import { PartialApplyError, stepFailure } from '../changeGuard/partialApply';
+import { IdentityMismatchError, verifyDeviceSerial } from '../identityPins';
+import {
+  buildMacIndex,
+  chooseWifiPackage,
+  classifyWifiRole,
+  clientsPerRadio,
+  hasRadios,
+  isCapsmanManaged,
+  legacyCapInterfaces,
+  legacyManagerEnabled,
+  legacyRadios,
+  lookupDeviceForMac,
+  macIndexKeys,
+  matchRadiosToDevices,
+  normalizeRadios,
+  parseCapsmanStatus,
+  parseCapStatus,
+  parseRadioMonitor,
+  resolveDatapath,
+  type WifiRole,
+} from './capsman';
 import {
   guestSsidTag,
   legacyAuthTypes,
   legacyProfileName,
   legacyProfileParams,
 } from './legacySecurity';
-import { decrypt } from '../../utils/crypto';
-import { lookupVendor } from '../../utils/oui';
-import { buildServerArpMap } from '../../utils/serverArp';
-import { aggregateBridgeVlans, portVlanMembership, expandVlanIds, rosList } from '../../utils/vlan';
-import {
-  classifyWifiRole,
-  isCapsmanManaged,
-  parseCapsmanStatus,
-  parseCapStatus,
-  normalizeRadios,
-  macIndexKeys,
-  parseRadioMonitor,
-  resolveDatapath,
-  clientsPerRadio,
-  buildMacIndex,
-  matchRadiosToDevices,
-  lookupDeviceForMac,
-  legacyManagerEnabled,
-  legacyCapInterfaces,
-  legacyRadios,
-  hasRadios,
-  chooseWifiPackage,
-  type WifiRole,
-} from './capsman';
+import { type ReadSpec, RouterOSClient, RouterOSTrapError } from './RouterOSClient';
+import { dropSessions, type Lease, lease, type SessionLane } from './sessionPool';
 
 /**
  * Version of the wireless role check. Devices classified by an older version
@@ -62,9 +63,9 @@ interface CapsmanInventory {
   configurations: string[] | null;
   provisioning: string[] | null;
 }
-import { parseLteMonitor, overallQuality, detectChanges, type LteStatus } from '../../utils/lte';
 import { bytesSince, periodKey, shouldSend } from '../../utils/dataCap';
 import { parseDeviceLogTime } from '../../utils/deviceTime';
+import { detectChanges, type LteStatus, overallQuality, parseLteMonitor } from '../../utils/lte';
 import { BackupService } from '../BackupService';
 import { storeProxyConnections } from '../ProxyLogService';
 
@@ -79,15 +80,15 @@ const UPDATE_DOWNLOAD_TIMEOUT_MS = 10 * 60_000;
  */
 const LOG_READ_TIMEOUT_MS = 120_000;
 import {
-  selectNewLogLines,
   highestStoredId,
-  surrogateLogId,
-  storedLogId,
   type RawLogLine,
+  selectNewLogLines,
+  storedLogId,
+  surrogateLogId,
 } from '../../utils/logDedup';
 import {
-  parseUpdateStatus,
   latestFromStream,
+  parseUpdateStatus,
   peakPercent,
   type UpdateStatus,
 } from '../../utils/updateStatus';
@@ -100,31 +101,31 @@ export interface DownloadResult {
   /** Number of progress rows streamed; zero means the device said nothing. */
   rows: number;
 }
-import { alertService } from '../AlertService';
+import { bridgeDeleteRefusal, planBridgePortMove } from '../../utils/bridgePortMove';
+import { frameTypesFor, planTaggedRemovals, planVlanWrite } from '../../utils/bridgeVlanPlan';
 import { readRevocation } from '../../utils/certRecord';
-import { managerAddressFromActive, stripOwnSessionNoise } from '../../utils/logNoise';
-import { ALL_MODULES, type PollModules } from '../../utils/pollModules';
-import { planVlanWrite, frameTypesFor, planTaggedRemovals } from '../../utils/bridgeVlanPlan';
-import { planBridgePortMove, bridgeDeleteRefusal } from '../../utils/bridgePortMove';
-import {
-  normalizeHealth,
-  evaluateHealth,
-  type HealthVerdict,
-  type HealthIssue,
-} from '../../utils/deviceHealth';
-import { resolveChannel } from '../../utils/updateChannel';
-import { registerPollSession } from '../../utils/pollJobContext';
-import { translateToWifiParams } from './wifiParams';
-import { toV7FilterRule } from './routeFilter';
-import { usesRemoteLogFormat, toSyslogActionParams } from './syslogAction';
-import { configuredServices } from '../../utils/ipServices';
 import { isClockChangeLine } from '../../utils/clockLogLines';
-import { planNtpWrites, isLegacyClient, legacyServerList, type NtpForm } from './ntpSettings';
-import { recordInterfaceCounters } from '../interfaceErrors';
-import { parseRateBps } from '../../utils/wifiRate';
-import { probeUserManager, USER_MANAGER_RECHECK_MS } from '../userManager';
+import {
+  evaluateHealth,
+  type HealthIssue,
+  type HealthVerdict,
+  normalizeHealth,
+} from '../../utils/deviceHealth';
 import { poolSize, usedPerPool } from '../../utils/dhcpPools';
+import { configuredServices } from '../../utils/ipServices';
+import { managerAddressFromActive, stripOwnSessionNoise } from '../../utils/logNoise';
+import { registerPollSession } from '../../utils/pollJobContext';
+import { ALL_MODULES, type PollModules } from '../../utils/pollModules';
+import { resolveChannel } from '../../utils/updateChannel';
+import { parseRateBps } from '../../utils/wifiRate';
+import { alertService } from '../AlertService';
+import { recordInterfaceCounters } from '../interfaceErrors';
 import { recordOptics } from '../opticLevels';
+import { probeUserManager, USER_MANAGER_RECHECK_MS } from '../userManager';
+import { isLegacyClient, legacyServerList, type NtpForm, planNtpWrites } from './ntpSettings';
+import { toV7FilterRule } from './routeFilter';
+import { toSyslogActionParams, usesRemoteLogFormat } from './syslogAction';
+import { translateToWifiParams } from './wifiParams';
 
 /** The device tables the bridge-port checks read (#258). */
 export interface BridgeState {

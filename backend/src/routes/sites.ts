@@ -1,10 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { devicesDenied } from '../utils/siteAccess';
-import { cleanOverrides, validateOverrides, resolveEffective } from '../utils/pollOverrides';
-import { globalSettings } from '../services/pollSettings';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne, transaction } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
+import { globalSettings } from '../services/pollSettings';
 import { groupsChanged } from '../services/siteGroups';
+import { cleanOverrides, resolveEffective, validateOverrides } from '../utils/pollOverrides';
+import { devicesDenied } from '../utils/siteAccess';
 import { accountsOnlyReaching } from '../utils/siteRoles';
 
 const router = Router();

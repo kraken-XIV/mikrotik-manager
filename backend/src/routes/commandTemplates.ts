@@ -1,6 +1,7 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
-import { requireAuth, requireWrite, fleetOnly } from '../middleware/auth';
+import { fleetOnly, requireAuth, requireWrite } from '../middleware/auth';
 
 /**
  * Saved command templates (#163).

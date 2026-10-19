@@ -2,7 +2,7 @@ jest.mock('../crypto', () => ({
   encrypt: (v: string) => `C:${v}`,
   decrypt: (v: string) => v.slice(2),
 }));
-import { maskConfig, mergeConfig, sealConfig, openConfig } from '../alertChannelSecrets';
+import { maskConfig, mergeConfig, openConfig, sealConfig } from '../alertChannelSecrets';
 
 const MASK = '••••••••';
 

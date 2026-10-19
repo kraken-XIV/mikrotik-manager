@@ -1,10 +1,10 @@
+import { query } from '../../config/database';
 import {
   backfillProxyConnections,
   backfillProxySources,
   collectProxySources,
   storeProxyConnections,
 } from '../ProxyLogService';
-import { query } from '../../config/database';
 
 jest.mock('../../config/database', () => ({ query: jest.fn() }));
 

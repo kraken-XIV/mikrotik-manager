@@ -1,17 +1,18 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { metricsApi, devicesApi } from '../../services/api';
-import type { Interface, TrafficPoint, ResourcePoint } from '../../types';
+import { useState } from 'react';
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from 'recharts';
+
+import { devicesApi, metricsApi } from '../../services/api';
+import type { Interface, ResourcePoint, TrafficPoint } from '../../types';
 import { chartTooltip } from '../common/chartTooltip';
 
 interface Props {

@@ -1,4 +1,4 @@
-import { stpFleetRules, type StpFleetInput } from '../configHealth';
+import { type StpFleetInput, stpFleetRules } from '../configHealth';
 import type { DeviceSnapshot } from '../pathModel';
 
 /** A two-port bridge; spanning tree mode as given. */

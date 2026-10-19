@@ -1,11 +1,12 @@
-import { Router, Request, Response } from 'express';
 import { execFile } from 'child_process';
-import { promisify } from 'util';
-import { readFile, writeFile, unlink } from 'fs/promises';
-import { existsSync } from 'fs';
 import crypto from 'crypto';
+import { Request, Response, Router } from 'express';
+import { existsSync } from 'fs';
+import { readFile, unlink, writeFile } from 'fs/promises';
 import path from 'path';
-import { requireAuth, requireAdmin } from '../middleware/auth';
+import { promisify } from 'util';
+
+import { requireAdmin, requireAuth } from '../middleware/auth';
 
 const router = Router();
 router.use(requireAuth);

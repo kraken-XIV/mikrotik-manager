@@ -1,27 +1,28 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { formatDistanceToNow } from 'date-fns';
+import {
+  AlertTriangle,
+  ArrowUpCircle,
+  CheckCircle,
+  Clock,
+  HardDrive,
+  RefreshCw,
+  Rocket,
+  ShieldAlert,
+  Zap,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowUpCircle,
-  RefreshCw,
-  CheckCircle,
-  AlertTriangle,
-  Clock,
-  ShieldAlert,
-  Rocket,
-  Zap,
-  HardDrive,
-} from 'lucide-react';
-import clsx from 'clsx';
-import { firmwareApi, commandTemplatesApi } from '../services/api';
-import UpdateChannelCard from '../components/firmware/UpdateChannelCard';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { formatDistanceToNow } from 'date-fns';
+
 import ChangelogModal from '../components/ChangelogModal';
 import DeviceTypePill from '../components/devices/DeviceTypePill';
 import TagChips from '../components/devices/TagChips';
 import RolloutPanel from '../components/firmware/RolloutPanel';
 import { ROLLOUT_STATUS } from '../components/firmware/rolloutStatus';
+import UpdateChannelCard from '../components/firmware/UpdateChannelCard';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { commandTemplatesApi, firmwareApi } from '../services/api';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
-import { cveAlertsFor, cveAlertMessage, cveAlertKey } from '../cveAlerts';
 import type { FleetCveReport } from '../../services/cveFeed';
+import { cveAlertKey, cveAlertMessage, cveAlertsFor } from '../cveAlerts';
 
 const cve = (
   id: string,

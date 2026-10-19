@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { QueryClient, QueryObserver } from '@tanstack/react-query';
+import { describe, expect, it } from 'vitest';
 
 /**
  * Why site switching is done by rekeying the QueryClient rather than clearing it.

@@ -17,16 +17,16 @@
  * persistence lives in `runConfigHealth`.
  */
 import { query } from '../../config/database';
+import { type StpBridge, stpDomains, type StpLink } from '../../utils/stpUpstream';
 import { expandVlanIds, rosList } from '../../utils/vlan';
+import type { GuardDevice } from './ChangeGuard';
 import {
   captureSnapshot,
-  resolveManagementPath,
-  vlanMembership,
   type DeviceSnapshot,
+  resolveManagementPath,
   type RosRow,
+  vlanMembership,
 } from './pathModel';
-import type { GuardDevice } from './ChangeGuard';
-import { stpDomains, type StpBridge, type StpLink } from '../../utils/stpUpstream';
 
 export type FindingSeverity = 'critical' | 'warning' | 'info';
 

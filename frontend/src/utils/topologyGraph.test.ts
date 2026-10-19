@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { buildTopologyGraph, mergeCables, endFor, endId, type GraphInput } from './topologyGraph';
-import type { TopologyLink, TopologyDevice } from '../types';
+import { describe, expect, it } from 'vitest';
+
+import type { TopologyDevice, TopologyLink } from '../types';
+import { buildTopologyGraph, endFor, endId, type GraphInput, mergeCables } from './topologyGraph';
 
 const dev = (id: number, name = `d${id}`): TopologyDevice => ({
   id,

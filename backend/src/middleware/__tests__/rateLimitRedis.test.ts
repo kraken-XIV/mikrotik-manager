@@ -3,7 +3,8 @@ jest.mock('../../config/redis', () => ({ limiterRedis: () => ({ eval: mockEval }
 jest.mock('../../config/database', () => ({ query: jest.fn().mockResolvedValue([]) }));
 
 import type { Request, Response } from 'express';
-import { rateLimitRedis, memoryLimitExceeded } from '../rateLimitRedis';
+
+import { memoryLimitExceeded, rateLimitRedis } from '../rateLimitRedis';
 
 // Outside review S5.
 describe('rateLimitRedis', () => {

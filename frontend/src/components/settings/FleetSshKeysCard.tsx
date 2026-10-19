@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  KeyRound,
-  Loader2,
   AlertTriangle,
   CheckCircle2,
-  XCircle,
+  KeyRound,
+  Loader2,
   MinusCircle,
   RefreshCw,
+  XCircle,
 } from 'lucide-react';
-import clsx from 'clsx';
-import { sshFleetApi, tagsApi, type FleetKeyJob } from '../../services/api';
+import { useEffect, useMemo, useState } from 'react';
+
+import { type FleetKeyJob, sshFleetApi, tagsApi } from '../../services/api';
 import { useSiteStore } from '../../store/siteStore';
 
 /**

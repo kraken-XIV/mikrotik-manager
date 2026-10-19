@@ -1,5 +1,5 @@
-import { lease, dropSessions, pooledSessionCount } from '../sessionPool';
 import type { RouterOSClient } from '../RouterOSClient';
+import { dropSessions, lease, pooledSessionCount } from '../sessionPool';
 
 /** A stand-in client: usable until disconnected or marked broken. */
 function fakeClient() {

@@ -1,7 +1,7 @@
 import { query } from '../config/database';
+import { summarizeIssues } from '../utils/deviceHealth';
 import { alertService } from './AlertService';
 import type { DeviceCollector, DeviceRow } from './mikrotik/DeviceCollector';
-import { summarizeIssues } from '../utils/deviceHealth';
 
 /**
  * Read a device's hardware health, store the verdict, and alert on a change

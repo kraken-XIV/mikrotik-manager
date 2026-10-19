@@ -1,6 +1,7 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, Trash2, Copy } from 'lucide-react';
+import { Copy, KeyRound, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+
 import { commandSecretsApi } from '../../services/api';
 
 /**

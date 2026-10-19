@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { lineDiff } from './lineDiff';
 
 const rebuild = (rows: ReturnType<typeof lineDiff>, side: 'old' | 'new') =>

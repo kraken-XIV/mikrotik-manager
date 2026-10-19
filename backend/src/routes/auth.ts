@@ -1,15 +1,16 @@
-import { Router, Request, Response } from 'express';
-import { revokeSessionToken, forgetSessionAccount } from '../utils/sessionState';
 import bcrypt from 'bcryptjs';
+import { Request, Response, Router } from 'express';
 import * as OTPAuth from 'otpauth';
 import * as qrcode from 'qrcode';
+
 import { query, queryOne } from '../config/database';
-import { signRawToken, verifyRawToken, requireAuth } from '../middleware/auth';
-import { getSecretsInfo, encryptionKeyMissing } from '../utils/secrets';
+import { requireAuth, signRawToken, verifyRawToken } from '../middleware/auth';
 import { loginRateLimit, rateLimitRedis } from '../middleware/rateLimitRedis';
-import { validatePassword } from '../utils/passwordPolicy';
-import { sessionResponse } from '../utils/sessionResponse';
 import { passwordLoginEnabled } from '../utils/passwordLogin';
+import { validatePassword } from '../utils/passwordPolicy';
+import { encryptionKeyMissing, getSecretsInfo } from '../utils/secrets';
+import { sessionResponse } from '../utils/sessionResponse';
+import { forgetSessionAccount, revokeSessionToken } from '../utils/sessionState';
 
 const router = Router();
 

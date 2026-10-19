@@ -1,11 +1,12 @@
+import { useQuery } from '@tanstack/react-query';
+import { BookOpen, LogOut, Menu, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Sun, Moon, LogOut, Menu, BookOpen } from 'lucide-react';
+
+import { settingsApi, signOut } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
-import GlobalSearch from './GlobalSearch';
 import { docsUrl } from '../../version';
-import { useQuery } from '@tanstack/react-query';
-import { settingsApi, signOut } from '../../services/api';
+import GlobalSearch from './GlobalSearch';
 
 interface TopBarProps {
   onMenuClick: () => void;

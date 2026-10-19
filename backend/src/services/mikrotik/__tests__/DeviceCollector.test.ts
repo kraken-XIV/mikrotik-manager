@@ -7,9 +7,9 @@ jest.mock('../../../config/influxdb');
 jest.mock('../../../utils/oui');
 jest.mock('../../../utils/serverArp');
 
-import { DeviceCollector, DeviceRow } from '../DeviceCollector';
 import { query } from '../../../config/database';
 import { isPartialApply } from '../../changeGuard/partialApply';
+import { DeviceCollector, DeviceRow } from '../DeviceCollector';
 
 const testDevice: DeviceRow = {
   id: 1,

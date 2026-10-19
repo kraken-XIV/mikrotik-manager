@@ -19,14 +19,15 @@
  * Capture and resolution are deliberately separate so resolution stays a pure
  * function over a snapshot and can be unit-tested against fixtures.
  */
-import { readApiConnections, readCoveringRoutes } from './targetedReads';
 import { isIP } from 'net';
-import { RouterOSClient } from '../mikrotik/RouterOSClient';
+
 import { usesApiTls } from '../../utils/apiTls';
 import { decrypt } from '../../utils/crypto';
 import { expandVlanIds } from '../../utils/vlan';
+import { RouterOSClient } from '../mikrotik/RouterOSClient';
 import type { GuardDevice } from './ChangeGuard';
 import { referencedAddressLists } from './firewallPath';
+import { readApiConnections, readCoveringRoutes } from './targetedReads';
 
 // Re-exported so the analysis modules keep importing VLAN handling from the path
 // model they reason about, while the collector shares the same implementation.

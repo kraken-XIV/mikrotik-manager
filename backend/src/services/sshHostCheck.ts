@@ -8,7 +8,7 @@
  * connection before authentication. ssh2 then reports only "Host denied", so
  * explainSshError() swaps that for what actually happened.
  */
-import { verifyDeviceIdentity, sshHostKeyFingerprint, IdentityMismatchError } from './identityPins';
+import { IdentityMismatchError, sshHostKeyFingerprint, verifyDeviceIdentity } from './identityPins';
 
 const lastRefusal = new Map<string, string>();
 const key = (host: string, port: number): string => `${host}:${port}`;

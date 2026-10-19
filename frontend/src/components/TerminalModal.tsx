@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { io, Socket } from 'socket.io-client';
-import { X, Maximize2, Minimize2, TerminalSquare, AlertCircle, RefreshCw } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
 import '@xterm/xterm/css/xterm.css';
+
+import { FitAddon } from '@xterm/addon-fit';
+import { Terminal } from '@xterm/xterm';
+import { AlertCircle, Maximize2, Minimize2, RefreshCw, TerminalSquare, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { io, Socket } from 'socket.io-client';
+
+import { useAuthStore } from '../store/authStore';
 
 const MIN_W = 480;
 const MIN_H = 300;

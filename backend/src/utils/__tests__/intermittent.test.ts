@@ -1,4 +1,4 @@
-import { offlineAction, recoveryAlert, describeDuration } from '../intermittent';
+import { describeDuration, offlineAction, recoveryAlert } from '../intermittent';
 
 const now = new Date('2026-09-25T12:00:00Z');
 const hoursAgo = (h: number) => new Date(now.getTime() - h * 3600_000);

@@ -1,13 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
   chunkRows,
-  staggerBlocks,
   columnsForWidth,
-  resolveColumns,
   DENSITY_OPTIONS,
   parseDensity,
-  TILE_PX,
+  resolveColumns,
+  staggerBlocks,
   TILE_GAP_PX,
+  TILE_PX,
 } from './faceplateLayout';
 
 describe('columnsForWidth', () => {

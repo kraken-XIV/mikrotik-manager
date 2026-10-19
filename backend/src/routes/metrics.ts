@@ -1,25 +1,26 @@
-import { Router, Request, Response } from 'express';
-import { decodedPath } from '../utils/requestPath';
+import { fluxString } from '@influxdata/influxdb-client';
+import { Request, Response, Router } from 'express';
+
+import { query } from '../config/database';
+import { bucket, getQueryApi } from '../config/influxdb';
+import { requireAuth } from '../middleware/auth';
+import { activeSite } from '../middleware/site';
+import { latestInterfaceCounters, latestResources } from '../services/latestMetrics';
 import {
   outageLengthSeconds,
   outageOverlapsSql,
   outageSecondsInWindow,
   outageSecondsSql,
 } from '../utils/outageWindow';
+import { decodedPath } from '../utils/requestPath';
 import { deviceSiteAccess } from '../utils/siteAccess';
-import { getQueryApi, bucket } from '../config/influxdb';
-import { query } from '../config/database';
-import { requireAuth } from '../middleware/auth';
 import {
-  siteScopeDevices,
-  siteScopeByDevice,
-  siteScopeByNullableDevice,
   clientSeriesTag,
   siteList,
+  siteScopeByDevice,
+  siteScopeByNullableDevice,
+  siteScopeDevices,
 } from '../utils/siteScope';
-import { activeSite } from '../middleware/site';
-import { fluxString } from '@influxdata/influxdb-client';
-import { latestResources, latestInterfaceCounters } from '../services/latestMetrics';
 
 const router = Router();
 router.use(requireAuth);

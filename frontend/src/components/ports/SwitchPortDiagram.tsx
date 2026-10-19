@@ -1,73 +1,74 @@
-import { useState, useEffect, useRef } from 'react';
-import ReviewChangesButton from '../common/ReviewChangesButton';
-import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { formatDistanceToNow } from 'date-fns';
 import {
-  RefreshCw,
-  X,
-  Check,
-  AlertCircle,
   Activity,
+  AlertCircle,
+  AlertTriangle,
+  Check,
+  ExternalLink,
+  LayoutGrid,
   Link2,
-  Trash2,
   Network,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
   Users,
   Wifi,
-  ShieldCheck,
-  AlertTriangle,
-  LayoutGrid,
-  ExternalLink,
+  X,
   Zap,
 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
 import {
   devicesApi,
   metricsApi,
-  type PortErrorSummary,
   type OpticStatus,
+  type PortErrorSummary,
 } from '../../services/api';
-import { chartTooltip } from '../common/chartTooltip';
-import FloatingWindow from '../common/FloatingWindow';
-import { useCanWrite } from '../../hooks/useCanWrite';
-import ChangeGuardDialog, {
-  guardOutcomeMessage,
-  LockoutVerdictDialog,
-  lockoutVerdictOf,
-  type GuardResult,
-  type LockoutVerdict,
-} from '../ChangeGuardDialog';
-import type { SwitchPort, Vlan, TrafficPoint, PortMonitorData, PortClient } from '../../types';
-import { classifyPort, portBasis, portLabel, portSortKey } from '../../utils/portClass';
-import { parseVlanList, toggleVlan, formatVlanList } from '../../utils/vlanList';
+import type { PortClient, PortMonitorData, SwitchPort, TrafficPoint, Vlan } from '../../types';
 import { changeErrorText } from '../../utils/changeError';
 import {
-  staggerBlocks,
   chunkRows,
-  resolveColumns,
-  DENSITY_OPTIONS,
-  parseDensity,
-  densityLabel,
   type Density,
+  DENSITY_OPTIONS,
+  densityLabel,
+  parseDensity,
+  resolveColumns,
   type StaggerBlock,
+  staggerBlocks,
 } from '../../utils/faceplateLayout';
 import {
+  arrangeSfp,
+  cageTiles,
   lookupModelLayout,
   resolveEvenOnTop,
-  arrangeSfp,
   stackCages,
-  cageTiles,
 } from '../../utils/faceplateModels';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
-import { formatDistanceToNow } from 'date-fns';
-import clsx from 'clsx';
+import { classifyPort, portBasis, portLabel, portSortKey } from '../../utils/portClass';
+import { formatVlanList, parseVlanList, toggleVlan } from '../../utils/vlanList';
+import ChangeGuardDialog, {
+  guardOutcomeMessage,
+  type GuardResult,
+  type LockoutVerdict,
+  LockoutVerdictDialog,
+  lockoutVerdictOf,
+} from '../ChangeGuardDialog';
+import { chartTooltip } from '../common/chartTooltip';
+import FloatingWindow from '../common/FloatingWindow';
+import ReviewChangesButton from '../common/ReviewChangesButton';
 
 /** Move-dialog targets that aren't bridge names (#258). */
 const NEW_BRIDGE = '\u0000new';

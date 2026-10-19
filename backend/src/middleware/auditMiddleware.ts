@@ -1,8 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
+
 import { query } from '../config/database';
-import { verifyToken } from './auth';
 import { logSafe } from '../utils/logSafe';
 import { outsidePreview } from '../utils/previewContext';
+import { verifyToken } from './auth';
 
 function extractEntity(path: string): { entityType: string | null; entityId: number | null } {
   // e.g. /api/devices/42/interfaces → 'device', 42

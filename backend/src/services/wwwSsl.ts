@@ -21,10 +21,11 @@
  * assigned on the device instead and is kept from then on.
  */
 import https from 'https';
+
 import { queryOne } from '../config/database';
-import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
-import { ensureCertificate, certByName, usable } from './apiSsl';
 import { allowedFrom, allowedFromKey } from '../utils/ipServices';
+import { certByName, ensureCertificate, usable } from './apiSsl';
+import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 
 export interface WwwSslResult {
   /** True once www-ssl answers and plain www is off. */

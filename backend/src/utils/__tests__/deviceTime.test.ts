@@ -1,8 +1,8 @@
 import {
   parseDeviceLogTime,
+  parseGmtOffsetMs,
   parseWallClock,
   wallClockToUtc,
-  parseGmtOffsetMs,
 } from '../deviceTime';
 
 const NOW = new Date('2026-09-03T15:37:45Z');

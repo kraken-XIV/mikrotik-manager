@@ -6,16 +6,17 @@
  *   POST /api/user-manager/:id/sessions/:sid/remove   clear a stuck session
  *   POST /api/user-manager/recheck              look for it again on the next slow poll
  */
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
 import { activeSite } from '../middleware/site';
-import { siteScopeDevices } from '../utils/siteScope';
-import { deviceSiteAccess, deviceIdParam } from '../utils/siteAccess';
-import { readUserManager, removeSession } from '../services/userManager';
-import { isItemId } from '../utils/userManager';
 import type { DeviceRow } from '../services/mikrotik/DeviceCollector';
 import { RouterOSTrapError } from '../services/mikrotik/RouterOSClient';
+import { readUserManager, removeSession } from '../services/userManager';
+import { deviceIdParam, deviceSiteAccess } from '../utils/siteAccess';
+import { siteScopeDevices } from '../utils/siteScope';
+import { isItemId } from '../utils/userManager';
 
 const router = Router();
 router.use(requireAuth);

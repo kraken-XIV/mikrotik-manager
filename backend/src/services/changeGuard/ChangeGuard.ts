@@ -23,14 +23,15 @@
  * never configure SSH credentials and would otherwise have no protection at all.
  */
 import { randomBytes } from 'crypto';
-import { RouterOSClient } from '../mikrotik/RouterOSClient';
-import { usesApiTls } from '../../utils/apiTls';
-import { decrypt } from '../../utils/crypto';
+
 import { query, queryOne } from '../../config/database';
 import { redis } from '../../config/redis';
+import { usesApiTls } from '../../utils/apiTls';
+import { decrypt } from '../../utils/crypto';
+import { RouterOSClient } from '../mikrotik/RouterOSClient';
 import { heldLockToken, restoreHeldLock } from './deviceLock';
 import { isPartialApply, PartialApplyRevertError } from './partialApply';
-import { restoreScopeFor, captureScope, buildRestorePlan, type RestorePlan } from './scriptRestore';
+import { buildRestorePlan, captureScope, type RestorePlan, restoreScopeFor } from './scriptRestore';
 
 export type GuardMode = 'binary' | 'script';
 

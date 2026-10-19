@@ -10,29 +10,30 @@
  * The token used to travel in the URL fragment, where it stayed in history for
  * its whole life, and any token there was accepted (outside review S2, S4).
  */
-import { Router, Request, Response } from 'express';
-import { randomBytes, createHash } from 'crypto';
-import { redis } from '../config/redis';
-import { queryOne } from '../config/database';
-import { sessionResponse } from '../utils/sessionResponse';
+import { createHash, randomBytes } from 'crypto';
+import { Request, Response, Router } from 'express';
 import { Issuer } from 'openid-client';
-import { requireAuth, requireAdmin } from '../middleware/auth';
+
+import { queryOne } from '../config/database';
+import { redis } from '../config/redis';
+import { requireAdmin, requireAuth } from '../middleware/auth';
 import { rateLimitRedis } from '../middleware/rateLimitRedis';
 import {
-  loadOidcConfig,
-  saveOidcConfig,
-  maskedConfig,
   APP_ROLES,
   type AppRole,
+  loadOidcConfig,
+  maskedConfig,
   type OidcConfig,
+  saveOidcConfig,
 } from '../services/oidc/oidcConfig';
 import {
   beginLogin,
+  bindingHash,
   completeLogin,
   resetOidcClientCache,
-  bindingHash,
 } from '../services/oidc/OidcService';
 import { logSafe } from '../utils/logSafe';
+import { sessionResponse } from '../utils/sessionResponse';
 
 const router = Router();
 

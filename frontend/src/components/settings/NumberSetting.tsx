@@ -1,4 +1,4 @@
-import { useState, type InputHTMLAttributes } from 'react';
+import { type InputHTMLAttributes, useState } from 'react';
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'> & {
   value: number | string | null | undefined;

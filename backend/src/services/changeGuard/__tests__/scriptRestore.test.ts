@@ -1,9 +1,9 @@
 import {
   buildRestorePlan,
-  restoreScopeFor,
-  rosQuote,
   captureScope,
   CHUNK_MAX,
+  restoreScopeFor,
+  rosQuote,
 } from '../scriptRestore';
 
 const plan = (captured: Parameters<typeof buildRestorePlan>[0]) =>

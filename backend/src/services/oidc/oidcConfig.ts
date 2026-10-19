@@ -6,7 +6,7 @@
  * secret is only ever written through the dedicated, admin-only OIDC endpoints.
  */
 import { query, queryOne } from '../../config/database';
-import { encrypt, decrypt } from '../../utils/crypto';
+import { decrypt, encrypt } from '../../utils/crypto';
 
 export const OIDC_SETTINGS_KEY = 'oidc_config';
 

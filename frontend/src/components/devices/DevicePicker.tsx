@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
 import { sitesApi } from '../../services/api';
 import type { Device } from '../../types';
 import DeviceTypePill from './DeviceTypePill';

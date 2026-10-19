@@ -1,4 +1,4 @@
-import { resolveChannel, isUpdateChannel } from '../updateChannel';
+import { isUpdateChannel, resolveChannel } from '../updateChannel';
 
 describe('resolveChannel', () => {
   it('leaves the device alone when nothing is set, as before this existed', () => {

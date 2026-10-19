@@ -1,7 +1,7 @@
 import {
-  parseUpdateStatus,
   describeUpdateStatus,
   latestFromStream,
+  parseUpdateStatus,
   peakPercent,
 } from '../updateStatus';
 

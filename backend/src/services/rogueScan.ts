@@ -8,8 +8,8 @@
  * managed AP is also called "Guest".
  */
 import { query } from '../config/database';
-import { siteScopeByDevice, type SiteScope } from '../utils/siteScope';
 import { classifyScans, type ScannedNetwork } from '../utils/rogueAp';
+import { type SiteScope, siteScopeByDevice } from '../utils/siteScope';
 
 export async function classifyLatestScans(scope: SiteScope) {
   const scanFilter = siteScopeByDevice(scope, 'a.device_id');

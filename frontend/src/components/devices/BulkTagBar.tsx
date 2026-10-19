@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Tag as TagIcon, X, Loader2, KeyRound, Building2 } from 'lucide-react';
-import { tagsApi, sitesApi } from '../../services/api';
+import { Building2, KeyRound, Loader2, Tag as TagIcon, X } from 'lucide-react';
+import { useState } from 'react';
+
+import { sitesApi, tagsApi } from '../../services/api';
 import type { Device, Tag } from '../../types';
 
 /**

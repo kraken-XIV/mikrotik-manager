@@ -1,82 +1,83 @@
-import { PartialApplyError, isPartialApply } from '../services/changeGuard/partialApply';
-import { resolveAuth } from '../services/sshExec';
-import {
-  readSshInfo,
-  refreshOverSsh,
-  checkApi,
-  promoteToApi,
-  recordApiCheck,
-  type SshOnlyDevice,
-} from '../services/sshOnly';
-import { describeSshFailure } from '../utils/sshOnly';
-import net from 'net';
-import { Router, Request, Response } from 'express';
-import { deviceSiteAccess, deviceIdParam, devicesDenied } from '../utils/siteAccess';
-import { bulkUpdateCredentials } from '../services/bulkCredentials';
-import { deviceSettings } from '../services/pollSettings';
-import { validateOverrides } from '../utils/pollOverrides';
-import {
-  devicePins,
-  pendingIdentityChanges,
-  trustNewIdentity,
-  IDENTITY_KINDS,
-} from '../services/identityPins';
-import { enableApiSsl, type ApiSslDevice } from '../services/apiSsl';
-import { enableWwwSsl } from '../services/wwwSsl';
-import { deviceWriteLock, deviceIdFromPath } from '../services/changeGuard/deviceLock';
 import { randomUUID } from 'crypto';
+import { Request, Response, Router } from 'express';
+import net from 'net';
 import { Client as SshClient } from 'ssh2';
+
 import { query, queryOne } from '../config/database';
+import { redis } from '../config/redis';
 import {
-  requireAuth,
-  requireWrite,
-  requireAdmin,
-  requireSiteAdmin,
   isSiteScoped,
+  requireAdmin,
+  requireAuth,
+  requireSiteAdmin,
+  requireWrite,
 } from '../middleware/auth';
-import { maskSecretsForReadOnly } from '../utils/redactSecrets';
-import { encrypt, decrypt } from '../utils/crypto';
-import { RouterOSClient } from '../services/mikrotik/RouterOSClient';
-import { usesApiTls, managementService, parseApiTls, checkPort } from '../utils/apiTls';
-import { planBridgePortMove, addressesOnPorts, bridgeDeleteRefusal } from '../utils/bridgePortMove';
-import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
-import { PollerService } from '../services/PollerService';
+import { activeSite, targetSite } from '../middleware/site';
+import { type ApiSslDevice, enableApiSsl } from '../services/apiSsl';
+import { bulkUpdateCredentials } from '../services/bulkCredentials';
+import { analyzeChange, type PlannedChange } from '../services/changeGuard/analyzeChange';
 import {
-  createDeviceFromBody,
-  loadCredentialPreset,
-  type CreateDeviceInput,
-} from '../services/deviceCreation';
-import { parsePort } from '../utils/parsePort';
-import { safeConnectionError } from '../utils/safeClientError';
-import { normalizeDeviceAddress, reconcileAddressPort } from '../utils/deviceAddress';
-import {
-  withSafeApply,
+  type GuardDevice,
+  GuardRequiredError,
   probeCapability,
   probeUndoCapability,
-  GuardRequiredError,
-  type GuardDevice,
+  withSafeApply,
 } from '../services/changeGuard/ChangeGuard';
-import { captureSnapshot, resolveManagementPath } from '../services/changeGuard/pathModel';
-import { analyzeChange, type PlannedChange } from '../services/changeGuard/analyzeChange';
 import { runConfigHealth } from '../services/changeGuard/configHealth';
+import { deviceIdFromPath, deviceWriteLock } from '../services/changeGuard/deviceLock';
+import { withGuardedChange } from '../services/changeGuard/guardedRoute';
+import { isPartialApply, PartialApplyError } from '../services/changeGuard/partialApply';
+import { captureSnapshot, resolveManagementPath } from '../services/changeGuard/pathModel';
+import { enqueueBulkAddJob, getBulkAddJobState } from '../services/DeviceBulkAddWorker';
+import { DEVICE_BASE_COLUMNS } from '../services/deviceColumns';
+import {
+  createDeviceFromBody,
+  type CreateDeviceInput,
+  loadCredentialPreset,
+} from '../services/deviceCreation';
+import { withEffectiveLocation } from '../services/deviceLocation';
+import { resolveSiteChoice } from '../services/deviceSite';
+import { runHealthCheck } from '../services/healthCheck';
+import {
+  devicePins,
+  IDENTITY_KINDS,
+  pendingIdentityChanges,
+  trustNewIdentity,
+} from '../services/identityPins';
+import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
+import { RouterOSClient } from '../services/mikrotik/RouterOSClient';
+import { PollerService } from '../services/PollerService';
+import { deviceSettings } from '../services/pollSettings';
+import { resolveAuth } from '../services/sshExec';
+import { SSH_TARGET_COLS } from '../services/SshKeyService';
+import {
+  checkApi,
+  promoteToApi,
+  readSshInfo,
+  recordApiCheck,
+  refreshOverSsh,
+  type SshOnlyDevice,
+} from '../services/sshOnly';
+import { enableWwwSsl } from '../services/wwwSsl';
+import { checkPort, managementService, parseApiTls, usesApiTls } from '../utils/apiTls';
+import { addressesOnPorts, bridgeDeleteRefusal, planBridgePortMove } from '../utils/bridgePortMove';
 import { fixFor, noFixReason } from '../utils/configHealthFixes';
+import { decrypt, encrypt } from '../utils/crypto';
+import { normalizeDeviceAddress, reconcileAddressPort } from '../utils/deviceAddress';
+import type { HealthIssue } from '../utils/deviceHealth';
+import { logSafe } from '../utils/logSafe';
+import { buildSegments, summarise, summariseBands } from '../utils/lteDwell';
+import { parsePort } from '../utils/parsePort';
+import { validateOverrides } from '../utils/pollOverrides';
+import { maskSecretsForReadOnly } from '../utils/redactSecrets';
+import { updateAvailable } from '../utils/rosVersion';
+import { safeConnectionError } from '../utils/safeClientError';
+import { deviceIdParam, devicesDenied, deviceSiteAccess } from '../utils/siteAccess';
+import { andSite, siteScopeDevices } from '../utils/siteScope';
+import { classifyKeyTarget } from '../utils/sshKeyCredentials';
+import { describeSshFailure } from '../utils/sshOnly';
 import { expandVlanIds } from '../utils/vlan';
 import { isMultiVlanSpec } from '../utils/vlan';
-import { redis } from '../config/redis';
-import { enqueueBulkAddJob, getBulkAddJobState } from '../services/DeviceBulkAddWorker';
-import { logSafe } from '../utils/logSafe';
-import { withGuardedChange } from '../services/changeGuard/guardedRoute';
-import { updateAvailable } from '../utils/rosVersion';
-import { DEVICE_BASE_COLUMNS } from '../services/deviceColumns';
-import { withEffectiveLocation } from '../services/deviceLocation';
-import { SSH_TARGET_COLS } from '../services/SshKeyService';
-import { classifyKeyTarget } from '../utils/sshKeyCredentials';
-import type { HealthIssue } from '../utils/deviceHealth';
-import { runHealthCheck } from '../services/healthCheck';
-import { buildSegments, summarise, summariseBands } from '../utils/lteDwell';
-import { siteScopeDevices, andSite } from '../utils/siteScope';
-import { activeSite, targetSite } from '../middleware/site';
-import { resolveSiteChoice } from '../services/deviceSite';
 
 /** Postgres interval text to milliseconds, for the few windows we offer. */
 function intervalToMs(interval: string): number {
@@ -84,29 +85,30 @@ function intervalToMs(interval: string): number {
   const per: Record<string, number> = { hours: 3_600_000, days: 86_400_000 };
   return (Number(n) || 0) * (per[unit] ?? 0);
 }
-import { parseBandList, uplinkAnchor, totalBandwidthMhz, type LteBandInfo } from '../utils/lte';
 import { fluxString } from '@influxdata/influxdb-client';
-import { upgradeDecision } from '../utils/firmwarePlan';
-import { sshHostCheck, explainSshError } from '../services/sshHostCheck';
-import { presetCaller } from '../utils/presetAccess';
-import {
-  parseAllowedList,
-  configuredServices,
-  allowedFromKey,
-  managerPeer,
-  addressAllowed,
-  plainApiUsers,
-} from '../utils/ipServices';
+
 import { portErrorSummaries, thresholds } from '../services/interfaceErrors';
+import { dropThreshold, opticHistory, opticStatuses, rxLimits } from '../services/opticLevels';
+import { explainSshError, sshHostCheck } from '../services/sshHostCheck';
 import { clientAddressListView } from '../utils/addressLists';
-import { l3hwView } from '../utils/l3hw';
-import { switchVlanView } from '../utils/switchVlans';
-import { switchVlanEntry, switchPortVlan, validPortName } from '../utils/switchVlanEdit';
-import { ipAddressEdit } from '../utils/ipAddressEdit';
 import { parseBgpConnection } from '../utils/bgpConnection';
 import { parseBridgeCreate, parseBridgeUpdate } from '../utils/bridgeEdit';
 import { bridgesView } from '../utils/bridgesView';
-import { opticStatuses, opticHistory, dropThreshold, rxLimits } from '../services/opticLevels';
+import { upgradeDecision } from '../utils/firmwarePlan';
+import { ipAddressEdit } from '../utils/ipAddressEdit';
+import {
+  addressAllowed,
+  allowedFromKey,
+  configuredServices,
+  managerPeer,
+  parseAllowedList,
+  plainApiUsers,
+} from '../utils/ipServices';
+import { l3hwView } from '../utils/l3hw';
+import { type LteBandInfo, parseBandList, totalBandwidthMhz, uplinkAnchor } from '../utils/lte';
+import { presetCaller } from '../utils/presetAccess';
+import { switchPortVlan, switchVlanEntry, validPortName } from '../utils/switchVlanEdit';
+import { switchVlanView } from '../utils/switchVlans';
 
 const router = Router();
 router.use(requireAuth);

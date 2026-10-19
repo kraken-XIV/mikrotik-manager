@@ -1,8 +1,9 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth } from '../middleware/auth';
-import { siteScopeByDevice } from '../utils/siteScope';
 import { activeSite } from '../middleware/site';
+import { siteScopeByDevice } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);

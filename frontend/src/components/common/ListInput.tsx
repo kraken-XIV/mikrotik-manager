@@ -1,5 +1,6 @@
-import { useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
+import { type ClipboardEvent, type KeyboardEvent, useState } from 'react';
+
 import { splitList } from '../../utils/ipPrefix';
 
 /**

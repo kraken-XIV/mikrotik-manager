@@ -1,12 +1,12 @@
 import {
-  parseRosId,
   highestStoredId,
   isLogReset,
-  selectNewLogLines,
-  surrogateLogId,
   isSurrogateLogId,
-  storedLogId,
+  parseRosId,
   type RawLogLine,
+  selectNewLogLines,
+  storedLogId,
+  surrogateLogId,
 } from '../logDedup';
 
 // Fixed clock so timestamp comparisons are deterministic.

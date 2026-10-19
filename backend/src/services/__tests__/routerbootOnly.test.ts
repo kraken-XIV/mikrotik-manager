@@ -4,8 +4,8 @@ jest.mock('../BackupService', () => ({ BackupService: jest.fn() }));
 jest.mock('../mikrotik/DeviceCollector', () => ({ DeviceCollector: jest.fn() }));
 
 import { query, queryOne } from '../../config/database';
-import { DeviceCollector } from '../mikrotik/DeviceCollector';
 import { FirmwareOrchestrator } from '../FirmwareOrchestrator';
+import { DeviceCollector } from '../mikrotik/DeviceCollector';
 
 const device = { id: 8, name: 'TEST', ip_address: '192.168.0.51', ros_version: '7.24.5' };
 const rollout = {

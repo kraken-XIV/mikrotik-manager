@@ -1,10 +1,11 @@
-import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, RefreshCw, ShieldCheck, AlertTriangle } from 'lucide-react';
-import { devicesApi, type ApiSslResult } from '../../services/api';
-import { useCanWrite } from '../../hooks/useCanWrite';
-import type { Device } from '../../types';
 import clsx from 'clsx';
+import { AlertTriangle, KeyRound, RefreshCw, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
+import { type ApiSslResult, devicesApi } from '../../services/api';
+import type { Device } from '../../types';
 import { unmutedForApiSslNotice } from '../../utils/apiSslNotice';
 import { usesApiTls } from '../../utils/apiTls';
 

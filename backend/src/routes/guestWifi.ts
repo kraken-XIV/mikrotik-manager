@@ -1,12 +1,13 @@
-import { Router, Request, Response } from 'express';
-import { deviceSiteAccess, deviceIdQuery } from '../utils/siteAccess';
-import { deviceWriteLock, deviceIdFromQuery } from '../services/changeGuard/deviceLock';
-import { withGuardedChange } from '../services/changeGuard/guardedRoute';
 import { randomBytes } from 'crypto';
+import { Request, Response, Router } from 'express';
+
 import { queryOne } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { maskSecretsForReadOnly } from '../utils/redactSecrets';
+import { deviceIdFromQuery, deviceWriteLock } from '../services/changeGuard/deviceLock';
+import { withGuardedChange } from '../services/changeGuard/guardedRoute';
 import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
+import { maskSecretsForReadOnly } from '../utils/redactSecrets';
+import { deviceIdQuery, deviceSiteAccess } from '../utils/siteAccess';
 
 const router = Router();
 router.use(requireAuth);

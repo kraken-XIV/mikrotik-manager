@@ -1,19 +1,20 @@
-import { Router, Request, Response } from 'express';
-import { wirelessDeviceSql } from '../services/mikrotik/capsman';
-import { deviceSiteAccess, deviceIdParam, deviceIdQuery, devicesDenied } from '../utils/siteAccess';
-import { deviceWriteLock, deviceIdFromPath } from '../services/changeGuard/deviceLock';
-import { withGuardedChange } from '../services/changeGuard/guardedRoute';
+import { fluxString } from '@influxdata/influxdb-client';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { maskSecretsForReadOnly } from '../utils/redactSecrets';
-import { siteScopeDevices, siteScopeByDevice } from '../utils/siteScope';
 import { activeSite } from '../middleware/site';
+import { deviceIdFromPath, deviceWriteLock } from '../services/changeGuard/deviceLock';
+import { withGuardedChange } from '../services/changeGuard/guardedRoute';
+import { wirelessDeviceSql } from '../services/mikrotik/capsman';
 import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
-import { lookupVendor } from '../utils/oui';
-import { settleWithConcurrency, FLEET_ACTION_CONCURRENCY } from '../utils/concurrency';
 import { aggregateAPScanRows } from '../utils/apScan';
-import { analyzeSpectrum, summarize, BAND_RANGES, parseChannelSpec } from '../utils/rfSpectrum';
-import { fluxString } from '@influxdata/influxdb-client';
+import { FLEET_ACTION_CONCURRENCY, settleWithConcurrency } from '../utils/concurrency';
+import { lookupVendor } from '../utils/oui';
+import { maskSecretsForReadOnly } from '../utils/redactSecrets';
+import { analyzeSpectrum, BAND_RANGES, parseChannelSpec, summarize } from '../utils/rfSpectrum';
+import { deviceIdParam, deviceIdQuery, devicesDenied, deviceSiteAccess } from '../utils/siteAccess';
+import { siteScopeByDevice, siteScopeDevices } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);

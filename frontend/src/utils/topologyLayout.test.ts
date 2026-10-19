@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  layoutTree,
+  DEFAULT_LAYOUT,
   layoutForest,
+  type LayoutResult,
+  layoutTree,
   pack,
   packInto,
-  DEFAULT_LAYOUT,
-  type LayoutResult,
 } from './topologyLayout';
 
 /** Children map from a plain description, as the page builds it by BFS. */

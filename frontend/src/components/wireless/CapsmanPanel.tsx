@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { Server, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
-import { wirelessApi, type CapsmanController } from '../../services/api';
 import clsx from 'clsx';
+import { AlertTriangle, ChevronDown, ChevronRight, Server } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+
+import { type CapsmanController, wirelessApi } from '../../services/api';
 
 /** One row of the unified radio/interface table. */
 interface Row {

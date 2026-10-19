@@ -1,7 +1,7 @@
 import { query } from '../config/database';
-import { siteScopeDevices, type SiteScope } from '../utils/siteScope';
-import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 import { type LldpDeviceType } from '../utils/lldpTargets';
+import { type SiteScope, siteScopeDevices } from '../utils/siteScope';
+import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 
 export { LLDP_DEVICE_TYPES, parseDeviceTypes } from '../utils/lldpTargets';
 

@@ -1,10 +1,10 @@
 import {
   buildSegments,
-  summarise,
-  summariseBands,
+  type CellEvent,
   expandBands,
   formatDuration,
-  type CellEvent,
+  summarise,
+  summariseBands,
 } from '../lteDwell';
 
 const T = (iso: string) => new Date(iso);

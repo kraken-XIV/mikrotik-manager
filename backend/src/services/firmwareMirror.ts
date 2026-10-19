@@ -16,33 +16,34 @@
  * - local-update/download starts in the background and can fail without a word,
  *   so a download is confirmed by the file on the device, never by the reply.
  */
-import https from 'https';
-import fs from 'fs';
-import path from 'path';
 import { createHash, randomBytes } from 'crypto';
+import fs from 'fs';
+import https from 'https';
+import path from 'path';
 import { Client as SSHClient } from 'ssh2';
+
 import { query, queryOne } from '../config/database';
-import { encrypt, decrypt } from '../utils/crypto';
-import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
-import { resolveAuth } from './sshExec';
-import { sshHostCheck, explainSshError } from './sshHostCheck';
-import { logSafe } from '../utils/logSafe';
+import { decrypt, encrypt } from '../utils/crypto';
 import {
-  planFiles,
-  versionsToPrune,
-  parseNewest,
-  parseSha256File,
-  supportsLocalUpdate,
+  type FleetDevice,
   isMirrorVersion,
-  newestCompleteFrom,
   MIRROR_GROUP,
   MIRROR_GROUP_POLICY,
-  mirrorPath,
-  mirrorDisks,
-  type FleetDevice,
-  type NeededFile,
   type MirrorDisk,
+  mirrorDisks,
+  mirrorPath,
+  type NeededFile,
+  newestCompleteFrom,
+  parseNewest,
+  parseSha256File,
+  planFiles,
+  supportsLocalUpdate,
+  versionsToPrune,
 } from '../utils/firmwareMirror';
+import { logSafe } from '../utils/logSafe';
+import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
+import { resolveAuth } from './sshExec';
+import { explainSshError, sshHostCheck } from './sshHostCheck';
 
 const CACHE_ROOT = path.join(process.env.SECRETS_DIR || '/app/data', 'firmware-cache');
 const MAX_PACKAGE_BYTES = 120 * 1024 * 1024;

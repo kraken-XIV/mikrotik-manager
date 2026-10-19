@@ -6,21 +6,22 @@
  * callback (openid-client checks the ID-token signature via JWKS plus iss/aud/
  * exp/nonce and the PKCE verifier), then resolves the identity to a local user.
  */
-import { Issuer, generators } from 'openid-client';
-import type { Client, TokenSet } from 'openid-client';
 import { createHash } from 'crypto';
-import { redis } from '../../config/redis';
+import type { Client, TokenSet } from 'openid-client';
+import { generators, Issuer } from 'openid-client';
+
 import { query, queryOne } from '../../config/database';
-import { loadOidcConfig, getClientSecret, type OidcConfig, type AppRole } from './oidcConfig';
+import { redis } from '../../config/redis';
 import { endAllSessions } from '../../utils/sessionState';
 import {
-  extractGroups,
-  mapGroupsToRole,
   deriveUsername,
+  emailDomainAllowed,
+  extractGroups,
   getEmail,
   isEmailVerified,
-  emailDomainAllowed,
+  mapGroupsToRole,
 } from './claimMapping';
+import { type AppRole, getClientSecret, loadOidcConfig, type OidcConfig } from './oidcConfig';
 
 const TX_TTL_SECONDS = 600; // 10 minutes
 const txKey = (state: string): string => `oidc:tx:${state}`;

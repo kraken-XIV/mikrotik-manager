@@ -7,17 +7,17 @@
  * once a day per device so the rest of the fleet costs nothing.
  */
 import { query } from '../config/database';
-import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
-import { RouterOSTrapError } from './mikrotik/RouterOSClient';
 import {
-  pickSettings,
-  pickUsers,
+  matchNasToDevices,
   pickGroups,
   pickRouters,
   pickSessions,
-  matchNasToDevices,
+  pickSettings,
+  pickUsers,
   SESSION_FIELDS,
 } from '../utils/userManager';
+import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
+import { RouterOSTrapError } from './mikrotik/RouterOSClient';
 import { canonicalIp } from './netflow/attribution';
 
 export const USER_MANAGER_RECHECK_MS = 86_400_000;

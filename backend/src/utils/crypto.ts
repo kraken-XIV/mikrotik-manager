@@ -7,7 +7,8 @@
  * "Credential encryption (ENCRYPTION_KEY)".
  */
 import * as crypto from 'crypto';
-import { encryptionKey, decryptionKeys, encryptionKeyMissing } from './secrets';
+
+import { decryptionKeys, encryptionKey, encryptionKeyMissing } from './secrets';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;

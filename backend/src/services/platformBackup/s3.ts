@@ -6,8 +6,8 @@
  */
 import * as crypto from 'crypto';
 import * as fs from 'fs';
-import * as https from 'https';
 import * as http from 'http';
+import * as https from 'https';
 
 export interface S3Config {
   /** e.g. https://s3.us-east-1.amazonaws.com, https://s3.us-west-004.backblazeb2.com */

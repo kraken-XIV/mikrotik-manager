@@ -1,10 +1,11 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import LoadError from '../common/LoadError';
-import { Route, AlertTriangle, ArrowRight, Wifi } from 'lucide-react';
 import clsx from 'clsx';
+import { AlertTriangle, ArrowRight, Route, Wifi } from 'lucide-react';
+import { useState } from 'react';
+
 import { clientsApi, type RoamSession } from '../../services/api';
 import { rssiColor } from '../../utils/wifiChannels';
+import LoadError from '../common/LoadError';
 
 const RANGES = ['1h', '24h', '7d', '30d'] as const;
 

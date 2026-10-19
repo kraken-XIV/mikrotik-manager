@@ -1,16 +1,16 @@
 import {
+  clampKeepVersions,
+  downloadUrl,
+  type FleetDevice,
+  isMirrorFolder,
+  matchLocalUpdate,
+  newestCompleteFrom,
   packageFileName,
   parseNewest,
   parseSha256File,
   planFiles,
-  versionsToPrune,
   supportsLocalUpdate,
-  matchLocalUpdate,
-  clampKeepVersions,
-  isMirrorFolder,
-  downloadUrl,
-  newestCompleteFrom,
-  type FleetDevice,
+  versionsToPrune,
 } from '../firmwareMirror';
 
 describe('packageFileName (#193)', () => {
@@ -175,7 +175,7 @@ describe('newestCompleteFrom', () => {
 
 // ── Disks (Discussion #85) ─────────────────────────────────────────────────
 
-import { mirrorPath, mirrorDisks, suggestDisk, isDiskName } from '../firmwareMirror';
+import { isDiskName, mirrorDisks, mirrorPath, suggestDisk } from '../firmwareMirror';
 
 describe('mirror disks', () => {
   // A 64 MB RAM disk on a CRS309 (7.24.5), as /disk/print detail returns it.

@@ -1,4 +1,4 @@
-import { sealItems, openItem } from '../bulkAddSecrets';
+import { openItem, sealItems } from '../bulkAddSecrets';
 
 describe('bulk add passwords', () => {
   it('keeps plain-text passwords out of the queued payload', () => {

@@ -6,29 +6,30 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { query, queryOne } from '../../config/database';
-import { encrypt, decrypt } from '../../utils/crypto';
 import { cronMatches } from '../../utils/cron';
+import { decrypt, encrypt } from '../../utils/crypto';
 import { logSafe } from '../../utils/logSafe';
 import { alertService } from '../AlertService';
 import {
-  exportRecords,
-  restoreFromFile,
-  versionNotNewer,
-  type RestoreMode,
-  type RestoreResult,
-} from './engine';
-import { writeBackup, readHeader, type BackupContents, type BackupHeader } from './format';
-import {
-  LOCAL_DIR,
-  UPLOAD_DIR,
-  FILE_PREFIX,
-  ensureLocalDir,
-  sendTo,
-  pruneAt,
   type Destination,
   type DestinationType,
+  ensureLocalDir,
+  FILE_PREFIX,
+  LOCAL_DIR,
+  pruneAt,
+  sendTo,
+  UPLOAD_DIR,
 } from './destinations';
+import {
+  exportRecords,
+  restoreFromFile,
+  type RestoreMode,
+  type RestoreResult,
+  versionNotNewer,
+} from './engine';
+import { type BackupContents, type BackupHeader, readHeader, writeBackup } from './format';
 
 export const APP_VERSION = (() => {
   try {

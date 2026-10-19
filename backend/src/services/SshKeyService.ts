@@ -12,21 +12,22 @@
  * access is an explicit, separate decision, taken after keys are seen working.
  */
 import { Client as SSHClient } from 'ssh2';
+
 import { query, queryOne } from '../config/database';
-import { encrypt, decrypt } from '../utils/crypto';
+import { usesApiTls } from '../utils/apiTls';
+import { decrypt, encrypt } from '../utils/crypto';
+import { resolveKeyCredentials } from '../utils/sshKeyCredentials';
 import {
   generateDeviceKeyPair,
-  keyFileName,
-  keyComment,
-  isUsablePrivateKey,
-  keyTypeForVersion,
   importRejection,
+  isUsablePrivateKey,
+  keyComment,
+  keyFileName,
   type KeyStatus,
+  keyTypeForVersion,
 } from '../utils/sshKeys';
 import { RouterOSClient } from './mikrotik/RouterOSClient';
-import { usesApiTls } from '../utils/apiTls';
-import { resolveKeyCredentials } from '../utils/sshKeyCredentials';
-import { sshHostCheck, explainSshError } from './sshHostCheck';
+import { explainSshError, sshHostCheck } from './sshHostCheck';
 
 const CONNECT_TIMEOUT_MS = 20_000;
 

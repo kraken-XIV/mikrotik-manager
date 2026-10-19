@@ -1,37 +1,38 @@
-import { Router, Request, Response } from 'express';
-import { deviceSiteAccess, deviceIdQuery } from '../utils/siteAccess';
-import { deviceWriteLock, deviceIdFromQuery } from '../services/changeGuard/deviceLock';
-import { withGuardedChange } from '../services/changeGuard/guardedRoute';
-import type { PlannedChange } from '../services/changeGuard/analyzeChange';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne } from '../config/database';
-import {
-  readManagementTunnel,
-  tunnelWriteRule,
-  type ManagementTunnel,
-  type TunnelVerdict,
-} from '../services/changeGuard/wireguardPath';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { maskSecretsForReadOnly } from '../utils/redactSecrets';
-import { siteScopeDevices } from '../utils/siteScope';
-import { poolState } from '../utils/dhcpPools';
 import { activeSite, writableScope } from '../middleware/site';
+import type { PlannedChange } from '../services/changeGuard/analyzeChange';
+import { deviceIdFromQuery, deviceWriteLock } from '../services/changeGuard/deviceLock';
+import { withGuardedChange } from '../services/changeGuard/guardedRoute';
+import {
+  type ManagementTunnel,
+  readManagementTunnel,
+  type TunnelVerdict,
+  tunnelWriteRule,
+} from '../services/changeGuard/wireguardPath';
 import { liveForDevices } from '../services/liveCache';
-import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
-import { netflowCollector } from '../services/netflow/NetflowCollector';
 import {
   getLldpStatuses,
-  setLldpForTypes,
-  parseDeviceTypes,
   LLDP_DEVICE_TYPES,
+  parseDeviceTypes,
+  setLldpForTypes,
 } from '../services/lldpApply';
+import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
+import { netflowCollector } from '../services/netflow/NetflowCollector';
 import {
   applySnmpConfig,
   getSnmpStatuses,
   getSnmpTemplates,
-  SnmpInputError,
   type SnmpConfigInput,
+  SnmpInputError,
   type SnmpTarget,
 } from '../services/snmpApply';
+import { poolState } from '../utils/dhcpPools';
+import { maskSecretsForReadOnly } from '../utils/redactSecrets';
+import { deviceIdQuery, deviceSiteAccess } from '../utils/siteAccess';
+import { siteScopeDevices } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);

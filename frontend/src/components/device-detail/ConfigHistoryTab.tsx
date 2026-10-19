@@ -1,20 +1,21 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { format } from 'date-fns';
 import {
-  History,
+  AlertCircle,
   Camera,
+  CheckCircle,
+  GitCompare,
+  History,
+  Loader2,
   RotateCcw,
   Trash2,
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  GitCompare,
 } from 'lucide-react';
-import { configHistoryApi } from '../../services/api';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { configHistoryApi } from '../../services/api';
 import { lineDiff } from '../../utils/lineDiff';
-import { format } from 'date-fns';
-import clsx from 'clsx';
 
 interface Props {
   deviceId: number;

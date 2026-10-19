@@ -1,33 +1,34 @@
-import {
-  mapWithConcurrency,
-  settleWithConcurrency,
-  FLEET_ACTION_CONCURRENCY,
-} from '../utils/concurrency';
-import { liveForDevices } from '../services/liveCache';
-import { securityPosture, type PostureDevice } from './devices';
-import { Router, Request, Response } from 'express';
+import { fluxString } from '@influxdata/influxdb-client';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { getQueryApi } from '../config/influxdb';
-import { requireAuth, requireWrite, fleetOnly } from '../middleware/auth';
+import { fleetOnly, requireAuth, requireWrite } from '../middleware/auth';
+import { activeSite, writableScope } from '../middleware/site';
+import { alertService } from '../services/AlertService';
+import { BackupDevice, BackupService } from '../services/BackupService';
+import { portErrorSummaries } from '../services/interfaceErrors';
+import { latestResources } from '../services/latestMetrics';
+import { liveForDevices } from '../services/liveCache';
+import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
+import { opticStatuses } from '../services/opticLevels';
+import { certExpiryState, describeCert, needsAttention } from '../utils/certExpiry';
 import {
-  siteScopeDevices,
+  FLEET_ACTION_CONCURRENCY,
+  mapWithConcurrency,
+  settleWithConcurrency,
+} from '../utils/concurrency';
+import { poolState } from '../utils/dhcpPools';
+import type { PortErrorSummary } from '../utils/interfaceErrors';
+import type { OpticStatus } from '../utils/opticLevels';
+import {
+  type SiteScope,
   siteScopeByDevice,
   siteScopeByNullableDevice,
-  type SiteScope,
+  siteScopeDevices,
 } from '../utils/siteScope';
-import { activeSite, writableScope } from '../middleware/site';
-import { certExpiryState, needsAttention, describeCert } from '../utils/certExpiry';
-import { alertService } from '../services/AlertService';
-import { portErrorSummaries } from '../services/interfaceErrors';
-import type { PortErrorSummary } from '../utils/interfaceErrors';
-import { opticStatuses } from '../services/opticLevels';
-import { poolState } from '../utils/dhcpPools';
-import type { OpticStatus } from '../utils/opticLevels';
-import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
-import { BackupService, BackupDevice } from '../services/BackupService';
-import { fluxString } from '@influxdata/influxdb-client';
 import { stpDomains } from '../utils/stpUpstream';
-import { latestResources } from '../services/latestMetrics';
+import { type PostureDevice, securityPosture } from './devices';
 
 const router = Router();
 

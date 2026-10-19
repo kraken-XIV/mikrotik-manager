@@ -6,7 +6,7 @@ jest.mock('https', () => ({
   }),
 }));
 
-import { lookupVendor, initOuiDatabase } from '../oui';
+import { initOuiDatabase, lookupVendor } from '../oui';
 
 describe('lookupVendor - before initialization', () => {
   it('returns empty string when database is not loaded', () => {

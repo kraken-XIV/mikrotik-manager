@@ -11,12 +11,13 @@
  * devices without one (#110).
  */
 import { Client as SSHClient } from 'ssh2';
-import { previewContext } from '../utils/previewContext';
+
 import { queryOne } from '../config/database';
 import { decrypt } from '../utils/crypto';
-import { preferredAuth, type KeyStatus } from '../utils/sshKeys';
-import { sshHostCheck, explainSshError } from './sshHostCheck';
+import { previewContext } from '../utils/previewContext';
+import { type KeyStatus, preferredAuth } from '../utils/sshKeys';
 import { sshHostKeyFingerprint } from './identityPins';
+import { explainSshError, sshHostCheck } from './sshHostCheck';
 
 export interface SshExecDevice {
   id: number;

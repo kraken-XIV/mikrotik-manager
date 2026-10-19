@@ -1,8 +1,9 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Globe, RefreshCw, X } from 'lucide-react';
-import { settingsApi, sitesApi, siteGroupsApi } from '../../services/api';
 import clsx from 'clsx';
+import { Globe, RefreshCw, X } from 'lucide-react';
+import { useState } from 'react';
+
+import { settingsApi, siteGroupsApi, sitesApi } from '../../services/api';
 
 export interface UserSiteRole {
   site_id: number;

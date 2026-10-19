@@ -10,11 +10,12 @@
  * This lists every encrypted value, reports which key opens each one, and
  * re-encrypts anything still under an older key.
  */
-import { hasPlaintextSecret, sealConfig, sensitiveKeys } from '../utils/alertChannelSecrets';
-import { SEALED_PREFIX, isSealed, seal, sealedCiphertext } from '../utils/sealed';
 import * as fs from 'fs';
+
 import { query } from '../config/database';
-import { encrypt, decrypt, ciphertextKeyState } from '../utils/crypto';
+import { hasPlaintextSecret, sealConfig, sensitiveKeys } from '../utils/alertChannelSecrets';
+import { ciphertextKeyState, decrypt, encrypt } from '../utils/crypto';
+import { isSealed, seal, SEALED_PREFIX, sealedCiphertext } from '../utils/sealed';
 
 export interface LocationStatus {
   location: string;

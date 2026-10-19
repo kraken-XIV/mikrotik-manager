@@ -1,15 +1,16 @@
-import { Router, Request, Response } from 'express';
-import { deviceSiteAccess, deviceIdQuery } from '../utils/siteAccess';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth } from '../middleware/auth';
-import { siteScopeByDevice } from '../utils/siteScope';
 import { activeSite } from '../middleware/site';
-import { resolveProxyQuery } from '../utils/proxyQuery';
 import {
   USAGE_KIND,
-  useProxyUsageRollup,
   useProxySourcesTable,
+  useProxyUsageRollup,
 } from '../services/ProxyUsageService';
+import { resolveProxyQuery } from '../utils/proxyQuery';
+import { deviceIdQuery, deviceSiteAccess } from '../utils/siteAccess';
+import { siteScopeByDevice } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);

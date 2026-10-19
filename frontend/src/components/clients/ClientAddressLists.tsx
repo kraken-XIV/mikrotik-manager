@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ListChecks, AlertTriangle, ShieldAlert } from 'lucide-react';
 import clsx from 'clsx';
-import FloatingWindow from '../common/FloatingWindow';
-import { LockoutVerdictDialog, lockoutVerdictOf, type LockoutVerdict } from '../ChangeGuardDialog';
-import { devicesApi, type ClientAddressListView } from '../../services/api';
+import { AlertTriangle, ListChecks, ShieldAlert } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+import { type ClientAddressListView, devicesApi } from '../../services/api';
 import type { Device } from '../../types';
+import { type LockoutVerdict, LockoutVerdictDialog, lockoutVerdictOf } from '../ChangeGuardDialog';
 import DevicePicker from '../common/DevicePicker';
+import FloatingWindow from '../common/FloatingWindow';
 
 /**
  * A client's firewall address lists on one router (#145): tick to add, untick

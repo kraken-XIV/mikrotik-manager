@@ -13,8 +13,9 @@
  * has to be someone who could see the secret anyway.
  */
 import { randomBytes } from 'crypto';
+
 import { query } from '../config/database';
-import { encrypt, decrypt } from '../utils/crypto';
+import { decrypt, encrypt } from '../utils/crypto';
 
 export const SECRET_NAME = /^[A-Za-z0-9_-]{1,64}$/;
 const SECRET_REF = /\{\{\s*secret:([A-Za-z0-9_-]{1,64})\s*\}\}/g;

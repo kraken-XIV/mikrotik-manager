@@ -1,4 +1,4 @@
-import { _sharedArpScan, _arpScanInProgress, _resetArpScanCache } from '../serverArp';
+import { _arpScanInProgress, _resetArpScanCache, _sharedArpScan } from '../serverArp';
 
 describe('shared arp-scan (#301)', () => {
   beforeEach(() => _resetArpScanCache());

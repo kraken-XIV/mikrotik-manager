@@ -1,4 +1,4 @@
-import { aggregateAPScanRows, scanSignal, scanSecurity } from '../apScan';
+import { aggregateAPScanRows, scanSecurity, scanSignal } from '../apScan';
 
 const vendor = () => '';
 

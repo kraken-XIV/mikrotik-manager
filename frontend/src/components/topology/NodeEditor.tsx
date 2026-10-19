@@ -1,6 +1,7 @@
-import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { X } from 'lucide-react';
+import { useState } from 'react';
+
 import { topologyApi } from '../../services/api';
 import type { TopologyNode } from '../../types';
 import { NODE_KINDS } from './nodes';

@@ -1,4 +1,4 @@
-import { encrypt, decrypt } from './crypto';
+import { decrypt, encrypt } from './crypto';
 
 /**
  * Passwords in a queued bulk add (P2-28).

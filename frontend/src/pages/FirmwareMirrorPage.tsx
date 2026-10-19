@@ -1,30 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft,
-  HardDrive,
-  RefreshCw,
-  Trash2,
-  Server,
-  AlertTriangle,
-  CheckCircle,
-  Settings2,
-  Plus,
-} from 'lucide-react';
 import clsx from 'clsx';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  mirrorApi,
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle,
+  HardDrive,
+  Plus,
+  RefreshCw,
+  Server,
+  Settings2,
+  Trash2,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+
+import DevicePicker from '../components/common/DevicePicker';
+import {
   devicesApi,
-  sitesApi,
   type FirmwareMirror,
-  type MirrorDevice,
+  mirrorApi,
   type MirrorClientResult,
+  type MirrorDevice,
   type MirrorDisk,
+  sitesApi,
 } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import DevicePicker from '../components/common/DevicePicker';
 
 const STATUS_STYLE: Record<FirmwareMirror['status'], string> = {
   new: 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300',

@@ -1,4 +1,5 @@
 import type { PoolClient } from 'pg';
+
 import { pool, query } from '../config/database';
 import { GROUPS, type ProxyBy, type ProxyGroup } from '../utils/proxyQuery';
 

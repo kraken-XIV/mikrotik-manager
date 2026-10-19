@@ -1,23 +1,24 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  FileText,
-  RefreshCw,
   AlertTriangle,
-  Plus,
+  CheckCircle,
+  FileText,
   Pencil,
+  Plus,
+  Power,
+  RefreshCw,
+  Save,
   Trash2,
   X,
-  Save,
-  CheckCircle,
   XCircle,
-  Power,
 } from 'lucide-react';
-import clsx from 'clsx';
-import { networkServicesApi, devicesApi } from '../services/api';
-import { useCanWrite } from '../hooks/useCanWrite';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+
 import DevicePicker from '../components/common/DevicePicker';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { devicesApi, networkServicesApi } from '../services/api';
 
 type NS = Record<string, string>;
 

@@ -4,6 +4,7 @@ import reactPlugin from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import security from 'eslint-plugin-security';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default tseslint.config(
   { ignores: ['dist/**', 'node_modules/**'] },
@@ -18,8 +19,13 @@ export default tseslint.config(
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooks,
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
+      // Import ordering: light-touch, autofixable. Side-effect imports keep
+      // their positions; everything else sorts to cut merge-conflict noise
+      // and make import style uniform without a bundler change.
+      'simple-import-sort/imports': 'error',
       // React rules
       ...reactPlugin.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { isCapsmanCertificate, isQuietCapsmanCertificate } from './capsmanCerts';
 
 const cert = (common_name: string | null, state = 'valid', name = 'cert1') => ({

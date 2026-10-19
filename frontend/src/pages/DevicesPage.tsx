@@ -1,51 +1,52 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
+  ChevronRight,
+  Pencil,
+  Plus,
+  Power,
+  Radar,
+  RefreshCw,
+  Router,
+  ShieldQuestion,
+  Trash2,
+  Upload,
+} from 'lucide-react';
+import {
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
-  type MouseEvent as ReactMouseEvent,
 } from 'react';
-import { usesApiTls } from '../utils/apiTls';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Plus,
-  RefreshCw,
-  Router,
-  Trash2,
-  ChevronRight,
-  Radar,
-  Pencil,
-  ShieldQuestion,
-  Upload,
-  Power,
-} from 'lucide-react';
-import { devicesApi, topologyApi, metricsApi, tagsApi, adoptionApi } from '../services/api';
-import type { Device } from '../types';
-import type { DiscoveredDevice, AdoptionCandidate } from '../services/api';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { useSocket } from '../hooks/useSocket';
-import clsx from 'clsx';
+
+import { FilterBar, FilterSearch, FilterSelect } from '../components/common/FilterBar';
+import SortableHeader, { type SortDir } from '../components/common/SortableHeader';
 import AddDeviceModal from '../components/devices/AddDeviceModal';
 import AdoptDeviceModal from '../components/devices/AdoptDeviceModal';
-import EditDeviceModal from '../components/devices/EditDeviceModal';
 import BulkCredentialsModal from '../components/devices/BulkCredentialsModal';
-import TryAllDiscoveredModal from '../components/devices/TryAllDiscoveredModal';
-import CsvImportModal from '../components/devices/CsvImportModal';
 import BulkTagBar from '../components/devices/BulkTagBar';
 import ColumnPicker from '../components/devices/ColumnPicker';
+import CsvImportModal from '../components/devices/CsvImportModal';
+import DeviceTypePill from '../components/devices/DeviceTypePill';
+import EditDeviceModal from '../components/devices/EditDeviceModal';
+import TryAllDiscoveredModal from '../components/devices/TryAllDiscoveredModal';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { useSocket } from '../hooks/useSocket';
+import type { AdoptionCandidate, DiscoveredDevice } from '../services/api';
+import { adoptionApi, devicesApi, metricsApi, tagsApi, topologyApi } from '../services/api';
+import type { Device } from '../types';
+import { usesApiTls } from '../utils/apiTls';
 import {
-  loadColumnPrefs,
-  saveColumnPrefs,
-  visibleColumns,
   clampWidth,
   type ColumnPrefs,
   type DeviceColumnId,
+  loadColumnPrefs,
+  saveColumnPrefs,
+  visibleColumns,
 } from '../utils/deviceColumns';
 import { displayState, STATE_COLOR } from '../utils/deviceState';
-import DeviceTypePill from '../components/devices/DeviceTypePill';
-import SortableHeader, { type SortDir } from '../components/common/SortableHeader';
-import { FilterBar, FilterSearch, FilterSelect } from '../components/common/FilterBar';
 
 type DeviceSortKey =
   | 'name'

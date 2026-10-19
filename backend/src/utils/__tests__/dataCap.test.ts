@@ -1,4 +1,4 @@
-import { bytesSince, periodKey, effectiveThreshold, shouldSend } from '../dataCap';
+import { bytesSince, effectiveThreshold, periodKey, shouldSend } from '../dataCap';
 
 const GB = 1024 ** 3;
 

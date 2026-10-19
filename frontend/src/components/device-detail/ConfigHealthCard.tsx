@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import LoadError from '../common/LoadError';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
   Activity,
   AlertTriangle,
@@ -12,11 +11,13 @@ import {
   ShieldAlert,
   Wrench,
 } from 'lucide-react';
-import { devicesApi, type ConfigFinding } from '../../services/api';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
-import { useGuardedWrite, GuardedWriteUi } from '../ChangeGuardDialog';
+import { type ConfigFinding, devicesApi } from '../../services/api';
 import { apiErrorMessage } from '../../utils/apiError';
-import clsx from 'clsx';
+import { GuardedWriteUi, useGuardedWrite } from '../ChangeGuardDialog';
+import LoadError from '../common/LoadError';
 
 const SEV: Record<ConfigFinding['severity'], { chip: string; card: string; label: string }> = {
   critical: {

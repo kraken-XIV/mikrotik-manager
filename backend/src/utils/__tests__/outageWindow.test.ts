@@ -1,4 +1,4 @@
-import { outageSecondsInWindow, outageLengthSeconds } from '../outageWindow';
+import { outageLengthSeconds, outageSecondsInWindow } from '../outageWindow';
 
 // Outside review P2-25.
 describe('outageSecondsInWindow', () => {

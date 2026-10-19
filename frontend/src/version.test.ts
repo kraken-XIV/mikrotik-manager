@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { docsUrl, APP_VERSION } from './version';
+import { describe, expect, it } from 'vitest';
+
+import { APP_VERSION, docsUrl } from './version';
 
 describe('docsUrl', () => {
   it('points at the series this build belongs to, not latest', () => {

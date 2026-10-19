@@ -1,23 +1,24 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Plus,
-  Trash2,
-  AlertCircle,
-  RefreshCw,
-  Pencil,
-  Check,
-  X,
-  Network,
-  Copy,
-} from 'lucide-react';
-import { devicesApi } from '../../services/api';
-import type { Vlan, SwitchPort } from '../../types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import {
+  AlertCircle,
+  Check,
+  Copy,
+  Network,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
-import CopyVlanModal from './CopyVlanModal';
-import { LockoutVerdictDialog, lockoutVerdictOf, type LockoutVerdict } from '../ChangeGuardDialog';
+import { devicesApi } from '../../services/api';
+import type { SwitchPort, Vlan } from '../../types';
+import { type LockoutVerdict, LockoutVerdictDialog, lockoutVerdictOf } from '../ChangeGuardDialog';
 import ReviewChangesButton from '../common/ReviewChangesButton';
+import CopyVlanModal from './CopyVlanModal';
 import L3HwCard from './L3HwCard';
 import SwitchVlanCard from './SwitchVlanCard';
 

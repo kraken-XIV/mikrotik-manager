@@ -5,14 +5,15 @@
  * fleet in one call, and the difference between a tool and an accident is being
  * able to see what will happen first.
  */
-import { Router } from 'express';
-import { devicesDenied, type Role } from '../utils/siteAccess';
 import type { Request, Response } from 'express';
-import { requireAuth, requireWrite, isSiteScoped } from '../middleware/auth';
-import { siteScopeByDevice } from '../utils/siteScope';
-import { activeSite } from '../middleware/site';
+import { Router } from 'express';
+
 import { query, queryOne } from '../config/database';
+import { isSiteScoped, requireAuth, requireWrite } from '../middleware/auth';
+import { activeSite } from '../middleware/site';
 import { commandRunner } from '../services/CommandRunner';
+import { devicesDenied, type Role } from '../utils/siteAccess';
+import { siteScopeByDevice } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);

@@ -1,14 +1,15 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+
 import {
-  writeBackup,
+  type BackupRecord,
+  DamagedBackupError,
   readHeader,
   readRecords,
   unlock,
+  writeBackup,
   WrongPassphraseError,
-  DamagedBackupError,
-  type BackupRecord,
 } from '../format';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mtm-pb-'));

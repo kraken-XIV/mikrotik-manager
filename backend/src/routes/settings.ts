@@ -1,18 +1,19 @@
-import { Router, Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import { Request, Response, Router } from 'express';
+
+import { query, queryOne, transaction } from '../config/database';
+import { requireAdmin, requireAuth } from '../middleware/auth';
 import { encryptionStatus, reencryptAll } from '../services/encryptedData';
+import { netflowCollector } from '../services/netflow/NetflowCollector';
+import { OIDC_SETTINGS_KEY } from '../services/oidc/oidcConfig';
+import { validatePassword } from '../utils/passwordPolicy';
 import {
   encryptionKeyInfo,
   encryptionKeyMissing,
-  rotateEncryptionKey,
   retireOldEncryptionKeys,
+  rotateEncryptionKey,
 } from '../utils/secrets';
 import { endAllSessions, forgetSessionAccount } from '../utils/sessionState';
-import bcrypt from 'bcryptjs';
-import { query, queryOne, transaction } from '../config/database';
-import { requireAuth, requireAdmin } from '../middleware/auth';
-import { netflowCollector } from '../services/netflow/NetflowCollector';
-import { validatePassword } from '../utils/passwordPolicy';
-import { OIDC_SETTINGS_KEY } from '../services/oidc/oidcConfig';
 
 const router = Router();
 router.use(requireAuth);

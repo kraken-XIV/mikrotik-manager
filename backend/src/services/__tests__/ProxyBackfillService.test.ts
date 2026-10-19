@@ -1,5 +1,5 @@
-import { runProxyBackfills, startProxyBackfillsInBackground } from '../ProxyBackfillService';
 import { pool } from '../../config/database';
+import { runProxyBackfills, startProxyBackfillsInBackground } from '../ProxyBackfillService';
 import { backfillProxySources } from '../ProxyLogService';
 import { backfillProxyUsage } from '../ProxyUsageService';
 

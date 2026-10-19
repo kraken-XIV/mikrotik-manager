@@ -1,27 +1,28 @@
-import { useState } from 'react';
-import ReviewChangesButton from '../common/ReviewChangesButton';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Plus,
-  Trash2,
-  Pencil,
-  Power,
-  AlertCircle,
-  RefreshCw,
-  Check,
-  X,
-  ArrowRightLeft,
-  Shield,
-  ArrowUp,
-  ArrowDown,
-  List,
-  Activity,
-} from 'lucide-react';
-import { devicesApi } from '../../services/api';
-import { useCanWrite } from '../../hooks/useCanWrite';
-import { formatBytes, formatCount, ruleSummary, natSummary } from '../../utils/firewallSummary';
-import { useGuardedWrite, GuardedWriteUi } from '../ChangeGuardDialog';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import {
+  Activity,
+  AlertCircle,
+  ArrowDown,
+  ArrowRightLeft,
+  ArrowUp,
+  Check,
+  List,
+  Pencil,
+  Plus,
+  Power,
+  RefreshCw,
+  Shield,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useState } from 'react';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
+import { devicesApi } from '../../services/api';
+import { formatBytes, formatCount, natSummary, ruleSummary } from '../../utils/firewallSummary';
+import { GuardedWriteUi, useGuardedWrite } from '../ChangeGuardDialog';
+import ReviewChangesButton from '../common/ReviewChangesButton';
 
 type Row = Record<string, string> & { '.id': string };
 

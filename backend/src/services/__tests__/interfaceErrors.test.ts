@@ -9,7 +9,7 @@ jest.mock('../AlertService', () => ({
   },
 }));
 
-import { recordInterfaceCounters, checkInterfaceErrors, forgetBaseline } from '../interfaceErrors';
+import { checkInterfaceErrors, forgetBaseline, recordInterfaceCounters } from '../interfaceErrors';
 
 const row = (name: string, fcs: string) => ({ name, 'rx-fcs-error': fcs, 'rx-align-error': '0' });
 

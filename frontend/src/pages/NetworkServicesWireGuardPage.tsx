@@ -1,34 +1,35 @@
-import { useState } from 'react';
-import ReviewChangesButton from '../components/common/ReviewChangesButton';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  Shield,
-  RefreshCw,
   AlertTriangle,
-  Power,
-  Plus,
-  Pencil,
-  Trash2,
+  Check,
   ChevronDown,
   ChevronRight,
-  Key,
   Copy,
-  Check,
-  X,
+  Key,
   Lock,
+  Pencil,
+  Plus,
+  Power,
+  RefreshCw,
+  Shield,
+  Trash2,
+  X,
 } from 'lucide-react';
-import clsx from 'clsx';
-import { networkServicesApi, devicesApi } from '../services/api';
-import { liveRefetch, type LiveRow } from '../utils/liveFreshness';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { useGuardedWrite, GuardedWriteUi } from '../components/ChangeGuardDialog';
-import { apiErrorMessage } from '../utils/apiError';
-import { rosDurationSeconds } from '../utils/rosDuration';
-import ListInput from '../components/common/ListInput';
-import { isIpOrPrefix, splitList } from '../utils/ipPrefix';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+
+import { GuardedWriteUi, useGuardedWrite } from '../components/ChangeGuardDialog';
+import ListInput from '../components/common/ListInput';
+import ReviewChangesButton from '../components/common/ReviewChangesButton';
 import DeviceTypePill from '../components/devices/DeviceTypePill';
 import TagChips, { type TagLike } from '../components/devices/TagChips';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { devicesApi, networkServicesApi } from '../services/api';
+import { apiErrorMessage } from '../utils/apiError';
+import { isIpOrPrefix, splitList } from '../utils/ipPrefix';
+import { liveRefetch, type LiveRow } from '../utils/liveFreshness';
+import { rosDurationSeconds } from '../utils/rosDuration';
 
 type NS = Record<string, string>;
 

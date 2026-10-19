@@ -1,12 +1,12 @@
 import {
-  extractGroups,
-  mapGroupsToRole,
   deriveUsername,
+  emailDomainAllowed,
+  extractGroups,
   getEmail,
   isEmailVerified,
-  emailDomainAllowed,
+  mapGroupsToRole,
 } from '../claimMapping';
-import { DEFAULT_OIDC_CONFIG, type AppRole } from '../oidcConfig';
+import { type AppRole, DEFAULT_OIDC_CONFIG } from '../oidcConfig';
 
 const cfg = (over = {}) => ({ ...DEFAULT_OIDC_CONFIG, ...over });
 

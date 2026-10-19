@@ -1,5 +1,36 @@
-import { Queue, Worker, Job } from 'bullmq';
+import { Point } from '@influxdata/influxdb-client';
+import { Job, Queue, Worker } from 'bullmq';
+import { Server as SocketServer } from 'socket.io';
+
+import { query, queryOne } from '../config/database';
+import { getWriteApi } from '../config/influxdb';
+import { createRedisConnection, redis } from '../config/redis';
+import { certExpiryState, describeCert, needsAttention } from '../utils/certExpiry';
+import { cronMatches } from '../utils/cron';
+import { describeDuration, offlineAction, recoveryAlert } from '../utils/intermittent';
+import { logAlertCandidates } from '../utils/logAlerts';
+import { pollJobAborted, runPollJob } from '../utils/pollJobContext';
+import { describeDisabled, resolveModules } from '../utils/pollModules';
+import { cleanOverrides, effectiveValues } from '../utils/pollOverrides';
+import { updateAvailable } from '../utils/rosVersion';
+import { gateTtlSeconds } from '../utils/schedulerGate';
+import { apiCheckIntervalMs } from '../utils/sshOnly';
+import { alertService } from './AlertService';
+import type { GuardDevice } from './changeGuard/ChangeGuard';
+import { runConfigHealth } from './changeGuard/configHealth';
+import { checkCveAlerts } from './cveAlerts';
+import { refreshCveFeed } from './cveFeed';
+import { renewalTick as deviceCertRenewalTick } from './deviceCa';
+import { runHealthCheck } from './healthCheck';
+import { checkInterfaceErrors, purgeInterfaceErrorEvents } from './interfaceErrors';
 import { hasRadios } from './mikrotik/capsman';
+import { DeviceCollector, DeviceRow } from './mikrotik/DeviceCollector';
+import { pooledSessionCount } from './mikrotik/sessionPool';
+import { checkOptics, purgeOpticReadings } from './opticLevels';
+import { isRestoring, scheduleTick as platformBackupTick } from './platformBackup/service';
+import { EMIT_CHANNEL, HEARTBEAT_PREFIX, POLLER_ROLE, PROCESS_ID } from './pollerRole';
+import { reconcileProxyUsage } from './ProxyUsageService';
+import { checkRoutingPeers } from './routingPeerAlerts';
 import {
   checkApi,
   promoteToApi,
@@ -7,37 +38,7 @@ import {
   refreshOverSsh,
   type SshOnlyDevice,
 } from './sshOnly';
-import { apiCheckIntervalMs } from '../utils/sshOnly';
-import { cleanOverrides, effectiveValues } from '../utils/pollOverrides';
-import { createRedisConnection, redis } from '../config/redis';
-import { query, queryOne } from '../config/database';
-import { pooledSessionCount } from './mikrotik/sessionPool';
-import { DeviceCollector, DeviceRow } from './mikrotik/DeviceCollector';
-import { Server as SocketServer } from 'socket.io';
-import { getWriteApi } from '../config/influxdb';
-import { Point } from '@influxdata/influxdb-client';
-import { alertService } from './AlertService';
-import { logAlertCandidates } from '../utils/logAlerts';
-import { runConfigHealth } from './changeGuard/configHealth';
-import type { GuardDevice } from './changeGuard/ChangeGuard';
-import { cronMatches } from '../utils/cron';
-import { reconcileProxyUsage } from './ProxyUsageService';
-import { checkInterfaceErrors, purgeInterfaceErrorEvents } from './interfaceErrors';
-import { checkOptics, purgeOpticReadings } from './opticLevels';
 import { checkWireGuardStale } from './wireguardStale';
-import { checkRoutingPeers } from './routingPeerAlerts';
-import { isRestoring, scheduleTick as platformBackupTick } from './platformBackup/service';
-import { renewalTick as deviceCertRenewalTick } from './deviceCa';
-import { resolveModules, describeDisabled } from '../utils/pollModules';
-import { updateAvailable } from '../utils/rosVersion';
-import { certExpiryState, needsAttention, describeCert } from '../utils/certExpiry';
-import { offlineAction, recoveryAlert, describeDuration } from '../utils/intermittent';
-import { runHealthCheck } from './healthCheck';
-import { gateTtlSeconds } from '../utils/schedulerGate';
-import { runPollJob, pollJobAborted } from '../utils/pollJobContext';
-import { refreshCveFeed } from './cveFeed';
-import { checkCveAlerts } from './cveAlerts';
-import { POLLER_ROLE, PROCESS_ID, EMIT_CHANNEL, HEARTBEAT_PREFIX } from './pollerRole';
 
 // ─── Tuning ───────────────────────────────────────────────────────────────────
 

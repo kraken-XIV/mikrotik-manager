@@ -1,6 +1,7 @@
-import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FolderOpen, Pencil, Plus, Trash2, Check, X, RefreshCw } from 'lucide-react';
+import { Check, FolderOpen, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
+
 import { siteGroupsApi } from '../../services/api';
 import type { Site } from '../../store/siteStore';
 

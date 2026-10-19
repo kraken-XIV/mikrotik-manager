@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useEffect } from 'react';
+
 import { useActionErrorStore } from '../../store/actionErrorStore';
 
 /** Shows a failed action that had nowhere else to report it (U5). */

@@ -1,26 +1,27 @@
-import { useState } from 'react';
-import ReviewChangesButton from '../components/common/ReviewChangesButton';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  Server,
-  RefreshCw,
   AlertTriangle,
-  Power,
-  Plus,
+  Check,
   Pencil,
+  Plus,
+  Power,
+  RefreshCw,
+  Server,
   Trash2,
   X,
-  Check,
 } from 'lucide-react';
-import clsx from 'clsx';
-import { networkServicesApi, devicesApi } from '../services/api';
-import { liveRefetch, type LiveRow } from '../utils/liveFreshness';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { apiErrorMessage } from '../utils/apiError';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DhcpPoolUsage } from '../components/wireless/RfHealth';
+
 import DevicePicker from '../components/common/DevicePicker';
+import ReviewChangesButton from '../components/common/ReviewChangesButton';
+import { DhcpPoolUsage } from '../components/wireless/RfHealth';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { devicesApi, networkServicesApi } from '../services/api';
+import { apiErrorMessage } from '../utils/apiError';
 import { shortList } from '../utils/deviceCards';
+import { liveRefetch, type LiveRow } from '../utils/liveFreshness';
 
 type NS = Record<string, string>;
 

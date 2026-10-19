@@ -1,14 +1,15 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { format } from 'date-fns';
+import { AlertCircle, AlertTriangle, Bell, Info, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Bell, Search, Trash2, AlertCircle, Info, AlertTriangle } from 'lucide-react';
-import { eventsApi, devicesApi } from '../services/api';
+
+import DevicePicker from '../components/common/DevicePicker';
 import { useCanWrite } from '../hooks/useCanWrite';
 import { useSocket } from '../hooks/useSocket';
-import { format } from 'date-fns';
+import { devicesApi, eventsApi } from '../services/api';
 import type { EventSeverity } from '../types';
-import clsx from 'clsx';
-import DevicePicker from '../components/common/DevicePicker';
 
 const severityIcon = (severity: EventSeverity) => {
   if (severity === 'error' || severity === 'critical') return AlertCircle;

@@ -1,4 +1,4 @@
-import { interruptedOutcome, INTERRUPTED_RUN_ERROR } from '../interrupted';
+import { INTERRUPTED_RUN_ERROR, interruptedOutcome } from '../interrupted';
 
 describe('interruptedOutcome', () => {
   // A device the run never got to needs nothing but a re-run.

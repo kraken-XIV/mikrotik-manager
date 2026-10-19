@@ -1,27 +1,28 @@
-import { useMemo, useState } from 'react';
-import { hasRadios } from '../utils/wireless';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  Ticket,
-  Wifi,
-  Users,
-  Globe,
-  Power,
-  Trash2,
-  RefreshCw,
-  Plus,
-  Printer,
-  CheckCircle,
   AlertTriangle,
-  X,
+  CheckCircle,
   Clock,
   Database,
+  Globe,
+  Plus,
+  Power,
+  Printer,
+  RefreshCw,
+  Ticket,
+  Trash2,
+  Users,
+  Wifi,
+  X,
 } from 'lucide-react';
-import clsx from 'clsx';
-import { guestWifiApi, devicesApi } from '../services/api';
-import { useCanWrite } from '../hooks/useCanWrite';
-import type { Device } from '../types';
+import { useMemo, useState } from 'react';
+
 import DevicePicker from '../components/common/DevicePicker';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { devicesApi, guestWifiApi } from '../services/api';
+import type { Device } from '../types';
+import { hasRadios } from '../utils/wireless';
 
 type HS = Record<string, string>;
 

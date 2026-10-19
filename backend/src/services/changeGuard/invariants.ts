@@ -13,17 +13,17 @@
  * vlan-filtering is on, and PVID-derived untagged membership is added dynamically
  * (which is why effective `current-*` membership is what we test).
  */
+import { managementService } from '../../utils/apiTls';
+import type { GuardDevice } from './ChangeGuard';
 import { evaluateInputChain } from './firewallPath';
 import {
-  vlanMembership,
-  routeFor,
-  routeActive,
-  routeDiscards,
   type DeviceSnapshot,
   type ManagementPath,
+  routeActive,
+  routeDiscards,
+  routeFor,
+  vlanMembership,
 } from './pathModel';
-import type { GuardDevice } from './ChangeGuard';
-import { managementService } from '../../utils/apiTls';
 
 export interface InvariantResult {
   ok: boolean;

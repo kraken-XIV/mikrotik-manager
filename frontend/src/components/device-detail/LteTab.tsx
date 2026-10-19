@@ -1,33 +1,34 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
-import { chartTooltip } from '../common/chartTooltip';
-import {
-  Signal,
-  RadioTower,
   ArrowLeftRight,
-  RotateCcw,
-  Radio,
   ArrowUpFromLine,
-  Clock,
   ChevronDown,
   ChevronRight,
+  Clock,
+  Radio,
+  RadioTower,
+  RotateCcw,
+  Signal,
 } from 'lucide-react';
+import { useState } from 'react';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
 import {
   lteApi,
-  type LteInterface,
-  type LteHistoryEvent,
   type LteDwellTotal,
+  type LteHistoryEvent,
+  type LteInterface,
 } from '../../services/api';
+import { chartTooltip } from '../common/chartTooltip';
 import DataCapCard from './DataCapCard';
 
 interface Props {

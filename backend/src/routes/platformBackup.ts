@@ -2,47 +2,48 @@
  * Settings → Backup & Restore: backups of MikroTik Manager itself. Fleet
  * admins only (a backup holds every device credential, under the passphrase).
  */
-import { Router, Request, Response } from 'express';
+import * as crypto from 'crypto';
+import { Request, Response, Router } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
+
 import { query, queryOne } from '../config/database';
 import { redis } from '../config/redis';
-import { requireAuth, requireAdmin } from '../middleware/auth';
-import { encrypt } from '../utils/crypto';
-import { logSafe } from '../utils/logSafe';
+import { requireAdmin, requireAuth } from '../middleware/auth';
+import { compareWithFile } from '../services/platformBackup/compare';
 import {
-  APP_VERSION,
-  MIN_PASSPHRASE,
-  getSchedule,
-  loadDestinations,
-  runBackup,
-  deleteLocal,
-  pruneLocal,
-  startRestore,
-  restoreStatus,
-  clearFailedRestore,
-  isRestoring,
-  isBackupRunning,
-  sealSecrets,
-  toDestination,
-  pinHostKey,
-} from '../services/platformBackup/service';
+  type DestinationType,
+  ensureLocalDir,
+  LOCAL_DIR,
+  testDestination,
+  UPLOAD_DIR,
+} from '../services/platformBackup/destinations';
+import { versionNotNewer } from '../services/platformBackup/engine';
 import {
+  type BackupContents,
   readHeader,
   unlock,
   WrongPassphraseError,
-  type BackupContents,
 } from '../services/platformBackup/format';
-import { versionNotNewer } from '../services/platformBackup/engine';
-import { compareWithFile } from '../services/platformBackup/compare';
 import {
-  LOCAL_DIR,
-  UPLOAD_DIR,
-  ensureLocalDir,
-  testDestination,
-  type DestinationType,
-} from '../services/platformBackup/destinations';
+  APP_VERSION,
+  clearFailedRestore,
+  deleteLocal,
+  getSchedule,
+  isBackupRunning,
+  isRestoring,
+  loadDestinations,
+  MIN_PASSPHRASE,
+  pinHostKey,
+  pruneLocal,
+  restoreStatus,
+  runBackup,
+  sealSecrets,
+  startRestore,
+  toDestination,
+} from '../services/platformBackup/service';
+import { encrypt } from '../utils/crypto';
+import { logSafe } from '../utils/logSafe';
 
 const router = Router();
 const MAX_UPLOAD = 20 * 1024 * 1024 * 1024;

@@ -1,10 +1,10 @@
 import {
-  parseSshInfo,
-  looksLikeRouterOs,
-  classifyApiFailure,
   apiCheckIntervalMs,
-  parseSshOnlyFlag,
+  classifyApiFailure,
   describeSshFailure,
+  looksLikeRouterOs,
+  parseSshInfo,
+  parseSshOnlyFlag,
   SSH_INFO_COMMAND,
 } from '../sshOnly';
 

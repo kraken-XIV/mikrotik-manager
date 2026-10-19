@@ -1,20 +1,21 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  BarChart3,
-  RefreshCw,
-  AlertTriangle,
-  Save,
-  CheckCircle,
-  XCircle,
-  Radio,
-} from 'lucide-react';
 import clsx from 'clsx';
 import { formatDistanceToNow, parseISO } from 'date-fns';
-import { networkServicesApi, settingsApi, trafficApi } from '../services/api';
-import { liveRefetch, freshnessLabel, type LiveRow } from '../utils/liveFreshness';
+import {
+  AlertTriangle,
+  BarChart3,
+  CheckCircle,
+  Radio,
+  RefreshCw,
+  Save,
+  XCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+
 import { useCanWrite, useIsFleetAdmin } from '../hooks/useCanWrite';
+import { networkServicesApi, settingsApi, trafficApi } from '../services/api';
+import { freshnessLabel, liveRefetch, type LiveRow } from '../utils/liveFreshness';
 
 function Toggle({
   checked,

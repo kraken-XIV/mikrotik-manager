@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
-import { ShieldCheck, ShieldAlert, ShieldX, ShieldOff, Clock, KeyRound } from 'lucide-react';
-import { format } from 'date-fns';
 import clsx from 'clsx';
+import { format } from 'date-fns';
+import { Clock, KeyRound, ShieldAlert, ShieldCheck, ShieldOff, ShieldX } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+import type { CertState, DeviceCertificate } from '../services/api';
 import { isQuietCapsmanCertificate } from '../utils/capsmanCerts';
-import type { DeviceCertificate, CertState } from '../services/api';
 
 /**
  * Renders collected device certificates (#143).

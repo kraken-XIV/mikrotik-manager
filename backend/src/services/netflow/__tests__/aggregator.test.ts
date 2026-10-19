@@ -1,5 +1,5 @@
-import { FlowAggregator, CLIENT_UNKNOWN, CLIENT_OTHER } from '../FlowAggregator';
 import { classifyApp } from '../appCategories';
+import { CLIENT_OTHER, CLIENT_UNKNOWN, FlowAggregator } from '../FlowAggregator';
 
 const MAC_A = 'aa:aa:aa:aa:aa:01';
 const MAC_B = 'aa:aa:aa:aa:aa:02';

@@ -1,8 +1,8 @@
 import { query } from '../config/database';
-import { siteScopeDevices, type SiteScope } from '../utils/siteScope';
-import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 import { effectiveLocation } from '../utils/effectiveLocation';
-import { fieldToWrite, unknownVariables, type SnmpDeviceVars } from '../utils/snmpTemplate';
+import { type SiteScope, siteScopeDevices } from '../utils/siteScope';
+import { fieldToWrite, type SnmpDeviceVars, unknownVariables } from '../utils/snmpTemplate';
+import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 
 /**
  * Applying SNMP settings to every online router or switch in scope.

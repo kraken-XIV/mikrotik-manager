@@ -1,18 +1,19 @@
-import { Router, Request, Response } from 'express';
-import { decodedPath } from '../utils/requestPath';
+import { fluxString } from '@influxdata/influxdb-client';
 import * as dgram from 'dgram';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
-import { logSafe } from '../utils/logSafe';
-import { requireAuth, requireAdmin, requireWrite } from '../middleware/auth';
-import { siteList, siteScopeByDevice, siteScopeByNullableDevice } from '../utils/siteScope';
-import { fluxDeviceFilter } from '../utils/siteAccess';
+import { bucket, getQueryApi } from '../config/influxdb';
+import { requireAdmin, requireAuth, requireWrite } from '../middleware/auth';
 import { activeSite, writableScope } from '../middleware/site';
 import { PollerService } from '../services/PollerService';
-import { getQueryApi, bucket } from '../config/influxdb';
-import { fingerprintClient, DEVICE_CATEGORIES, DeviceCategory } from '../utils/clientFingerprint';
-import { parseRoamLine, buildSessions, flappingSessions } from '../utils/roaming';
-import { fluxString } from '@influxdata/influxdb-client';
+import { DEVICE_CATEGORIES, DeviceCategory, fingerprintClient } from '../utils/clientFingerprint';
 import { counterDeltas } from '../utils/counterDeltas';
+import { logSafe } from '../utils/logSafe';
+import { decodedPath } from '../utils/requestPath';
+import { buildSessions, flappingSessions, parseRoamLine } from '../utils/roaming';
+import { fluxDeviceFilter } from '../utils/siteAccess';
+import { siteList, siteScopeByDevice, siteScopeByNullableDevice } from '../utils/siteScope';
 
 // Effective category: the user's override wins; otherwise the fingerprint.
 function withCategory<T extends Record<string, unknown>>(

@@ -1,45 +1,46 @@
-import { useState } from 'react';
-import { isWirelessDevice } from '../../utils/wireless';
-import { NavLink, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useIsFleetAdmin } from '../../hooks/useCanWrite';
+import clsx from 'clsx';
 import {
-  LayoutDashboard,
-  Router,
-  Users,
+  Activity,
+  ArrowUpCircle,
+  BarChart3,
   Bell,
-  GitBranch,
-  HardDrive,
-  ShieldCheck,
-  Settings,
-  Network,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Layers,
-  ChevronDown,
-  SlidersHorizontal,
-  X,
-  Wifi,
-  Server,
-  Globe,
   Clock,
-  Shield,
   FileText,
-  Activity,
-  BarChart3,
-  Ticket,
-  ArrowUpCircle,
-  Radio,
-  LayoutGrid,
-  TerminalSquare,
+  GitBranch,
+  Globe,
+  HardDrive,
   KeyRound,
-  UserCheck,
+  Layers,
+  LayoutDashboard,
+  LayoutGrid,
+  Network,
+  Radio,
   Route,
+  Router,
+  Server,
+  Settings,
+  Shield,
+  ShieldCheck,
+  SlidersHorizontal,
+  TerminalSquare,
+  Ticket,
+  UserCheck,
+  Users,
+  Wifi,
+  X,
 } from 'lucide-react';
-import clsx from 'clsx';
-import SiteSelector from './SiteSelector';
-import { APP_VERSION } from '../../version';
+import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+
+import { useIsFleetAdmin } from '../../hooks/useCanWrite';
 import { devicesApi } from '../../services/api';
+import { isWirelessDevice } from '../../utils/wireless';
+import { APP_VERSION } from '../../version';
+import SiteSelector from './SiteSelector';
 
 const monitorItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },

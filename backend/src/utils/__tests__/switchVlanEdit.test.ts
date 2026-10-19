@@ -1,4 +1,4 @@
-import { switchVlanEntry, switchPortVlan } from '../switchVlanEdit';
+import { switchPortVlan, switchVlanEntry } from '../switchVlanEdit';
 
 describe('switchVlanEntry', () => {
   it('builds a new entry', () => {

@@ -1,15 +1,15 @@
 import {
-  channelCenter,
-  spectrumFor,
-  classifyPair,
-  overlapMhz,
   analyzeSpectrum,
-  summarize,
-  freeSpans,
-  widthMhz,
-  channelForFreq,
   bandForFreq,
+  channelCenter,
+  channelForFreq,
+  classifyPair,
+  freeSpans,
+  overlapMhz,
   parseChannelSpec,
+  spectrumFor,
+  summarize,
+  widthMhz,
 } from '../rfSpectrum';
 
 const ch = (n: number) => 2407 + n * 5; // 2.4 GHz channel → centre MHz

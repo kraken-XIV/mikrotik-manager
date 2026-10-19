@@ -1,4 +1,4 @@
-import { parseImportOutput, countCommandsBefore } from '../importResult';
+import { countCommandsBefore, parseImportOutput } from '../importResult';
 
 // Output captured from RouterOS 7.24.4 (the TEST switch).
 const OK = 'Script file loaded and executed successfully\n';

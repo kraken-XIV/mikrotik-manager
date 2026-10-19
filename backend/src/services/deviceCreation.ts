@@ -1,24 +1,24 @@
 import { query, queryOne } from '../config/database';
-import { encrypt, decrypt } from '../utils/crypto';
-import { parsePort } from '../utils/parsePort';
-import { safeConnectionError } from '../utils/safeClientError';
-import { normalizeDeviceAddress, reconcileAddressPort } from '../utils/deviceAddress';
-import { logSafe } from '../utils/logSafe';
-import { RouterOSClient } from './mikrotik/RouterOSClient';
-import type { PollerService } from './PollerService';
 import type { CredentialPresetRow } from '../routes/credentialPresets';
-import { DEVICE_BASE_COLUMNS } from './deviceColumns';
-import { connectPreferringSsl, API_SSL_PORT } from './mikrotik/apiConnect';
-import { usesApiTls, parseApiTls, checkPort } from '../utils/apiTls';
-import { pinIdentity } from './identityPins';
-import { presetUseRefusal, type PresetCaller } from '../utils/presetAccess';
+import { checkPort, parseApiTls, usesApiTls } from '../utils/apiTls';
+import { decrypt, encrypt } from '../utils/crypto';
+import { normalizeDeviceAddress, reconcileAddressPort } from '../utils/deviceAddress';
 import { fit } from '../utils/fit';
+import { logSafe } from '../utils/logSafe';
+import { parsePort } from '../utils/parsePort';
+import { type PresetCaller, presetUseRefusal } from '../utils/presetAccess';
+import { safeConnectionError } from '../utils/safeClientError';
 import {
-  parseSshOnlyFlag,
   classifyApiFailure,
   describeSshFailure,
+  parseSshOnlyFlag,
   type SshInfo,
 } from '../utils/sshOnly';
+import { DEVICE_BASE_COLUMNS } from './deviceColumns';
+import { pinIdentity } from './identityPins';
+import { API_SSL_PORT, connectPreferringSsl } from './mikrotik/apiConnect';
+import { RouterOSClient } from './mikrotik/RouterOSClient';
+import type { PollerService } from './PollerService';
 import { readSshInfo } from './sshOnly';
 
 export type CreateDeviceContext = {

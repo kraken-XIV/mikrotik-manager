@@ -6,10 +6,11 @@
  * devices in other sites. Routes answer "not found" for a device the account
  * can't see, so it can't learn which ids exist elsewhere.
  */
-import type { Request, Response, NextFunction } from 'express';
-import { decodedPath } from './requestPath';
+import type { NextFunction, Request, Response } from 'express';
+
 import { query, queryOne } from '../config/database';
 import type { AuthPayload } from '../middleware/auth';
+import { decodedPath } from './requestPath';
 
 export type Role = 'admin' | 'operator' | 'viewer';
 const RANK: Record<string, number> = { viewer: 0, operator: 1, admin: 2 };

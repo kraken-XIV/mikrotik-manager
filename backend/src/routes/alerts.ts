@@ -1,6 +1,7 @@
 import { Router } from 'express';
+
 import { query } from '../config/database';
-import { requireAuth, requireWrite, fleetOnly } from '../middleware/auth';
+import { fleetOnly, requireAuth, requireWrite } from '../middleware/auth';
 import { alertService } from '../services/AlertService';
 import { maskConfig, mergeConfig, sealConfig } from '../utils/alertChannelSecrets';
 

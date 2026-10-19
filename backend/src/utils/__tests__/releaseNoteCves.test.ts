@@ -1,8 +1,8 @@
 import {
   parseReleaseNoteCves,
-  releasePlan,
-  releaseNoteFixes,
   releaseName,
+  releaseNoteFixes,
+  releasePlan,
 } from '../releaseNoteCves';
 
 // download.mikrotik.com/routeros/<version>/CHANGELOG, as published.

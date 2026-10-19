@@ -1,7 +1,8 @@
+import clsx from 'clsx';
+import { AlertTriangle, Check, Copy, Eye, Info, ShieldAlert, X } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Eye, X, Copy, Check, AlertTriangle, ShieldAlert, Info } from 'lucide-react';
-import clsx from 'clsx';
+
 import type { ChangePreview, PreviewStep } from '../../services/api';
 
 const ACTION: Record<string, { label: string; cls: string }> = {

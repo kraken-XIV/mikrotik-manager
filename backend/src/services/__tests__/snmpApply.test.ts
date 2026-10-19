@@ -1,8 +1,8 @@
 jest.mock('../../config/database');
 jest.mock('../mikrotik/DeviceCollector');
 
-import { validateSnmpInput, applySnmpConfig, SnmpInputError } from '../snmpApply';
 import { query } from '../../config/database';
+import { applySnmpConfig, SnmpInputError, validateSnmpInput } from '../snmpApply';
 
 describe('validateSnmpInput (fleet SNMP changes)', () => {
   it('accepts a single chosen change, such as only a trap destination', () => {

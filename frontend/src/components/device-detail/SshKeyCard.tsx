@@ -1,6 +1,7 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, KeyRound, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, ShieldCheck, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
+
 import { sshKeyApi } from '../../services/api';
 
 /**

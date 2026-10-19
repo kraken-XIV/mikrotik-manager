@@ -1,17 +1,18 @@
-import { useState, useEffect } from 'react';
-import ReviewChangesButton from '../components/common/ReviewChangesButton';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Clock, RefreshCw, AlertTriangle, Save } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { networkServicesApi, devicesApi } from '../services/api';
-import { liveRefetch, type LiveRow } from '../utils/liveFreshness';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { apiErrorMessage } from '../utils/apiError';
-import ListInput from '../components/common/ListInput';
-import { splitList } from '../utils/ipPrefix';
-import { isValidIPv4, isValidIPv6, isValidHostname } from '../utils/deviceAddress';
+import { AlertTriangle, Clock, RefreshCw, Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
 import DevicePicker from '../components/common/DevicePicker';
+import ListInput from '../components/common/ListInput';
+import ReviewChangesButton from '../components/common/ReviewChangesButton';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { devicesApi, networkServicesApi } from '../services/api';
+import { apiErrorMessage } from '../utils/apiError';
+import { isValidHostname, isValidIPv4, isValidIPv6 } from '../utils/deviceAddress';
 import { shortList } from '../utils/deviceCards';
+import { splitList } from '../utils/ipPrefix';
+import { liveRefetch, type LiveRow } from '../utils/liveFreshness';
 
 function Toggle({
   checked,

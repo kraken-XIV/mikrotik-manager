@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ShieldAlert, Radio, ChevronDown, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
-import { wirelessApi } from '../../services/api';
 import { formatDistanceToNow } from 'date-fns';
+import { ChevronDown, ChevronRight, Radio, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
+
+import { wirelessApi } from '../../services/api';
 
 function signalCls(dbm: number): string {
   if (dbm >= -55) return 'text-green-600 dark:text-green-400';

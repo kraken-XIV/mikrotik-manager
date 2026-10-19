@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { barGeometry } from './spectrumGeometry';
 
 // The 2.4 GHz band as drawn, wide enough to contain a 40 MHz channel 1.

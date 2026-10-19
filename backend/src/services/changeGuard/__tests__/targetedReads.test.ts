@@ -1,4 +1,4 @@
-import { coveringPrefixes, readCoveringRoutes, readApiConnections } from '../targetedReads';
+import { coveringPrefixes, readApiConnections, readCoveringRoutes } from '../targetedReads';
 
 describe('targeted reads (#313)', () => {
   it('lists every IPv4 prefix that can hold an address, longest first', () => {

@@ -1,28 +1,29 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  Thermometer,
-  Zap,
-  Wind,
-  Power,
   Activity,
-  HelpCircle,
-  RefreshCw,
   HardDrive,
+  HelpCircle,
+  Power,
+  RefreshCw,
+  Thermometer,
+  Wind,
+  Zap,
 } from 'lucide-react';
-import { devicesApi, metricsApi } from '../../services/api';
-import type { ResourcePoint } from '../../types';
+import { useState } from 'react';
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from 'recharts';
-import clsx from 'clsx';
+
+import { devicesApi, metricsApi } from '../../services/api';
+import type { ResourcePoint } from '../../types';
 
 interface HealthMetric {
   name: string;

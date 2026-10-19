@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { AlertTriangle, GitMerge, RefreshCcw, X } from 'lucide-react';
+import { useState } from 'react';
+
 import type { DuplicateSerialError } from '../../services/api';
 
 interface Props {

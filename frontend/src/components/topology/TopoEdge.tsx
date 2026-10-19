@@ -1,14 +1,15 @@
 import {
   BaseEdge,
   EdgeLabelRenderer,
-  useInternalNode,
-  getSmoothStepPath,
-  Position,
   type EdgeProps,
+  getSmoothStepPath,
   type InternalNode,
+  Position,
+  useInternalNode,
 } from '@xyflow/react';
 import { X } from 'lucide-react';
-import { linkEnds, sideOf, type Rect, type Side } from '../../utils/topologyGeometry';
+
+import { linkEnds, type Rect, type Side, sideOf } from '../../utils/topologyGeometry';
 
 /** What a link on the map carries; see toFlowEdge in the page. */
 export interface TopoEdgeData extends Record<string, unknown> {

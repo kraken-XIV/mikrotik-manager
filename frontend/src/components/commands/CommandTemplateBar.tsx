@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BookMarked, Save, Trash2, X } from 'lucide-react';
-import { commandTemplatesApi, type CommandTemplate } from '../../services/api';
+import { useEffect, useState } from 'react';
+
+import { type CommandTemplate, commandTemplatesApi } from '../../services/api';
 
 /**
  * Load a saved command into Bulk Commands, or save the current one (#163).

@@ -1,47 +1,48 @@
-import { useState } from 'react';
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeft,
-  RefreshCw,
-  Activity,
-  Cpu,
-  MemoryStick,
-  Clock,
-  ExternalLink,
-  TerminalSquare,
-  ShieldCheck,
-  Copy,
-  Check,
-  GitBranch,
-} from 'lucide-react';
-import { hostPort, winboxAddress } from '../utils/deviceAddress';
-import { devicesApi, metricsApi } from '../services/api';
-import { useCanWrite } from '../hooks/useCanWrite';
-import SwitchPortDiagram from '../components/ports/SwitchPortDiagram';
-import DeviceTagPicker from '../components/devices/DeviceTagPicker';
-import TerminalModal from '../components/TerminalModal';
-import DeviceLocationSection from '../components/device-detail/DeviceLocationSection';
-import VlansTab from '../components/device-detail/VlansTab';
-import RoutingTab from '../components/device-detail/RoutingTab';
-import FirewallTab from '../components/device-detail/FirewallTab';
-import SystemConfigTab from '../components/device-detail/SystemConfigTab';
-import ConfigHistoryTab from '../components/device-detail/ConfigHistoryTab';
-import HardwareTab from '../components/device-detail/HardwareTab';
-import ToolsTab from '../components/device-detail/ToolsTab';
-import RadiosTab from '../components/device-detail/RadiosTab';
-import LteTab from '../components/device-detail/LteTab';
-import ConnectionsTab from '../components/device-detail/ConnectionsTab';
-import QueuesTab from '../components/device-detail/QueuesTab';
-import SecurityTab from '../components/device-detail/SecurityTab';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { displayState, STATE_LABEL } from '../utils/deviceState';
-import DeviceHealthCard from '../components/device-detail/DeviceHealthCard';
+import {
+  Activity,
+  ArrowLeft,
+  Check,
+  Clock,
+  Copy,
+  Cpu,
+  ExternalLink,
+  GitBranch,
+  MemoryStick,
+  RefreshCw,
+  ShieldCheck,
+  TerminalSquare,
+} from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+
 import BridgesTab from '../components/device-detail/BridgesTab';
+import ConfigHistoryTab from '../components/device-detail/ConfigHistoryTab';
+import ConnectionsTab from '../components/device-detail/ConnectionsTab';
+import DeviceHealthCard from '../components/device-detail/DeviceHealthCard';
+import DeviceLocationSection from '../components/device-detail/DeviceLocationSection';
+import FirewallTab from '../components/device-detail/FirewallTab';
+import HardwareTab from '../components/device-detail/HardwareTab';
+import LteTab from '../components/device-detail/LteTab';
 import PollingNote from '../components/device-detail/PollingNote';
-import { DeviceIdentityBanner } from '../components/security/IdentityChange';
-import { isWirelessDevice } from '../utils/wireless';
+import QueuesTab from '../components/device-detail/QueuesTab';
+import RadiosTab from '../components/device-detail/RadiosTab';
+import RoutingTab from '../components/device-detail/RoutingTab';
+import SecurityTab from '../components/device-detail/SecurityTab';
 import SshOnlyBanner from '../components/device-detail/SshOnlyBanner';
+import SystemConfigTab from '../components/device-detail/SystemConfigTab';
+import ToolsTab from '../components/device-detail/ToolsTab';
+import VlansTab from '../components/device-detail/VlansTab';
+import DeviceTagPicker from '../components/devices/DeviceTagPicker';
+import SwitchPortDiagram from '../components/ports/SwitchPortDiagram';
+import { DeviceIdentityBanner } from '../components/security/IdentityChange';
+import TerminalModal from '../components/TerminalModal';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { devicesApi, metricsApi } from '../services/api';
+import { hostPort, winboxAddress } from '../utils/deviceAddress';
+import { displayState, STATE_LABEL } from '../utils/deviceState';
+import { isWirelessDevice } from '../utils/wireless';
 
 type TabKey =
   | 'overview'

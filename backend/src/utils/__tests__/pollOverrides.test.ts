@@ -1,8 +1,8 @@
 import {
-  resolveEffective,
-  validateOverrides,
   cleanOverrides,
   effectiveValues,
+  resolveEffective,
+  validateOverrides,
 } from '../pollOverrides';
 
 const global = {

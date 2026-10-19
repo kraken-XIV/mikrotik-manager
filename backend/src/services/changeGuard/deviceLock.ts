@@ -12,10 +12,11 @@
  * the lock is recognised through AsyncLocalStorage rather than acquired twice.
  */
 import { AsyncLocalStorage } from 'async_hooks';
-import { decodedPath } from '../../utils/requestPath';
 import { randomBytes } from 'crypto';
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+
 import { redis } from '../../config/redis';
+import { decodedPath } from '../../utils/requestPath';
 
 export const deviceLockKey = (deviceId: number): string => `changeguard:lock:${deviceId}`;
 

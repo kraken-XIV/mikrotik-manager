@@ -1,4 +1,4 @@
-import { windowCovers, type MaintenanceWindowRow } from '../maintenance';
+import { type MaintenanceWindowRow, windowCovers } from '../maintenance';
 
 const w = (over: Partial<MaintenanceWindowRow>): MaintenanceWindowRow => ({
   device_ids: [],

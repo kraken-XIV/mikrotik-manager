@@ -1,5 +1,6 @@
 import { fluxString } from '@influxdata/influxdb-client';
-import { getQueryApi, bucket } from '../config/influxdb';
+
+import { bucket, getQueryApi } from '../config/influxdb';
 
 export interface LatestResources {
   cpu: number;

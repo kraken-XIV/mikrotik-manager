@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  lookupModelLayout,
-  resolveEvenOnTop,
   arrangeSfp,
-  stackCages,
   cageTiles,
+  lookupModelLayout,
   MODEL_LAYOUTS,
+  resolveEvenOnTop,
+  stackCages,
 } from './faceplateModels';
 
 const nums = (n: number) => Array.from({ length: n }, (_, i) => i + 1);

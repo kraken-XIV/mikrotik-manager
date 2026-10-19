@@ -1,48 +1,49 @@
-import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import {
-  ArrowLeft,
-  Wifi,
-  Network,
-  Router,
-  Layers,
   Activity,
-  Power,
-  Save,
-  Clock,
-  ChevronRight,
   AlertCircle,
-  Pencil,
-  X,
-  Gauge,
+  ArrowLeft,
   Check,
+  ChevronRight,
+  Clock,
+  Gauge,
+  Layers,
+  Network,
+  Pencil,
+  Power,
+  Router,
+  Save,
+  Wifi,
+  X,
 } from 'lucide-react';
-import { useCanWrite } from '../hooks/useCanWrite';
+import { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  AreaChart,
   Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  BarChart,
-  Bar,
-  Cell,
-  ReferenceLine,
 } from 'recharts';
-import { format, formatDistanceToNow, parseISO } from 'date-fns';
+
+import ClientAddressLists from '../components/clients/ClientAddressLists';
 import RoamingTimeline from '../components/clients/RoamingTimeline';
-import { clientsApi, trafficApi, devicesApi } from '../services/api';
 import FastTrackNote from '../components/common/FastTrackNote';
-import { CATEGORY_META, SELECTABLE_CATEGORIES } from '../utils/clientCategories';
+import { useCanWrite } from '../hooks/useCanWrite';
 import type { ClientDetail } from '../services/api';
 import type { SignalPoint } from '../services/api';
-import clsx from 'clsx';
+import { clientsApi, devicesApi, trafficApi } from '../services/api';
+import { CATEGORY_META, SELECTABLE_CATEGORIES } from '../utils/clientCategories';
 import { formatRatePair } from '../utils/wifiRate';
-import ClientAddressLists from '../components/clients/ClientAddressLists';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

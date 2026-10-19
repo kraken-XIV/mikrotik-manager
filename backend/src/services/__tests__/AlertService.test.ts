@@ -1,8 +1,8 @@
 jest.mock('../../config/database');
 jest.mock('nodemailer');
 
-import { AlertService } from '../AlertService';
 import { query } from '../../config/database';
+import { AlertService } from '../AlertService';
 
 const mockedQuery = jest.mocked(query);
 

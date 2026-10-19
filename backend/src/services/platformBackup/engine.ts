@@ -11,11 +11,12 @@
  * has verified, so a damaged or altered file changes nothing.
  */
 import type { PoolClient } from 'pg';
+
 import { pool } from '../../config/database';
 import { allDecryptionKeys, setExtraDecryptionKeys } from '../../utils/secrets';
 import { reencryptAll } from '../encryptedData';
-import { CONFIG_TABLES, NEVER_RESTORED, APP_SETTINGS_STATE_KEYS } from './tables';
-import { readHeader, readRecords, type BackupContents, type BackupRecord } from './format';
+import { type BackupContents, type BackupRecord, readHeader, readRecords } from './format';
+import { APP_SETTINGS_STATE_KEYS, CONFIG_TABLES, NEVER_RESTORED } from './tables';
 
 const FETCH = 2000;
 const INSERT_BATCH = 1000;

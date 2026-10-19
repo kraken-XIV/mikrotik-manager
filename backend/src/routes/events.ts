@@ -1,10 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { roleAtLeast, roleOnDevice } from '../utils/siteAccess';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { siteScopeByNullableDevice } from '../utils/siteScope';
 import { activeSite, writableScope } from '../middleware/site';
 import { CLOCK_CHANGE_SQL } from '../utils/clockLogLines';
+import { roleAtLeast, roleOnDevice } from '../utils/siteAccess';
+import { siteScopeByNullableDevice } from '../utils/siteScope';
 
 /** Most events the list's total counts; past it the page shows "N+". */
 export const EVENTS_COUNT_CAP = 100_000;

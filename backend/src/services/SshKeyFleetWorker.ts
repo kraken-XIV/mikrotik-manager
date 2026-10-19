@@ -1,8 +1,9 @@
-import { Queue, Worker, Job } from 'bullmq';
-import { createRedisConnection, redis } from '../config/redis';
+import { Job, Queue, Worker } from 'bullmq';
+
 import { query, queryOne } from '../config/database';
+import { createRedisConnection, redis } from '../config/redis';
 import { classifyKeyTarget } from '../utils/sshKeyCredentials';
-import { sshKeyService, SSH_TARGET_COLS, type SshTarget } from './SshKeyService';
+import { SSH_TARGET_COLS, sshKeyService, type SshTarget } from './SshKeyService';
 
 /**
  * Fleet-wide SSH key deployment as a background job.

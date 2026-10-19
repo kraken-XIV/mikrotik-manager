@@ -1,8 +1,8 @@
 import {
-  splitHostPort,
   apiConnectionSources,
-  managerIpFromConntrack,
   type DeviceSnapshot,
+  managerIpFromConntrack,
+  splitHostPort,
 } from '../pathModel';
 
 describe('splitHostPort', () => {

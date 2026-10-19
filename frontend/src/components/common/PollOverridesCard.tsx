@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { devicesApi, sitesApi, type PollSettings } from '../../services/api';
+
+import { devicesApi, type PollSettings, sitesApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import NumberSetting from '../settings/NumberSetting';
 

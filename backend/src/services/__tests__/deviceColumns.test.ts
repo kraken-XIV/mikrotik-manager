@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
+
 import { DEVICE_BASE_COLUMNS } from '../deviceColumns';
 
 const SRC = join(__dirname, '..', '..');

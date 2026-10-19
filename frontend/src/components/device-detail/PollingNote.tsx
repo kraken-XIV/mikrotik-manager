@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Check, X, RefreshCw, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
+import { AlertCircle, Check, Pencil, RefreshCw, X } from 'lucide-react';
+import { useState } from 'react';
+
 import { devicesApi, type PollSettings } from '../../services/api';
 import { POLL_ROWS, useCanEditPollSettings } from '../common/PollOverridesCard';
 

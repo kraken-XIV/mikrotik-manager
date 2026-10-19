@@ -1,4 +1,4 @@
-import { fixFor, noFixReason, NO_FIX_REASON } from '../configHealthFixes';
+import { fixFor, NO_FIX_REASON, noFixReason } from '../configHealthFixes';
 
 describe('Config Health fixes (#239)', () => {
   it('turns spanning tree on, or classic STP into RSTP', () => {

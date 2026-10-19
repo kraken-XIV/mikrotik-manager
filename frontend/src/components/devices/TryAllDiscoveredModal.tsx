@@ -1,9 +1,10 @@
+import { AlertCircle, CheckCircle, KeyRound, Loader2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Loader2, CheckCircle, AlertCircle, KeyRound } from 'lucide-react';
-import { devicesApi, type BulkAddDeviceItem, type DiscoveredDevice } from '../../services/api';
+
+import { useSitePresets } from '../../hooks/useSitePresets';
+import { type BulkAddDeviceItem, devicesApi, type DiscoveredDevice } from '../../services/api';
 import type { DeviceType } from '../../types';
 import { parsePort } from '../../utils/parsePort';
-import { useSitePresets } from '../../hooks/useSitePresets';
 
 interface Props {
   discoveredDevices: DiscoveredDevice[];

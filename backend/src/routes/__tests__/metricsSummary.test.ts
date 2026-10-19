@@ -4,10 +4,11 @@ jest.mock('../../middleware/auth', () => ({
   requireAuth: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
-import request from 'supertest';
 import express from 'express';
-import metricsRoutes from '../metrics';
+import request from 'supertest';
+
 import { query } from '../../config/database';
+import metricsRoutes from '../metrics';
 
 const mockedQuery = jest.mocked(query);
 

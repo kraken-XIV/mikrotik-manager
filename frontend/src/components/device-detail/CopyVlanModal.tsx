@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, ChevronRight, Copy, AlertTriangle, Check, RefreshCw, Info } from 'lucide-react';
-import { devicesApi } from '../../services/api';
-import { useGuardedWrite, GuardedWriteUi } from '../ChangeGuardDialog';
-import type { Device, Vlan, SwitchPort } from '../../types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import { AlertTriangle, Check, ChevronRight, Copy, Info, RefreshCw, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+import { devicesApi } from '../../services/api';
+import type { Device, SwitchPort, Vlan } from '../../types';
+import { GuardedWriteUi, useGuardedWrite } from '../ChangeGuardDialog';
 import DevicePicker from '../common/DevicePicker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

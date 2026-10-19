@@ -6,36 +6,37 @@
  * manage the fleet mirror; a site admin manages their own site's. Anyone who
  * can see a site can see its mirror.
  */
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne } from '../config/database';
 import { requireAuth } from '../middleware/auth';
-import { presetCaller, type PresetCaller } from '../utils/presetAccess';
 import {
-  getMirror,
   deployMirror,
-  syncMirror,
-  setClients,
+  getMirror,
+  latestVersion,
+  type MirrorRow,
+  moveMirror,
   removeMirror,
   scopeDevices,
-  latestVersion,
   serverDisks,
-  moveMirror,
-  type MirrorRow,
+  setClients,
+  syncMirror,
 } from '../services/firmwareMirror';
-import {
-  planFiles,
-  isMirrorFolder,
-  isMirrorVersion,
-  clampKeepVersions,
-  supportsLocalUpdate,
-  DEFAULT_MIRROR_FOLDER,
-  isDiskName,
-  mirrorPath,
-  suggestDisk,
-} from '../utils/firmwareMirror';
 import type { DeviceRow } from '../services/mikrotik/DeviceCollector';
 import { normalizeDeviceAddress } from '../utils/deviceAddress';
+import {
+  clampKeepVersions,
+  DEFAULT_MIRROR_FOLDER,
+  isDiskName,
+  isMirrorFolder,
+  isMirrorVersion,
+  mirrorPath,
+  planFiles,
+  suggestDisk,
+  supportsLocalUpdate,
+} from '../utils/firmwareMirror';
 import { logSafe } from '../utils/logSafe';
+import { type PresetCaller, presetCaller } from '../utils/presetAccess';
 
 const router = Router();
 router.use(requireAuth);

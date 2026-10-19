@@ -1,8 +1,9 @@
 import type { PoolClient } from 'pg';
+
 import { query } from '../config/database';
-import { parseProxyLog, type ProxyConnection } from '../utils/proxyLog';
 import { logSafe } from '../utils/logSafe';
-import { usageUpsertCtes, SOURCES_READY_KEY } from './ProxyUsageService';
+import { parseProxyLog, type ProxyConnection } from '../utils/proxyLog';
+import { SOURCES_READY_KEY, usageUpsertCtes } from './ProxyUsageService';
 
 export interface ProxyLogInput {
   logId: string;

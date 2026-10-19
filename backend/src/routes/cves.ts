@@ -1,4 +1,5 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { requireAuth, requireWrite } from '../middleware/auth';
 import { activeSite } from '../middleware/site';
 import { fleetCveReport, refreshCveFeed } from '../services/cveFeed';

@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2 } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { maintenanceApi, devicesApi, type MaintenanceWindow } from '../../services/api';
+import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+
+import { devicesApi, maintenanceApi, type MaintenanceWindow } from '../../services/api';
 import DevicePicker from '../devices/DevicePicker';
 
 /**

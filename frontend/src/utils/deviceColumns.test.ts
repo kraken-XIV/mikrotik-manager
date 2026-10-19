@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  parseColumnPrefs,
-  visibleColumns,
   clampWidth,
   DEVICE_COLUMNS,
-  MIN_COLUMN_WIDTH,
   MAX_COLUMN_WIDTH,
+  MIN_COLUMN_WIDTH,
+  parseColumnPrefs,
+  visibleColumns,
 } from './deviceColumns';
 
 describe('device column preferences', () => {

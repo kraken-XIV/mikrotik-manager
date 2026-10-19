@@ -4,8 +4,8 @@
  * then serves all vendor lookups from memory — no rate limits, no external calls
  * per client.
  */
-import https from 'https';
 import fs from 'fs';
+import https from 'https';
 import path from 'path';
 
 /**

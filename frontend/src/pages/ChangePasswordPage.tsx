@@ -1,10 +1,11 @@
-import { useState, FormEvent } from 'react';
+import { AlertCircle, Eye, EyeOff, KeyRound, Network } from 'lucide-react';
+import { FormEvent, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Network, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
+
+import CircuitBackground from '../components/CircuitBackground';
 import { authApi, signOut } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
-import CircuitBackground from '../components/CircuitBackground';
 
 /**
  * First-login password change (P1-3).

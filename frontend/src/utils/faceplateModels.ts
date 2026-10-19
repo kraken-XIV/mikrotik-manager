@@ -8,7 +8,7 @@
  * A localStorage choice (`faceplate.evenTop.<model>`) still overrides
  * `etherEvenOnTop`.
  */
-import { chunkRows, staggerBlocks, type StaggerBlock } from './faceplateLayout';
+import { chunkRows, type StaggerBlock, staggerBlocks } from './faceplateLayout';
 
 export type SfpLayout =
   /** One unwrapped row, left to right. */

@@ -1,4 +1,4 @@
-import { poolSize, usedPerPool, poolState } from '../dhcpPools';
+import { poolSize, poolState, usedPerPool } from '../dhcpPools';
 
 describe('DHCP pool usage (#156)', () => {
   it('sizes pools the way RouterOS writes them', () => {

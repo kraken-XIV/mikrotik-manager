@@ -2,10 +2,11 @@ jest.mock('../../config/database');
 jest.mock('../AlertService', () => ({ alertService: { dispatch: jest.fn() } }));
 
 import { X509Certificate } from 'crypto';
-import { createCa, issueDeviceCert } from '../../utils/pki';
-import { verifyManagedCertificate, adoptCaCertificate, forgetCachedCa } from '../deviceCa';
-import { IdentityMismatchError } from '../identityPins';
+
 import { query, queryOne } from '../../config/database';
+import { createCa, issueDeviceCert } from '../../utils/pki';
+import { adoptCaCertificate, forgetCachedCa, verifyManagedCertificate } from '../deviceCa';
+import { IdentityMismatchError } from '../identityPins';
 
 jest.setTimeout(30_000);
 const mockedQueryOne = jest.mocked(queryOne);

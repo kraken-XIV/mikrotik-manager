@@ -1,5 +1,6 @@
-import { Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Navigate } from 'react-router-dom';
+
 import { sitesApi } from '../services/api';
 import { useSiteStore } from '../store/siteStore';
 

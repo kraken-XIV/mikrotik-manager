@@ -1,4 +1,4 @@
-import { normalizeHealth, evaluateHealth } from '../deviceHealth';
+import { evaluateHealth, normalizeHealth } from '../deviceHealth';
 
 // Captured from the reference fleet's CRS510 (dual PSU), then altered.
 const crs510 = [

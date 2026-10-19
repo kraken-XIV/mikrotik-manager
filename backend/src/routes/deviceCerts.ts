@@ -2,25 +2,26 @@
  * Operations → Certificates: the manager's CA and the device certificates it
  * issues (#200). Fleet admins only; listing follows the site switcher.
  */
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
-import { requireAuth, requireAdmin } from '../middleware/auth';
+import { requireAdmin, requireAuth } from '../middleware/auth';
 import { activeSite } from '../middleware/site';
-import { siteScopeDevices } from '../utils/siteScope';
-import { caInfo, PkiError } from '../utils/pki';
 import {
-  loadCa,
-  setUpCa,
-  importExistingCa,
-  deleteCa,
-  updateSettings,
-  issueCertificate,
-  removeCertificate,
   CA_DAY_CHOICES,
-  MIN_DAYS,
+  deleteCa,
+  importExistingCa,
+  issueCertificate,
+  loadCa,
   MAX_DEVICE_DAYS,
+  MIN_DAYS,
+  removeCertificate,
+  setUpCa,
+  updateSettings,
 } from '../services/deviceCa';
 import { logSafe } from '../utils/logSafe';
+import { caInfo, PkiError } from '../utils/pki';
+import { siteScopeDevices } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth, requireAdmin);

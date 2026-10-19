@@ -1,56 +1,58 @@
-import { useCanWrite } from '../hooks/useCanWrite';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  ReactFlow,
-  MiniMap,
-  Controls,
-  Background,
-  useNodesState,
-  useEdgesState,
-  type Node,
-  type Edge,
-  type Connection,
-  type ReactFlowInstance,
-  BackgroundVariant,
-  ConnectionMode,
-} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  RefreshCw,
+  Background,
+  BackgroundVariant,
+  type Connection,
+  ConnectionMode,
+  Controls,
+  type Edge,
+  MiniMap,
+  type Node,
+  ReactFlow,
+  type ReactFlowInstance,
+  useEdgesState,
+  useNodesState,
+} from '@xyflow/react';
+import clsx from 'clsx';
+import {
+  AlertCircle,
+  Building2,
+  ChevronUp,
+  Crosshair,
   GitBranch,
   Link2,
   Link2Off,
-  AlertCircle,
   Plus,
-  Users,
-  ChevronUp,
+  RefreshCw,
   RotateCcw,
-  Crosshair,
-  Building2,
+  Users,
 } from 'lucide-react';
-import { topologyApi, sitesApi, devicesApi } from '../services/api';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+
+import EdgeMenu from '../components/topology/EdgeMenu';
+import HandLinksTable from '../components/topology/HandLinksTable';
+import HiddenLinksTable from '../components/topology/HiddenLinksTable';
+import NeighbourEditor from '../components/topology/NeighbourEditor';
+import NodeEditor from '../components/topology/NodeEditor';
+import { nodeTypes, statusColor } from '../components/topology/nodes';
+import TopoEdge, { type TopoEdgeData } from '../components/topology/TopoEdge';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { devicesApi, sitesApi, topologyApi } from '../services/api';
 import { useSiteStore } from '../store/siteStore';
-import { nodesWithinHops } from '../utils/topologyFocus';
-import type { TopologyDevice, TopologyNode, HandLinkEnd } from '../types';
-import clsx from 'clsx';
 import { useThemeStore } from '../store/themeStore';
+import type { HandLinkEnd, TopologyDevice, TopologyNode } from '../types';
+import type { BridgeInfo } from '../utils/stpRoot';
+import { nodesWithinHops } from '../utils/topologyFocus';
+import type { Side } from '../utils/topologyGeometry';
 import {
   buildTopologyGraph,
   endFor,
   type GraphEdge,
   type StpUpstream,
 } from '../utils/topologyGraph';
-import type { BridgeInfo } from '../utils/stpRoot';
-import type { Side } from '../utils/topologyGeometry';
-import { nodeTypes, statusColor } from '../components/topology/nodes';
-import TopoEdge, { type TopoEdgeData } from '../components/topology/TopoEdge';
-import EdgeMenu from '../components/topology/EdgeMenu';
-import NodeEditor from '../components/topology/NodeEditor';
-import HandLinksTable from '../components/topology/HandLinksTable';
-import HiddenLinksTable from '../components/topology/HiddenLinksTable';
-import NeighbourEditor from '../components/topology/NeighbourEditor';
 
 const edgeTypes = { topo: TopoEdge };
 const SHOW_CLIENTS_KEY = 'topology.showClients';

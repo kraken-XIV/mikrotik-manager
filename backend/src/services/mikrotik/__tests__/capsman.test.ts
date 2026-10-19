@@ -1,16 +1,16 @@
 import {
+  buildMacIndex,
+  chooseWifiPackage,
   classifyWifiRole,
-  parseCapsmanStatus,
-  parseCapStatus,
+  hasRadios,
   isCapsmanManaged,
-  normalizeRadios,
-  matchRadiosToDevices,
   lookupDeviceForMac,
   macIndexKeys,
-  buildMacIndex,
-  hasRadios,
+  matchRadiosToDevices,
+  normalizeRadios,
+  parseCapsmanStatus,
+  parseCapStatus,
   wirelessDeviceSql,
-  chooseWifiPackage,
 } from '../capsman';
 
 describe('classifyWifiRole', () => {
@@ -192,7 +192,7 @@ describe('lookupDeviceForMac', () => {
 
 // ── live radio state and datapath (issue #94 follow-up) ──────────────────────
 
-import { parseRadioMonitor, resolveDatapath, clientsPerRadio } from '../capsman';
+import { clientsPerRadio, parseRadioMonitor, resolveDatapath } from '../capsman';
 
 describe('parseRadioMonitor', () => {
   // Shape reported by the issue author from `/interface/wifi/monitor wifi1 once`.
@@ -401,13 +401,13 @@ describe('matchRadiosToDevices — controller mirrors (#94 field report)', () =>
 
 // ── Legacy CAPsMAN (#250), from the reporter's CHR and RB951 on 7.24.5 ───────
 
-import {
-  legacyManagerEnabled,
-  legacyCapInterfaces,
-  parseLegacyChannel,
-  legacyRadios,
-} from '../capsman';
 import { legacyFixture } from '../__fixtures__/legacyCapsman';
+import {
+  legacyCapInterfaces,
+  legacyManagerEnabled,
+  legacyRadios,
+  parseLegacyChannel,
+} from '../capsman';
 
 describe('legacy CAPsMAN (#250)', () => {
   it('recognises an enabled controller and a CAP', () => {

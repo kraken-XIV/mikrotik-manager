@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
 import { Columns3 } from 'lucide-react';
-import { DEVICE_COLUMNS, type ColumnPrefs, type DeviceColumnId } from '../../utils/deviceColumns';
+import { useEffect, useRef, useState } from 'react';
+
+import { type ColumnPrefs, DEVICE_COLUMNS, type DeviceColumnId } from '../../utils/deviceColumns';
 
 /**
  * Show or hide the Devices list's columns, and put them back (#283). Widths

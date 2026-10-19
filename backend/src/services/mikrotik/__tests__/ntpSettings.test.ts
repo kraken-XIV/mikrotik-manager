@@ -1,4 +1,4 @@
-import { planNtpWrites, legacyServerList } from '../ntpSettings';
+import { legacyServerList, planNtpWrites } from '../ntpSettings';
 
 // State as RouterOS 6.49 without the ntp package reports it (read from a CHR).
 const v6 = {

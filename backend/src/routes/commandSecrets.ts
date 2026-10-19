@@ -3,10 +3,11 @@
  * (typed, or generated here) and never read back: the list shows names and
  * when they changed.
  */
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
-import { requireAuth, requireAdmin } from '../middleware/auth';
-import { SECRET_NAME, generateSecret, listSecrets, saveSecret } from '../services/commandSecrets';
+import { requireAdmin, requireAuth } from '../middleware/auth';
+import { generateSecret, listSecrets, saveSecret, SECRET_NAME } from '../services/commandSecrets';
 
 const router = Router();
 router.use(requireAuth, requireAdmin);

@@ -1,29 +1,30 @@
 import { Handle, Position } from '@xyflow/react';
+import clsx from 'clsx';
 import {
-  Users,
-  Wifi,
-  Cable,
-  Globe,
-  Router,
-  Shield,
-  Network,
-  Server,
-  HardDrive,
-  Printer,
-  Camera,
-  Phone,
-  Monitor,
-  Cloud,
   Box,
+  Cable,
+  Camera,
   ChevronDown,
   ChevronUp,
+  Cloud,
+  Globe,
+  HardDrive,
+  Monitor,
+  Network,
+  Phone,
+  Printer,
+  Router,
+  Server,
+  Shield,
+  Users,
+  Wifi,
 } from 'lucide-react';
-import clsx from 'clsx';
+
 import type {
-  TopologyDevice,
   ExternalTopologyNode,
-  TopologyNode,
   TopologyClient,
+  TopologyDevice,
+  TopologyNode,
 } from '../../types';
 
 /** The node cards on the topology map (#147). */

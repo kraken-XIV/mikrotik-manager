@@ -8,15 +8,15 @@
  * two weeks: one week for the usual level, and a week of margin.
  */
 import { query } from '../config/database';
-import { alertService } from './AlertService';
 import {
-  readOptic,
-  opticStatus,
   DEFAULT_DROP_DB,
   type OpticStatus,
-  type Usual,
+  opticStatus,
+  readOptic,
   type RxLimits,
+  type Usual,
 } from '../utils/opticLevels';
+import { alertService } from './AlertService';
 
 /** Store one slow poll's readings. */
 export async function recordOptics(

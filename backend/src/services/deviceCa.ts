@@ -23,38 +23,39 @@
  * While the switch happens, polls accept the new certificate as well as the
  * old one (expectTlsCertificate), so it doesn't raise a changed-identity alert.
  */
-import { Client as SSHClient } from 'ssh2';
 import { randomBytes, X509Certificate } from 'crypto';
 import { isIP } from 'net';
+import { Client as SSHClient } from 'ssh2';
+
 import { query, queryOne } from '../config/database';
-import { encrypt, decrypt } from '../utils/crypto';
-import { RouterOSClient } from './mikrotik/RouterOSClient';
-import { API_SSL_PORT } from './mikrotik/apiConnect';
 import { usesApiTls } from '../utils/apiTls';
-import { configuredServices, allowedFrom, allowedFromKey } from '../utils/ipServices';
-import { ensureCertificate } from './apiSsl';
+import { decrypt, encrypt } from '../utils/crypto';
+import { allowedFrom, allowedFromKey, configuredServices } from '../utils/ipServices';
+import { logSafe } from '../utils/logSafe';
 import {
+  type CaInfo,
+  caInfo,
+  type CaMaterial,
   createCa,
+  deviceSans,
   importCa,
   issueDeviceCert,
-  deviceSans,
-  caInfo,
-  signedBy,
   PkiError,
-  type CaMaterial,
-  type CaInfo,
+  signedBy,
 } from '../utils/pki';
-import {
-  expectTlsCertificate,
-  clearTlsExpectation,
-  forgetIdentity,
-  pinIdentity,
-  IdentityMismatchError,
-} from './identityPins';
-import { resolveAuth } from './sshExec';
-import { sshHostCheck, explainSshError } from './sshHostCheck';
 import { alertService } from './AlertService';
-import { logSafe } from '../utils/logSafe';
+import { ensureCertificate } from './apiSsl';
+import {
+  clearTlsExpectation,
+  expectTlsCertificate,
+  forgetIdentity,
+  IdentityMismatchError,
+  pinIdentity,
+} from './identityPins';
+import { API_SSL_PORT } from './mikrotik/apiConnect';
+import { RouterOSClient } from './mikrotik/RouterOSClient';
+import { resolveAuth } from './sshExec';
+import { explainSshError, sshHostCheck } from './sshHostCheck';
 
 export const MIN_DAYS = 1;
 export const MAX_DEVICE_DAYS = 3650;

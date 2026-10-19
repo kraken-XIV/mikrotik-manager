@@ -1,26 +1,28 @@
+import 'leaflet/dist/leaflet.css';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import L from 'leaflet';
+import {
+  AlertCircle,
+  Building2,
+  Check,
+  MapPin,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import {
-  Building2,
-  MapPin,
-  Plus,
-  Pencil,
-  Trash2,
-  Check,
-  X,
-  AlertCircle,
-  RefreshCw,
-} from 'lucide-react';
-import { sitesApi, settingsApi, siteGroupsApi } from '../services/api';
-import { useSiteStore, type Site } from '../store/siteStore';
-import { useCanWrite, useIsSiteScoped } from '../hooks/useCanWrite';
-import GroupsCard from '../components/sites/GroupsCard';
-import { geocodeAddress, OSM_TILE_URL, OSM_ATTRIBUTION } from '../utils/geocode';
-import { escapeHtml } from '../utils/escapeHtml';
+
 import PollOverridesCard from '../components/common/PollOverridesCard';
+import GroupsCard from '../components/sites/GroupsCard';
+import { useCanWrite, useIsSiteScoped } from '../hooks/useCanWrite';
+import { settingsApi, siteGroupsApi, sitesApi } from '../services/api';
+import { type Site, useSiteStore } from '../store/siteStore';
+import { escapeHtml } from '../utils/escapeHtml';
+import { geocodeAddress, OSM_ATTRIBUTION, OSM_TILE_URL } from '../utils/geocode';
 
 /** World map with one pin per site that has coordinates. */
 function SitesMap({ sites, onSelect }: { sites: Site[]; onSelect: (id: number) => void }) {

@@ -1,8 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { ChevronDown, Search } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Search } from 'lucide-react';
-import clsx from 'clsx';
+
 import { sitesApi } from '../../services/api';
 import { filterDevices, PICKER_RENDER_LIMIT, type PickerDevice } from '../../utils/devicePicker';
 

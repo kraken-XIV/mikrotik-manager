@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { credentialPresetsApi, sitesApi, type CredentialPreset } from '../services/api';
+import { useMemo } from 'react';
+
+import { type CredentialPreset, credentialPresetsApi, sitesApi } from '../services/api';
 import { useSiteStore } from '../store/siteStore';
 
 /** Presets that can apply to a device in `siteId`: fleet-wide ones and that site's own. */

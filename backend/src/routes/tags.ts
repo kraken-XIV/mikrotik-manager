@@ -1,8 +1,9 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
+import { query } from '../config/database';
+import { requireAdmin, requireAuth, requireWrite } from '../middleware/auth';
 import { decodedPath } from '../utils/requestPath';
 import { resourceSiteAccess } from '../utils/siteAccess';
-import { query } from '../config/database';
-import { requireAuth, requireWrite, requireAdmin } from '../middleware/auth';
 
 const router = Router();
 router.use(requireAuth);

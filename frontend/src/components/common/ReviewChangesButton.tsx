@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Eye, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
-import { previewAll, type ChangePreview } from '../../services/api';
+import { Eye, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+
+import { type ChangePreview, previewAll } from '../../services/api';
 import ChangePreviewModal from './ChangePreviewModal';
 
 /**

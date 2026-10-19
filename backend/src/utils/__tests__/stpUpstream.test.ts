@@ -1,8 +1,8 @@
 import {
   resolveStpUpstreams,
-  upstreamByDevice,
   type StpBridge,
   type StpLink,
+  upstreamByDevice,
 } from '../stpUpstream';
 
 /**

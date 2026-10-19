@@ -1,4 +1,4 @@
-import { expandVlanIds, isMultiVlanSpec, aggregateBridgeVlans, portVlanMembership } from '../vlan';
+import { aggregateBridgeVlans, expandVlanIds, isMultiVlanSpec, portVlanMembership } from '../vlan';
 
 describe('expandVlanIds', () => {
   it('clamps ranges to 1-4094 so a hostile spec cannot exhaust memory', () => {

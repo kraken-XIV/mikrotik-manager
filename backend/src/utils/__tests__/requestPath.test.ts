@@ -1,7 +1,8 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+
+import { deviceIdFromPath } from '../../services/changeGuard/deviceLock';
 import { decodedPath } from '../requestPath';
 import { deviceIdParam, deviceSiteAccess } from '../siteAccess';
-import { deviceIdFromPath } from '../../services/changeGuard/deviceLock';
 
 // GHSA-6xq3-q9m5-7hxp: access checks must read the same id the route handler
 // receives, which Express decodes.

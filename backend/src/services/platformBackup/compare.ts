@@ -17,13 +17,13 @@
  * The result names tables, rows and fields, never values.
  */
 import { pool } from '../../config/database';
+import { openConfig } from '../../utils/alertChannelSecrets';
 import { decrypt } from '../../utils/crypto';
 import { setExtraDecryptionKeys } from '../../utils/secrets';
-import { openConfig } from '../../utils/alertChannelSecrets';
 import { encryptedColumns } from '../encryptedData';
-import { readHeader, readRecords, type BackupContents } from './format';
-import { publicTables, primaryKey, tableColumns, qi } from './engine';
-import { CONFIG_TABLES, NEVER_RESTORED, APP_SETTINGS_STATE_KEYS } from './tables';
+import { primaryKey, publicTables, qi, tableColumns } from './engine';
+import { type BackupContents, readHeader, readRecords } from './format';
+import { APP_SETTINGS_STATE_KEYS, CONFIG_TABLES, NEVER_RESTORED } from './tables';
 
 const SAMPLE_LIMIT = 25;
 

@@ -5,15 +5,15 @@
  * turns the result into React Flow nodes and edges and owns all styling.
  */
 import type {
-  TopologyDevice,
-  TopologyLink,
   ExternalTopologyNode,
-  TopologyNode,
   HandLink,
   HandLinkEnd,
   TopologyClient,
+  TopologyDevice,
+  TopologyLink,
+  TopologyNode,
 } from '../types';
-import { resolveStpRoot, type BridgeInfo, type RootVerdict } from './stpRoot';
+import { type BridgeInfo, resolveStpRoot, type RootVerdict } from './stpRoot';
 import { layoutForest } from './topologyLayout';
 
 /** Upstream verdict as returned by /api/topology; resolved server-side. */

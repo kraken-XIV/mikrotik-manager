@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { unmutedForApiSslNotice, PLAIN_API_CHECK } from './apiSslNotice';
+import { describe, expect, it } from 'vitest';
+
+import { PLAIN_API_CHECK, unmutedForApiSslNotice } from './apiSslNotice';
 
 const devices = [{ id: 1 }, { id: 2 }, { id: 3 }];
 

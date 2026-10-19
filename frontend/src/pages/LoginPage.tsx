@@ -1,10 +1,11 @@
-import { useState, FormEvent, useRef, useEffect } from 'react';
+import { AlertCircle, Eye, EyeOff, LogIn, Network, ShieldCheck } from 'lucide-react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Network, Eye, EyeOff, AlertCircle, ShieldCheck, LogIn } from 'lucide-react';
+
+import CircuitBackground from '../components/CircuitBackground';
 import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
-import CircuitBackground from '../components/CircuitBackground';
 
 const SSO_ERRORS = new Map<string, string>([
   ['expired', 'That sign-in expired or was started in a different browser. Please sign in again.'],

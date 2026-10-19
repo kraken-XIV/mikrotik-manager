@@ -8,21 +8,21 @@
  * counter grew are stored, so a healthy fleet writes nothing.
  */
 import { query } from '../config/database';
-import { alertService } from './AlertService';
 import {
-  readCounters,
   counterDelta,
-  isEmpty,
-  summarise,
-  describeErrors,
-  totalErrors,
   DEFAULT_ERRORS_PER_MIN,
   DEFAULT_FLAPS_PER_HOUR,
-  RATE_WINDOW_MIN,
-  type PortCounters,
+  describeErrors,
   type ErrorEvent,
+  isEmpty,
+  type PortCounters,
   type PortErrorSummary,
+  RATE_WINDOW_MIN,
+  readCounters,
+  summarise,
+  totalErrors,
 } from '../utils/interfaceErrors';
+import { alertService } from './AlertService';
 
 const baseline = new Map<string, PortCounters>();
 

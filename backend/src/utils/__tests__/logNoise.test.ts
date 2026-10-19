@@ -1,8 +1,8 @@
 import {
   isOwnApiSession,
   isOwnSshSession,
-  stripOwnSessionNoise,
   managerAddressFromActive,
+  stripOwnSessionNoise,
 } from '../logNoise';
 
 /**

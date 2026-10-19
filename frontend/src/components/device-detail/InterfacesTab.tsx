@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { devicesApi } from '../../services/api';
 import clsx from 'clsx';
+
+import { devicesApi } from '../../services/api';
 
 export default function InterfacesTab({ deviceId }: { deviceId: number }) {
   const { data: interfaces = [], isLoading } = useQuery({

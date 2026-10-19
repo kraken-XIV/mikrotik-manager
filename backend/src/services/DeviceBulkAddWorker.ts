@@ -1,10 +1,11 @@
-import { Queue, Worker, Job } from 'bullmq';
+import { Job, Queue, Worker } from 'bullmq';
+
 import { createRedisConnection } from '../config/redis';
 import { redis } from '../config/redis';
+import { openItem, sealItems } from '../utils/bulkAddSecrets';
+import type { PresetCaller } from '../utils/presetAccess';
 import { createDeviceFromBody, type CreateDeviceInput } from './deviceCreation';
 import type { PollerService } from './PollerService';
-import { sealItems, openItem } from '../utils/bulkAddSecrets';
-import type { PresetCaller } from '../utils/presetAccess';
 
 const QUEUE_NAME = 'bulk-add-devices';
 const JOB_TTL_SEC = 86400;

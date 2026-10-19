@@ -1,6 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { limiterRedis } from '../config/redis';
+import { NextFunction, Request, Response } from 'express';
+
 import { query } from '../config/database';
+import { limiterRedis } from '../config/redis';
 
 // Per-process fallback used ONLY when Redis is unavailable, so throttling
 // degrades gracefully (esp. for /login) instead of failing fully open exactly

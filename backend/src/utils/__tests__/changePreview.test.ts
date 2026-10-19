@@ -1,11 +1,11 @@
 import {
-  isReadCommand,
-  toCli,
-  describeWrite,
-  targetQuery,
-  isPreviewableRoute,
-  isDbWrite,
   cliValue,
+  describeWrite,
+  isDbWrite,
+  isPreviewableRoute,
+  isReadCommand,
+  targetQuery,
+  toCli,
 } from '../changePreview';
 
 describe('isReadCommand', () => {

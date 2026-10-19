@@ -1,6 +1,6 @@
+import type { GuardDevice } from '../ChangeGuard';
 import { auditConfig } from '../configHealth';
 import type { DeviceSnapshot } from '../pathModel';
-import type { GuardDevice } from '../ChangeGuard';
 
 const device: GuardDevice = {
   id: 1,

@@ -1,15 +1,16 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Network, Plus, Pencil, Trash2, Check, X, RefreshCw, AlertCircle, Cpu } from 'lucide-react';
 import clsx from 'clsx';
-import { devicesApi, type BridgeView } from '../../services/api';
+import { AlertCircle, Check, Cpu, Network, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { type BridgeView, devicesApi } from '../../services/api';
 import {
+  guardOutcomeMessage,
+  type GuardResult,
+  type LockoutVerdict,
   LockoutVerdictDialog,
   lockoutVerdictOf,
-  guardOutcomeMessage,
-  type LockoutVerdict,
-  type GuardResult,
 } from '../ChangeGuardDialog';
 
 const MODES = [

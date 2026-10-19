@@ -1,30 +1,31 @@
-import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import LoadError from '../components/common/LoadError';
-import { useNavigate } from 'react-router-dom';
+import clsx from 'clsx';
 import {
-  Shield,
-  ShieldCheck,
-  ShieldAlert,
-  RefreshCw,
+  AlertTriangle,
   ChevronDown,
   ChevronRight,
   Gauge,
-  Server,
-  AlertTriangle,
-  ListChecks,
   KeyRound,
+  ListChecks,
+  RefreshCw,
+  Server,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
-import { devicesApi, certificatesApi } from '../services/api';
-import { activeChecks, countFindings, mutedCount } from '../utils/securityFindings';
-import type { SecurityCheck } from '../services/api';
-import type { Device } from '../types';
-import clsx from 'clsx';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import CertificateList from '../components/CertificateList';
-import RouterOsCveCard from '../components/security/RouterOsCveCard';
+import LoadError from '../components/common/LoadError';
 import ApiSslCard from '../components/security/ApiSslCard';
-import { useCanWrite } from '../hooks/useCanWrite';
 import { PendingIdentityCard } from '../components/security/IdentityChange';
+import RouterOsCveCard from '../components/security/RouterOsCveCard';
+import { useCanWrite } from '../hooks/useCanWrite';
+import type { SecurityCheck } from '../services/api';
+import { certificatesApi, devicesApi } from '../services/api';
+import type { Device } from '../types';
+import { activeChecks, countFindings, mutedCount } from '../utils/securityFindings';
 
 interface DevicePosture {
   id: number;

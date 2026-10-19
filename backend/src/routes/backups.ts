@@ -1,14 +1,15 @@
-import { Router, Request, Response } from 'express';
-import { decodedPath } from '../utils/requestPath';
-import { resourceSiteAccess } from '../utils/siteAccess';
+import { Request, Response, Router } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { query, queryOne } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { siteScopeByDevice } from '../utils/siteScope';
 import { activeSite, writableScope } from '../middleware/site';
 import { BackupService, describeRestore } from '../services/BackupService';
 import { decrypt } from '../utils/crypto';
+import { decodedPath } from '../utils/requestPath';
+import { resourceSiteAccess } from '../utils/siteAccess';
+import { siteScopeByDevice } from '../utils/siteScope';
 
 /**
  * Backups holding passwords and keys (#172) are admin-only to read. Restoring

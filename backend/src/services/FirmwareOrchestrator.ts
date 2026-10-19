@@ -10,17 +10,17 @@
 // arrived (pair with a maintenance window by scheduling inside it).
 
 import { query, queryOne } from '../config/database';
-import { DeviceCollector, DeviceRow } from './mikrotik/DeviceCollector';
-import { BackupService } from './BackupService';
-import { mapWithConcurrency, clampConcurrency } from '../utils/concurrency';
-import { interruptedOutcome, INTERRUPTED_RUN_ERROR } from '../utils/interrupted';
-import { describeUpdateStatus, type UpdateStatus } from '../utils/updateStatus';
-import { upgradeDecision, verifyUpgrade, scheduleDecision } from '../utils/firmwarePlan';
-import { mirrorForDevice, newestCompleteVersion, type MirrorRow } from './firmwareMirror';
+import { clampConcurrency, mapWithConcurrency } from '../utils/concurrency';
 import { matchLocalUpdate, packageFileName } from '../utils/firmwareMirror';
-import { runSshCommand, looksLikeFailure, type SshExecDevice } from './sshExec';
-import { withSafeApply, type GuardDevice } from './changeGuard/ChangeGuard';
+import { scheduleDecision, upgradeDecision, verifyUpgrade } from '../utils/firmwarePlan';
+import { INTERRUPTED_RUN_ERROR, interruptedOutcome } from '../utils/interrupted';
+import { describeUpdateStatus, type UpdateStatus } from '../utils/updateStatus';
+import { BackupService } from './BackupService';
+import { type GuardDevice, withSafeApply } from './changeGuard/ChangeGuard';
 import { fillSecrets, maskSecrets } from './commandSecrets';
+import { mirrorForDevice, type MirrorRow, newestCompleteVersion } from './firmwareMirror';
+import { DeviceCollector, DeviceRow } from './mikrotik/DeviceCollector';
+import { looksLikeFailure, runSshCommand, type SshExecDevice } from './sshExec';
 
 const REBOOT_GRACE_MS = 25_000; // let the device actually go down
 /**

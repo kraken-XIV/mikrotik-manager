@@ -1,21 +1,22 @@
-import { useState, useRef, useEffect } from 'react';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
   Building2,
-  ChevronDown,
   Check,
-  Plus,
-  Pencil,
-  Globe,
-  X,
+  ChevronDown,
   FolderOpen,
+  Globe,
+  Pencil,
+  Plus,
   Search,
+  X,
 } from 'lucide-react';
-import clsx from 'clsx';
-import { sitesApi, siteGroupsApi } from '../../services/api';
-import { useSiteStore, type Site } from '../../store/siteStore';
+import { useEffect, useRef, useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
 import { useIsSiteScoped } from '../../hooks/useCanWrite';
+import { siteGroupsApi, sitesApi } from '../../services/api';
+import { type Site, useSiteStore } from '../../store/siteStore';
 
 interface Props {
   isCollapsed: boolean;

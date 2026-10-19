@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { resolveStpRoot, bridgePriority, type BridgeInfo } from './stpRoot';
+import { describe, expect, it } from 'vitest';
+
+import { type BridgeInfo, bridgePriority, resolveStpRoot } from './stpRoot';
 
 const RB4011 = '0x1000.2C:C8:1B:05:2B:B1'; // priority 4096
 const AP_A = '0x2000.AA:AA:AA:AA:AA:AA'; // priority 8192

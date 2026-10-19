@@ -1,8 +1,9 @@
-import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { X } from 'lucide-react';
+import { useState } from 'react';
+
 import { topologyApi } from '../../services/api';
-import { NODE_KINDS, capsLabel } from './nodes';
+import { capsLabel, NODE_KINDS } from './nodes';
 
 /**
  * Say what a neighbour discovery found really is (#260): a computer it took

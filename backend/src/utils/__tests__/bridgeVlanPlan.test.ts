@@ -1,4 +1,4 @@
-import { planVlanWrite, frameTypesFor, planTaggedRemovals } from '../bridgeVlanPlan';
+import { frameTypesFor, planTaggedRemovals, planVlanWrite } from '../bridgeVlanPlan';
 
 describe('planVlanWrite', () => {
   it('adds a static row when the existing one is dynamic — the reported failure', () => {

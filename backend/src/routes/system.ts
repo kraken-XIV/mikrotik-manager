@@ -1,12 +1,13 @@
-import { Router } from 'express';
 import type { Request, Response } from 'express';
+import { Router } from 'express';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { requireAuth, requireWrite, fleetOnly } from '../middleware/auth';
+
 import { query } from '../config/database';
-import { DARK_SITE_FEATURES, DARK_SITE_KEYS, internetAllowed } from '../utils/darkSite';
+import { fleetOnly, requireAuth, requireWrite } from '../middleware/auth';
 import type { PollerService } from '../services/PollerService';
 import { globalSettings } from '../services/pollSettings';
+import { DARK_SITE_FEATURES, DARK_SITE_KEYS, internetAllowed } from '../utils/darkSite';
 import { cleanOverrides, effectiveValues } from '../utils/pollOverrides';
 
 const router = Router();

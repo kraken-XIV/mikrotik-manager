@@ -1,4 +1,4 @@
-import { presetCaller, canManagePresetSite, canSeePreset, presetUseRefusal } from '../presetAccess';
+import { canManagePresetSite, canSeePreset, presetCaller, presetUseRefusal } from '../presetAccess';
 
 const fleetAdmin = presetCaller({ role: 'admin' });
 const fleetOperator = presetCaller({ role: 'operator' });

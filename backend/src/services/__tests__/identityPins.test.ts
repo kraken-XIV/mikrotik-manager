@@ -1,13 +1,13 @@
+import { query } from '../../config/database';
+import { alertService } from '../AlertService';
 import {
-  verifyDeviceIdentity,
-  verifyDeviceSerial,
   IdentityMismatchError,
   normalizeFingerprint,
   sshFingerprintDisplay,
   trustNewIdentity,
+  verifyDeviceIdentity,
+  verifyDeviceSerial,
 } from '../identityPins';
-import { query } from '../../config/database';
-import { alertService } from '../AlertService';
 
 jest.mock('../../config/database', () => ({ query: jest.fn(), queryOne: jest.fn() }));
 jest.mock('../AlertService', () => ({ alertService: { dispatch: jest.fn() } }));

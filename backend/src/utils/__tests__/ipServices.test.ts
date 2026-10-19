@@ -1,10 +1,10 @@
 import {
-  configuredServices,
+  addressAllowed,
   allowedFrom,
   allowedFromKey,
-  parseAllowedList,
-  addressAllowed,
+  configuredServices,
   managerPeer,
+  parseAllowedList,
   type ServiceRow,
 } from '../ipServices';
 

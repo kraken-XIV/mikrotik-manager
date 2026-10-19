@@ -1,7 +1,7 @@
 import {
-  planBridgePortMove,
   addressesOnPorts,
   bridgeDeleteRefusal,
+  planBridgePortMove,
   type RosRow,
 } from '../bridgePortMove';
 

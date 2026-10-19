@@ -1,6 +1,7 @@
 import * as net from 'net';
-import { RouterOSClient, RouterOSSentence, REPEATED_ATTRIBUTES_KEY } from '../RouterOSClient';
-import { REPEATED_KEY, parseBandSpecs } from '../../../utils/lte';
+
+import { parseBandSpecs, REPEATED_KEY } from '../../../utils/lte';
+import { REPEATED_ATTRIBUTES_KEY, RouterOSClient, RouterOSSentence } from '../RouterOSClient';
 
 /** Encode one word using RouterOS's variable-length prefix (short form only). */
 const word = (s: string): Buffer => {

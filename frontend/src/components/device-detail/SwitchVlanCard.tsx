@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Cpu, AlertTriangle, Pencil, Trash2, Check, X, Plus, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
-import { devicesApi, type SwitchVlanView } from '../../services/api';
+import { AlertTriangle, Check, Cpu, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { devicesApi, type SwitchVlanView } from '../../services/api';
 import { guardOutcomeMessage, type GuardResult } from '../ChangeGuardDialog';
 
 const MODE_HELP: Record<string, string> = {

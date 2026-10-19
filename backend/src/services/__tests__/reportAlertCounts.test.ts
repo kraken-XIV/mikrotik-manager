@@ -1,5 +1,5 @@
-import { reportService } from '../ReportService';
 import { query } from '../../config/database';
+import { reportService } from '../ReportService';
 
 jest.mock('../../config/database', () => ({ query: jest.fn(), queryOne: jest.fn() }));
 

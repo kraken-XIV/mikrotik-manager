@@ -1,6 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 import { createHash, randomBytes } from 'crypto';
+import { NextFunction, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+
 import { query } from '../config/database';
 import { jwtSigningSecret, jwtVerifierSecrets } from '../utils/secrets';
 import { validateSession } from '../utils/sessionState';

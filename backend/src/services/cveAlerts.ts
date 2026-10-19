@@ -1,7 +1,7 @@
 import { query, queryOne } from '../config/database';
+import { cveAlertMessage, cveAlertsFor } from '../utils/cveAlerts';
 import { alertService } from './AlertService';
 import { fleetCveReport } from './cveFeed';
-import { cveAlertsFor, cveAlertMessage } from '../utils/cveAlerts';
 
 const ALERTED_KEY = 'cve_alerted';
 

@@ -5,14 +5,15 @@
  * itself. A backup on the same server doesn't survive losing the server,
  * which is what the off-box destinations are for.
  */
-import * as fs from 'fs';
-import * as path from 'path';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
 import nodemailer from 'nodemailer';
+import * as path from 'path';
 import { Client as SshClient, type SFTPWrapper } from 'ssh2';
+
 import { queryOne } from '../../config/database';
 import { openConfig } from '../../utils/alertChannelSecrets';
-import { s3Put, s3PutBuffer, s3Delete, s3List, type S3Config } from './s3';
+import { type S3Config, s3Delete, s3List, s3Put, s3PutBuffer } from './s3';
 
 export const LOCAL_DIR = path.join(process.env.BACKUPS_DIR || '/app/backups', 'platform');
 /** Files uploaded for a restore. */

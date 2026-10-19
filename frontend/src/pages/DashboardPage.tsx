@@ -1,51 +1,53 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import 'leaflet/dist/leaflet.css';
+
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { format, formatDistanceToNow } from 'date-fns';
+import L from 'leaflet';
 import {
-  AlertTriangle,
-  Wifi,
-  MapPin,
-  ArrowUpCircle,
-  Cpu,
-  X,
-  RefreshCw,
-  Terminal,
-  HardDrive,
-  GitBranch,
   Activity,
-  Shield,
-  Clock,
-  FileText,
+  AlertTriangle,
+  ArrowUpCircle,
   Bell,
   ChevronRight,
+  Clock,
+  Cpu,
+  FileText,
+  GitBranch,
+  HardDrive,
+  MapPin,
+  RefreshCw,
+  Shield,
+  Terminal,
+  Wifi,
+  X,
 } from 'lucide-react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import {
-  metricsApi,
-  eventsApi,
-  devicesApi,
-  clientsApi,
-  trafficApi,
-  operationsApi,
-  topologyApi,
-  systemApi,
-  settingsApi,
-} from '../services/api';
-import type { OpsAttentionItem, OpsCapacityRow, OpsActivityItem } from '../services/api';
-import TerminalModal from '../components/TerminalModal';
-import ProxyUsageCard from '../components/ProxyUsageCard';
-import { useSocket } from '../hooks/useSocket';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { format, formatDistanceToNow } from 'date-fns';
-import type { Device, DeviceEvent } from '../types';
-import { fleetStatus } from '../utils/fleetStatus';
-import { escapeHtml } from '../utils/escapeHtml';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
 import DeviceTypePill from '../components/devices/DeviceTypePill';
+import ProxyUsageCard from '../components/ProxyUsageCard';
+import TerminalModal from '../components/TerminalModal';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { useSocket } from '../hooks/useSocket';
+import type { OpsActivityItem, OpsAttentionItem, OpsCapacityRow } from '../services/api';
+import {
+  clientsApi,
+  devicesApi,
+  eventsApi,
+  metricsApi,
+  operationsApi,
+  settingsApi,
+  systemApi,
+  topologyApi,
+  trafficApi,
+} from '../services/api';
+import type { Device, DeviceEvent } from '../types';
 import { byAttention, CARD_ROWS } from '../utils/deviceCards';
 import { filterDevices } from '../utils/devicePicker';
+import { escapeHtml } from '../utils/escapeHtml';
+import { fleetStatus } from '../utils/fleetStatus';
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
 

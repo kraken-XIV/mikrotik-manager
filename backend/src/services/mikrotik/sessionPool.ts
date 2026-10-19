@@ -22,6 +22,7 @@
  * is at every connect. Sessions idle for eleven minutes are closed.
  */
 import { createHash } from 'crypto';
+
 import { RouterOSClient } from './RouterOSClient';
 
 export type SessionLane = 'fast' | 'logs' | 'slow';

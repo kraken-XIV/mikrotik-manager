@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Search } from 'lucide-react';
 import clsx from 'clsx';
-import { networkServicesApi, devicesApi } from '../services/api';
-import { liveRefetch, freshnessLabel, type LiveRow } from '../utils/liveFreshness';
+import { RefreshCw, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import SortableHeader, { type SortDir } from '../components/common/SortableHeader';
 import DeviceTypePill from '../components/devices/DeviceTypePill';
 import TagChips from '../components/devices/TagChips';
-import SortableHeader, { type SortDir } from '../components/common/SortableHeader';
+import { devicesApi, networkServicesApi } from '../services/api';
+import { freshnessLabel, liveRefetch, type LiveRow } from '../utils/liveFreshness';
 
 interface DeviceServiceRow {
   id: number;

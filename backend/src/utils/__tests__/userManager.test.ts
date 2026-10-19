@@ -1,13 +1,13 @@
 import {
-  pickUsers,
-  pickRouters,
-  pickGroups,
-  pickSettings,
-  pickSessions,
-  splitAttributes,
-  matchNasToDevices,
   isItemId,
+  matchNasToDevices,
+  pickGroups,
+  pickRouters,
+  pickSessions,
+  pickSettings,
+  pickUsers,
   SECRET_FIELDS,
+  splitAttributes,
 } from '../userManager';
 
 // From the #251 reporter's CHR (7.24.5), with a password and shared secret

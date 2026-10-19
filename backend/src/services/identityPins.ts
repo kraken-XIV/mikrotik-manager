@@ -23,9 +23,10 @@
  * wrong device.
  */
 import { createHash } from 'crypto';
+
 import { query } from '../config/database';
+import { type SiteScope, siteScopeDevices } from '../utils/siteScope';
 import { alertService } from './AlertService';
-import { siteScopeDevices, type SiteScope } from '../utils/siteScope';
 
 export type IdentityKind = 'api-tls' | 'ssh-host' | 'serial';
 export const IDENTITY_KINDS: readonly IdentityKind[] = ['api-tls', 'ssh-host', 'serial'];

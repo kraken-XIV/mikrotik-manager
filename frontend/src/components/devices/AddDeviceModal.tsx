@@ -1,17 +1,18 @@
-import { useState, FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, CheckCircle, AlertCircle, AlertTriangle, Loader2, KeyRound } from 'lucide-react';
-import { devicesApi, tagsApi, type DuplicateSerialError } from '../../services/api';
-import ConfirmDuplicateModal from './ConfirmDuplicateModal';
-import { parsePort } from '../../utils/parsePort';
+import { AlertCircle, AlertTriangle, CheckCircle, KeyRound, Loader2, X } from 'lucide-react';
+import { FormEvent, useState } from 'react';
+
+import { useSitePresets } from '../../hooks/useSitePresets';
+import { devicesApi, type DuplicateSerialError, tagsApi } from '../../services/api';
 import { API_SSL_PORT, portFieldError } from '../../utils/apiTls';
 import {
-  isValidDeviceAddress,
-  classifyAddress,
   addressFieldValue,
+  classifyAddress,
+  isValidDeviceAddress,
 } from '../../utils/deviceAddress';
-import { useSitePresets } from '../../hooks/useSitePresets';
-import SiteField, { siteFieldPayload, useDefaultSiteField, type SiteFieldValue } from './SiteField';
+import { parsePort } from '../../utils/parsePort';
+import ConfirmDuplicateModal from './ConfirmDuplicateModal';
+import SiteField, { siteFieldPayload, type SiteFieldValue, useDefaultSiteField } from './SiteField';
 
 interface Props {
   onClose: () => void;

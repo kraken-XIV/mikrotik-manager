@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { RefreshCw, Route as RouteIcon } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import clsx from 'clsx';
-import { routingApi, type RoutingPeerRow } from '../services/api';
+import { formatDistanceToNow } from 'date-fns';
+import { RefreshCw, Route as RouteIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+
 import { FilterBar, FilterSearch, FilterSelect } from '../components/common/FilterBar';
+import { routingApi, type RoutingPeerRow } from '../services/api';
 
 function StateBadge({ p }: { p: RoutingPeerRow }) {
   const cls = p.disabled

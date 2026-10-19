@@ -2,10 +2,10 @@ import {
   AMBIGUOUS,
   buildAttributionMaps,
   canonicalIp,
+  type ClientRow,
+  type DeviceRow,
   isLocalAddress,
   matchClient,
-  type DeviceRow,
-  type ClientRow,
 } from '../attribution';
 
 // Outside review P2-23 / J4: two customers on the RouterOS default subnet.

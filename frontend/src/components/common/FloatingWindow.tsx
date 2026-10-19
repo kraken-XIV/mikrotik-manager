@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Maximize2, Minimize2, X } from 'lucide-react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Maximize2, Minimize2 } from 'lucide-react';
 
 /**
  * A window over the page, like the SSH terminal's: drag it by the title bar,

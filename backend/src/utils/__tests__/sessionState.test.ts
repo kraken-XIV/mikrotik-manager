@@ -1,11 +1,11 @@
-import {
-  validateSession,
-  endAllSessions,
-  revokeSessionToken,
-  forgetSessionAccount,
-} from '../sessionState';
 import { query, queryOne } from '../../config/database';
 import { redis } from '../../config/redis';
+import {
+  endAllSessions,
+  forgetSessionAccount,
+  revokeSessionToken,
+  validateSession,
+} from '../sessionState';
 
 jest.mock('../../config/database', () => ({ query: jest.fn(), queryOne: jest.fn() }));
 jest.mock('../../config/redis', () => ({ redis: { set: jest.fn(), exists: jest.fn() } }));

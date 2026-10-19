@@ -1,28 +1,29 @@
 import axios, { AxiosError } from 'axios';
+
 import { useAuthStore } from '../store/authStore';
 import { useSiteStore } from '../store/siteStore';
 import type {
-  Device,
-  Interface,
-  Vlan,
-  Client,
-  DeviceEvent,
   Backup,
-  MetricsSummary,
+  Client,
+  ConfigCaptureResult,
+  ConfigDiffResponse,
+  ConfigSnapshotFull,
+  ConfigSnapshotMeta,
+  Device,
   DeviceAvailability,
-  TimeSeriesPoint,
-  TrafficPoint,
+  DeviceEvent,
+  Interface,
+  IpAddress,
+  MetricsSummary,
+  PortMonitorData,
+  PortVlanConfig,
   ResourcePoint,
   SwitchPort,
   SystemConfig,
-  IpAddress,
-  PortVlanConfig,
-  PortMonitorData,
-  ConfigSnapshotMeta,
-  ConfigSnapshotFull,
-  ConfigDiffResponse,
-  ConfigCaptureResult,
+  TimeSeriesPoint,
+  TrafficPoint,
   UserRole,
+  Vlan,
 } from '../types';
 
 /** Backups and restores of large configurations run for minutes, not seconds. */

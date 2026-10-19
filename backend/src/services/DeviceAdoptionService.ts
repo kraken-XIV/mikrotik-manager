@@ -1,35 +1,35 @@
 import { query, queryOne } from '../config/database';
-import { decrypt } from '../utils/crypto';
-import { logSafe } from '../utils/logSafe';
-import { RouterOSClient } from './mikrotik/RouterOSClient';
-import { usesApiTls } from '../utils/apiTls';
-import { createDeviceFromBody } from './deviceCreation';
-import type { PollerService } from './PollerService';
 import {
+  type AddressPlan,
+  type AdoptionCandidate,
+  arpRowResolved,
+  assessFactoryState,
+  buildPlanOps,
   collectCandidates,
-  tempAddressCandidates,
-  validateTargetAddress,
+  detectDeviceType,
   fetchAuthHeader,
+  hasMac,
+  judgeConflict,
+  jumpInterface,
+  leasedAddress,
+  type ModeRecommendation,
   needsJumpHost,
+  type NeighborRow,
+  planInterface,
+  recommendMode,
+  type RestOp,
   stripPrefix,
   TEMP_COMMENT,
-  jumpInterface,
-  detectDeviceType,
-  hasMac,
-  recommendMode,
-  assessFactoryState,
+  tempAddressCandidates,
   validatePlan,
-  buildPlanOps,
-  planInterface,
-  leasedAddress,
-  judgeConflict,
-  arpRowResolved,
-  type AdoptionCandidate,
-  type NeighborRow,
-  type RestOp,
-  type ModeRecommendation,
-  type AddressPlan,
+  validateTargetAddress,
 } from '../utils/adoption';
+import { usesApiTls } from '../utils/apiTls';
+import { decrypt } from '../utils/crypto';
+import { logSafe } from '../utils/logSafe';
+import { createDeviceFromBody } from './deviceCreation';
+import { RouterOSClient } from './mikrotik/RouterOSClient';
+import type { PollerService } from './PollerService';
 
 /**
  * Adopting a factory-default device by borrowing a managed neighbour.

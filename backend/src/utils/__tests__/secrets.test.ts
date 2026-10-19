@@ -1,7 +1,7 @@
-import * as os from 'os';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as nodeCrypto from 'crypto';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 // Reproduce ciphertext exactly as legacy code produced it under a given key.
 function legacyEncrypt(plain: string, material: string): string {

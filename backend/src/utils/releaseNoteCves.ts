@@ -1,4 +1,4 @@
-import { parseRosVersion, compareRosVersions } from './rosVersion';
+import { compareRosVersions, parseRosVersion } from './rosVersion';
 
 /**
  * CVEs named in MikroTik's own release notes (discussion #85).

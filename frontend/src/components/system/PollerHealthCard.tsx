@@ -1,9 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Activity, AlertTriangle, CheckCircle2, Clock, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { useIsFleetAdmin } from '../../hooks/useCanWrite';
-import { Activity, AlertTriangle, CheckCircle2, Clock, RefreshCw, Trash2 } from 'lucide-react';
-import { pollerApi, settingsApi, type PollerHealth, type PollerPhases } from '../../services/api';
+import { pollerApi, type PollerHealth, type PollerPhases, settingsApi } from '../../services/api';
 
 /**
  * The poller's own health, in the UI rather than buried in an API response.

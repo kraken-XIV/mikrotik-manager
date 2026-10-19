@@ -1,14 +1,15 @@
-import { useState, useMemo, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { X, ShieldQuestion, Check, AlertTriangle, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
-import AddDeviceModal from './AddDeviceModal';
+import { AlertTriangle, Check, Loader2, ShieldQuestion, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
 import {
+  type AddressPlan,
   adoptionApi,
   type AdoptionCandidate,
   type AdoptionResult,
-  type AddressPlan,
 } from '../../services/api';
+import AddDeviceModal from './AddDeviceModal';
 
 /**
  * The single way a discovered device gets adopted.

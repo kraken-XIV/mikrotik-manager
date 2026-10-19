@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { nodesWithinHops } from './topologyFocus';
 
 // core - dist1 - access1 - ap1 ; core - dist2 ; dist1 - ext:unmanaged - access2

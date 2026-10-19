@@ -15,10 +15,11 @@
  * on the interface is treated as possibly carrying it.
  */
 import net from 'net';
+
 import { DeviceCollector, type DeviceRow } from '../mikrotik/DeviceCollector';
-import { managerIpFromConntrack, type DeviceSnapshot, type RosRow } from './pathModel';
-import { readApiConnections, readCoveringRoutes } from './targetedReads';
 import { canonicalIp } from '../netflow/attribution';
+import { type DeviceSnapshot, managerIpFromConntrack, type RosRow } from './pathModel';
+import { readApiConnections, readCoveringRoutes } from './targetedReads';
 
 export interface TunnelState {
   addresses: RosRow[];

@@ -1,6 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { resolveSiteId, type SiteScope } from '../utils/siteScope';
+import { NextFunction, Request, Response } from 'express';
+
 import { groupSites } from '../services/siteGroups';
+import { resolveSiteId, type SiteScope } from '../utils/siteScope';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

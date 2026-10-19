@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Play,
-  Loader2,
-  CheckCircle,
-  XCircle,
-  Wifi,
-  RotateCcw,
-  Download,
-  Activity,
-} from 'lucide-react';
-import { deviceToolsApi, devicesApi } from '../../services/api';
 import clsx from 'clsx';
+import {
+  Activity,
+  CheckCircle,
+  Download,
+  Loader2,
+  Play,
+  RotateCcw,
+  Wifi,
+  XCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { devicesApi, deviceToolsApi } from '../../services/api';
 import DevicePicker from '../common/DevicePicker';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────

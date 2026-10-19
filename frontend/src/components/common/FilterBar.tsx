@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { Search } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 /**
  * The compact filter bar from the Devices page, shared so every list filters

@@ -1,4 +1,5 @@
 import { parse } from 'pg-connection-string';
+
 import { databaseUrl } from '../database';
 
 jest.mock('pg', () => ({ Pool: jest.fn().mockImplementation(() => ({ on: jest.fn() })) }));

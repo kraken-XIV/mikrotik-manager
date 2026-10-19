@@ -1,4 +1,4 @@
-import { maskSecrets, canSeeDeviceSecrets, SECRET_MASK } from '../redactSecrets';
+import { canSeeDeviceSecrets, maskSecrets, SECRET_MASK } from '../redactSecrets';
 
 describe('maskSecrets', () => {
   it('masks Wi-Fi, WireGuard, SNMP and hotspot secrets at any depth', () => {

@@ -1,10 +1,11 @@
-import tls from 'tls';
-import { X509Certificate } from 'crypto';
 import { execFileSync } from 'child_process';
+import { X509Certificate } from 'crypto';
 import { mkdtempSync, readFileSync, rmSync } from 'fs';
+import { AddressInfo } from 'net';
 import { tmpdir } from 'os';
 import path from 'path';
-import { AddressInfo } from 'net';
+import tls from 'tls';
+
 import { RouterOSClient } from '../RouterOSClient';
 
 /**

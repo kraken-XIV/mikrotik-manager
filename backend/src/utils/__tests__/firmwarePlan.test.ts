@@ -1,4 +1,4 @@
-import { upgradeDecision, verifyUpgrade, scheduleDecision } from '../firmwarePlan';
+import { scheduleDecision, upgradeDecision, verifyUpgrade } from '../firmwarePlan';
 
 describe('upgradeDecision', () => {
   it('upgrades only to a genuinely newer version', () => {

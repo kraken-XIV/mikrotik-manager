@@ -1,44 +1,45 @@
-import { useState, useEffect, useRef } from 'react';
-import ReviewChangesButton from '../common/ReviewChangesButton';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Wifi,
-  Activity,
-  Users,
-  Radio,
-  RefreshCw,
-  Pencil,
-  ChevronDown,
-  ChevronRight,
-  Signal,
-  Zap,
-  Globe,
-  Cpu,
-  ScanLine,
-  Lock,
-  Unlock,
-  AlertTriangle,
-} from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Cell,
-} from 'recharts';
-import { chartTooltip } from '../common/chartTooltip';
-import { wirelessApi } from '../../services/api';
-import { useCanWrite } from '../../hooks/useCanWrite';
-import RfHealth from '../wireless/RfHealth';
-import type { WirelessInterface, WirelessMetricPoint } from '../../types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { format } from 'date-fns';
+import {
+  Activity,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Cpu,
+  Globe,
+  Lock,
+  Pencil,
+  Radio,
+  RefreshCw,
+  ScanLine,
+  Signal,
+  Unlock,
+  Users,
+  Wifi,
+  Zap,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
+import { wirelessApi } from '../../services/api';
+import type { WirelessInterface, WirelessMetricPoint } from '../../types';
 import { changedFields } from '../../utils/formDiff';
+import { chartTooltip } from '../common/chartTooltip';
+import ReviewChangesButton from '../common/ReviewChangesButton';
+import RfHealth from '../wireless/RfHealth';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

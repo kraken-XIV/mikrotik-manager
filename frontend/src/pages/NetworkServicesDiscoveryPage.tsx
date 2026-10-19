@@ -1,25 +1,26 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  Radio,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
   AlertCircle,
+  Box,
   Check,
-  HelpCircle,
-  Shield,
+  CheckCircle,
+  ChevronDown,
   Eye,
   EyeOff,
-  Router as RouterIcon,
+  HelpCircle,
   Layers,
+  Radio,
+  RefreshCw,
+  Router as RouterIcon,
+  Shield,
   Wifi,
-  Box,
-  ChevronDown,
+  XCircle,
 } from 'lucide-react';
-import { networkServicesApi } from '../services/api';
+import { useState } from 'react';
+
 import { useCanWrite } from '../hooks/useCanWrite';
-import clsx from 'clsx';
+import { networkServicesApi } from '../services/api';
 
 type Scope = 'all' | 'routers' | 'switches' | 'aps';
 type Kind = 'router' | 'switch' | 'wireless_ap' | 'other';

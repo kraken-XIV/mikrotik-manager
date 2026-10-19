@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { HeartPulse, AlertTriangle, CheckCircle2, EyeOff, Eye, Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Eye, EyeOff, HeartPulse, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
 import { devicesApi } from '../../services/api';
 import type { Device, HealthIssue } from '../../types';
-import { useCanWrite } from '../../hooks/useCanWrite';
 
 /**
  * Hardware health and "expected to drop out" for one device (#168).

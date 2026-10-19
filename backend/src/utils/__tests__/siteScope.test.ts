@@ -1,10 +1,10 @@
 import {
-  resolveSiteId,
-  siteScopeDevices,
-  siteScopeByDevice,
-  siteScopeByNullableDevice,
   andSite,
   clientSeriesTag,
+  resolveSiteId,
+  siteScopeByDevice,
+  siteScopeByNullableDevice,
+  siteScopeDevices,
 } from '../siteScope';
 
 describe('resolveSiteId', () => {

@@ -1,12 +1,12 @@
-import { analyzeChange, simulate, type PlannedChange } from '../analyzeChange';
+import { analyzeChange, type PlannedChange, simulate } from '../analyzeChange';
+import type { GuardDevice } from '../ChangeGuard';
 import { evaluate } from '../invariants';
 import {
+  type DeviceSnapshot,
+  expandVlanIds,
   resolveManagementPath,
   vlanMembership,
-  expandVlanIds,
-  type DeviceSnapshot,
 } from '../pathModel';
-import type { GuardDevice } from '../ChangeGuard';
 
 const device: GuardDevice = {
   id: 1,

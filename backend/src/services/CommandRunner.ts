@@ -14,10 +14,10 @@
  * sharp tool that refuses to cut is not a tool.
  */
 import { query, queryOne } from '../config/database';
-import { runSshCommand, looksLikeFailure, type SshExecDevice } from './sshExec';
-import { withSafeApply, type GuardDevice } from './changeGuard/ChangeGuard';
 import { interruptedOutcome } from '../utils/interrupted';
+import { type GuardDevice, withSafeApply } from './changeGuard/ChangeGuard';
 import { fillSecrets, maskSecrets } from './commandSecrets';
+import { looksLikeFailure, runSshCommand, type SshExecDevice } from './sshExec';
 
 interface RunRow {
   id: number;

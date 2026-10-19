@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
-import api, { previewChanges, devicesApi, networkServicesApi } from './api';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import api, { devicesApi, networkServicesApi, previewChanges } from './api';
 
 const sent: InternalAxiosRequestConfig[] = [];
 

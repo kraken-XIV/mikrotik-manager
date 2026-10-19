@@ -1,6 +1,7 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShieldAlert, RefreshCw, Check } from 'lucide-react';
+import { Check, RefreshCw, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
+
 import { identityApi, type IdentityPin } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 

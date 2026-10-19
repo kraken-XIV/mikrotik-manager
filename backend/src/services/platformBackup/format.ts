@@ -12,10 +12,10 @@
  */
 import * as crypto from 'crypto';
 import * as fs from 'fs';
-import * as zlib from 'zlib';
 import * as readline from 'readline';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
+import * as zlib from 'zlib';
 
 export const MAGIC = Buffer.from('MTMBACKUP1\n', 'utf8');
 const TAG_LEN = 16;

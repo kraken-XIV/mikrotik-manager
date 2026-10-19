@@ -1,10 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { getQueryApi, bucket } from '../config/influxdb';
-import { query } from '../config/database';
-import { requireAuth } from '../middleware/auth';
-import { netflowCollector } from '../services/netflow/NetflowCollector';
 import { fluxString } from '@influxdata/influxdb-client';
+import { Request, Response, Router } from 'express';
+
+import { query } from '../config/database';
+import { bucket, getQueryApi } from '../config/influxdb';
+import { requireAuth } from '../middleware/auth';
 import { activeSite } from '../middleware/site';
+import { netflowCollector } from '../services/netflow/NetflowCollector';
 import { siteList } from '../utils/siteScope';
 
 const router = Router();

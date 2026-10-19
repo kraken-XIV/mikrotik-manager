@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, Upload, Download, Loader2, Check, AlertTriangle, FileText } from 'lucide-react';
 import clsx from 'clsx';
-import { devicesApi, tagsApi, sitesApi, type BulkAddJobStatus } from '../../services/api';
-import { useAuthStore } from '../../store/authStore';
-import { shortList } from '../../utils/deviceCards';
-import { parseDeviceCsv, buildCsvTemplate, MAX_ROWS } from '../../utils/csvImport';
+import { AlertTriangle, Check, Download, FileText, Loader2, Upload, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
 import { useSitePresets } from '../../hooks/useSitePresets';
+import { type BulkAddJobStatus, devicesApi, sitesApi, tagsApi } from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
+import { buildCsvTemplate, MAX_ROWS, parseDeviceCsv } from '../../utils/csvImport';
+import { shortList } from '../../utils/deviceCards';
 
 /**
  * Bulk device import from a CSV file (#160).

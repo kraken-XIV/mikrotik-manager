@@ -1,26 +1,27 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { Radio, Signal, Activity, ShieldCheck, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
-import { wirelessApi, networkServicesApi } from '../../services/api';
+import { Activity, AlertTriangle, Radio, ShieldCheck, Signal } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { networkServicesApi, wirelessApi } from '../../services/api';
 import type {
+  RfBandRange,
   RfChannelRow,
+  RfOverlapKind,
   RfSignalRow,
   RfTxQualityRow,
-  RfOverlapKind,
-  RfBandRange,
 } from '../../types';
+import { barGeometry } from '../../utils/spectrumGeometry';
 import {
   BAND_LABEL,
-  RfBand,
-  RSSI_ZONES,
-  rssiColor,
   RETRY_BUCKETS,
   retryBucketIndex,
   retryColor,
+  RfBand,
+  RSSI_ZONES,
+  rssiColor,
 } from '../../utils/wifiChannels';
-import { barGeometry } from '../../utils/spectrumGeometry';
 
 const ALL_BANDS: RfBand[] = ['2.4', '5', '6'];
 

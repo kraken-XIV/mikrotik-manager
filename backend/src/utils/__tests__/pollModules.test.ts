@@ -1,4 +1,4 @@
-import { resolveModules, describeDisabled, ALL_MODULES } from '../pollModules';
+import { ALL_MODULES, describeDisabled, resolveModules } from '../pollModules';
 
 describe('resolveModules', () => {
   it('defaults everything on for an install that has never set them', () => {

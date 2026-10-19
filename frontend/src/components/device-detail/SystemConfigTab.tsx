@@ -1,34 +1,35 @@
-import ConfigHealthCard from './ConfigHealthCard';
-import { useState, useEffect } from 'react';
-import ReviewChangesButton from '../common/ReviewChangesButton';
-import SshKeyCard from './SshKeyCard';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  RefreshCw,
-  Plus,
-  Trash2,
-  CheckCircle,
   AlertCircle,
-  Download,
-  Server,
-  Cpu,
-  FileText,
-  ShieldCheck,
-  Pencil,
   Check,
+  CheckCircle,
+  Cpu,
+  Download,
+  FileText,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Server,
+  ShieldCheck,
+  Trash2,
   X,
 } from 'lucide-react';
-import { devicesApi, certificatesApi } from '../../services/api';
-import { LockoutVerdictDialog, lockoutVerdictOf, type LockoutVerdict } from '../ChangeGuardDialog';
-import type { Device, IpAddress, Interface } from '../../types';
-import clsx from 'clsx';
-import { changedFields } from '../../utils/formDiff';
+import { useEffect, useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
-import ChangelogModal from '../ChangelogModal';
-import CertificateList from '../CertificateList';
-import ListInput from '../common/ListInput';
-import { splitList } from '../../utils/ipPrefix';
+import { certificatesApi, devicesApi } from '../../services/api';
+import type { Device, Interface, IpAddress } from '../../types';
 import { isValidIPv4, isValidIPv6 } from '../../utils/deviceAddress';
+import { changedFields } from '../../utils/formDiff';
+import { splitList } from '../../utils/ipPrefix';
+import CertificateList from '../CertificateList';
+import { type LockoutVerdict, LockoutVerdictDialog, lockoutVerdictOf } from '../ChangeGuardDialog';
+import ChangelogModal from '../ChangelogModal';
+import ListInput from '../common/ListInput';
+import ReviewChangesButton from '../common/ReviewChangesButton';
+import ConfigHealthCard from './ConfigHealthCard';
+import SshKeyCard from './SshKeyCard';
 
 interface Props {
   deviceId: number;

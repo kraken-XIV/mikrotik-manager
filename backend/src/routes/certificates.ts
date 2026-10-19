@@ -1,10 +1,11 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth } from '../middleware/auth';
-import { siteScopeByDevice } from '../utils/siteScope';
 import { activeSite } from '../middleware/site';
-import { certExpiryState, describeCert, needsAttention, type CertState } from '../utils/certExpiry';
 import { alertService } from '../services/AlertService';
+import { certExpiryState, type CertState, describeCert, needsAttention } from '../utils/certExpiry';
+import { siteScopeByDevice } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);

@@ -1,12 +1,12 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, Activity, Search } from 'lucide-react';
-import { devicesApi } from '../../services/api';
-import { formatBytes } from '../../utils/firewallSummary';
 import clsx from 'clsx';
+import { Activity, RefreshCw, Search } from 'lucide-react';
+import { useState } from 'react';
 
+import { devicesApi } from '../../services/api';
+import { type ConnSortKey, endpoint, sortConnections } from '../../utils/connections';
+import { formatBytes } from '../../utils/firewallSummary';
 import SortableHeader, { type SortDir } from '../common/SortableHeader';
-import { endpoint, sortConnections, type ConnSortKey } from '../../utils/connections';
 
 const PROTO_COLOR: Record<string, string> = {
   tcp: 'text-blue-600 dark:text-blue-400',

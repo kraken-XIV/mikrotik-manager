@@ -1,6 +1,7 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert, Route, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, RefreshCw, Route, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+
 import { devicesApi } from '../services/api';
 
 /**

@@ -1,21 +1,22 @@
-import { useCanWrite } from '../hooks/useCanWrite';
-import { useState } from 'react';
-import type { Device } from '../types';
-import { useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Terminal,
   AlertTriangle,
-  Play,
-  ShieldCheck,
+  Ban,
   ChevronDown,
   ChevronRight,
-  Ban,
   Download,
+  Play,
+  ShieldCheck,
+  Terminal,
 } from 'lucide-react';
-import { commandsApi, devicesApi, type CommandRunDetail, tagsApi } from '../services/api';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
 import CommandTemplateBar from '../components/commands/CommandTemplateBar';
 import DevicePicker from '../components/devices/DevicePicker';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { type CommandRunDetail, commandsApi, devicesApi, tagsApi } from '../services/api';
+import type { Device } from '../types';
 
 /**
  * Bulk command execution.

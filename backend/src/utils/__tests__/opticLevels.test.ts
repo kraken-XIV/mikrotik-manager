@@ -1,4 +1,4 @@
-import { readOptic, opticStatus, MIN_BASELINE_READINGS } from '../opticLevels';
+import { MIN_BASELINE_READINGS, opticStatus, readOptic } from '../opticLevels';
 
 describe('readOptic', () => {
   it('reads the API form (bare numbers)', () => {

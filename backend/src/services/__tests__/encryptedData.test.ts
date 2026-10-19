@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { reencryptAll, encryptionStatus } from '../encryptedData';
+
 import { query } from '../../config/database';
+import { encryptionStatus, reencryptAll } from '../encryptedData';
 
 jest.mock('../../config/database', () => ({ query: jest.fn() }));
 // Two known keys: "C:" values are under the current one, "O:" under an older

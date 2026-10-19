@@ -1,12 +1,12 @@
 import {
-  generateDeviceKeyPair,
   fingerprintPublicKey,
+  generateDeviceKeyPair,
+  importRejection,
   isUsablePrivateKey,
   keyComment,
   keyFileName,
-  preferredAuth,
   keyTypeForVersion,
-  importRejection,
+  preferredAuth,
 } from '../sshKeys';
 
 describe('generateDeviceKeyPair', () => {

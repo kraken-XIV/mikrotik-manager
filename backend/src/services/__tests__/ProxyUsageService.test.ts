@@ -1,15 +1,15 @@
+import { pool, query } from '../../config/database';
 import {
-  reconcileProxyUsage,
   aggregateSql,
-  usageUpsertCtes,
-  rebuildProxyUsage,
   backfillProxyUsage,
-  useProxyUsageRollup,
+  rebuildProxyUsage,
+  reconcileProxyUsage,
   resetProxyUsageSettingsCache,
-  useProxySourcesTable,
   USAGE_KIND,
+  usageUpsertCtes,
+  useProxySourcesTable,
+  useProxyUsageRollup,
 } from '../ProxyUsageService';
-import { query, pool } from '../../config/database';
 
 jest.mock('../../config/database', () => ({ query: jest.fn(), pool: { connect: jest.fn() } }));
 

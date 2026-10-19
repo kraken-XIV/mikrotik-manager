@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import ReviewChangesButton from '../common/ReviewChangesButton';
-import FastTrackNote from '../common/FastTrackNote';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Pencil, RefreshCw, Check, X, Gauge, AlertCircle } from 'lucide-react';
-import { devicesApi } from '../../services/api';
-import { useCanWrite } from '../../hooks/useCanWrite';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import { AlertCircle, Check, Gauge, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
+import { devicesApi } from '../../services/api';
+import FastTrackNote from '../common/FastTrackNote';
+import ReviewChangesButton from '../common/ReviewChangesButton';
 
 type Row = Record<string, string> & { '.id': string };
 

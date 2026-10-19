@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Tag as TagIcon, X, Plus, Check } from 'lucide-react';
-import { tagsApi } from '../../services/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Check, Plus, Tag as TagIcon, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { tagsApi } from '../../services/api';
 
 /**
  * Putting tags on a device.

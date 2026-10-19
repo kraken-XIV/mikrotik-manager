@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+
 import { deviceIdFromPath, deviceIdFromQuery } from '../deviceLock';
 
 const req = (path: string, extra: Partial<Request> = {}): Request =>

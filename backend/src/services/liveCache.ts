@@ -14,9 +14,9 @@
  * gets the cached view at once and the rest fills in as the page polls.
  */
 import { query } from '../config/database';
-import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 import { FLEET_ACTION_CONCURRENCY } from '../utils/concurrency';
 import { logSafe } from '../utils/logSafe';
+import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 
 export interface LiveEntry<T> {
   data: T | null;

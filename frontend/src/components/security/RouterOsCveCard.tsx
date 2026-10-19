@@ -1,10 +1,11 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { Bug, ChevronRight, ExternalLink, Flame, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bug, RefreshCw, ChevronRight, ExternalLink, ShieldCheck, Flame } from 'lucide-react';
-import clsx from 'clsx';
-import { cvesApi, type FleetCve } from '../../services/api';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { cvesApi, type FleetCve } from '../../services/api';
 
 /**
  * Known vulnerabilities for the RouterOS versions in the fleet (#175).

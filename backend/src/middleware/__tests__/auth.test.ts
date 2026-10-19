@@ -1,15 +1,16 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import {
-  signToken,
-  signRawToken,
-  verifyToken,
-  requireAuth,
-  requireAdmin,
-  requireWrite,
-  AuthPayload,
-} from '../auth';
+
 import { validateSession } from '../../utils/sessionState';
+import {
+  AuthPayload,
+  requireAdmin,
+  requireAuth,
+  requireWrite,
+  signRawToken,
+  signToken,
+  verifyToken,
+} from '../auth';
 
 // The account check hits the database; each test says what the account looks like.
 jest.mock('../../utils/sessionState', () => ({ validateSession: jest.fn() }));

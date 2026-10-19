@@ -7,22 +7,22 @@
  * device into an ordinary one and a full sync starts.
  */
 import { query } from '../config/database';
+import { usesApiTls } from '../utils/apiTls';
 import { decrypt } from '../utils/crypto';
 import { fit } from '../utils/fit';
 import { logSafe } from '../utils/logSafe';
-import { runSshCommand, type SshExecDevice } from './sshExec';
-import { RouterOSClient } from './mikrotik/RouterOSClient';
-import { usesApiTls } from '../utils/apiTls';
-import { connectPreferringSsl, API_PORT, API_SSL_PORT } from './mikrotik/apiConnect';
-import { pinIdentity } from './identityPins';
 import {
-  SSH_INFO_COMMAND,
-  parseSshInfo,
-  looksLikeRouterOs,
-  classifyApiFailure,
-  type SshInfo,
   type ApiFailureKind,
+  classifyApiFailure,
+  looksLikeRouterOs,
+  parseSshInfo,
+  SSH_INFO_COMMAND,
+  type SshInfo,
 } from '../utils/sshOnly';
+import { pinIdentity } from './identityPins';
+import { API_PORT, API_SSL_PORT, connectPreferringSsl } from './mikrotik/apiConnect';
+import { RouterOSClient } from './mikrotik/RouterOSClient';
+import { runSshCommand, type SshExecDevice } from './sshExec';
 
 export interface SshOnlyDevice extends SshExecDevice {
   api_port: number;

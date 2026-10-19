@@ -1,5 +1,5 @@
 import { encrypt } from '../../../utils/crypto';
-import { getClientSecret, maskedConfig, DEFAULT_OIDC_CONFIG, type OidcConfig } from '../oidcConfig';
+import { DEFAULT_OIDC_CONFIG, getClientSecret, maskedConfig, type OidcConfig } from '../oidcConfig';
 
 describe('OIDC config secret handling', () => {
   it('decrypts a stored client secret', () => {

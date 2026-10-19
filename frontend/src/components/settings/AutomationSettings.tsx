@@ -1,22 +1,23 @@
-import { useCanWrite } from '../../hooks/useCanWrite';
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { formatDistanceToNow } from 'date-fns';
 import {
+  AlertTriangle,
+  Check,
+  Copy,
   KeyRound,
-  Webhook as WebhookIcon,
   Mail,
   Plus,
-  Trash2,
-  Copy,
-  Check,
-  Send,
-  AlertTriangle,
   Power,
+  Send,
+  Trash2,
+  Webhook as WebhookIcon,
   X,
 } from 'lucide-react';
-import clsx from 'clsx';
+import { useState } from 'react';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
 import { automationApi } from '../../services/api';
-import { formatDistanceToNow } from 'date-fns';
 
 const EVENT_LABEL: Record<string, string> = {
   device_offline: 'Device offline',

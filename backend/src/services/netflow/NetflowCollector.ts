@@ -4,25 +4,26 @@
 // aggregates into 60-second windows written to InfluxDB (time series) and
 // Postgres (daily per-client rollups).
 
-import * as dgram from 'dgram';
 import { Point } from '@influxdata/influxdb-client';
+import * as dgram from 'dgram';
+
 import { query } from '../../config/database';
 import { getWriteApi } from '../../config/influxdb';
-import { decodePacket, pruneTemplateCache, TemplateCache } from './decoder';
-import { classifyApp, APP_LAN } from './appCategories';
-import { FlowAggregator, CLIENT_UNKNOWN, Direction } from './FlowAggregator';
-import { PacketRateLimiter } from './rateLimiter';
+import { APP_LAN, classifyApp } from './appCategories';
 import {
   AMBIGUOUS,
-  buildAttributionMaps,
-  isLocalAddress,
-  matchClient,
   type AttributionMaps,
+  buildAttributionMaps,
+  canonicalIp,
   type ClientRow,
   type DeviceRow,
   type ExporterInfo,
-  canonicalIp,
+  isLocalAddress,
+  matchClient,
 } from './attribution';
+import { decodePacket, pruneTemplateCache, TemplateCache } from './decoder';
+import { CLIENT_UNKNOWN, Direction, FlowAggregator } from './FlowAggregator';
+import { PacketRateLimiter } from './rateLimiter';
 
 const FLUSH_INTERVAL_MS = 60_000;
 const MAP_REFRESH_MS = 60_000;

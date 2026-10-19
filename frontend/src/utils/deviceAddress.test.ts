@@ -1,13 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
+  addressFieldValue,
+  classifyAddress,
+  isPrivateIp,
   isValidDeviceAddress,
+  isValidHostname,
   isValidIPv4,
   isValidIPv6,
-  isValidHostname,
-  isPrivateIp,
-  classifyAddress,
   splitAddressAndPort,
-  addressFieldValue,
   stripIPv6Brackets,
 } from './deviceAddress';
 

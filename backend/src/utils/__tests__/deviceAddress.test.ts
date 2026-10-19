@@ -1,4 +1,4 @@
-import { normalizeDeviceAddress, isBlockedAddress, classifyAddress } from '../deviceAddress';
+import { classifyAddress, isBlockedAddress, normalizeDeviceAddress } from '../deviceAddress';
 
 describe('normalizeDeviceAddress', () => {
   it('accepts a plain LAN IPv4 address unchanged', () => {

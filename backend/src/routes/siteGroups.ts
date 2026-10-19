@@ -7,7 +7,8 @@
  * account limited to particular sites sees the groups its sites are in, with
  * only those sites listed.
  */
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne, transaction } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
 import { groupsChanged } from '../services/siteGroups';

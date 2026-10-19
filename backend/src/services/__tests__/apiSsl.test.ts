@@ -1,7 +1,7 @@
-import { connectPreferringSsl, describeSslFailure } from '../mikrotik/apiConnect';
-import { enableApiSsl, MTM_CERT_NAME, type ApiSslDevice } from '../apiSsl';
-import { RouterOSClient } from '../mikrotik/RouterOSClient';
 import { query } from '../../config/database';
+import { type ApiSslDevice, enableApiSsl, MTM_CERT_NAME } from '../apiSsl';
+import { connectPreferringSsl, describeSslFailure } from '../mikrotik/apiConnect';
+import { RouterOSClient } from '../mikrotik/RouterOSClient';
 
 jest.mock('../../config/database', () => ({ query: jest.fn(), queryOne: jest.fn() }));
 jest.mock('../../utils/crypto', () => ({ decrypt: (v: string) => v, encrypt: (v: string) => v }));

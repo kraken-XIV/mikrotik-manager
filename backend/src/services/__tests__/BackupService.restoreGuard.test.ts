@@ -1,5 +1,5 @@
-import * as os from 'os';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 process.env.BACKUPS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'mtm-bk-'));
 jest.mock('../../config/database', () => ({ query: jest.fn(), queryOne: jest.fn() }));

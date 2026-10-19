@@ -18,6 +18,7 @@
  * length sent together, gives the same result as the whole table.
  */
 import net from 'net';
+
 import type { ReadSpec } from '../mikrotik/RouterOSClient';
 
 type Row = Record<string, string>;

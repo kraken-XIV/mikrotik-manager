@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The store persists to localStorage, which the test environment doesn't have.
 vi.hoisted(() => {

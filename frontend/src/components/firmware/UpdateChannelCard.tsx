@@ -1,8 +1,9 @@
-import { useIsFleetAdmin } from '../../hooks/useCanWrite';
-import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Radio, Loader2 } from 'lucide-react';
-import { firmwareApi, settingsApi, type FirmwareDeviceRow } from '../../services/api';
+import { Loader2, Radio } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+import { useIsFleetAdmin } from '../../hooks/useCanWrite';
+import { firmwareApi, type FirmwareDeviceRow, settingsApi } from '../../services/api';
 import DevicePicker from '../common/DevicePicker';
 
 /**

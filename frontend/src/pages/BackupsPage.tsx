@@ -1,39 +1,40 @@
-import { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { format } from 'date-fns';
 import {
-  HardDrive,
-  Plus,
-  Download,
-  RotateCcw,
-  Trash2,
   AlertCircle,
   AlertTriangle,
-  Loader2,
-  X,
-  GitCompare,
-  FileText,
-  FilterX,
-  Lock,
   ChevronLeft,
   ChevronRight,
+  Download,
+  FileText,
+  FilterX,
+  GitCompare,
+  HardDrive,
+  Loader2,
+  Lock,
+  Plus,
+  RotateCcw,
+  Trash2,
+  X,
 } from 'lucide-react';
-import { backupsApi, devicesApi } from '../services/api';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { useAuthStore } from '../store/authStore';
-import type { Backup } from '../types';
+import { useMemo, useState } from 'react';
+
 import BackupViewerModal from '../components/backups/BackupViewerModal';
-import { orderForDiff } from '../utils/backupCompare';
-import { format } from 'date-fns';
-import clsx from 'clsx';
-import DeviceTypePill from '../components/devices/DeviceTypePill';
-import TagChips from '../components/devices/TagChips';
+import DevicePicker from '../components/common/DevicePicker';
 import {
   FilterBar,
+  FilterDivider,
   FilterSearch,
   FilterSelect,
-  FilterDivider,
 } from '../components/common/FilterBar';
-import DevicePicker from '../components/common/DevicePicker';
+import DeviceTypePill from '../components/devices/DeviceTypePill';
+import TagChips from '../components/devices/TagChips';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { backupsApi, devicesApi } from '../services/api';
+import { useAuthStore } from '../store/authStore';
+import type { Backup } from '../types';
+import { orderForDiff } from '../utils/backupCompare';
 
 /** One home for backup-type wording, used by the filter and the table badge. */
 const TYPE_LABEL: Record<string, string> = {

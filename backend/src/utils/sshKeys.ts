@@ -9,6 +9,7 @@
  */
 import * as crypto from 'crypto';
 import { utils as sshUtils } from 'ssh2';
+
 import { compareRosVersions, parseRosVersion } from './rosVersion';
 
 export type SshKeyType = 'ed25519' | 'rsa';

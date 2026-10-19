@@ -1,11 +1,12 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { AlertTriangle, RefreshCw, Trash2, UserCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { UserCheck, RefreshCw, AlertTriangle, Trash2 } from 'lucide-react';
-import clsx from 'clsx';
-import { userManagerApi, type UmRow } from '../services/api';
-import { useCanWrite } from '../hooks/useCanWrite';
+
 import DevicePicker from '../components/common/DevicePicker';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { type UmRow, userManagerApi } from '../services/api';
 
 /**
  * User Manager, RouterOS's RADIUS server (#251): who's logged in where, the

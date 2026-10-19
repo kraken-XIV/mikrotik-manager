@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { Clock, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 /**
  * How long a rollout waits for a device.

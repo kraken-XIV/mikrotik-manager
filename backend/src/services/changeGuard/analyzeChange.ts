@@ -8,15 +8,15 @@
  * itself, so the warning names the actual mechanism instead of being generic.
  */
 import { planVlanWrite } from '../../utils/bridgeVlanPlan';
+import type { GuardDevice } from './ChangeGuard';
 import { evaluate, INVARIANTS, type InvariantStatus } from './invariants';
 import {
-  resolveManagementPath,
-  expandVlanIds,
   type DeviceSnapshot,
+  expandVlanIds,
   type ManagementPath,
+  resolveManagementPath,
   type RosRow,
 } from './pathModel';
-import type { GuardDevice } from './ChangeGuard';
 
 export type PlannedChange =
   | { kind: 'bridge.vlan-filtering'; bridge: string; enabled: boolean }

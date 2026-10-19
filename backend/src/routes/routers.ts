@@ -1,17 +1,18 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { maskSecretsForReadOnly } from '../utils/redactSecrets';
-import { siteScopeDevices } from '../utils/siteScope';
 import { activeSite, writableScope } from '../middleware/site';
-import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
 import { getLldpStatuses, setLldpForTypes } from '../services/lldpApply';
+import { DeviceCollector, DeviceRow } from '../services/mikrotik/DeviceCollector';
 import {
   applySnmpConfig,
   getSnmpStatuses,
-  SnmpInputError,
   type SnmpConfigInput,
+  SnmpInputError,
 } from '../services/snmpApply';
+import { maskSecretsForReadOnly } from '../utils/redactSecrets';
+import { siteScopeDevices } from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);

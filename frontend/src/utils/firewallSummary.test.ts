@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { ruleSummary, natSummary, formatBytes, formatCount } from './firewallSummary';
+import { describe, expect, it } from 'vitest';
+
+import { formatBytes, formatCount, natSummary, ruleSummary } from './firewallSummary';
 
 describe('ruleSummary', () => {
   it('summarizes an allow rule with address lists and a port', () => {

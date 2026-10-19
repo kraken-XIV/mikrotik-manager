@@ -1,6 +1,7 @@
 import type { Request } from 'express';
-import { secretNames, missingSecrets } from '../services/commandSecrets';
+
 import { isSiteScoped } from '../middleware/auth';
+import { missingSecrets, secretNames } from '../services/commandSecrets';
 
 /**
  * Whether a command's {{secret:name}} references may be used by this account

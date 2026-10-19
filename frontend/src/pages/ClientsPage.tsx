@@ -1,40 +1,41 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import LoadError from '../components/common/LoadError';
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { formatDistanceToNow } from 'date-fns';
 import {
-  Wifi,
-  Network,
-  Users,
-  X,
-  Pencil,
-  Trash2,
-  ChevronUp,
   ChevronDown,
-  ChevronsUpDown,
-  ListChecks,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
+  ChevronUp,
+  ListChecks,
+  Network,
+  Pencil,
   RefreshCw,
+  Trash2,
+  Users,
+  Wifi,
+  X,
 } from 'lucide-react';
-import { CATEGORY_META } from '../utils/clientCategories';
-import { RSSI_ZONES } from '../utils/wifiChannels';
-import { clientsApi, devicesApi } from '../services/api';
-import type { Client } from '../types';
-import { useCanWrite } from '../hooks/useCanWrite';
-import { useSocket } from '../hooks/useSocket';
-import { formatDistanceToNow } from 'date-fns';
-import clsx from 'clsx';
-import {
-  FilterBar,
-  FilterSearch,
-  FilterSelect,
-  FilterSegment,
-  FilterDivider,
-} from '../components/common/FilterBar';
-import { formatRate, formatRatePair } from '../utils/wifiRate';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import ClientAddressLists from '../components/clients/ClientAddressLists';
 import DevicePicker from '../components/common/DevicePicker';
+import {
+  FilterBar,
+  FilterDivider,
+  FilterSearch,
+  FilterSegment,
+  FilterSelect,
+} from '../components/common/FilterBar';
+import LoadError from '../components/common/LoadError';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { useSocket } from '../hooks/useSocket';
+import { clientsApi, devicesApi } from '../services/api';
+import type { Client } from '../types';
+import { CATEGORY_META } from '../utils/clientCategories';
+import { RSSI_ZONES } from '../utils/wifiChannels';
+import { formatRate, formatRatePair } from '../utils/wifiRate';
 
 const REFRESH_OPTIONS = [
   { label: 'Not Updating', value: null },

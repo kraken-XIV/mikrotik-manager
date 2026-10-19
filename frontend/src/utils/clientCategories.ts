@@ -1,18 +1,18 @@
 import {
-  Network,
-  Server,
-  Monitor,
-  Smartphone,
-  Tv,
-  Speaker,
   Camera,
-  Printer,
-  Gamepad2,
-  Mic,
-  Home,
   Cpu,
+  Gamepad2,
   HelpCircle,
+  Home,
   type LucideIcon,
+  Mic,
+  Monitor,
+  Network,
+  Printer,
+  Server,
+  Smartphone,
+  Speaker,
+  Tv,
 } from 'lucide-react';
 
 // Device categories (must match the backend's DEVICE_CATEGORIES)

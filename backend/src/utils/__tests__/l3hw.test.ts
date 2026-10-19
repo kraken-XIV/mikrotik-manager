@@ -1,6 +1,6 @@
-import { l3hwView } from '../l3hw';
-import { ruleL3HwOffloadOff, isL3HwChip } from '../../services/changeGuard/configHealth';
+import { isL3HwChip, ruleL3HwOffloadOff } from '../../services/changeGuard/configHealth';
 import type { DeviceSnapshot } from '../../services/changeGuard/pathModel';
+import { l3hwView } from '../l3hw';
 
 // As a CRS309 (Marvell-98DX8208) on 7.24.5 reports them.
 type R = Record<string, string>;

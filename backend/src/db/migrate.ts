@@ -1,5 +1,6 @@
-import { pool } from '../config/database';
 import bcrypt from 'bcryptjs';
+
+import { pool } from '../config/database';
 import { backfillProxyConnections } from '../services/ProxyLogService';
 
 const MIGRATION_SQL = `

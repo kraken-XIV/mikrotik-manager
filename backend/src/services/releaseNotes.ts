@@ -7,16 +7,16 @@
  * RouterOS yet, NVD's entry is looked up by id for a description and score.
  */
 import { query } from '../config/database';
-import { logSafe } from '../utils/logSafe';
-import { compareRosVersions, parseRosVersion } from '../utils/rosVersion';
-import {
-  parseReleaseNoteCves,
-  releasePlan,
-  releaseName,
-  type NoteCve,
-  type ReleaseNote,
-} from '../utils/releaseNoteCves';
 import { parseNvdCveDetail } from '../utils/cveMatch';
+import { logSafe } from '../utils/logSafe';
+import {
+  type NoteCve,
+  parseReleaseNoteCves,
+  releaseName,
+  type ReleaseNote,
+  releasePlan,
+} from '../utils/releaseNoteCves';
+import { compareRosVersions, parseRosVersion } from '../utils/rosVersion';
 
 const NOTES_URL = (version: string) =>
   `https://download.mikrotik.com/routeros/${version}/CHANGELOG`;

@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { activeChecks, countFindings, mutedCount } from './securityFindings';
+import { describe, expect, it } from 'vitest';
+
 import type { SecurityCheck } from '../services/api';
+import { activeChecks, countFindings, mutedCount } from './securityFindings';
 
 const c = (id: string, severity: SecurityCheck['severity'], suppressed = false): SecurityCheck => ({
   id,

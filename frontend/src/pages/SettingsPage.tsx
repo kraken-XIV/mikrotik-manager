@@ -1,62 +1,63 @@
-import NumberSetting from '../components/settings/NumberSetting';
-import { useState, useRef, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
-  Settings,
-  Users,
-  Key,
-  Plus,
-  Trash2,
-  CheckCircle,
-  AlertCircle,
-  Pencil,
-  X,
-  ShieldCheck,
-  ShieldAlert,
-  RefreshCw,
-  Upload,
-  Lock,
-  Bell,
-  Send,
-  ClipboardList,
-  Zap,
-  LogIn,
   Activity,
-  Moon,
+  AlertCircle,
+  Bell,
+  CheckCircle,
+  ClipboardList,
   Globe,
   HardDrive,
+  Key,
+  Lock,
+  LogIn,
+  Moon,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Send,
+  Settings,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  Upload,
+  Users,
+  X,
+  Zap,
 } from 'lucide-react';
-import { settingsApi, authApi, certApi, alertsApi, auditLogApi, tagsApi } from '../services/api';
-import { docsUrl } from '../version';
+import { useMemo, useRef, useState } from 'react';
+
+import AutomationSettings from '../components/settings/AutomationSettings';
+import DarkSiteCard from '../components/settings/DarkSiteCard';
+import EncryptionKeyCard from '../components/settings/EncryptionKeyCard';
+import FirmwareTimeoutCard from '../components/settings/FirmwareTimeoutCard';
+import FleetSshKeysCard from '../components/settings/FleetSshKeysCard';
 import MaintenanceWindowsCard from '../components/settings/MaintenanceWindowsCard';
-import type { CertInfo, AlertRule, AlertChannel } from '../services/api';
+import NumberSetting from '../components/settings/NumberSetting';
+import OidcSettings from '../components/settings/OidcSettings';
+import PlatformBackupSettings from '../components/settings/PlatformBackupSettings';
+import PollModulesCard from '../components/settings/PollModulesCard';
+import SiteAccessDialog, {
+  type UserGroupRole,
+  type UserSiteRole,
+} from '../components/settings/SiteAccessDialog';
+import TagRow from '../components/settings/TagRow';
 import PollerHealthCard from '../components/system/PollerHealthCard';
+import { useIsSiteScoped } from '../hooks/useCanWrite';
+import type { AlertChannel, AlertRule, CertInfo } from '../services/api';
+import { alertsApi, auditLogApi, authApi, certApi, settingsApi, tagsApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import type { User, UserRole } from '../types';
 import {
+  type BackupFrequency,
+  describeBackupSchedule,
+  ordinal,
   parseBackupCron,
   scheduleToCron,
-  describeBackupSchedule,
   WEEKDAY_NAMES,
-  ordinal,
-  type BackupFrequency,
 } from '../utils/backupSchedule';
-import clsx from 'clsx';
-import FirmwareTimeoutCard from '../components/settings/FirmwareTimeoutCard';
-import PollModulesCard from '../components/settings/PollModulesCard';
-import TagRow from '../components/settings/TagRow';
-import DarkSiteCard from '../components/settings/DarkSiteCard';
-import FleetSshKeysCard from '../components/settings/FleetSshKeysCard';
-import AutomationSettings from '../components/settings/AutomationSettings';
-import EncryptionKeyCard from '../components/settings/EncryptionKeyCard';
-import OidcSettings from '../components/settings/OidcSettings';
-import PlatformBackupSettings from '../components/settings/PlatformBackupSettings';
-import { useIsSiteScoped } from '../hooks/useCanWrite';
-import SiteAccessDialog, {
-  type UserSiteRole,
-  type UserGroupRole,
-} from '../components/settings/SiteAccessDialog';
+import { docsUrl } from '../version';
 
 const ROLE_META: Record<UserRole, { label: string; color: string; desc: string }> = {
   admin: {

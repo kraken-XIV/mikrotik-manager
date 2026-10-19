@@ -1,5 +1,5 @@
-import { parseRoamLine } from '../roaming';
 import { parseLteMonitor, splitCarriers } from '../lte';
+import { parseRoamLine } from '../roaming';
 
 // Outside review P2-17: device-supplied text must not stall the event loop.
 // Before the fix these inputs took over a second (LTE) and ~100 ms per line

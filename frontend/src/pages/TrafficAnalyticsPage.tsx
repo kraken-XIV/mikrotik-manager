@@ -1,33 +1,34 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import LoadError from '../components/common/LoadError';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from 'recharts';
-import { chartTooltip } from '../components/common/chartTooltip';
+import clsx from 'clsx';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import {
   Activity,
+  AlertTriangle,
   ArrowDown,
   ArrowUp,
   BarChart3,
   Router as RouterIcon,
   Settings2,
-  AlertTriangle,
 } from 'lucide-react';
-import { format, parseISO, formatDistanceToNow } from 'date-fns';
-import clsx from 'clsx';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+import { chartTooltip } from '../components/common/chartTooltip';
+import LoadError from '../components/common/LoadError';
 import { trafficApi } from '../services/api';
 
 type Range = '1h' | '24h' | '7d' | '30d';

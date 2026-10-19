@@ -1,6 +1,7 @@
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
+import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
+
 import { tagsApi } from '../../services/api';
 import type { Tag } from '../../types';
 

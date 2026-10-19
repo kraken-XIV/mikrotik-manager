@@ -1,4 +1,4 @@
-import { Layers, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Layers } from 'lucide-react';
 
 /**
  * Switching off collectors.
