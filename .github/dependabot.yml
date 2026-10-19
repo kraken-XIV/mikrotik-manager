@@ -1,5 +1,13 @@
 version: 2
 updates:
+  # Repo-root npm dependencies (Prettier, husky, lint-staged)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+
   # Frontend npm dependencies
   - package-ecosystem: "npm"
     directory: "/frontend"
