@@ -236,7 +236,7 @@ export default function VlansTab({
     });
   };
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading...</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading...</div>;
 
   return (
     <div className="space-y-4">
@@ -248,9 +248,9 @@ export default function VlansTab({
 
       {/* VLAN Filtering warning */}
       {bridgesWithoutFiltering.length > 0 && !chipVlans && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
-          <Network className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm text-amber-800 dark:text-amber-300">
+        <div className="flex items-start gap-3 rounded-lg border border-warn dark:border-warn bg-warn-bg px-4 py-3">
+          <Network className="w-5 h-5 text-warn shrink-0 mt-0.5" />
+          <div className="flex-1 text-sm text-warn dark:text-warn">
             <span className="font-semibold">VLAN Filtering is not enabled</span> on the Bridge
             interface
             {bridgesWithoutFiltering.length > 1
@@ -260,7 +260,7 @@ export default function VlansTab({
             {onGoToPorts && (
               <button
                 onClick={() => onGoToPorts(bridgesWithoutFiltering[0].name)}
-                className="inline-flex items-center gap-1 font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-200 transition-colors"
+                className="inline-flex items-center gap-1 font-semibold underline underline-offset-2 hover:text-warn dark:hover:text-warn transition-colors"
               >
                 Enable VLAN Filtering on the Bridge interface →
               </button>
@@ -273,7 +273,7 @@ export default function VlansTab({
       <div className="flex items-center justify-between">
         <div>
           {deleteError && (
-            <span className="text-sm text-red-500 flex items-center gap-1">
+            <span className="text-sm text-bad flex items-center gap-1">
               <AlertCircle className="w-4 h-4" />
               {deleteError}
             </span>
@@ -324,7 +324,7 @@ export default function VlansTab({
       {/* Add VLAN form */}
       {canWrite && showAdd && (
         <div className="card p-4 space-y-3">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">New Bridge VLAN</h4>
+          <h4 className="text-sm font-semibold text-ink">New Bridge VLAN</h4>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div>
               <label className="label">VLAN ID (1–4094)</label>
@@ -369,7 +369,7 @@ export default function VlansTab({
                 onChange={(e) => setAddForm((f) => ({ ...f, tagged_ports: e.target.value }))}
                 placeholder="ether1, ether2"
               />
-              <p className="text-xs text-gray-400 mt-1">Comma-separated</p>
+              <p className="text-xs text-ink-4 mt-1">Comma-separated</p>
             </div>
             <div>
               <label className="label">Untagged Ports</label>
@@ -379,11 +379,11 @@ export default function VlansTab({
                 onChange={(e) => setAddForm((f) => ({ ...f, untagged_ports: e.target.value }))}
                 placeholder="ether3"
               />
-              <p className="text-xs text-gray-400 mt-1">Comma-separated</p>
+              <p className="text-xs text-ink-4 mt-1">Comma-separated</p>
             </div>
           </div>
           {addError && (
-            <div className="flex items-center gap-2 text-sm text-red-500">
+            <div className="flex items-center gap-2 text-sm text-bad">
               <AlertCircle className="w-4 h-4" /> {addError}
             </div>
           )}
@@ -412,23 +412,17 @@ export default function VlansTab({
 
       {/* Edit VLAN panel */}
       {canWrite && editingVlan && (
-        <div className="card p-4 space-y-3 border-blue-300 dark:border-blue-600 border-2">
+        <div className="card p-4 space-y-3 border-accent dark:border-accent border-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-              Edit VLAN{' '}
-              <span className="font-mono text-blue-600 dark:text-blue-400">
-                {editingVlan.vlan_id}
-              </span>
+            <h4 className="text-sm font-semibold text-ink">
+              Edit VLAN <span className="font-mono text-accent">{editingVlan.vlan_id}</span>
               {editingVlan.bridge && (
-                <span className="text-gray-400 dark:text-slate-500 font-normal">
-                  {' '}
-                  on {editingVlan.bridge}
-                </span>
+                <span className="text-ink-3 font-normal"> on {editingVlan.bridge}</span>
               )}
             </h4>
             <button
               onClick={() => setEditingVlan(null)}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+              className="text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
             >
               <X className="w-4 h-4" />
             </button>
@@ -444,7 +438,7 @@ export default function VlansTab({
                 placeholder="ether1, ether2"
                 autoFocus
               />
-              <p className="text-xs text-gray-400 mt-1">Comma-separated interface names</p>
+              <p className="text-xs text-ink-4 mt-1">Comma-separated interface names</p>
             </div>
             <div>
               <label className="label">Untagged Ports</label>
@@ -454,12 +448,12 @@ export default function VlansTab({
                 onChange={(e) => setEditForm((f) => ({ ...f, untagged_ports: e.target.value }))}
                 placeholder="ether3"
               />
-              <p className="text-xs text-gray-400 mt-1">Comma-separated interface names</p>
+              <p className="text-xs text-ink-4 mt-1">Comma-separated interface names</p>
             </div>
           </div>
 
           {editError && (
-            <div className="flex items-center gap-2 text-sm text-red-500">
+            <div className="flex items-center gap-2 text-sm text-bad">
               <AlertCircle className="w-4 h-4" /> {editError}
             </div>
           )}
@@ -505,7 +499,7 @@ export default function VlansTab({
       {/* VLANs table */}
       <div className="card overflow-hidden">
         {(vlans as Vlan[]).length === 0 ? (
-          <div className="text-center py-8 text-gray-400 dark:text-slate-500">
+          <div className="text-center py-8 text-ink-3">
             {chipVlans
               ? 'No bridge VLANs. On this switch chip, VLANs are set in the switch chip table above.'
               : 'No VLANs configured on this device, or device not synced yet.'}
@@ -513,7 +507,7 @@ export default function VlansTab({
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+              <tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
                 <th className="table-header px-4 py-2.5 text-left">VLAN ID</th>
                 <th className="table-header px-4 py-2.5 text-left">Name</th>
                 <th className="table-header px-4 py-2.5 text-left">Bridge</th>
@@ -522,30 +516,26 @@ export default function VlansTab({
                 {canWrite && <th className="table-header px-4 py-2.5 w-16" />}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+            <tbody className="divide-y divide-line table-zebra">
               {(vlans as Vlan[]).map((vlan) => (
                 <tr
                   key={vlan.id}
                   className={clsx(
-                    'hover:bg-gray-50 dark:hover:bg-slate-700/30',
-                    editingVlan?.id === vlan.id && 'bg-blue-50 dark:bg-blue-900/10',
+                    'hover:bg-surface-2/30',
+                    editingVlan?.id === vlan.id && 'bg-accent-soft dark:bg-accent-soft',
                   )}
                 >
-                  <td className="px-4 py-2.5 font-mono font-bold text-blue-600 dark:text-blue-400">
-                    {vlan.vlan_id}
-                  </td>
-                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
+                  <td className="px-4 py-2.5 font-mono font-bold text-accent">{vlan.vlan_id}</td>
+                  <td className="px-4 py-2.5 font-medium text-ink">
                     {vlan.name || `VLAN ${vlan.vlan_id}`}
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">
-                    {vlan.bridge || '—'}
-                  </td>
+                  <td className="px-4 py-2.5 font-mono text-ink-3">{vlan.bridge || '—'}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex flex-wrap gap-1">
                       {(vlan.tagged_ports ?? []).map((p) => (
                         <span
                           key={p}
-                          className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded font-mono"
+                          className="px-1.5 py-0.5 bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent text-xs rounded font-mono"
                         >
                           {p}
                         </span>
@@ -558,7 +548,7 @@ export default function VlansTab({
                       {(vlan.untagged_ports ?? []).map((p) => (
                         <span
                           key={p}
-                          className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 text-xs rounded font-mono"
+                          className="px-1.5 py-0.5 bg-surface-3 text-ink-2 text-xs rounded font-mono"
                         >
                           {p}
                         </span>
@@ -574,8 +564,8 @@ export default function VlansTab({
                           className={clsx(
                             'p-1 rounded transition-colors',
                             editingVlan?.id === vlan.id
-                              ? 'text-blue-500 bg-blue-100 dark:bg-blue-900/30'
-                              : 'text-gray-400 hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-slate-700',
+                              ? 'text-accent bg-accent-soft dark:bg-accent-soft'
+                              : 'text-ink-4 hover:text-accent hover:bg-surface-3',
                           )}
                           title="Edit VLAN"
                         >
@@ -588,7 +578,7 @@ export default function VlansTab({
                             }
                           }}
                           disabled={deleteMutation.isPending}
-                          className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                          className="p-1 rounded text-ink-4 hover:text-bad hover:bg-surface-3 transition-colors"
                           title="Delete VLAN"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

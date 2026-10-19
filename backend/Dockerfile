@@ -23,7 +23,11 @@ WORKDIR /app
 # Install only production dependencies
 COPY package*.json ./
 COPY scripts/harden-braces.cjs ./scripts/harden-braces.cjs
-RUN npm ci --omit=dev && npm cache clean --force
+# npm is build/install tooling, not a runtime dependency. Remove its bundled
+# dependency tree and launchers after installing the locked application deps.
+RUN npm ci --omit=dev && npm cache clean --force \
+  && rm -rf /usr/local/lib/node_modules/npm \
+  && rm -f /usr/local/bin/npm /usr/local/bin/npx
 
 # Install arp-scan for server-side MAC→IP ARP discovery.
 # libcap is needed to set file capabilities so it runs without root.

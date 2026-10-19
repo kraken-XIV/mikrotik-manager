@@ -52,12 +52,12 @@ export default function NeighbourEditor({
     >
       <div className="card w-full max-w-md mx-4 p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Neighbour: {discovered}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h3 className="font-semibold text-ink">Neighbour: {discovered}</h3>
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-xs text-gray-500 dark:text-slate-400">
+        <p className="text-xs text-ink-3">
           Found by discovery, not managed. Change how it&apos;s shown on the map; discovery keeps
           finding it as before.
         </p>
@@ -82,10 +82,10 @@ export default function NeighbourEditor({
             ))}
           </select>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-bad">{error}</p>}
         <div className="flex items-center justify-between pt-1">
           <button
-            className="text-xs text-gray-500 hover:underline"
+            className="text-xs text-ink-3 hover:underline"
             onClick={() => save.mutate({ name: null, kind: null })}
           >
             Back to what discovery says

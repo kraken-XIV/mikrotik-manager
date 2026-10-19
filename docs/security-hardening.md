@@ -1,4 +1,4 @@
-# Security hardening after Phase 2
+# Security hardening
 
 This review addresses the known dependency alerts and CodeQL findings; it is not a claim that software has no unknown vulnerabilities.
 

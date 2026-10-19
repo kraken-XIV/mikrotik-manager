@@ -64,9 +64,9 @@ function QueueModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h3 className="font-semibold text-ink">{title}</h3>
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -115,13 +115,13 @@ function QueueModal({
                 key={r}
                 type="button"
                 onClick={() => set('down', r)}
-                className="px-2 py-1 text-xs rounded-md border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400"
+                className="px-2 py-1 text-xs rounded-md border border-line text-ink-2 hover:border-accent"
               >
                 ↓ {r}
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-ink-4">
             Use suffixes: <span className="font-mono">k</span>, <span className="font-mono">M</span>
             , <span className="font-mono">G</span> (bits/sec). Leave a field as{' '}
             <span className="font-mono">0</span> for unlimited.
@@ -137,9 +137,9 @@ function QueueModal({
           </div>
           <FastTrackNote deviceId={deviceId} />
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+              <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-bad">{error}</p>
             </div>
           )}
           <div className="flex items-center justify-end gap-3 pt-1">
@@ -242,11 +242,11 @@ export default function QueuesTab({ deviceId }: { deviceId: number }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center">
-            <Gauge className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <div className="w-7 h-7 bg-good-bg rounded-lg flex items-center justify-center">
+            <Gauge className="w-3.5 h-3.5 text-good" />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-            Bandwidth Queues <span className="text-gray-400 font-normal">({queues.length})</span>
+          <h3 className="text-sm font-semibold text-ink">
+            Bandwidth Queues <span className="text-ink-4 font-normal">({queues.length})</span>
           </h3>
         </div>
         <div className="flex items-center gap-2">
@@ -271,23 +271,23 @@ export default function QueuesTab({ deviceId }: { deviceId: number }) {
           )}
         </div>
       </div>
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-4">
         Simple queues cap upload/download for a client IP, subnet, or interface. Limit a single
         client quickly from its detail page.
       </p>
 
       {isLoading ? (
-        <div className="text-center py-8 text-gray-400">
+        <div className="text-center py-8 text-ink-4">
           <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
           Loading…
         </div>
       ) : queues.length === 0 ? (
-        <div className="card p-8 text-center text-gray-400">No bandwidth queues defined.</div>
+        <div className="card p-8 text-center text-ink-4">No bandwidth queues defined.</div>
       ) : (
         <div className="card overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+              <tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
                 <th className="table-header px-3 py-2.5 text-left">Name</th>
                 <th className="table-header px-3 py-2.5 text-left">Target</th>
                 <th className="table-header px-3 py-2.5 text-left">Max ↑/↓</th>
@@ -295,28 +295,21 @@ export default function QueuesTab({ deviceId }: { deviceId: number }) {
                 {canWrite && <th className="table-header px-3 py-2.5 w-20" />}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+            <tbody className="divide-y divide-line table-zebra">
               {queues.map((q, i) => {
                 const disabled = q.disabled === 'true';
                 const lim = splitLimit(q['max-limit']);
                 return (
                   <tr
                     key={q['.id'] ?? i}
-                    className={clsx(
-                      'hover:bg-gray-50 dark:hover:bg-slate-700/30',
-                      disabled && 'opacity-40',
-                    )}
+                    className={clsx('hover:bg-surface-2/30', disabled && 'opacity-40')}
                   >
-                    <td className="px-3 py-2 text-xs font-medium text-gray-900 dark:text-white">
-                      {q.name}
-                    </td>
-                    <td className="px-3 py-2 font-mono text-xs text-gray-600 dark:text-slate-300">
-                      {q.target || '—'}
-                    </td>
-                    <td className="px-3 py-2 font-mono text-xs text-emerald-600 dark:text-emerald-400">
+                    <td className="px-3 py-2 text-xs font-medium text-ink">{q.name}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-ink-2">{q.target || '—'}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-good">
                       {lim.up || '0'} / {lim.down || '0'}
                     </td>
-                    <td className="px-3 py-2 text-xs text-gray-400 italic max-w-[160px] truncate">
+                    <td className="px-3 py-2 text-xs text-ink-4 italic max-w-[160px] truncate">
                       {q.comment || ''}
                     </td>
                     {canWrite && (
@@ -324,7 +317,7 @@ export default function QueuesTab({ deviceId }: { deviceId: number }) {
                         <div className="flex items-center gap-1 justify-end">
                           <button
                             onClick={() => openEdit(q)}
-                            className="p-1 rounded text-gray-400 hover:text-blue-500"
+                            className="p-1 rounded text-ink-4 hover:text-accent"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
@@ -332,7 +325,7 @@ export default function QueuesTab({ deviceId }: { deviceId: number }) {
                             onClick={() => {
                               if (confirm(`Delete queue "${q.name}"?`)) delMut.mutate(q['.id']);
                             }}
-                            className="p-1 rounded text-gray-400 hover:text-red-500"
+                            className="p-1 rounded text-ink-4 hover:text-bad"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

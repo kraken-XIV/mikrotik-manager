@@ -4,14 +4,14 @@ The security floor adds mandatory-on-run Gitleaks, Trivy and dependency-diff gat
 CodeQL, runtime npm audits, coverage, lint and build checks. No security job uses
 `continue-on-error`. Scanner/configuration/download failures fail CI too.
 
-| Check                         | Scope                                                                           | Policy                                                                       |
-| ----------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Secrets — gitleaks            | Full reachable Git history on PR/push/manual/weekly runs                        | Any unexcepted secret fails                                                  |
-| Trivy — vuln & misconfig      | All three npm lockfiles, including dev dependencies; repository Dockerfiles/IaC | Fixed HIGH/CRITICAL vulnerabilities and HIGH/CRITICAL misconfigurations fail |
-| Dependency Review             | New runtime, development and unknown-scope PR dependencies                      | HIGH/CRITICAL advisories fail; no advisory allowlist                         |
-| Security Audit                | Backend/frontend production npm dependencies                                    | HIGH/CRITICAL advisories fail; no advisory allowlist                         |
-| Scorecard preview (read-only) | PR posture preview                                                              | Advisory posture; execution errors fail, no publishing/write token           |
-| Scorecard analysis            | Trusted default-branch push, branch-protection events, weekly                   | Advisory posture published to OpenSSF and code scanning                      |
+| Check                         | Scope                                                                                                      | Policy                                                                       |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Secrets — gitleaks            | Full reachable Git history on PR/push/manual/weekly runs                                                   | Any unexcepted secret fails                                                  |
+| Trivy — vuln & misconfig      | All three npm lockfiles, including dev dependencies; repository Dockerfiles/IaC and both production images | Fixed HIGH/CRITICAL vulnerabilities and HIGH/CRITICAL misconfigurations fail |
+| Dependency Review             | New runtime, development and unknown-scope PR dependencies                                                 | HIGH/CRITICAL advisories fail; no advisory allowlist                         |
+| Security Audit                | Backend/frontend production npm dependencies                                                               | HIGH/CRITICAL advisories fail; no advisory allowlist                         |
+| Scorecard preview (read-only) | PR posture preview                                                                                         | Advisory posture; execution errors fail, no publishing/write token           |
+| Scorecard analysis            | Trusted default-branch push, branch-protection events, weekly                                              | Advisory posture published to OpenSSF and code scanning                      |
 
 The Trivy job separately prints HIGH/CRITICAL advisories **including unfixed**
 ones. This informational report does not claim that unpatched dependencies are
@@ -85,8 +85,7 @@ one **misconfiguration** exception (no vulnerability/CVE or package exceptions):
   before expiry; expiration intentionally makes CI fail until resolved.
 - This exception cannot apply to a backend Dockerfile, another image path, a CVE,
   or another misconfiguration in the nginx Dockerfile. A genuine nginx image CVE
-  remains detectable if an image scan is run; this phase's gate scans source
-  lockfiles/IaC, not built image contents.
+  is blocked by the production-image gate as well as source lockfile checks.
 
 `node_modules` trees alone are skipped by the repository scan: vendored package
 build Dockerfiles are not our deployed components. All three source lockfiles
@@ -133,8 +132,8 @@ skip when tools are missing.
   No advisory ID has been added to a scanner/audit exception for this debt.
 - Trivy reports the two repository Dockerfiles; it does not analyze Docker
   Compose semantics in this version. The separate generated-Compose consistency
-  check is not a vulnerability scan. No built-image or Compose-security coverage
-  is claimed.
+  check is not a vulnerability scan. The runtime-image gate adds built-image vulnerability gates for both production images;
+  Compose-security coverage is still not claimed.
 - The immutable Scorecard wrapper commit currently invokes the upstream
   `ghcr.io/ossf/scorecard-action:v2.5.0` container tag internally. That upstream
   tag is not digest-pinned by its action metadata; a commit pin alone does not
@@ -142,8 +141,8 @@ skip when tools are missing.
   for the advisory scanner, not for the checksum-pinned blocking CLIs.
 - HIGH/CRITICAL is the gate threshold; lower-severity advisories still need normal
   maintenance. A passing scan is not proof that unknown vulnerabilities do not
-  exist. Container-image CVE scanning before registry push remains a separate
-  publisher redesign; this phase neither deploys nor pushes images.
+  exist. The blocking Trivy job now builds and scans both production images without
+  registry credentials or publishing. These checks neither deploy nor push images.
 - Scorecard is posture, not an application-security test. PR preview does not
   publish; scheduled/default-branch publishing can only be proved after this PR
   is reviewed and merged. No automatic merge is authorized.
@@ -174,3 +173,21 @@ in the same workflow caused HTTP 400 OIDC-policy rejection. The upstream action
 only warns for that error, so a green GitHub job alone does **not** prove public
 publication. Verify publication logs and the public API commit after merging;
 SARIF upload to GitHub is a separate outcome. A regression guards this layout.
+
+## Runtime-image hardening
+
+Full image scans found issues invisible to npm lockfile/source scans:
+
+- Backend: npm's bundled `brace-expansion` 5.0.9 (CVE-2026-102276 and
+  CVE-2026-102278) and `undici` 6.28.0 (CVE-2026-19534). The production
+  process uses `node dist/index.js`, not npm/npx; their unnecessary runtime
+  tree and launchers are removed after `npm ci --omit=dev`. Build stages retain
+  npm, and locked application dependencies are unchanged.
+- nginx: Alpine `libexpat` 2.8.5-r0 (CVE-2026-77214) and `libx11` 1.8.13-r0
+  (CVE-2026-88806). The pinned official base is retained; these installed
+  libraries receive normal Alpine security upgrades during the image build.
+
+The existing required Trivy job builds and scans both final production images.
+Any fixable HIGH/CRITICAL OS or packaged-language finding fails it. No CVE
+exceptions were added, and the source/IaC gates and unfixed-debt report remain.
+No image is pushed, no device is contacted, and no privileged token is granted.

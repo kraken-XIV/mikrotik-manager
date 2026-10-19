@@ -215,11 +215,11 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Device</h2>
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h2 className="text-lg font-semibold text-ink">Edit Device</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+            className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -237,7 +237,7 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                     type="button"
                     onClick={handleUnlockName}
                     disabled={unlocking}
-                    className="flex items-center gap-1 text-[11px] font-normal normal-case tracking-normal text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
+                    className="flex items-center gap-1 text-[11px] font-normal normal-case tracking-normal text-accent hover:underline disabled:opacity-50"
                     title="Stop keeping this name and follow the router's own identity again"
                   >
                     {unlocking ? (
@@ -255,7 +255,7 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                 onChange={(e) => set('name', e.target.value)}
               />
               {device.name_locked && (
-                <p className="text-[11px] text-gray-400 mt-1">
+                <p className="text-[11px] text-ink-4 mt-1">
                   Set manually — the router&apos;s own identity won&apos;t override this until
                   unlocked.
                 </p>
@@ -266,7 +266,7 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
               <label className="label flex items-center justify-between">
                 <span>Management address (IP or hostname) *</span>
                 {device.status !== 'online' && (
-                  <span className="text-[10px] font-normal text-gray-400 dark:text-slate-500 normal-case tracking-normal">
+                  <span className="text-[10px] font-normal text-ink-3 normal-case tracking-normal">
                     Device offline — IP list unavailable, enter manually
                   </span>
                 )}
@@ -278,10 +278,10 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                 placeholder="192.168.88.1 or router.example.com"
               />
               {addressInvalid && (
-                <p className="text-[11px] text-red-500 mt-1">Not a valid IP address or hostname.</p>
+                <p className="text-[11px] text-bad mt-1">Not a valid IP address or hostname.</p>
               )}
               {showPlaintextWarning && (
-                <p className="flex items-start gap-1 text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+                <p className="flex items-start gap-1 text-[11px] text-warn mt-1">
                   <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                   <span>
                     Credentials travel unencrypted to this address. Prefer api-ssl on port 8729, or
@@ -290,25 +290,25 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                 </p>
               )}
               {device.status === 'online' && (
-                <div className="mt-2 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                  <div className="px-3 py-1.5 bg-gray-50 dark:bg-slate-700/50 text-[11px] uppercase tracking-wide font-semibold text-gray-500 dark:text-slate-400 flex items-center gap-1.5">
+                <div className="mt-2 border border-line rounded-lg overflow-hidden">
+                  <div className="px-3 py-1.5 bg-surface-2 dark:bg-surface-3 text-[11px] uppercase tracking-wide font-semibold text-ink-3 flex items-center gap-1.5">
                     <Network className="w-3 h-3" />
                     IPs configured on this device
                   </div>
                   {ipsLoading ? (
-                    <div className="px-3 py-3 text-xs text-gray-400 flex items-center gap-2">
+                    <div className="px-3 py-3 text-xs text-ink-4 flex items-center gap-2">
                       <Loader2 className="w-3 h-3 animate-spin" /> Fetching from router…
                     </div>
                   ) : ipsError ? (
-                    <div className="px-3 py-3 text-xs text-red-500">
+                    <div className="px-3 py-3 text-xs text-bad">
                       Could not fetch IP list. You can still enter one manually.
                     </div>
                   ) : candidateIps.length === 0 ? (
-                    <div className="px-3 py-3 text-xs text-gray-400">
+                    <div className="px-3 py-3 text-xs text-ink-4">
                       No usable IP addresses returned by the router.
                     </div>
                   ) : (
-                    <ul className="max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700">
+                    <ul className="max-h-40 overflow-y-auto divide-y divide-line">
                       {candidateIps.map((c) => {
                         const selected = sameAddress(form.ip_address, c.address);
                         return (
@@ -319,12 +319,12 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                               className={
                                 'w-full flex items-center justify-between px-3 py-1.5 text-xs text-left transition-colors ' +
                                 (selected
-                                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                  : 'hover:bg-gray-50 dark:hover:bg-slate-700/50 text-gray-700 dark:text-slate-300')
+                                  ? 'bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent'
+                                  : 'hover:bg-surface-2/50 text-ink-2')
                               }
                             >
                               <span className="font-mono">{c.cidr}</span>
-                              <span className="text-gray-400 dark:text-slate-500">{c.iface}</span>
+                              <span className="text-ink-3">{c.iface}</span>
                             </button>
                           </li>
                         );
@@ -332,7 +332,7 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                     </ul>
                   )}
                   {!ipsLoading && !ipsError && !ipWasDetected && form.ip_address && (
-                    <div className="px-3 py-2 text-[11px] text-amber-600 dark:text-amber-400 border-t border-gray-100 dark:border-slate-700">
+                    <div className="px-3 py-2 text-[11px] text-warn border-t border-line-soft">
                       Entered IP isn&apos;t in the router&apos;s address list — double-check before
                       saving.
                     </div>
@@ -358,11 +358,11 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
 
           {/* API credentials */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3">
               RouterOS API Credentials
             </h3>
             {device.ssh_only && (
-              <p className="text-xs text-amber-700 dark:text-amber-400 -mt-1 mb-3">
+              <p className="text-xs text-warn -mt-1 mb-3">
                 This device was added over SSH only. This is the login tried on the API once
                 it&apos;s enabled; the manager connects over SSH until then, and checks a new
                 address or SSH login over SSH when you save.
@@ -387,7 +387,7 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                   ))}
                 </select>
                 {selectedPreset && (
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
+                  <p className="text-xs text-ink-3 mt-2">
                     Saving replaces this device&apos;s login with preset{' '}
                     <strong>{selectedPreset.name}</strong>
                     {selectedPreset.has_ssh_password && selectedPreset.ssh_username
@@ -420,7 +420,7 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                   onChange={(e) => set('api_port', e.target.value)}
                 />
                 <label
-                  className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-200 mt-1.5 cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs text-ink-2 dark:text-ink mt-1.5 cursor-pointer"
                   title="Tick when this port runs api-ssl, for example a forwarded port behind NAT"
                 >
                   <input
@@ -455,7 +455,7 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
           {/* SSH credentials (optional; what an SSH-only device is reached with, #174) */}
           {!selectedPreset && (
             <details className="group" open={device.ssh_only || undefined}>
-              <summary className="cursor-pointer text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider select-none">
+              <summary className="cursor-pointer text-xs font-semibold text-ink-3 uppercase tracking-wider select-none">
                 SSH Credentials (optional, for backup/restore)
               </summary>
               <div className="mt-3 grid grid-cols-2 gap-3">
@@ -495,7 +495,7 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
           {/* Per-device polling and backup overrides (#261): rarely needed, so
               out of sight; a site's are set on the Sites page. */}
           <details className="group">
-            <summary className="cursor-pointer text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider select-none">
+            <summary className="cursor-pointer text-xs font-semibold text-ink-3 uppercase tracking-wider select-none">
               Advanced: polling and backups
             </summary>
             <div className="mt-3">
@@ -519,18 +519,16 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+              <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-bad">{error}</p>
             </div>
           )}
 
           {loading && (
-            <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <Loader2 className="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" />
-              <p className="text-sm text-blue-600 dark:text-blue-400">
-                Verifying connection with new settings…
-              </p>
+            <div className="flex items-center gap-2 p-3 bg-accent-soft border border-accent dark:border-accent rounded-lg">
+              <Loader2 className="w-4 h-4 text-accent animate-spin flex-shrink-0" />
+              <p className="text-sm text-accent">Verifying connection with new settings…</p>
             </div>
           )}
 

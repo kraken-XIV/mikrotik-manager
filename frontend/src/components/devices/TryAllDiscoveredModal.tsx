@@ -170,20 +170,18 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Try All Discovered Devices
-          </h2>
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h2 className="text-lg font-semibold text-ink">Try All Discovered Devices</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+            className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
-          <p className="text-sm text-gray-600 dark:text-slate-300">
+          <p className="text-sm text-ink-2">
             Attempt to add <strong>{targets.length}</strong> discovered device(s) in one run.
             Progress runs <strong>on the server</strong> — you can leave this page and reopen later
             (job id is shown while running).
@@ -194,7 +192,7 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
               type="button"
               onClick={() => setMode('preset')}
               disabled={running}
-              className={`px-3 py-1.5 rounded-lg text-sm border ${mode === 'preset' ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-600 dark:text-slate-300 border-gray-300 dark:border-slate-600'}`}
+              className={`px-3 py-1.5 rounded-lg text-sm border ${mode === 'preset' ? 'bg-accent text-accent-fg border-accent' : 'text-ink-2 border-line'}`}
             >
               Use Preset
             </button>
@@ -202,7 +200,7 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
               type="button"
               onClick={() => setMode('manual')}
               disabled={running}
-              className={`px-3 py-1.5 rounded-lg text-sm border ${mode === 'manual' ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-600 dark:text-slate-300 border-gray-300 dark:border-slate-600'}`}
+              className={`px-3 py-1.5 rounded-lg text-sm border ${mode === 'manual' ? 'bg-accent text-accent-fg border-accent' : 'text-ink-2 border-line'}`}
             >
               Enter Manually
             </button>
@@ -293,21 +291,19 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
           )}
 
           {jobId && running && (
-            <p className="text-xs text-gray-500 dark:text-slate-400 font-mono break-all">
-              Job: {jobId}
-            </p>
+            <p className="text-xs text-ink-3 font-mono break-all">Job: {jobId}</p>
           )}
 
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+              <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-bad">{error}</p>
             </div>
           )}
 
           {running && (
             <div className="space-y-2">
-              <div className="text-sm text-gray-700 dark:text-slate-300">
+              <div className="text-sm text-ink-2">
                 Trying {progress.current}/{progress.total}
                 {progress.currentName && (
                   <>
@@ -315,9 +311,9 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
                   </>
                 )}
               </div>
-              <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-surface-3 dark:bg-surface-3 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-blue-500 transition-all"
+                  className="h-full bg-accent transition-all"
                   style={{
                     width: `${progress.total ? Math.round((progress.current / progress.total) * 100) : 0}%`,
                   }}
@@ -337,36 +333,32 @@ export default function TryAllDiscoveredModal({ discoveredDevices, onClose, onSu
 
           {results && (
             <div className="space-y-2">
-              <div className="text-sm text-gray-700 dark:text-slate-300">
+              <div className="text-sm text-ink-2">
                 {running ? 'Live results:' : cancelled ? 'Cancelled:' : 'Done:'}{' '}
-                <span className="text-green-600 dark:text-green-400">{okCount} succeeded</span>,{' '}
-                <span className="text-red-600 dark:text-red-400">{failCount} failed</span>
+                <span className="text-good">{okCount} succeeded</span>,{' '}
+                <span className="text-bad">{failCount} failed</span>
               </div>
-              <div className="max-h-56 overflow-y-auto border border-gray-200 dark:border-slate-700 rounded-lg">
+              <div className="max-h-56 overflow-y-auto border border-line rounded-lg">
                 <table className="w-full text-xs">
-                  <thead className="bg-gray-50 dark:bg-slate-700/50 sticky top-0">
+                  <thead className="bg-surface-2 dark:bg-surface-3 sticky top-0">
                     <tr>
                       <th className="table-header px-3 py-2 text-left">Device</th>
                       <th className="table-header px-3 py-2 text-left">IP</th>
                       <th className="table-header px-3 py-2 text-left">Result</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                  <tbody className="divide-y divide-line">
                     {results.map((r) => (
                       <tr key={`${r.ip}-${r.identity}`}>
-                        <td className="px-3 py-2 text-gray-700 dark:text-slate-300">
-                          {r.identity}
-                        </td>
-                        <td className="px-3 py-2 font-mono text-gray-500 dark:text-slate-400">
-                          {r.ip}
-                        </td>
+                        <td className="px-3 py-2 text-ink-2">{r.identity}</td>
+                        <td className="px-3 py-2 font-mono text-ink-3">{r.ip}</td>
                         <td className="px-3 py-2">
                           {r.ok ? (
-                            <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+                            <span className="inline-flex items-center gap-1 text-good">
                               <CheckCircle className="w-3.5 h-3.5" /> {r.message}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+                            <span className="inline-flex items-center gap-1 text-bad">
                               <AlertCircle className="w-3.5 h-3.5" /> {r.message}
                             </span>
                           )}

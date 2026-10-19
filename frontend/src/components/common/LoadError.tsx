@@ -18,9 +18,7 @@ export default function LoadError({
     (error as { response?: { data?: { error?: string } } })?.response?.data?.error ??
     (error as Error | undefined)?.message;
   return (
-    <div
-      className={`flex items-start gap-2 p-4 text-sm text-amber-700 dark:text-amber-400 ${className}`}
-    >
+    <div className={`flex items-start gap-2 p-4 text-sm text-warn ${className}`}>
       <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
       <span>
         Couldn&apos;t load {what}, so this isn&apos;t showing the real state.

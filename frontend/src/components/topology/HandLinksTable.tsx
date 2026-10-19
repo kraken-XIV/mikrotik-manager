@@ -21,28 +21,26 @@ export default function HandLinksTable({
     end.kind === 'device' ? 'device' : end.kind === 'node' ? 'your node' : 'neighbour';
   return (
     <div className="card overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-          Links drawn by hand ({links.length})
-        </h3>
+      <div className="px-4 py-3 border-b border-line">
+        <h3 className="text-sm font-semibold text-ink">Links drawn by hand ({links.length})</h3>
       </div>
       <div className="overflow-x-auto max-h-[320px] overflow-y-auto">
         <table className="w-full text-sm">
-          <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+          <tbody className="divide-y divide-line">
             {links.map((l) => (
-              <tr key={l.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                <td className="px-4 py-2 text-gray-900 dark:text-white">
-                  {name(l.a)} <span className="text-xs text-gray-400">{kind(l.a)}</span>
+              <tr key={l.id} className="hover:bg-surface-2/30">
+                <td className="px-4 py-2 text-ink">
+                  {name(l.a)} <span className="text-xs text-ink-4">{kind(l.a)}</span>
                 </td>
-                <td className="px-2 py-2 text-gray-400">↔</td>
-                <td className="px-4 py-2 text-gray-900 dark:text-white">
-                  {name(l.b)} <span className="text-xs text-gray-400">{kind(l.b)}</span>
+                <td className="px-2 py-2 text-ink-4">↔</td>
+                <td className="px-4 py-2 text-ink">
+                  {name(l.b)} <span className="text-xs text-ink-4">{kind(l.b)}</span>
                 </td>
-                <td className="px-4 py-2 text-xs text-gray-500">{l.label}</td>
+                <td className="px-4 py-2 text-xs text-ink-3">{l.label}</td>
                 <td className="px-4 py-2 text-right">
                   {canWrite && (
                     <button
-                      className="text-xs text-red-600 hover:underline"
+                      className="text-xs text-bad hover:underline"
                       onClick={() => onRemove(l.id)}
                     >
                       Remove

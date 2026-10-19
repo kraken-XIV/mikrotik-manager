@@ -143,26 +143,20 @@ function DeviceNode({ data }: { data: Record<string, unknown> }) {
           className="w-2 h-2 rounded-full flex-shrink-0"
           style={{ background: statusColor[device.status] ?? '#94a3b8' }}
         />
-        <span className="font-semibold truncate text-gray-900 dark:text-white">{device.name}</span>
+        <span className="font-semibold truncate text-ink">{device.name}</span>
         {device.isRootBridge && (
-          <span title="Spanning-tree root bridge" className="ml-auto text-amber-500 font-bold">
+          <span title="Spanning-tree root bridge" className="ml-auto text-warn font-bold">
             ★
           </span>
         )}
       </div>
-      <div className="font-mono text-gray-400 dark:text-slate-500">{device.ip_address}</div>
-      {device.model && (
-        <div className="text-gray-400 dark:text-slate-500 truncate">{device.model}</div>
-      )}
+      <div className="font-mono text-ink-3">{device.ip_address}</div>
+      {device.model && <div className="text-ink-3 truncate">{device.model}</div>}
       {device.orphan && (
-        <div className="mt-1 text-orange-400 dark:text-orange-500 text-[10px]">
-          No known connections
-        </div>
+        <div className="mt-1 text-warn dark:text-warn text-[10px]">No known connections</div>
       )}
       {device.stpNote && (
-        <div className="mt-1 text-amber-600 dark:text-amber-400 text-[10px] leading-snug">
-          {device.stpNote}
-        </div>
+        <div className="mt-1 text-warn text-[10px] leading-snug">{device.stpNote}</div>
       )}
     </div>
   );
@@ -178,24 +172,20 @@ function ExternalNode({ data }: { data: Record<string, unknown> }) {
   const gone = node.caps === 'gone';
   return (
     <div
-      className="px-3 py-2 min-w-[130px] max-w-[200px] text-xs rounded-lg bg-gray-100 dark:bg-slate-700/60 shadow-sm select-none"
+      className="px-3 py-2 min-w-[130px] max-w-[200px] text-xs rounded-lg bg-surface-3/60 shadow-sm select-none"
       style={{ border: '1.5px dashed #94a3b8' }}
     >
       <Handles connectable={!!node.connectMode} />
       <div className="flex items-center gap-1.5 mb-1">
-        <span className="text-base leading-none text-gray-400">◌</span>
-        <span className="font-semibold truncate text-gray-600 dark:text-slate-300">
+        <span className="text-base leading-none text-ink-4">◌</span>
+        <span className="font-semibold truncate text-ink-2">
           {node.name}
           {cl ? ` (${cl})` : ''}
         </span>
       </div>
-      {node.address && (
-        <div className="font-mono text-gray-400 dark:text-slate-500">{node.address}</div>
-      )}
-      {node.platform && (
-        <div className="text-gray-400 dark:text-slate-500 truncate">{node.platform}</div>
-      )}
-      <div className="text-gray-400 dark:text-slate-500 mt-0.5">
+      {node.address && <div className="font-mono text-ink-3">{node.address}</div>}
+      {node.platform && <div className="text-ink-3 truncate">{node.platform}</div>}
+      <div className="text-ink-3 mt-0.5">
         {gone ? 'No longer seen by discovery' : 'Seen by discovery, not managed'}
       </div>
     </div>
@@ -209,7 +199,7 @@ function ManualNode({ data }: { data: Record<string, unknown> }) {
   return (
     <div
       className={clsx(
-        'px-3 py-2 min-w-[140px] max-w-[200px] text-xs rounded-lg bg-white dark:bg-slate-800 shadow-sm select-none cursor-pointer',
+        'px-3 py-2 min-w-[140px] max-w-[200px] text-xs rounded-lg bg-surface shadow-sm select-none cursor-pointer',
         node.orphan && 'opacity-70',
       )}
       style={{ border: '1.5px dashed #8b5cf6' }}
@@ -217,14 +207,12 @@ function ManualNode({ data }: { data: Record<string, unknown> }) {
     >
       <Handles connectable={!!node.connectMode} />
       <div className="flex items-center gap-1.5 mb-1">
-        <Icon className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
-        <span className="font-semibold truncate text-gray-900 dark:text-white">{node.name}</span>
+        <Icon className="w-3.5 h-3.5 text-violet flex-shrink-0" />
+        <span className="font-semibold truncate text-ink">{node.name}</span>
       </div>
-      {node.address && (
-        <div className="font-mono text-gray-400 dark:text-slate-500 truncate">{node.address}</div>
-      )}
+      {node.address && <div className="font-mono text-ink-3 truncate">{node.address}</div>}
       <div className="text-violet-500/80 dark:text-violet-400/80">{label}</div>
-      {node.orphan && <div className="mt-1 text-orange-400 text-[10px]">Not connected yet</div>}
+      {node.orphan && <div className="mt-1 text-warn text-[10px]">Not connected yet</div>}
     </div>
   );
 }
@@ -234,7 +222,7 @@ function ClientGroupNode({ data }: { data: Record<string, unknown> }) {
   const g = data as { count: number; wireless: number; expanded?: boolean; label?: string };
   return (
     <div
-      className="px-2.5 py-1.5 text-xs rounded-full bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 shadow-sm select-none cursor-pointer flex items-center gap-1.5 max-w-[225px]"
+      className="px-2.5 py-1.5 text-xs rounded-full bg-info-bg dark:bg-info-bg text-info dark:text-info shadow-sm select-none cursor-pointer flex items-center gap-1.5 max-w-[225px]"
       style={{ border: '1px solid #7dd3fc' }}
       title={`${g.label ? `${g.label}: ` : ''}${g.count} client${g.count === 1 ? '' : 's'}. ${g.expanded ? 'Click to fold them back into a count' : 'Click to show each client'}`}
     >
@@ -285,27 +273,25 @@ function ClientNode({ data }: { data: Record<string, unknown> }) {
   const c = data as unknown as TopologyClient;
   return (
     <div
-      className="px-2.5 py-1.5 min-w-[120px] max-w-[170px] text-[11px] rounded-md bg-white dark:bg-slate-800 shadow-sm select-none cursor-pointer"
+      className="px-2.5 py-1.5 min-w-[120px] max-w-[170px] text-[11px] rounded-md bg-surface shadow-sm select-none cursor-pointer"
       style={{ border: '1px solid #bae6fd' }}
       title={clientHover(c)}
     >
       <Handles connectable={false} />
       <div className="flex items-center gap-1">
         {c.wireless ? (
-          <Wifi className="w-3 h-3 text-sky-500 flex-shrink-0" />
+          <Wifi className="w-3 h-3 text-info flex-shrink-0" />
         ) : (
-          <Cable className="w-3 h-3 text-gray-400 flex-shrink-0" />
+          <Cable className="w-3 h-3 text-ink-4 flex-shrink-0" />
         )}
-        <span className="font-medium truncate text-gray-800 dark:text-slate-200">{c.name}</span>
+        <span className="font-medium truncate text-ink">{c.name}</span>
       </div>
-      {c.ip && <div className="font-mono text-gray-400 dark:text-slate-500 truncate">{c.ip}</div>}
-      <div className="font-mono text-[10px] text-gray-400 dark:text-slate-500 truncate">
-        {c.mac}
-      </div>
+      {c.ip && <div className="font-mono text-ink-3 truncate">{c.ip}</div>}
+      <div className="font-mono text-[10px] text-ink-3 truncate">{c.mac}</div>
       {c.vendor && c.vendor !== c.name && (
-        <div className="text-[10px] text-gray-400 dark:text-slate-500 truncate">{c.vendor}</div>
+        <div className="text-[10px] text-ink-3 truncate">{c.vendor}</div>
       )}
-      {!c.portKnown && <div className="text-[10px] text-gray-400 italic">port not known</div>}
+      {!c.portKnown && <div className="text-[10px] text-ink-4 italic">port not known</div>}
     </div>
   );
 }

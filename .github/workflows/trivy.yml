@@ -36,6 +36,16 @@ jobs:
           trivy fs --scanners vuln,misconfig --severity HIGH,CRITICAL
           --include-dev-deps --ignore-unfixed --skip-dirs '**/node_modules/**'
           --ignorefile .trivyignore.yaml --exit-code 1 --no-progress .
+      # Source lockfiles cannot see Alpine packages or Node's bundled npm tree.
+      # Build only: no registry credentials, push, deployment or running services.
+      - name: Build production images for vulnerability scanning
+        run: |
+          docker build -t mtm-security-backend:ci backend
+          docker build -t mtm-security-web:ci -f nginx/Dockerfile .
+      - name: Gate actionable HIGH and CRITICAL findings in both runtime images
+        run: |
+          trivy image --image-src docker --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress mtm-security-backend:ci
+          trivy image --image-src docker --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress mtm-security-web:ci
       # Report unfixed debt as well, without representing it as remediated.
       # Scanner/download/parse failures still fail this step.
       - name: Report HIGH and CRITICAL findings including unfixed advisories

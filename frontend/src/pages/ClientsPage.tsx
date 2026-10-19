@@ -78,7 +78,7 @@ function CategoryIcon({ category }: { category?: string }) {
   if (!meta) return null;
   const Icon = meta.icon;
   return (
-    <span title={meta.label} className="flex-shrink-0 text-gray-400 dark:text-slate-500">
+    <span title={meta.label} className="flex-shrink-0 text-ink-3">
       <Icon className="w-3.5 h-3.5" />
     </span>
   );
@@ -92,10 +92,10 @@ function signalLabel(dbm: number): string {
 }
 
 function signalColor(dbm: number): string {
-  if (dbm >= -55) return 'text-green-600 dark:text-green-400';
-  if (dbm >= -65) return 'text-lime-600 dark:text-lime-400';
-  if (dbm >= -75) return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-red-500 dark:text-red-400';
+  if (dbm >= -55) return 'text-good';
+  if (dbm >= -65) return 'text-good dark:text-good';
+  if (dbm >= -75) return 'text-warn';
+  return 'text-bad';
 }
 
 function formatDataBytes(bytes: number): string {
@@ -127,53 +127,49 @@ function ClientModal({ client, onClose }: { client: Client; onClose: () => void 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md p-6">
+      <div className="bg-surface rounded-xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">Edit Client</h2>
+          <h2 className="text-base font-semibold text-ink">Edit Client</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+            className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="space-y-3 text-sm text-gray-500 dark:text-slate-400 mb-4">
+        <div className="space-y-3 text-sm text-ink-3 mb-4">
           <div className="flex justify-between">
             <span>MAC</span>
-            <span className="font-mono text-gray-800 dark:text-white">{client.mac_address}</span>
+            <span className="font-mono text-ink dark:text-white">{client.mac_address}</span>
           </div>
           {client.vendor && (
             <div className="flex justify-between">
               <span>Vendor</span>
-              <span className="text-gray-800 dark:text-white">{client.vendor}</span>
+              <span className="text-ink dark:text-white">{client.vendor}</span>
             </div>
           )}
           {client.ip_address && (
             <div className="flex justify-between">
               <span>IP</span>
-              <span className="font-mono text-gray-800 dark:text-white">{client.ip_address}</span>
+              <span className="font-mono text-ink dark:text-white">{client.ip_address}</span>
             </div>
           )}
           {client.interface_name && (
             <div className="flex justify-between">
               <span>Port</span>
-              <span className="font-mono text-gray-800 dark:text-white">
-                {client.interface_name}
-              </span>
+              <span className="font-mono text-ink dark:text-white">{client.interface_name}</span>
             </div>
           )}
           {client.hostname && (
             <div className="flex justify-between">
               <span>Discovered Hostname</span>
-              <span className="font-mono text-gray-800 dark:text-white">{client.hostname}</span>
+              <span className="font-mono text-ink dark:text-white">{client.hostname}</span>
             </div>
           )}
         </div>
 
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-          Custom Name
-        </label>
+        <label className="block text-sm font-medium text-ink-2 mb-1">Custom Name</label>
         <input
           type="text"
           className="input w-full mb-1"
@@ -185,7 +181,7 @@ function ClientModal({ client, onClose }: { client: Client; onClose: () => void 
           }}
           autoFocus
         />
-        <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+        <p className="text-xs text-ink-3 mb-4">
           Overrides the auto-discovered hostname. Persists even when the client is offline.
         </p>
 
@@ -201,7 +197,7 @@ function ClientModal({ client, onClose }: { client: Client; onClose: () => void 
             {mutation.isPending ? 'Saving…' : 'Save'}
           </button>
         </div>
-        {mutation.isError && <p className="mt-2 text-xs text-red-500">Failed to save name.</p>}
+        {mutation.isError && <p className="mt-2 text-xs text-bad">Failed to save name.</p>}
       </div>
     </div>
   );
@@ -412,18 +408,16 @@ export default function ClientsPage() {
       {/* Title row with the page's actions; filters below in the shared bar,
           the same as on Devices (#222). */}
       <div className="flex items-center gap-2 flex-wrap">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-xl font-bold text-ink">
           Clients
           {total > 0 && (
-            <span className="ml-2 text-sm font-normal text-gray-500 dark:text-slate-400">
+            <span className="ml-2 text-sm font-normal text-ink-3">
               ({total} {showAll ? 'total' : 'online'})
             </span>
           )}
         </h1>
         <div className="ml-auto flex items-center gap-2">
-          {purgeResult && (
-            <span className="text-xs text-green-600 dark:text-green-400">{purgeResult}</span>
-          )}
+          {purgeResult && <span className="text-xs text-good">{purgeResult}</span>}
           {canWrite && (
             <button
               onClick={() => {
@@ -556,15 +550,15 @@ export default function ClientsPage() {
       </FilterBar>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400">Loading...</div>
+        <div className="flex items-center justify-center h-48 text-ink-4">Loading...</div>
       ) : isError && clients.length === 0 ? (
         <div className="card">
           <LoadError what="clients" error={error} />
         </div>
       ) : clients.length === 0 ? (
         <div className="card p-12 flex flex-col items-center gap-3 text-center">
-          <Users className="w-12 h-12 text-gray-300 dark:text-slate-600" />
-          <p className="text-gray-500 dark:text-slate-400">
+          <Users className="w-12 h-12 text-ink-4" />
+          <p className="text-ink-3">
             {showAll ? 'No clients found' : 'No active clients detected'}
           </p>
         </div>
@@ -585,7 +579,7 @@ export default function ClientsPage() {
                   {showAll && <col style={{ width: '6%' }} />}
                 </colgroup>
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-slate-700">
+                  <tr className="border-b border-line">
                     {(
                       [
                         { col: 'hostname', label: 'Host / Vendor / MAC', align: 'left' },
@@ -628,12 +622,12 @@ export default function ClientsPage() {
                           {!noSort &&
                             (sortCol === col ? (
                               sortDir === 'asc' ? (
-                                <ChevronUp className="w-3 h-3 text-blue-500" />
+                                <ChevronUp className="w-3 h-3 text-accent" />
                               ) : (
-                                <ChevronDown className="w-3 h-3 text-blue-500" />
+                                <ChevronDown className="w-3 h-3 text-accent" />
                               )
                             ) : (
-                              <ChevronsUpDown className="w-3 h-3 text-gray-300 dark:text-slate-600" />
+                              <ChevronsUpDown className="w-3 h-3 text-ink-4" />
                             ))}
                         </span>
                       </th>
@@ -641,9 +635,9 @@ export default function ClientsPage() {
                     {showAll && <th className="table-header px-4 py-2.5 text-center">Active</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+                <tbody className="divide-y divide-line table-zebra">
                   {clients.map((client) => (
-                    <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                    <tr key={client.id} className="hover:bg-surface-2/30">
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <CategoryIcon category={client.device_category} />
@@ -651,18 +645,14 @@ export default function ClientsPage() {
                             onClick={() =>
                               navigate(`/clients/${encodeURIComponent(client.mac_address)}`)
                             }
-                            className="font-medium text-blue-600 dark:text-blue-400 hover:underline text-left truncate"
+                            className="font-medium text-accent hover:underline text-left truncate"
                           >
                             {client.custom_name || client.hostname || (
-                              <span className="text-gray-400 dark:text-slate-500 italic">
-                                No hostname
-                              </span>
+                              <span className="text-ink-3 italic">No hostname</span>
                             )}
                           </button>
                           {client.custom_name && (
-                            <span className="text-xs text-blue-500 dark:text-blue-400 ml-1 flex-shrink-0">
-                              custom
-                            </span>
+                            <span className="text-xs text-accent ml-1 flex-shrink-0">custom</span>
                           )}
                           {canWrite && (
                             <button
@@ -670,10 +660,10 @@ export default function ClientsPage() {
                                 e.stopPropagation();
                                 setEditingClient(client);
                               }}
-                              className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 flex-shrink-0"
+                              className="p-0.5 rounded hover:bg-surface-3 flex-shrink-0"
                               title="Edit name"
                             >
-                              <Pencil className="w-3 h-3 text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400" />
+                              <Pencil className="w-3 h-3 text-ink-4 hover:text-ink-3 dark:hover:text-ink-3" />
                             </button>
                           )}
                           {canWrite && client.ip_address && (
@@ -682,28 +672,26 @@ export default function ClientsPage() {
                                 e.stopPropagation();
                                 setListsFor(client);
                               }}
-                              className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 flex-shrink-0"
+                              className="p-0.5 rounded hover:bg-surface-3 flex-shrink-0"
                               title="Firewall address lists for this client's address"
                             >
-                              <ListChecks className="w-3 h-3 text-gray-300 dark:text-slate-600 hover:text-gray-500 dark:hover:text-slate-400" />
+                              <ListChecks className="w-3 h-3 text-ink-4 hover:text-ink-3 dark:hover:text-ink-3" />
                             </button>
                           )}
                         </div>
                         {client.vendor && (
-                          <div className="text-xs text-gray-400 dark:text-slate-500 truncate">
-                            {client.vendor}
-                          </div>
+                          <div className="text-xs text-ink-3 truncate">{client.vendor}</div>
                         )}
-                        <div className="text-xs font-mono text-gray-400 dark:text-slate-500 truncate">
+                        <div className="text-xs font-mono text-ink-3 truncate">
                           {client.mac_address}
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-gray-600 dark:text-slate-400 truncate">
+                      <td className="px-4 py-2.5 font-mono text-ink-2 truncate">
                         {client.ip_address || '—'}
                       </td>
                       {isWireless ? (
                         <>
-                          <td className="px-4 py-2.5 text-xs text-gray-600 dark:text-slate-400 truncate">
+                          <td className="px-4 py-2.5 text-xs text-ink-2 truncate">
                             {(client as Client & { ssid?: string }).ssid || '—'}
                           </td>
                           <td className="px-4 py-2.5 text-xs whitespace-nowrap">
@@ -717,11 +705,11 @@ export default function ClientsPage() {
                                 </span>
                               </span>
                             ) : (
-                              <span className="text-gray-400 dark:text-slate-500">—</span>
+                              <span className="text-ink-3">—</span>
                             )}
                           </td>
                           <td
-                            className="px-4 py-2.5 text-xs whitespace-nowrap text-gray-600 dark:text-slate-400"
+                            className="px-4 py-2.5 text-xs whitespace-nowrap text-ink-2"
                             title="Link rate from the access point's side: TX is towards the client, RX from it"
                           >
                             {formatRatePair(client.tx_rate_bps, client.rx_rate_bps) ? (
@@ -730,7 +718,7 @@ export default function ClientsPage() {
                                 <div>RX {formatRate(client.rx_rate_bps) ?? '—'}</div>
                               </>
                             ) : (
-                              <span className="text-gray-400 dark:text-slate-500">—</span>
+                              <span className="text-ink-3">—</span>
                             )}
                           </td>
                         </>
@@ -740,8 +728,8 @@ export default function ClientsPage() {
                             className={clsx(
                               'inline-flex items-center gap-1 text-xs font-medium',
                               client.client_type === 'wireless'
-                                ? 'text-purple-600 dark:text-purple-400'
-                                : 'text-blue-600 dark:text-blue-400',
+                                ? 'text-violet dark:text-violet'
+                                : 'text-accent',
                             )}
                           >
                             {client.client_type === 'wireless' ? (
@@ -751,34 +739,34 @@ export default function ClientsPage() {
                             )}
                             {client.client_type}
                             {client.signal_strength != null && (
-                              <span className="text-gray-400 ml-1">
+                              <span className="text-ink-4 ml-1">
                                 ({client.signal_strength} dBm)
                               </span>
                             )}
                           </span>
                         </td>
                       )}
-                      <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400 truncate">
+                      <td className="px-4 py-2.5 font-mono text-xs text-ink-3 truncate">
                         {client.interface_name || '—'}
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">
+                      <td className="px-4 py-2.5 text-xs text-ink-3">
                         {client.vlan_id != null ? (
-                          <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded font-mono">
+                          <span className="px-1.5 py-0.5 bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent rounded font-mono">
                             {client.vlan_id}
                           </span>
                         ) : (
                           '—'
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 truncate">
+                      <td className="px-4 py-2.5 text-xs text-ink-3 truncate">
                         {client.device_name || '—'}
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
+                      <td className="px-4 py-2.5 text-xs text-ink-3 whitespace-nowrap">
                         {client.traffic_today_bytes
                           ? formatDataBytes(client.traffic_today_bytes)
                           : '—'}
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">
+                      <td className="px-4 py-2.5 text-xs text-ink-3">
                         {client.last_seen
                           ? formatDistanceToNow(new Date(client.last_seen), { addSuffix: true })
                           : '—'}
@@ -788,7 +776,7 @@ export default function ClientsPage() {
                           <span
                             className={clsx(
                               'w-2 h-2 rounded-full inline-block',
-                              client.active ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-600',
+                              client.active ? 'bg-good' : 'bg-surface-3 dark:bg-surface-3',
                             )}
                           />
                         </td>
@@ -807,7 +795,7 @@ export default function ClientsPage() {
               return (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
                   {/* Entries-per-page + range summary */}
-                  <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
+                  <div className="flex items-center gap-2 text-ink-3">
                     <span>Show</span>
                     <select
                       value={pageSize}
@@ -833,16 +821,13 @@ export default function ClientsPage() {
                         onClick={() => setPage((p) => Math.max(0, p - 1))}
                         disabled={page === 0}
                         aria-label="Previous page"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-ink-2 hover:bg-surface-3 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                       {getPageList(page, totalPages).map((item, i) =>
                         item === 'ellipsis' ? (
-                          <span
-                            key={`e${i}`}
-                            className="px-1.5 text-gray-400 dark:text-slate-500 select-none"
-                          >
+                          <span key={`e${i}`} className="px-1.5 text-ink-3 select-none">
                             …
                           </span>
                         ) : (
@@ -853,8 +838,8 @@ export default function ClientsPage() {
                             className={clsx(
                               'inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-lg text-sm font-medium transition-colors',
                               item - 1 === page
-                                ? 'bg-blue-600 text-white shadow-sm'
-                                : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700',
+                                ? 'bg-accent text-accent-fg shadow-sm'
+                                : 'text-ink-2 hover:bg-surface-3',
                             )}
                           >
                             {item}
@@ -865,7 +850,7 @@ export default function ClientsPage() {
                         onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                         disabled={page >= totalPages - 1}
                         aria-label="Next page"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-ink-2 hover:bg-surface-3 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>

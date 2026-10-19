@@ -30,7 +30,7 @@ function Toggle({
       onClick={() => !disabled && onChange(!checked)}
       className={clsx(
         'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors',
-        checked ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+        checked ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3',
         disabled && 'opacity-50 cursor-not-allowed',
       )}
     >
@@ -57,10 +57,8 @@ function SettingRow({
     <div className="flex items-start gap-3">
       <div className="pt-0.5">{children}</div>
       <div>
-        <div className="text-sm font-medium text-gray-700 dark:text-slate-200">{label}</div>
-        {description && (
-          <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{description}</p>
-        )}
+        <div className="text-sm font-medium text-ink-2 dark:text-ink">{label}</div>
+        {description && <p className="text-xs text-ink-3 mt-0.5">{description}</p>}
       </div>
     </div>
   );
@@ -161,8 +159,8 @@ export default function NetworkServicesNTPPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">NTP Server</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
+          <h1 className="text-xl font-bold text-ink">NTP Server</h1>
+          <p className="text-sm text-ink-3">
             Network Time Protocol server and client configuration
           </p>
         </div>
@@ -170,7 +168,7 @@ export default function NetworkServicesNTPPage() {
           <button
             onClick={() => refetch()}
             disabled={isFetching}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-sm text-ink-2 hover:bg-surface-3 disabled:opacity-50 transition-colors"
           >
             <RefreshCw className={clsx('w-3.5 h-3.5', isFetching && 'animate-spin')} />
             Refresh
@@ -180,7 +178,7 @@ export default function NetworkServicesNTPPage() {
 
       {/* Device selector */}
       <div className="card p-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-2">
+        <label className="block text-sm font-medium text-ink-2 dark:text-ink mb-2">
           Select Device
         </label>
         <DevicePicker
@@ -191,7 +189,7 @@ export default function NetworkServicesNTPPage() {
           onChange={(id) => setSelectedDeviceId(id ?? '')}
         />
         {selectedDevice?.status !== 'online' && deviceId > 0 && (
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-warn">
             <AlertTriangle className="w-3.5 h-3.5" />
             This device is currently offline.
           </div>
@@ -200,7 +198,7 @@ export default function NetworkServicesNTPPage() {
 
       {/* Conflict warning */}
       {conflictDevices.length > 0 && deviceId > 0 && serverEnabled && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-sm text-amber-700 dark:text-amber-300">
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-warn-bg border border-warn dark:border-warn text-sm text-warn dark:text-warn">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>
             NTP server also enabled on:{' '}
@@ -211,17 +209,13 @@ export default function NetworkServicesNTPPage() {
       )}
 
       {deviceId === 0 && (
-        <div className="card p-8 text-center text-sm text-gray-400 dark:text-slate-500">
-          Select a device above.
-        </div>
+        <div className="card p-8 text-center text-sm text-ink-3">Select a device above.</div>
       )}
       {deviceId > 0 && isLoading && (
-        <div className="card p-8 text-center text-sm text-gray-400 dark:text-slate-500">
-          Loading…
-        </div>
+        <div className="card p-8 text-center text-sm text-ink-3">Loading…</div>
       )}
       {deviceId > 0 && error && (
-        <div className="card p-4 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+        <div className="card p-4 flex items-center gap-2 text-sm text-bad">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
           Failed: {(error as Error).message}
         </div>
@@ -231,24 +225,20 @@ export default function NetworkServicesNTPPage() {
         <div className="space-y-4">
           {/* NTP Server */}
           <div className="card overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-500" />
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-                NTP Server
-              </h2>
+            <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+              <Clock className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">NTP Server</h2>
               <span className="ml-auto">
                 <span
                   className={clsx(
                     'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-                    serverEnabled
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                      : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
+                    serverEnabled ? 'bg-good-bg text-good' : 'bg-surface-3 text-ink-3',
                   )}
                 >
                   <span
                     className={clsx(
                       'w-1.5 h-1.5 rounded-full',
-                      serverEnabled ? 'bg-green-500' : 'bg-gray-400',
+                      serverEnabled ? 'bg-good' : 'bg-surface-3',
                     )}
                   />
                   {serverEnabled ? 'Enabled' : 'Disabled'}
@@ -257,7 +247,7 @@ export default function NetworkServicesNTPPage() {
             </div>
             <div className="p-5 space-y-4">
               {!serverHasData ? (
-                <p className="text-sm text-gray-400 dark:text-slate-500">
+                <p className="text-sm text-ink-3">
                   This device has no NTP server. On RouterOS 6 it comes with the optional ntp
                   package; the client below works without it.
                 </p>
@@ -309,24 +299,20 @@ export default function NetworkServicesNTPPage() {
 
           {/* NTP Client */}
           <div className="card overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-indigo-500" />
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-                NTP Client
-              </h2>
+            <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+              <Clock className="w-4 h-4 text-info" />
+              <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">NTP Client</h2>
               <span className="ml-auto">
                 <span
                   className={clsx(
                     'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-                    clientEnabled
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                      : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400',
+                    clientEnabled ? 'bg-good-bg text-good' : 'bg-surface-3 text-ink-3',
                   )}
                 >
                   <span
                     className={clsx(
                       'w-1.5 h-1.5 rounded-full',
-                      clientEnabled ? 'bg-green-500' : 'bg-gray-400',
+                      clientEnabled ? 'bg-good' : 'bg-surface-3',
                     )}
                   />
                   {clientEnabled ? 'Enabled' : 'Disabled'}
@@ -335,7 +321,7 @@ export default function NetworkServicesNTPPage() {
             </div>
             <div className="p-5 space-y-4">
               {!clientHasData ? (
-                <p className="text-sm text-gray-400 dark:text-slate-500">
+                <p className="text-sm text-ink-3">
                   NTP client settings not available (requires RouterOS 7).
                 </p>
               ) : (
@@ -355,7 +341,7 @@ export default function NetworkServicesNTPPage() {
                   </SettingRow>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
+                    <label className="block text-sm font-medium text-ink-2 dark:text-ink mb-1">
                       Mode
                     </label>
                     <select
@@ -372,14 +358,14 @@ export default function NetworkServicesNTPPage() {
                       <option value="multicast">Multicast</option>
                       <option value="manycast">Manycast (auto-discover)</option>
                     </select>
-                    <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
+                    <p className="mt-1 text-xs text-ink-3">
                       Unicast is recommended for most setups.
                     </p>
                   </div>
 
                   {(clientMode === 'unicast' || clientMode === 'manycast') && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
+                      <label className="block text-sm font-medium text-ink-2 dark:text-ink mb-1">
                         NTP Servers
                       </label>
                       <div className="max-w-sm">
@@ -399,39 +385,31 @@ export default function NetworkServicesNTPPage() {
                           }
                         />
                       </div>
-                      <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
-                        NTP server addresses or host names.
-                      </p>
+                      <p className="mt-1 text-xs text-ink-3">NTP server addresses or host names.</p>
                     </div>
                   )}
 
                   {ntp.client['status'] && (
-                    <div className="pt-3 border-t border-gray-100 dark:border-slate-800">
+                    <div className="pt-3 border-t border-line-soft dark:border-line-soft">
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <div>
-                          <div className="text-xs text-gray-400 dark:text-slate-500 mb-0.5">
-                            Sync Status
-                          </div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                          <div className="text-xs text-ink-3 mb-0.5">Sync Status</div>
+                          <div className="text-sm font-medium text-ink capitalize">
                             {ntp.client['status']}
                           </div>
                         </div>
                         {ntp.client['synced-server'] && (
                           <div>
-                            <div className="text-xs text-gray-400 dark:text-slate-500 mb-0.5">
-                              Synced Server
-                            </div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            <div className="text-xs text-ink-3 mb-0.5">Synced Server</div>
+                            <div className="text-sm font-medium text-ink">
                               {ntp.client['synced-server']}
                             </div>
                           </div>
                         )}
                         {ntp.client['last-adjustment'] && (
                           <div>
-                            <div className="text-xs text-gray-400 dark:text-slate-500 mb-0.5">
-                              Last Adjustment
-                            </div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            <div className="text-xs text-ink-3 mb-0.5">Last Adjustment</div>
+                            <div className="text-sm font-medium text-ink">
                               {ntp.client['last-adjustment']}
                             </div>
                           </div>
@@ -450,7 +428,7 @@ export default function NetworkServicesNTPPage() {
               <button
                 onClick={() => save.mutate()}
                 disabled={save.isPending}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-accent hover:bg-accent text-accent-fg text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
               >
                 <Save className="w-3.5 h-3.5" />
                 {save.isPending ? 'Saving…' : 'Save Changes'}
@@ -473,16 +451,14 @@ export default function NetworkServicesNTPPage() {
                     setDirty(false);
                   }
                 }}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-ink-3 hover:text-ink-2"
               >
                 Discard
               </button>
               {save.isError && (
-                <span className="text-sm text-red-500">{apiErrorMessage(save.error)}</span>
+                <span className="text-sm text-bad">{apiErrorMessage(save.error)}</span>
               )}
-              {save.isSuccess && (
-                <span className="text-sm text-green-600 dark:text-green-400">Saved</span>
-              )}
+              {save.isSuccess && <span className="text-sm text-good">Saved</span>}
             </div>
           )}
         </div>

@@ -4,7 +4,7 @@ import CredentialPresetsSettings from '../components/settings/CredentialPresetsS
 export default function CredentialsPage() {
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900 dark:text-white">Device Credentials</h1>
+      <h1 className="text-xl font-bold text-ink">Device Credentials</h1>
       <CredentialPresetsSettings />
     </div>
   );

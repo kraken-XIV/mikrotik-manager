@@ -106,18 +106,18 @@ export default function ApiSslCard() {
   const visible = expanded ? shown : shown.slice(0, PREVIEW);
 
   return (
-    <div className="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 overflow-hidden">
+    <div className="rounded-lg border border-warn dark:border-warn bg-warn-bg overflow-hidden">
       <div className="flex items-start justify-between gap-3 flex-wrap px-4 py-3">
         <div className="flex items-start gap-2 min-w-0">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-warn" />
           <div>
-            <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+            <h2 className="text-sm font-semibold text-warn dark:text-warn">
               {plain.length > 0
                 ? `${plain.length} device${plain.length === 1 ? ' is' : 's are'} managed over the unencrypted API`
                 : 'All devices are now managed over API-SSL'}
             </h2>
             {plain.length > 0 && (
-              <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+              <p className="text-xs text-warn dark:text-warn mt-0.5">
                 The plain API (8728) sends each device&apos;s login in the clear on every poll.
                 Switching enables API-SSL on the device (with a self-signed certificate if it has
                 none) and moves the manager over only once it has logged in over it. The plain API
@@ -125,7 +125,7 @@ export default function ApiSslCard() {
               </p>
             )}
             {plain.length > 0 && canWrite && (
-              <label className="mt-1.5 flex items-center gap-2 text-xs text-amber-900 dark:text-amber-200 cursor-pointer">
+              <label className="mt-1.5 flex items-center gap-2 text-xs text-warn dark:text-warn cursor-pointer">
                 <input
                   type="checkbox"
                   className="w-3.5 h-3.5 rounded"
@@ -162,14 +162,14 @@ export default function ApiSslCard() {
 
       {/* Capped: "show all" on a fleet of hundreds scrolls here rather than
           pushing the rest of the page down. */}
-      <ul className="divide-y divide-amber-200/70 dark:divide-amber-800/50 border-t border-amber-200 dark:border-amber-800 bg-white/60 dark:bg-slate-900/30 max-h-[420px] overflow-y-auto">
+      <ul className="divide-y divide-amber-200/70 dark:divide-amber-800/50 border-t border-warn dark:border-warn bg-white/60 dark:bg-slate-900/30 max-h-[420px] overflow-y-auto">
         {visible.map((d) => {
           const o = outcomes[d.id];
           return (
             <li key={d.id} className="px-4 py-2.5 flex items-start gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gray-900 dark:text-white">{d.name}</div>
-                <div className="text-xs text-gray-500 dark:text-slate-400">
+                <div className="text-sm font-medium text-ink">{d.name}</div>
+                <div className="text-xs text-ink-3">
                   {d.ip_address} · port {d.api_port}
                   {d.status !== 'online' ? ` · ${d.status}` : ''}
                 </div>
@@ -177,9 +177,7 @@ export default function ApiSslCard() {
                   <p
                     className={clsx(
                       'text-xs mt-1 flex items-start gap-1',
-                      o.result.switched
-                        ? 'text-green-700 dark:text-green-400'
-                        : 'text-amber-700 dark:text-amber-400',
+                      o.result.switched ? 'text-good' : 'text-warn',
                     )}
                   >
                     {o.result.switched ? (
@@ -191,20 +189,11 @@ export default function ApiSslCard() {
                   </p>
                 )}
                 {o?.state === 'done' && o.plainApi && (
-                  <p
-                    className={clsx(
-                      'text-xs mt-0.5',
-                      o.plainApi.ok
-                        ? 'text-green-700 dark:text-green-400'
-                        : 'text-amber-700 dark:text-amber-400',
-                    )}
-                  >
+                  <p className={clsx('text-xs mt-0.5', o.plainApi.ok ? 'text-good' : 'text-warn')}>
                     {o.plainApi.message}
                   </p>
                 )}
-                {o?.state === 'error' && (
-                  <p className="text-xs mt-1 text-red-600 dark:text-red-400">{o.message}</p>
-                )}
+                {o?.state === 'error' && <p className="text-xs mt-1 text-bad">{o.message}</p>}
               </div>
               {canWrite && !(o?.state === 'done' && o.result.switched) && (
                 <button
@@ -230,7 +219,7 @@ export default function ApiSslCard() {
       {shown.length > PREVIEW && (
         <button
           onClick={() => setExpanded((e) => !e)}
-          className="w-full px-4 py-2 text-xs font-medium text-amber-800 dark:text-amber-300 border-t border-amber-200 dark:border-amber-800 hover:bg-amber-100/60 dark:hover:bg-amber-900/30"
+          className="w-full px-4 py-2 text-xs font-medium text-warn dark:text-warn border-t border-warn dark:border-warn hover:bg-amber-100/60 dark:hover:bg-warn-bg"
         >
           {expanded ? 'Show fewer' : `Show all ${shown.length}`}
         </button>

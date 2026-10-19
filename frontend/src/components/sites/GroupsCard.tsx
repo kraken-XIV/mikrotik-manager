@@ -115,7 +115,7 @@ export default function GroupsCard({
           just that customer, and give people access to it under Users &amp; Roles.
         </p>
       )}
-      {error && <p className="px-4 pt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="px-4 pt-3 text-sm text-bad">{error}</p>}
 
       {editing != null && (
         <div className="px-4 py-3 space-y-3" style={{ borderBottom: '1px solid var(--line)' }}>
@@ -201,7 +201,7 @@ export default function GroupsCard({
             {groups.map((g) => (
               <tr
                 key={g.id}
-                className="border-b last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50"
+                className="border-b last:border-0 cursor-pointer hover:bg-surface-2/50"
                 style={{ borderColor: 'var(--line-soft)' }}
                 onClick={() => onOpen(g.id)}
                 title="Show only this group"
@@ -213,10 +213,7 @@ export default function GroupsCard({
                   {g.site_ids.length} site{g.site_ids.length === 1 ? '' : 's'} · {g.device_count}{' '}
                   device{g.device_count === 1 ? '' : 's'}
                   {g.device_count - g.online_count > 0 && (
-                    <span className="text-red-500">
-                      {' '}
-                      · {g.device_count - g.online_count} offline
-                    </span>
+                    <span className="text-bad"> · {g.device_count - g.online_count} offline</span>
                   )}
                 </td>
                 {canManage && (
@@ -224,14 +221,14 @@ export default function GroupsCard({
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => start(g.id)}
-                        className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400"
+                        className="p-1.5 rounded hover:bg-surface-3 text-ink-4"
                         title="Rename, or choose its sites"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => void remove(g.id, g.name)}
-                        className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-400 hover:text-red-500"
+                        className="p-1.5 rounded hover:bg-bad-bg dark:hover:bg-red-950/40 text-ink-4 hover:text-bad"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

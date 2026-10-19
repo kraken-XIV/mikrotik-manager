@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Run the same gates GitHub Actions runs, locally, before pushing.
 #
-# Mirrors .github/workflows/ci.yml exactly (frontend lint/type-check/test/build,
-# backend lint/type-check/build, prod-dependency audits) and additionally runs
-# the backend Jest suite, which CI does not currently cover.
+# Quick local sanity checks, not a complete mirror of CI. The required workflow
+# jobs additionally enforce coverage, CSS lint, browser tests and security scans.
+# Use those jobs as the authoritative validation gates.
 #
 # Usage:  scripts/ci-preflight.sh [--skip-audit]
-# Exit:   0 = everything CI checks would pass, 1 = at least one gate failed.
+# Exit:   0 = selected checks passed, 1 = at least one selected check failed.
 #
 # Runs every gate rather than failing fast, so one invocation surfaces all
 # problems instead of dribbling them out one push at a time.
@@ -36,7 +36,7 @@ run() {
 }
 
 : >/tmp/ci-preflight-failures
-echo "Running CI gates locally (mirrors .github/workflows/ci.yml)"
+echo "Running local sanity checks (full CI adds coverage, CSS, browser and security gates)"
 
 # The published deployment file is generated. Checking it first because it costs
 # nothing and because drift here is invisible to every maintainer — it only ever
@@ -81,7 +81,7 @@ if [[ $SKIP_AUDIT -eq 0 ]]; then
 fi
 
 if [[ ${#FAILED[@]} -eq 0 ]]; then
-  echo "All CI gates passed."
+  echo "All selected local sanity checks passed."
   exit 0
 fi
 
