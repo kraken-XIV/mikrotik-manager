@@ -171,3 +171,53 @@ test('accent bubbles match the actual UI accent in Light, Dark and live System m
   await page.emulateMedia({ colorScheme: 'light' });
   await expect(selected).toHaveCSS('background-color', 'rgb(15, 118, 110)');
 });
+
+test('custom colour picker persists, follows every mode and restores after choosing a preset', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/settings');
+  const appearance = page
+    .locator('.card')
+    .filter({ has: page.getByRole('heading', { name: 'Appearance', exact: true }) });
+  const picker = appearance.getByLabel('Pick custom accent colour');
+  const custom = appearance.getByRole('button', { name: 'Use custom accent' });
+  await picker.fill('#ee8844');
+  await expect(custom).toHaveAttribute('aria-pressed', 'true');
+  await expect(picker).toHaveValue('#ee8844');
+  const light = await page
+    .locator('html')
+    .evaluate((el) => getComputedStyle(el).getPropertyValue('--accent').trim());
+  await appearance.getByRole('button', { name: 'dark', exact: true }).click();
+  const dark = await page
+    .locator('html')
+    .evaluate((el) => getComputedStyle(el).getPropertyValue('--accent').trim());
+  expect(dark).not.toBe(light);
+  const applied = await custom
+    .locator('span')
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
+  await expect(appearance.getByRole('button', { name: 'dark', exact: true })).toHaveCSS(
+    'background-color',
+    applied,
+  );
+  await page.reload();
+  await expect(picker).toHaveValue('#ee8844');
+  await expect(custom).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('html')).toHaveCSS('--accent', dark);
+  await appearance.getByRole('button', { name: 'system', exact: true }).click();
+  await expect(page.locator('html')).toHaveCSS('--accent', light);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(page.locator('html')).toHaveCSS('--accent', dark);
+  await appearance.getByRole('button', { name: 'Accent colour: Blue' }).click();
+  await expect(custom).toHaveAttribute('aria-pressed', 'false');
+  await custom.click();
+  await expect(page.locator('html')).toHaveCSS('--accent', dark);
+  await expect(picker).toHaveValue('#ee8844');
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const control of [custom, picker]) {
+    const box = await control.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  }
+});

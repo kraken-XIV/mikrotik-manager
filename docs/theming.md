@@ -113,3 +113,19 @@ classes, just not token ones.
   is intentionally not used. Existing coverage floors are unchanged.
 
 No admin white-label features or rebranding are included in this phase.
+
+## Custom accent colour picker
+
+Use the colour input beside **Custom** in Settings → Appearance or the shared
+Login/top-bar theme picker. The browser's built-in colour chooser accepts any
+opaque RGB colour; no extra account or dependency is needed. Choosing a colour
+activates it immediately and saves it in this browser profile. **Custom** restores
+your last colour after trying a preset; the six existing presets are unchanged.
+
+The chosen base colour generates readable Light and Dark tones (including
+normal/hover button labels and accent links). System uses the resolved OS mode
+and updates live. The Custom bubble always displays the actual applied tone;
+the colour input and hex readout show the chosen base colour. A very bright or
+dark base may therefore render differently to keep text readable. Surface schemes
+remain independent. Only validated six-digit hex values enter persistence/CSS;
+legacy preferences and malformed storage safely fall back to existing defaults.

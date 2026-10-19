@@ -67,7 +67,8 @@ export default function ThemeMenu({ triggerClassName }: ThemeMenuProps) {
       className="relative"
       ref={containerRef}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+        if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node))
+          setOpen(false);
       }}
     >
       <button
