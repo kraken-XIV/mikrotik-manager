@@ -73,10 +73,10 @@ function toKind(t: string): Kind {
 
 function KindPill({ kind }: { kind: Kind }) {
   const look = {
-    router:      { cls: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300', icon: <RouterIcon className="w-3 h-3" />, label: 'Router' },
-    switch:      { cls: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300', icon: <Layers className="w-3 h-3" />, label: 'Switch' },
-    wireless_ap: { cls: 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300', icon: <Wifi className="w-3 h-3" />, label: 'AP' },
-    other:       { cls: 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300', icon: <Box className="w-3 h-3" />, label: 'Other' },
+    router:      { cls: 'bg-violet-bg dark:bg-violet-bg text-violet dark:text-violet', icon: <RouterIcon className="w-3 h-3" />, label: 'Router' },
+    switch:      { cls: 'bg-good-bg dark:bg-good-bg text-good dark:text-good', icon: <Layers className="w-3 h-3" />, label: 'Switch' },
+    wireless_ap: { cls: 'bg-info-bg dark:bg-sky-900/30 text-info dark:text-info', icon: <Wifi className="w-3 h-3" />, label: 'AP' },
+    other:       { cls: 'bg-surface-3 text-ink-2', icon: <Box className="w-3 h-3" />, label: 'Other' },
   }[kind];
   return (
     <span className={clsx('inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium', look.cls)}>
@@ -100,7 +100,7 @@ function PasswordInput({ value, onChange, placeholder }: { value: string; onChan
       />
       <button
         type="button"
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
         onClick={() => setShow(s => !s)}
         tabIndex={-1}
       >
@@ -305,9 +305,9 @@ export default function NetworkServicesDiscoveryPage() {
   const showsTemplate = (f: TemplField) => !edited.has(f) && !!templateOf(f);
   /** Under a field showing a saved template: it isn't sent unless chosen. */
   const templateNote = (f: TemplField) => showsTemplate(f) ? (
-    <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">
+    <p className="text-[11px] text-ink-3 mt-1">
       Last applied template; not sent unless you change it.{' '}
-      <button type="button" className="text-blue-600 dark:text-blue-400 hover:underline"
+      <button type="button" className="text-accent hover:underline"
               onClick={() => sf(f === 'contact' ? { contact: templateOf(f)! } : f === 'location' ? { location: templateOf(f)! } : { trap_target: templateOf(f)! })}>
         Send it
       </button>
@@ -336,13 +336,13 @@ export default function NetworkServicesDiscoveryPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Discovery &amp; SNMP</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+          <h1 className="text-xl font-bold text-ink">Discovery &amp; SNMP</h1>
+          <p className="text-sm text-ink-3 mt-0.5">
             Network-wide LLDP discovery and SNMP monitoring configuration
           </p>
         </div>
         {/* Scope selector */}
-        <div className="flex rounded-lg border border-gray-300 dark:border-slate-600 overflow-hidden">
+        <div className="flex rounded-lg border border-line overflow-hidden">
           {SCOPES.map(s => (
             <button
               key={s.key}
@@ -351,8 +351,8 @@ export default function NetworkServicesDiscoveryPage() {
               className={clsx(
                 'px-4 py-1.5 text-sm font-medium transition-colors',
                 scope === s.key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                  ? 'bg-accent text-accent-fg'
+                  : 'bg-surface text-ink-2 hover:bg-surface-2'
               )}
             >
               {s.label}
@@ -364,14 +364,14 @@ export default function NetworkServicesDiscoveryPage() {
       {/* ── LLDP Card ──────────────────────────────────────────────────────────── */}
       <div className="card p-6 space-y-5">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Radio className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <div className="w-9 h-9 bg-accent-soft rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Radio className="w-4 h-4 text-accent" />
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900 dark:text-white">
+            <h2 className="font-semibold text-ink">
               Link Layer Discovery Protocol (LLDP)
             </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-ink-3 mt-1">
               LLDP lets your devices announce themselves to neighbors and collect
               neighbor information. Enabling LLDP improves the accuracy of the network topology map.
             </p>
@@ -381,9 +381,9 @@ export default function NetworkServicesDiscoveryPage() {
         {!lldpLoading && lldpStatuses.length > 0 && (
           <div className={clsx(
             'flex items-center gap-2 px-3 py-2 rounded-lg text-sm',
-            allEnabled  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' :
-            allDisabled ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400' :
-                          'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400'
+            allEnabled  ? 'bg-good-bg text-good' :
+            allDisabled ? 'bg-bad-bg text-bad dark:text-bad' :
+                          'bg-warn-bg text-warn dark:text-warn'
           )}>
             {allEnabled ? <CheckCircle className="w-4 h-4" /> : allDisabled ? <XCircle className="w-4 h-4" /> : <HelpCircle className="w-4 h-4" />}
             {allEnabled  ? `LLDP is enabled on all online ${scopeNoun(scope)}` :
@@ -393,18 +393,18 @@ export default function NetworkServicesDiscoveryPage() {
         )}
 
         {lldpLoading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-ink-4">
             <RefreshCw className="w-4 h-4 animate-spin" /> Checking LLDP status on all {scopeNoun(scope)}…
           </div>
         ) : lldpStatuses.length === 0 ? (
-          <p className="text-sm text-gray-400 dark:text-slate-500">
+          <p className="text-sm text-ink-3">
             No online {scopeNoun(scope)} found. Devices must be online to check or change LLDP settings.
           </p>
         ) : (
-          <div className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-x-auto">
+          <div className="rounded-lg border border-line overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700">
+                <tr className="bg-surface-2 dark:bg-surface-3 border-b border-line">
                   <th className="table-header px-4 py-2.5 text-left">Device</th>
                   <th className="table-header px-4 py-2.5 text-left">Type</th>
                   <th className="table-header px-4 py-2.5 text-left">IP</th>
@@ -412,24 +412,24 @@ export default function NetworkServicesDiscoveryPage() {
                   <th className="table-header px-4 py-2.5 text-left">Protocols</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+              <tbody className="divide-y divide-line table-zebra">
                 {lldpStatuses.map(r => (
-                  <tr key={`${r.kind}-${r.id}`} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                  <tr key={`${r.kind}-${r.id}`} className="hover:bg-surface-2/30">
                     <td className="px-4 py-2.5 cell-primary">{r.name}</td>
                     <td className="px-4 py-2.5"><KindPill kind={r.kind} /></td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">{r.ip_address}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-ink-3">{r.ip_address}</td>
                     <td className="px-4 py-2.5">
                       {r.error ? (
-                        <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Error</span>
+                        <span className="text-xs text-bad flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Error</span>
                       ) : r.enabled === null ? (
-                        <span className="text-xs text-gray-400">Unknown</span>
+                        <span className="text-xs text-ink-4">Unknown</span>
                       ) : r.enabled ? (
-                        <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"><CheckCircle className="w-3.5 h-3.5" /> Enabled</span>
+                        <span className="flex items-center gap-1 text-xs text-good"><CheckCircle className="w-3.5 h-3.5" /> Enabled</span>
                       ) : (
-                        <span className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400"><XCircle className="w-3.5 h-3.5" /> Disabled</span>
+                        <span className="flex items-center gap-1 text-xs text-bad"><XCircle className="w-3.5 h-3.5" /> Disabled</span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">
+                    <td className="px-4 py-2.5 font-mono text-xs text-ink-3">
                       {r.protocol && r.protocol !== 'unknown' ? r.protocol : '—'}
                     </td>
                   </tr>
@@ -440,14 +440,14 @@ export default function NetworkServicesDiscoveryPage() {
         )}
 
         {lldpApplyResult && (
-          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+          <div className="flex items-center gap-2 text-sm text-good">
             <Check className="w-4 h-4" /> Applied to {lldpApplyResult.applied} of {lldpApplyResult.total} {scopeNoun(scope)}
           </div>
         )}
         {lldpApplyError && (
-          <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-600 dark:text-red-400">{lldpApplyError}</p>
+          <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+            <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-bad">{lldpApplyError}</p>
           </div>
         )}
 
@@ -466,7 +466,7 @@ export default function NetworkServicesDiscoveryPage() {
             </button>
             <button
               disabled={setLldpMutation.isPending || lldpLoading || lldpStatuses.length === 0}
-              className="btn-secondary flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20"
+              className="btn-secondary flex items-center gap-1.5 text-sm text-bad border-bad dark:border-bad hover:bg-bad-bg dark:hover:bg-bad-bg"
               onClick={() => { if (!confirm(`Disable LLDP on all ${lldpStatuses.length} devices in view? Topology discovery relies on it.`)) return; setLldpApplyResult(null); setLldpMutation.mutate(false); }}
             >
               {setLldpMutation.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
@@ -479,12 +479,12 @@ export default function NetworkServicesDiscoveryPage() {
       {/* ── SNMP Card ───────────────────────────────────────────────────────────── */}
       {scope === 'aps' ? (
         <div className="card p-6 flex items-start gap-3">
-          <div className="w-9 h-9 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+          <div className="w-9 h-9 bg-violet-bg dark:bg-violet-bg rounded-lg flex items-center justify-center flex-shrink-0">
+            <Shield className="w-4 h-4 text-violet dark:text-violet" />
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900 dark:text-white">SNMP</h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+            <h2 className="font-semibold text-ink">SNMP</h2>
+            <p className="text-sm text-ink-3 mt-1">
               SNMP settings here cover routers and switches. Pick one of those tabs to configure it.
             </p>
           </div>
@@ -492,14 +492,14 @@ export default function NetworkServicesDiscoveryPage() {
       ) : (
       <div className="card p-6 space-y-5">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+          <div className="w-9 h-9 bg-violet-bg dark:bg-violet-bg rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Shield className="w-4 h-4 text-violet dark:text-violet" />
           </div>
           <div className="flex-1">
-            <h2 className="font-semibold text-gray-900 dark:text-white">
+            <h2 className="font-semibold text-ink">
               Simple Network Management Protocol (SNMP)
             </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-ink-3 mt-1">
               Configure SNMP on any of your {scopeNoun(scope)}: choose devices from the list, or apply to all.
               Only the fields you change are sent (they&apos;re highlighted); everything else stays as it is
               on each device. The table below shows what each device has now.
@@ -509,11 +509,11 @@ export default function NetworkServicesDiscoveryPage() {
 
         <fieldset disabled={!canWrite} className="space-y-4 disabled:opacity-60">
           {/* Enable toggle */}
-          <div className={clsx('flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/40 rounded-lg', editedRing('enabled'))}>
+          <div className={clsx('flex items-center justify-between p-3 bg-surface-2 dark:bg-surface-3 rounded-lg', editedRing('enabled'))}>
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Enable SNMP
+              <p className="text-sm font-medium text-ink">Enable SNMP
               </p>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-ink-3 mt-0.5">
                 {shown.enabled === undefined && basisRows.length > 1
                   ? `Differs: on for ${onCount} of ${basisRows.length} devices. Click to set it for all of them.`
                   : 'Allow SNMP polling and trap generation'}
@@ -525,7 +525,7 @@ export default function NetworkServicesDiscoveryPage() {
               aria-label={shown.enabled === undefined ? 'SNMP differs between devices; click to turn on' : shown.enabled ? 'SNMP is on; click to turn off' : 'SNMP is off; click to turn on'}
               className={clsx(
                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                shown.enabled === true ? 'bg-blue-600' : shown.enabled === false ? 'bg-gray-300 dark:bg-slate-600' : 'bg-gray-200 dark:bg-slate-700 border border-dashed border-gray-400'
+                shown.enabled === true ? 'bg-accent' : shown.enabled === false ? 'bg-surface-3 dark:bg-surface-3' : 'bg-surface-3 dark:bg-surface-3 border border-dashed border-line'
               )}
             >
               <span className={clsx(
@@ -539,7 +539,7 @@ export default function NetworkServicesDiscoveryPage() {
           <div>
             <label className="label">SNMP Version
             </label>
-            <div className={clsx('flex rounded-lg border border-gray-300 dark:border-slate-600 overflow-hidden w-fit', editedRing('version'))}>
+            <div className={clsx('flex rounded-lg border border-line overflow-hidden w-fit', editedRing('version'))}>
               {(['v1', 'v2c', 'v3'] as const).map(v => (
                 <button
                   key={v}
@@ -549,15 +549,15 @@ export default function NetworkServicesDiscoveryPage() {
                   className={clsx(
                     'px-5 py-2 text-sm font-medium transition-colors',
                     shown.version === v
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                      ? 'bg-accent text-accent-fg'
+                      : 'bg-surface text-ink-2 hover:bg-surface-2'
                   )}
                 >
                   {v.toUpperCase()}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1.5">
+            <p className="text-xs text-ink-3 mt-1.5">
               {shown.version === 'v1'  && 'SNMPv1 — community string, no encryption. Legacy use only.'}
               {shown.version === 'v2c' && 'SNMPv2c — community string, supports 64-bit counters. Recommended for read-only monitoring.'}
               {shown.version === 'v3'  && 'SNMPv3 — username-based with authentication and optional encryption. Most secure.'}
@@ -592,7 +592,7 @@ export default function NetworkServicesDiscoveryPage() {
           </div>
           {/* Contact and location used to be written verbatim to every device,
               and blank fields erased what each device already had (#164). */}
-          <p className="text-[11.5px] text-gray-500 dark:text-slate-400 -mt-1">
+          <p className="text-[11.5px] text-ink-3 -mt-1">
             Fields show what the chosen devices have now; only a field you change is sent, and a
             field you clear is left as it is on each device. Variables are filled in per device: <span className="mono">{'{identity}'}</span>, <span className="mono">{'{name}'}</span>,{' '}
             <span className="mono">{'{ip}'}</span>, <span className="mono">{'{model}'}</span>,{' '}
@@ -608,8 +608,8 @@ export default function NetworkServicesDiscoveryPage() {
 
           {/* SNMPv3 section */}
           {isV3 && (
-            <div className="border border-purple-200 dark:border-purple-800/50 rounded-lg p-4 space-y-4 bg-purple-50/30 dark:bg-purple-900/10">
-              <p className="text-xs font-semibold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
+            <div className="border border-violet dark:border-purple-800/50 rounded-lg p-4 space-y-4 bg-purple-50/30 dark:bg-purple-900/10">
+              <p className="text-xs font-semibold text-violet dark:text-violet uppercase tracking-wide">
                 SNMPv3 Security
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -641,9 +641,9 @@ export default function NetworkServicesDiscoveryPage() {
                   </div>
                 )}
               </div>
-              <p className="text-xs text-gray-500 dark:text-slate-400">
+              <p className="text-xs text-ink-3">
                 Security level:{' '}
-                <span className="font-medium text-purple-700 dark:text-purple-300">
+                <span className="font-medium text-violet dark:text-violet">
                   {snmpForm.priv_protocol !== 'none' ? 'authPriv (auth + encryption)' : 'authNoPriv (auth only)'}
                 </span>
               </p>
@@ -653,14 +653,14 @@ export default function NetworkServicesDiscoveryPage() {
 
         {/* Per-device SNMP status table */}
         {snmpLoading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-ink-4">
             <RefreshCw className="w-4 h-4 animate-spin" /> Checking SNMP status on all {scopeNoun(scope)}…
           </div>
         ) : snmpStatuses.length > 0 && (
-          <div className="rounded-lg border border-gray-200 dark:border-slate-700 overflow-x-auto">
+          <div className="rounded-lg border border-line overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700">
+                <tr className="bg-surface-2 dark:bg-surface-3 border-b border-line">
                   <th className="table-header px-4 py-2.5 text-left">Device</th>
                   <th className="table-header px-4 py-2.5 text-left">Type</th>
                   <th className="table-header px-4 py-2.5 text-left">IP</th>
@@ -671,41 +671,41 @@ export default function NetworkServicesDiscoveryPage() {
                   <th className="table-header px-4 py-2.5 text-left">Location</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+              <tbody className="divide-y divide-line table-zebra">
                 {snmpStatuses.map(r => (
-                  <tr key={`${r.kind}-${r.id}`} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                  <tr key={`${r.kind}-${r.id}`} className="hover:bg-surface-2/30">
                     <td className="px-4 py-2.5 cell-primary">{r.name}</td>
                     <td className="px-4 py-2.5"><KindPill kind={r.kind} /></td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">{r.ip_address}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-ink-3">{r.ip_address}</td>
                     <td className="px-4 py-2.5">
                       {r.error ? (
-                        <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Error</span>
+                        <span className="text-xs text-bad flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Error</span>
                       ) : r.enabled === null ? (
-                        <span className="text-xs text-gray-400">Unknown</span>
+                        <span className="text-xs text-ink-4">Unknown</span>
                       ) : r.enabled ? (
-                        <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"><CheckCircle className="w-3.5 h-3.5" /> Enabled</span>
+                        <span className="flex items-center gap-1 text-xs text-good"><CheckCircle className="w-3.5 h-3.5" /> Enabled</span>
                       ) : (
-                        <span className="flex items-center gap-1 text-xs text-red-500 dark:text-red-400"><XCircle className="w-3.5 h-3.5" /> Disabled</span>
+                        <span className="flex items-center gap-1 text-xs text-bad"><XCircle className="w-3.5 h-3.5" /> Disabled</span>
                       )}
                     </td>
                     <td className="px-4 py-2.5">
                       {r.version ? (
                         <span className={clsx(
                           'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                          r.version === 'v3' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                                            : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
+                          r.version === 'v3' ? 'bg-violet-bg dark:bg-violet-bg text-violet dark:text-violet'
+                                            : 'bg-surface-3 text-ink-2'
                         )}>
                           {r.version.toUpperCase()}
                         </span>
                       ) : '—'}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">
+                    <td className="px-4 py-2.5 font-mono text-xs text-ink-3">
                       {r.community_name ?? '—'}
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 max-w-[12rem] truncate" title={r.contact || ''}>
+                    <td className="px-4 py-2.5 text-xs text-ink-3 max-w-[12rem] truncate" title={r.contact || ''}>
                       {r.contact || '—'}
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400 max-w-[12rem] truncate" title={r.location || ''}>
+                    <td className="px-4 py-2.5 text-xs text-ink-3 max-w-[12rem] truncate" title={r.location || ''}>
                       {r.location || '—'}
                     </td>
                   </tr>
@@ -716,14 +716,14 @@ export default function NetworkServicesDiscoveryPage() {
         )}
 
         {snmpApplyResult && (
-          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+          <div className="flex items-center gap-2 text-sm text-good">
             <Check className="w-4 h-4" /> Applied to {snmpApplyResult.applied} of {snmpApplyResult.total} device{snmpApplyResult.total === 1 ? '' : 's'}
           </div>
         )}
         {snmpApplyError && (
-          <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-600 dark:text-red-400">{snmpApplyError}</p>
+          <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+            <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-bad">{snmpApplyError}</p>
           </div>
         )}
 
@@ -753,12 +753,12 @@ export default function NetworkServicesDiscoveryPage() {
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setPickerOpen(false)} />
                   <div className="absolute z-20 bottom-full mb-1 left-0 w-72 max-h-72 overflow-y-auto card p-2 shadow-lg">
-                    <div className="flex items-center justify-between px-1 pb-1.5 mb-1 border-b border-gray-100 dark:border-slate-700 text-xs">
-                      <button type="button" className="text-blue-600" onClick={() => setSnmpPicked(new Set(snmpTargets.map(r => r.id)))}>Select all</button>
-                      <button type="button" className="text-gray-500" onClick={() => setSnmpPicked(new Set())}>Clear</button>
+                    <div className="flex items-center justify-between px-1 pb-1.5 mb-1 border-b border-line-soft text-xs">
+                      <button type="button" className="text-accent" onClick={() => setSnmpPicked(new Set(snmpTargets.map(r => r.id)))}>Select all</button>
+                      <button type="button" className="text-ink-3" onClick={() => setSnmpPicked(new Set())}>Clear</button>
                     </div>
                     {snmpTargets.map(r => (
-                      <label key={r.id} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-gray-50 dark:hover:bg-slate-700/50 text-sm text-gray-800 dark:text-slate-200 cursor-pointer">
+                      <label key={r.id} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-surface-2/50 text-sm text-ink cursor-pointer">
                         <input type="checkbox" checked={snmpPicked.has(r.id)} onChange={() => togglePick(r.id)} />
                         <span className="flex-1 truncate">{r.name}</span>
                         <KindPill kind={r.kind} />
@@ -787,7 +787,7 @@ export default function NetworkServicesDiscoveryPage() {
             </button>
             {edited.size > 0 && (
               <button type="button" onClick={resetSnmpForm} disabled={setSnmpMutation.isPending}
-                      className="text-sm text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200">
+                      className="text-sm text-ink-3 hover:text-ink-2 dark:text-ink-3 dark:hover:text-ink">
                 Reset
               </button>
             )}

@@ -30,31 +30,31 @@ export default function FirmwareHistoryPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Link to="/firmware" className="text-sm text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1">
+        <Link to="/firmware" className="text-sm text-accent hover:underline inline-flex items-center gap-1">
           <ArrowLeft className="w-4 h-4" /> Firmware
         </Link>
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Upgrade history</h1>
-        <span className="text-sm text-gray-400 dark:text-slate-500">{total} rollout{total === 1 ? '' : 's'}</span>
+        <h1 className="text-lg font-semibold text-ink">Upgrade history</h1>
+        <span className="text-sm text-ink-3">{total} rollout{total === 1 ? '' : 's'}</span>
       </div>
 
       {isError ? <LoadError what="rollout history" error={error} /> : (
         <div className="card overflow-hidden">
           {isLoading ? (
-            <div className="p-8 text-center text-sm text-gray-400">Loading…</div>
+            <div className="p-8 text-center text-sm text-ink-4">Loading…</div>
           ) : rows.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-400">No rollouts yet.</div>
+            <div className="p-8 text-center text-sm text-ink-4">No rollouts yet.</div>
           ) : (
-            <div className="divide-y divide-gray-100 dark:divide-slate-700/50">
+            <div className="divide-y divide-line/50">
               {rows.map((r) => (
                 <div key={r.id}>
                   <button onClick={() => setOpenId(openId === r.id ? null : r.id)}
-                    className="w-full px-5 py-2.5 flex items-center gap-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors">
+                    className="w-full px-5 py-2.5 flex items-center gap-3 text-left hover:bg-surface-2/40 transition-colors">
                     <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium capitalize flex-shrink-0', ROLLOUT_STATUS[r.status])}>{r.status}</span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{r.name}</span>
-                    <span className="text-xs text-gray-400 dark:text-slate-500">
+                    <span className="text-sm font-medium text-ink truncate">{r.name}</span>
+                    <span className="text-xs text-ink-3">
                       {r.success_count}/{r.device_count} succeeded{(r.failed_count ?? 0) > 0 ? ` · ${r.failed_count} failed` : ''}
                     </span>
-                    <span className="ml-auto text-[11px] text-gray-400 dark:text-slate-500 flex-shrink-0"
+                    <span className="ml-auto text-[11px] text-ink-3 flex-shrink-0"
                       title={format(new Date(r.created_at), 'PPpp')}>
                       {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
                     </span>
@@ -67,7 +67,7 @@ export default function FirmwareHistoryPage() {
             </div>
           )}
           {pages > 1 && (
-            <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200 dark:border-slate-700 text-xs text-gray-500 dark:text-slate-400">
+            <div className="flex items-center justify-between px-5 py-2.5 border-t border-line text-xs text-ink-3">
               <span>Page {page + 1} of {pages}</span>
               <div className="flex items-center gap-1">
                 <button className="p-1 rounded disabled:opacity-40" disabled={page === 0}

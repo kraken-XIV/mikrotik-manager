@@ -178,10 +178,10 @@ export default function BackupsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-xl font-bold text-ink">
           Backups
           {totalBackups > 0 && (
-            <span className="ml-2 text-sm font-normal text-gray-500 dark:text-slate-400">
+            <span className="ml-2 text-sm font-normal text-ink-3">
               ({totalBackups} total)
             </span>
           )}
@@ -201,8 +201,8 @@ export default function BackupsPage() {
         <div className={clsx(
           'rounded-lg border p-3 text-sm flex items-start justify-between gap-3',
           restoreResult.ok
-            ? 'border-green-300 bg-green-50 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300'
-            : 'border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-200'
+            ? 'border-good bg-good-bg text-good dark:bg-good-bg dark:border-good dark:text-good'
+            : 'border-warn bg-warn-bg text-warn dark:bg-warn-bg dark:border-warn dark:text-warn'
         )}>
           <span>{restoreResult.text}</span>
           <button onClick={() => setRestoreResult(null)} className="text-xs opacity-70 hover:opacity-100">Dismiss</button>
@@ -211,8 +211,8 @@ export default function BackupsPage() {
 
       {/* Create backup form */}
       {showCreateForm && (
-        <div className="card p-5 border-blue-200 dark:border-blue-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">New Backup</h3>
+        <div className="card p-5 border-accent dark:border-accent">
+          <h3 className="font-semibold text-ink mb-4">New Backup</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Device</label>
@@ -236,9 +236,9 @@ export default function BackupsPage() {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="flex items-center gap-2 mt-3 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+              <AlertCircle className="w-4 h-4 text-bad flex-shrink-0" />
+              <p className="text-sm text-bad">{error}</p>
             </div>
           )}
 
@@ -262,7 +262,7 @@ export default function BackupsPage() {
               {createMutation.isPending ? 'Creating...' : 'Create Backup'}
             </button>
           </div>
-          <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">
+          <p className="text-xs text-ink-3 mt-2">
             Backup uses SSH export. Make sure SSH credentials are configured for this device.
           </p>
         </div>
@@ -304,11 +304,11 @@ export default function BackupsPage() {
 
       {/* Selection actions */}
       {selected.length > 0 && (
-        <div className="card px-4 py-2.5 flex flex-wrap items-center gap-3 border-blue-200 dark:border-blue-800">
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
+        <div className="card px-4 py-2.5 flex flex-wrap items-center gap-3 border-accent dark:border-accent">
+          <span className="text-sm font-medium text-ink">
             {selected.length} selected
           </span>
-          <button onClick={() => setSelected([])} className="text-xs text-gray-400 hover:text-gray-600">
+          <button onClick={() => setSelected([])} className="text-xs text-ink-4 hover:text-ink-2">
             Clear
           </button>
           <div className="ml-auto flex items-center gap-2">
@@ -333,15 +333,15 @@ export default function BackupsPage() {
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400">Loading...</div>
+        <div className="flex items-center justify-center h-48 text-ink-4">Loading...</div>
       ) : backups.length === 0 ? (
         <div className="card p-12 flex flex-col items-center gap-4 text-center">
-          <HardDrive className="w-16 h-16 text-gray-300 dark:text-slate-600" />
+          <HardDrive className="w-16 h-16 text-ink-4" />
           <div>
-            <p className="font-medium text-gray-700 dark:text-slate-300">
+            <p className="font-medium text-ink-2">
               {activeFilterCount > 0 ? 'No backups match these filters' : 'No backups yet'}
             </p>
-            <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">
+            <p className="text-sm text-ink-3 mt-1">
               {activeFilterCount > 0
                 ? 'Try widening the date range or clearing a filter.'
                 : 'Create a backup to save your device configurations'}
@@ -356,7 +356,7 @@ export default function BackupsPage() {
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700">
+              <tr className="border-b border-line">
                 <th className="table-header px-3 py-2.5 w-9">
                   <input
                     type="checkbox"
@@ -375,15 +375,15 @@ export default function BackupsPage() {
                 <th className="table-header px-4 py-2.5 text-left w-36">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+            <tbody className="divide-y divide-line table-zebra">
               {backups.map((backup) => (
                 <tr
                   key={backup.id}
                   onClick={() => setViewing([backup.id])}
                   title="Click to preview"
                   className={clsx(
-                    'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/30',
-                    selected.includes(backup.id) && 'bg-blue-50/60 dark:bg-blue-900/10'
+                    'cursor-pointer hover:bg-surface-2/30',
+                    selected.includes(backup.id) && 'bg-blue-50/60 dark:bg-accent-soft'
                   )}
                 >
                   <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
@@ -399,7 +399,7 @@ export default function BackupsPage() {
                   <td className="px-1 py-2.5">
                     {backup.contains_secrets && (
                       <span title="Includes passwords and keys. Encrypted on disk; only admins can view or download it."
-                        aria-label="Contains secrets" className="inline-flex text-green-600 dark:text-green-400">
+                        aria-label="Contains secrets" className="inline-flex text-good">
                         <Lock className="w-3.5 h-3.5" />
                       </span>
                     )}
@@ -416,11 +416,11 @@ export default function BackupsPage() {
                       className={clsx(
                         'inline-flex text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap',
                         backup.backup_type === 'config-snapshot' &&
-                          'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+                          'bg-violet-bg dark:bg-violet-bg text-violet dark:text-violet',
                         backup.backup_type === 'scheduled' &&
-                          'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+                          'bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent',
                         backup.backup_type === 'manual' &&
-                          'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
+                          'bg-surface-3 text-ink-2'
                       )}
                       title={
                         backup.backup_type === 'config-snapshot'
@@ -431,13 +431,13 @@ export default function BackupsPage() {
                       {TYPE_LABEL[backup.backup_type ?? ''] ?? backup.backup_type ?? 'Manual'}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
+                  <td className="px-4 py-2.5 text-ink-3">
                     {formatBytes(backup.size_bytes)}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
+                  <td className="px-4 py-2.5 text-ink-3">
                     {format(new Date(backup.created_at), 'MMM d, yyyy HH:mm')}
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500 italic">
+                  <td className="px-4 py-2.5 text-xs text-ink-3 italic">
                     {backup.notes || ''}
                   </td>
                   <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
@@ -445,7 +445,7 @@ export default function BackupsPage() {
                       <button
                         onClick={() => setViewing([backup.id])}
                         disabled={backup.contains_secrets && !isAdmin}
-                        className="p-1.5 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-40 disabled:hover:text-gray-400 disabled:hover:bg-transparent"
+                        className="p-1.5 rounded text-ink-4 hover:text-accent hover:bg-accent-soft dark:hover:bg-accent-soft transition-colors disabled:opacity-40 disabled:hover:text-ink-4 disabled:hover:bg-transparent"
                         title={backup.contains_secrets && !isAdmin ? 'Contains passwords and keys: admins only' : 'Preview'}
                       >
                         <FileText className="w-3.5 h-3.5" />
@@ -453,7 +453,7 @@ export default function BackupsPage() {
                       <button
                         onClick={() => downloadBackup(backup.id, backup.filename)}
                         disabled={backup.contains_secrets && !isAdmin}
-                        className="p-1.5 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-40 disabled:hover:text-gray-400 disabled:hover:bg-transparent"
+                        className="p-1.5 rounded text-ink-4 hover:text-accent hover:bg-accent-soft dark:hover:bg-accent-soft transition-colors disabled:opacity-40 disabled:hover:text-ink-4 disabled:hover:bg-transparent"
                         title={backup.contains_secrets && !isAdmin ? 'Contains passwords and keys: admins only' : 'Download'}
                       >
                         <Download className="w-3.5 h-3.5" />
@@ -462,7 +462,7 @@ export default function BackupsPage() {
                       {canWrite && (
                         <button
                           onClick={() => { setRestoreTyped(''); setRestoreConfirm(backup); }}
-                          className="p-1.5 rounded text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                          className="p-1.5 rounded text-ink-4 hover:text-warn hover:bg-warn-bg dark:hover:bg-warn-bg transition-colors"
                           title="Restore"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
@@ -473,13 +473,13 @@ export default function BackupsPage() {
                         <div className="flex gap-1 text-xs">
                           <button
                             onClick={() => deleteMutation.mutate(backup.id)}
-                            className="text-red-500 hover:text-red-600 font-medium"
+                            className="text-bad hover:text-bad font-medium"
                           >
                             Delete?
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(null)}
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-ink-4 hover:text-ink-2"
                           >
                             ✕
                           </button>
@@ -491,7 +491,7 @@ export default function BackupsPage() {
                               ? setSnapshotDeleteTarget(backup)
                               : setDeleteConfirm(backup.id)
                           }
-                          className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          className="p-1.5 rounded text-ink-4 hover:text-bad hover:bg-bad-bg dark:hover:bg-bad-bg transition-colors"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -505,7 +505,7 @@ export default function BackupsPage() {
           </table>
           </div>
           {pages > 1 && (
-            <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-200 dark:border-slate-700 text-xs text-gray-500 dark:text-slate-400">
+            <div className="flex items-center justify-between px-4 py-2.5 border-t border-line text-xs text-ink-3">
               <span>{page * PAGE + 1}–{Math.min((page + 1) * PAGE, totalBackups)} of {totalBackups}</span>
               <div className="flex items-center gap-1">
                 <button className="p-1 rounded disabled:opacity-40" disabled={page === 0} onClick={() => setPage((p) => p - 1)} aria-label="Previous page"><ChevronLeft className="w-4 h-4" /></button>
@@ -533,40 +533,40 @@ export default function BackupsPage() {
       {bulkConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="card w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <div className="flex items-center justify-between p-5 border-b border-line">
+              <h3 className="text-lg font-semibold text-ink flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-warn" />
                 Delete {selected.length} backup{selected.length === 1 ? '' : 's'}?
               </h3>
               <button
                 onClick={() => setBulkConfirm(false)}
                 disabled={bulkDeleteMutation.isPending}
-                className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+                className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-5 space-y-4">
               {!bulkPreview ? (
-                <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                <div className="flex items-center gap-2 text-sm text-ink-4 py-2">
                   <Loader2 className="w-4 h-4 animate-spin" /> Checking what this removes…
                 </div>
               ) : (
                 <>
-                  <div className="text-sm text-gray-600 dark:text-slate-300">
+                  <div className="text-sm text-ink-2">
                     <ul className="space-y-1">
                       {bulkPreview.devices.map((d) => (
                         <li key={d.name} className="flex justify-between gap-4">
-                          <span className="text-gray-900 dark:text-white">{d.name}</span>
-                          <span className="text-gray-400">{d.count} backup{d.count === 1 ? '' : 's'}</span>
+                          <span className="text-ink">{d.name}</span>
+                          <span className="text-ink-4">{d.count} backup{d.count === 1 ? '' : 's'}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
                   {bulkPreview.snapshots > 0 && (
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-3">
-                      <p className="text-sm text-amber-800 dark:text-amber-300">
+                    <div className="rounded-lg border border-warn bg-warn-bg dark:border-warn p-3">
+                      <p className="text-sm text-warn dark:text-warn">
                         <span className="font-semibold">{bulkPreview.snapshots}</span> of these
                         {bulkPreview.snapshots === 1 ? ' is' : ' are'} tied to a{' '}
                         <span className="font-medium">Config History snapshot</span>. Deleting
@@ -577,7 +577,7 @@ export default function BackupsPage() {
                     </div>
                   )}
 
-                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                  <p className="text-sm text-ink-3">
                     This cannot be undone.
                   </p>
                 </>
@@ -614,22 +614,22 @@ export default function BackupsPage() {
         const ok = restoreTyped.trim() === target;
         return (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="card w-full max-w-lg mx-4 border-2 border-red-500">
-              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
+            <div className="card w-full max-w-lg mx-4 border-2 border-bad">
+              <div className="flex items-center justify-between p-5 border-b border-line">
+                <h3 className="text-lg font-semibold text-bad flex items-center gap-2">
                   <AlertTriangle className="w-6 h-6" />
                   Restore this backup?
                 </h3>
                 <button
                   onClick={() => setRestoreConfirm(null)}
                   disabled={restoreMutation.isPending}
-                  className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+                  className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="p-5 space-y-4">
-                <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300 space-y-1">
+                <div className="rounded-md bg-bad-bg border border-bad dark:border-bad p-3 text-sm text-bad dark:text-bad space-y-1">
                   <p className="font-semibold">
                     Restore runs this backup&apos;s commands on the device&apos;s running configuration.
                   </p>
@@ -639,14 +639,14 @@ export default function BackupsPage() {
                   </p>
                 </div>
                 <dl className="text-sm grid grid-cols-[auto,1fr] gap-x-3 gap-y-1">
-                  <dt className="text-gray-500 dark:text-slate-400">Device</dt>
-                  <dd className="font-medium text-gray-900 dark:text-white">{restoreConfirm.device_name || '—'}</dd>
-                  <dt className="text-gray-500 dark:text-slate-400">Backup</dt>
-                  <dd className="font-mono text-xs break-all text-gray-700 dark:text-slate-300">{restoreConfirm.filename}</dd>
-                  <dt className="text-gray-500 dark:text-slate-400">Taken</dt>
-                  <dd className="text-gray-700 dark:text-slate-300">{format(new Date(restoreConfirm.created_at), 'MMM d, yyyy HH:mm')}</dd>
+                  <dt className="text-ink-3">Device</dt>
+                  <dd className="font-medium text-ink">{restoreConfirm.device_name || '—'}</dd>
+                  <dt className="text-ink-3">Backup</dt>
+                  <dd className="font-mono text-xs break-all text-ink-2">{restoreConfirm.filename}</dd>
+                  <dt className="text-ink-3">Taken</dt>
+                  <dd className="text-ink-2">{format(new Date(restoreConfirm.created_at), 'MMM d, yyyy HH:mm')}</dd>
                 </dl>
-                <label className="block text-sm text-gray-700 dark:text-slate-300">
+                <label className="block text-sm text-ink-2">
                   Type <span className="font-mono font-semibold">{target}</span> to confirm
                   <input
                     autoFocus
@@ -686,31 +686,31 @@ export default function BackupsPage() {
       {snapshotDeleteTarget && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="card w-full max-w-md mx-4">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <div className="flex items-center justify-between p-5 border-b border-line">
+              <h3 className="text-lg font-semibold text-ink flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-warn" />
                 Delete config snapshot backup?
               </h3>
               <button
                 onClick={() => setSnapshotDeleteTarget(null)}
                 disabled={deleteMutation.isPending}
-                className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+                className="p-1 rounded text-ink-4 hover:text-ink-2 dark:hover:text-ink-2"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <p className="text-sm text-gray-600 dark:text-slate-300">
+              <p className="text-sm text-ink-2">
                 This backup is tied to a <span className="font-medium">Config History snapshot</span> for{' '}
-                <span className="font-medium text-gray-900 dark:text-white">{snapshotDeleteTarget.device_name || 'this device'}</span>.
+                <span className="font-medium text-ink">{snapshotDeleteTarget.device_name || 'this device'}</span>.
               </p>
-              <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-3">
-                <p className="text-sm text-amber-800 dark:text-amber-300">
+              <div className="rounded-lg border border-warn bg-warn-bg dark:border-warn p-3">
+                <p className="text-sm text-warn dark:text-warn">
                   Deleting it will also <span className="font-semibold">permanently remove that snapshot from the
                   device&apos;s Config History</span>, and you will no longer be able to roll back to it.
                 </p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-slate-400 font-mono break-all">
+              <p className="text-xs text-ink-3 font-mono break-all">
                 {snapshotDeleteTarget.filename}
               </p>
               <div className="flex items-center justify-end gap-2 pt-1">

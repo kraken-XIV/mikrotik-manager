@@ -110,7 +110,7 @@ export default function DeviceDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -118,7 +118,7 @@ export default function DeviceDetailPage() {
   if (!device) {
     return (
       <div className="flex flex-col items-center justify-center h-48 gap-3">
-        <p className="text-gray-500">Device not found</p>
+        <p className="text-ink-3">Device not found</p>
         <button onClick={() => navigate('/devices')} className="btn-secondary">
           Back to Devices
         </button>
@@ -172,13 +172,13 @@ export default function DeviceDetailPage() {
         <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => navigate('/devices')}
-            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
+            className="p-2 rounded-lg text-ink-4 hover:text-ink-2 dark:hover:text-ink-2 hover:bg-surface-3 transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">{device.name}</h1>
+              <h1 className="text-xl font-bold text-ink">{device.name}</h1>
               <DeviceTagPicker deviceId={deviceId} />
               {(() => {
                 const st = displayState(device);
@@ -195,10 +195,10 @@ export default function DeviceDetailPage() {
                     <span
                       className={clsx(
                         'w-1.5 h-1.5 rounded-full',
-                        st === 'online' && 'bg-green-500 animate-pulse',
-                        st === 'degraded' && 'bg-amber-500 animate-pulse',
-                        st === 'offline' && 'bg-red-500',
-                        (st === 'unknown' || st === 'expected-offline') && 'bg-gray-400'
+                        st === 'online' && 'bg-good animate-pulse',
+                        st === 'degraded' && 'bg-warn animate-pulse',
+                        st === 'offline' && 'bg-bad',
+                        (st === 'unknown' || st === 'expected-offline') && 'bg-surface-3'
                       )}
                     />
                     {STATE_LABEL[st]}
@@ -207,18 +207,18 @@ export default function DeviceDetailPage() {
               })()}
               {device.user_manager && (
                 <Link to={`/user-manager?device=${device.id}`} title="This device runs User Manager (RADIUS)"
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 hover:underline">
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-info-bg text-info dark:bg-info-bg dark:text-info hover:underline">
                   User Manager
                 </Link>
               )}
             </div>
-            <p className="text-sm text-gray-500 dark:text-slate-400 font-mono truncate">
+            <p className="text-sm text-ink-3 font-mono truncate">
               {/* An SSH-only device is reached on its SSH port (#174). */}
               {device.ssh_only ? `${hostPort(device.ip_address, device.ssh_port ?? 22)} (SSH)` : hostPort(device.ip_address, device.api_port)}
               <button type="button" title="Copy the address for Winbox" aria-label="Copy the address for Winbox"
                 onClick={() => { void navigator.clipboard.writeText(winboxAddress(device.ip_address)).then(() => { setAddrCopied(true); setTimeout(() => setAddrCopied(false), 1500); }); }}
-                className="inline-flex align-middle ml-1.5 p-0.5 rounded text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
-                {addrCopied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                className="inline-flex align-middle ml-1.5 p-0.5 rounded text-ink-4 hover:text-accent dark:hover:text-accent">
+                {addrCopied ? <Check className="w-3.5 h-3.5 text-good" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
               {device.model && ` · ${device.model}`}
               {device.ros_version && ` · ROS ${device.ros_version}`}
@@ -274,7 +274,7 @@ export default function DeviceDetailPage() {
       {device.ssh_only && <SshOnlyBanner device={device} />}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-slate-700 overflow-x-auto">
+      <div className="flex gap-1 border-b border-line overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -282,8 +282,8 @@ export default function DeviceDetailPage() {
             className={clsx(
               'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap',
               shownTab === tab.key
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-ink-3 hover:text-ink-2 dark:hover:text-ink-2'
             )}
           >
             {tab.label}
@@ -299,18 +299,18 @@ export default function DeviceDetailPage() {
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Cpu className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">CPU Load</span>
+                <Cpu className="w-4 h-4 text-accent" />
+                <span className="text-xs font-medium text-ink-3">CPU Load</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-2xl font-bold text-ink">
                 {resources ? `${cpuLoad}%` : '—'}
               </div>
               {resources && (
-                <div className="mt-2 h-1.5 bg-gray-200 dark:bg-slate-600 rounded-full">
+                <div className="mt-2 h-1.5 bg-surface-3 dark:bg-surface-3 rounded-full">
                   <div
                     className={clsx(
                       'h-full rounded-full transition-all',
-                      cpuLoad > 80 ? 'bg-red-500' : cpuLoad > 50 ? 'bg-yellow-500' : 'bg-green-500'
+                      cpuLoad > 80 ? 'bg-bad' : cpuLoad > 50 ? 'bg-warn' : 'bg-good'
                     )}
                     style={{ width: `${cpuLoad}%` }}
                   />
@@ -320,14 +320,14 @@ export default function DeviceDetailPage() {
 
             <div className="card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <MemoryStick className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Memory</span>
+                <MemoryStick className="w-4 h-4 text-accent" />
+                <span className="text-xs font-medium text-ink-3">Memory</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-2xl font-bold text-ink">
                 {resources ? `${memPercent}%` : '—'}
               </div>
               {resources && (
-                <div className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                <div className="text-xs text-ink-3 mt-1">
                   {formatMB(memUsed)} / {formatMB(memTotal)}
                 </div>
               )}
@@ -335,15 +335,15 @@ export default function DeviceDetailPage() {
 
             <div className="card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Uptime</span>
+                <Clock className="w-4 h-4 text-accent" />
+                <span className="text-xs font-medium text-ink-3">Uptime</span>
               </div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white truncate">
+              <div className="text-xl font-bold text-ink truncate">
                 {resources ? formatUptime(resources['uptime'] || '') : '—'}
               </div>
               {/* Time since it last booted, not availability (#326). */}
               {device.boot_at && (
-                <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5" title="Worked out from the device's uptime counter">
+                <div className="text-xs text-ink-3 mt-0.5" title="Worked out from the device's uptime counter">
                   since {new Date(device.boot_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
                 </div>
               )}
@@ -351,13 +351,13 @@ export default function DeviceDetailPage() {
 
             <div className="card p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Activity className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Version</span>
+                <Activity className="w-4 h-4 text-accent" />
+                <span className="text-xs font-medium text-ink-3">Version</span>
               </div>
-              <div className="text-sm font-bold text-gray-900 dark:text-white">
+              <div className="text-sm font-bold text-ink">
                 {device.ros_version || '—'}
               </div>
-              <div className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+              <div className="text-xs text-ink-3 mt-1">
                 {device.firmware_version || ''}
               </div>
             </div>
@@ -367,47 +367,47 @@ export default function DeviceDetailPage() {
           {/* Availability card */}
           <div className="card p-4">
             <div className="flex items-center gap-2 mb-3">
-              <ShieldCheck className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">30-Day Availability</span>
+              <ShieldCheck className="w-4 h-4 text-accent" />
+              <span className="text-sm font-semibold text-ink">30-Day Availability</span>
             </div>
             {availability ? (
               <div className="flex flex-wrap gap-6">
                 <div>
                   <div className={clsx(
                     'text-3xl font-bold',
-                    availability.uptimePct >= 99 ? 'text-green-500' : availability.uptimePct >= 95 ? 'text-yellow-500' : 'text-red-500'
+                    availability.uptimePct >= 99 ? 'text-good' : availability.uptimePct >= 95 ? 'text-warn' : 'text-bad'
                   )}>
                     {availability.uptimePct.toFixed(2)}%
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5" title="Share of the last 30 days the manager could reach this device">Availability</div>
+                  <div className="text-xs text-ink-3 mt-0.5" title="Share of the last 30 days the manager could reach this device">Availability</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{availability.totalOutages}</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Outages</div>
+                  <div className="text-2xl font-bold text-ink">{availability.totalOutages}</div>
+                  <div className="text-xs text-ink-3 mt-0.5">Outages</div>
                 </div>
                 {/* Reboots, seen from the uptime counter: one quicker than a poll never shows as an outage (#326). */}
                 <div title={device.last_reboot_at ? `Last: ${new Date(device.last_reboot_at).toLocaleString()}` : 'Counted from the device’s uptime, including reboots too quick to show as outages'}>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{device.reboots_30d ?? 0}</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Reboots</div>
+                  <div className="text-2xl font-bold text-ink">{device.reboots_30d ?? 0}</div>
+                  <div className="text-xs text-ink-3 mt-0.5">Reboots</div>
                 </div>
                 {availability.longestOutageSec > 0 && (
                   <div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <div className="text-2xl font-bold text-ink">
                       {availability.longestOutageSec < 60
                         ? `${availability.longestOutageSec}s`
                         : availability.longestOutageSec < 3600
                         ? `${Math.round(availability.longestOutageSec / 60)}m`
                         : `${(availability.longestOutageSec / 3600).toFixed(1)}h`}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Longest outage</div>
+                    <div className="text-xs text-ink-3 mt-0.5">Longest outage</div>
                   </div>
                 )}
                 <div className="flex-1 min-w-[120px] self-center">
-                  <div className="h-2 bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                  <div className="h-2 bg-surface-3 dark:bg-surface-3 rounded-full overflow-hidden">
                     <div
                       className={clsx(
                         'h-full rounded-full transition-all',
-                        availability.uptimePct >= 99 ? 'bg-green-500' : availability.uptimePct >= 95 ? 'bg-yellow-500' : 'bg-red-500'
+                        availability.uptimePct >= 99 ? 'bg-good' : availability.uptimePct >= 95 ? 'bg-warn' : 'bg-bad'
                       )}
                       style={{ width: `${availability.uptimePct}%` }}
                     />
@@ -415,30 +415,30 @@ export default function DeviceDetailPage() {
                 </div>
               </div>
             ) : (
-              <div className="text-sm text-gray-400 dark:text-slate-500">No availability data yet</div>
+              <div className="text-sm text-ink-3">No availability data yet</div>
             )}
           </div>
 
           {/* System details */}
           <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-sm font-semibold text-ink mb-4">
               System Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="flex justify-between py-1 border-b border-gray-100 dark:border-slate-700">
-                <span className="text-gray-500 dark:text-slate-400" title="The name shown in the manager">Name</span>
-                <span className="font-medium text-gray-900 dark:text-white text-right">{device.name}</span>
+              <div className="flex justify-between py-1 border-b border-line-soft">
+                <span className="text-ink-3" title="The name shown in the manager">Name</span>
+                <span className="font-medium text-ink text-right">{device.name}</span>
               </div>
               {/* The router's own name, when it differs from the manager's (#253). */}
               {device.ros_identity && device.ros_identity.trim() !== device.name.trim() && (
-                <div className="flex justify-between items-center gap-2 py-1 border-b border-gray-100 dark:border-slate-700">
-                  <span className="text-gray-500 dark:text-slate-400" title="The name set on the router itself (/system identity)">Identity on the router</span>
+                <div className="flex justify-between items-center gap-2 py-1 border-b border-line-soft">
+                  <span className="text-ink-3" title="The name set on the router itself (/system identity)">Identity on the router</span>
                   <span className="flex items-center gap-2 min-w-0">
-                    <span className="font-medium text-gray-900 dark:text-white truncate">{device.ros_identity}</span>
+                    <span className="font-medium text-ink truncate">{device.ros_identity}</span>
                     {canWrite && (
                       <button type="button" disabled={adoptIdentity.isPending} onClick={() => adoptIdentity.mutate()}
                         title="Show the router's own name here, and follow it if it changes"
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex-shrink-0 disabled:opacity-50">
+                        className="text-xs text-accent hover:underline flex-shrink-0 disabled:opacity-50">
                         {adoptIdentity.isPending ? 'Switching…' : 'Use this name'}
                       </button>
                     )}
@@ -456,9 +456,9 @@ export default function DeviceDetailPage() {
                 ['Added', new Date(device.created_at).toLocaleDateString()],
                 ['Last Seen', device.last_seen ? new Date(device.last_seen).toLocaleString() : '—'],
               ] as [string, string][]).map(([k, v]) => (
-                <div key={k} className="flex justify-between py-1 border-b border-gray-100 dark:border-slate-700">
-                  <span className="text-gray-500 dark:text-slate-400">{k}</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-right">{v}</span>
+                <div key={k} className="flex justify-between py-1 border-b border-line-soft">
+                  <span className="text-ink-3">{k}</span>
+                  <span className="font-medium text-ink text-right">{v}</span>
                 </div>
               ))}
             </div>

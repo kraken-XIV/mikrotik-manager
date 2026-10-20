@@ -116,12 +116,12 @@ function SetupWizard({ deviceId, interfaces, isAP, onDone }: {
     return (
       <div className="card p-6 max-w-2xl">
         <div className="flex items-center gap-2 mb-3">
-          <CheckCircle className="w-5 h-5 text-green-500" />
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">Guest network created — review these</h2>
+          <CheckCircle className="w-5 h-5 text-good" />
+          <h2 className="text-base font-semibold text-ink">Guest network created — review these</h2>
         </div>
         <div className="space-y-2 mb-4">
           {warnings.map((w, i) => (
-            <div key={i} className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-700 dark:text-amber-400">
+            <div key={i} className="flex items-start gap-2 p-3 rounded-lg bg-warn-bg text-xs text-warn">
               <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />{w}
             </div>
           ))}
@@ -136,26 +136,26 @@ function SetupWizard({ deviceId, interfaces, isAP, onDone }: {
   return (
     <div className="card p-6 max-w-2xl">
       <div className="flex items-center gap-2 mb-1">
-        <Ticket className="w-5 h-5 text-blue-500" />
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Set up Guest WiFi</h2>
+        <Ticket className="w-5 h-5 text-accent" />
+        <h2 className="text-base font-semibold text-ink">Set up Guest WiFi</h2>
       </div>
-      <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+      <p className="text-sm text-ink-3 mb-4">
         Builds the whole guest network in one pass: broadcasts a new guest SSID, isolates the traffic
         (VLAN or dedicated bridge), and stands up the captive portal — pool, DHCP, portal server, rate-limited guest profile, NAT.
       </p>
 
       {/* Mode toggle */}
-      <div className="flex rounded-lg border border-gray-200 dark:border-slate-700 p-1 gap-1 w-fit mb-5">
+      <div className="flex rounded-lg border border-line p-1 gap-1 w-fit mb-5">
         {isAP && (
           <button onClick={() => setMode('ssid')}
             className={clsx('px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-              mode === 'ssid' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')}>
+              mode === 'ssid' ? 'bg-accent text-accent-fg' : 'text-ink-2 hover:bg-surface-3')}>
             Create new guest SSID
           </button>
         )}
         <button onClick={() => setMode('existing')}
           className={clsx('px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-            mode === 'existing' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')}>
+            mode === 'existing' ? 'bg-accent text-accent-fg' : 'text-ink-2 hover:bg-surface-3')}>
           Use existing interface
         </button>
       </div>
@@ -166,17 +166,17 @@ function SetupWizard({ deviceId, interfaces, isAP, onDone }: {
             <div>
               <label className="label">Guest SSID</label>
               <input className="input" value={form.ssid} onChange={e => set('ssid')(e.target.value)} placeholder="Guest WiFi" maxLength={32} />
-              <p className="text-xs text-gray-400 mt-1">A new virtual AP is created on every radio (2.4 + 5 GHz).</p>
+              <p className="text-xs text-ink-4 mt-1">A new virtual AP is created on every radio (2.4 + 5 GHz).</p>
             </div>
             <div>
               <label className="label">WiFi password (optional)</label>
               <input className="input font-mono" value={form.passphrase} onChange={e => set('passphrase')(e.target.value)} placeholder="empty = open network" />
-              <p className="text-xs text-gray-400 mt-1">Open is typical for captive portals — the voucher is the gate.</p>
+              <p className="text-xs text-ink-4 mt-1">Open is typical for captive portals — the voucher is the gate.</p>
             </div>
             <div>
               <label className="label">Guest VLAN ID (recommended)</label>
               <input type="number" min={1} max={4094} className="input font-mono" value={form.vlanId} onChange={e => set('vlanId')(e.target.value)} placeholder="e.g. 50" />
-              <p className="text-xs text-gray-400 mt-1">Tags guest traffic for firewall/isolation. Empty = dedicated guest bridge instead.</p>
+              <p className="text-xs text-ink-4 mt-1">Tags guest traffic for firewall/isolation. Empty = dedicated guest bridge instead.</p>
             </div>
           </>
         ) : (
@@ -185,13 +185,13 @@ function SetupWizard({ deviceId, interfaces, isAP, onDone }: {
             <select className="input" value={form.interfaceName} onChange={e => set('interfaceName')(e.target.value)}>
               {interfaces.map(i => <option key={i.name} value={i.name}>{i.name}{i.type ? ` (${i.type})` : ''}</option>)}
             </select>
-            <p className="text-xs text-gray-400 mt-1">An existing guest bridge/VLAN/SSID interface.</p>
+            <p className="text-xs text-ink-4 mt-1">An existing guest bridge/VLAN/SSID interface.</p>
           </div>
         )}
         <div>
           <label className="label">Network name</label>
           <input className="input" value={form.name} onChange={e => set('name')(e.target.value)} placeholder="guest" />
-          <p className="text-xs text-gray-400 mt-1">Names the hotspot, pool &amp; profiles (a–z, 0–9, dash).</p>
+          <p className="text-xs text-ink-4 mt-1">Names the hotspot, pool &amp; profiles (a–z, 0–9, dash).</p>
         </div>
         <div>
           <label className="label">Gateway address (CIDR)</label>
@@ -204,7 +204,7 @@ function SetupWizard({ deviceId, interfaces, isAP, onDone }: {
         <div>
           <label className="label">Guest speed limit (rx/tx)</label>
           <input className="input font-mono" value={form.rateLimit} onChange={e => set('rateLimit')(e.target.value)} placeholder="10M/10M" />
-          <p className="text-xs text-gray-400 mt-1">Per-guest cap. Leave empty for unlimited.</p>
+          <p className="text-xs text-ink-4 mt-1">Per-guest cap. Leave empty for unlimited.</p>
         </div>
         <div>
           <label className="label">Portal DNS name (optional)</label>
@@ -212,20 +212,20 @@ function SetupWizard({ deviceId, interfaces, isAP, onDone }: {
         </div>
       </div>
 
-      <label className="mt-4 flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-slate-300">
+      <label className="mt-4 flex items-center gap-2 cursor-pointer text-sm text-ink-2">
         <input type="checkbox" className="w-4 h-4 rounded" checked={form.masquerade} onChange={e => set('masquerade')(e.target.checked)} />
         NAT guest traffic to the internet (adds a masquerade rule for the guest subnet)
       </label>
 
       {mode === 'existing' && (
-        <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-700 dark:text-amber-400">
+        <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-warn-bg text-xs text-warn">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>Pick a dedicated guest interface. Enabling a hotspot on your main LAN interface will put a captive portal in front of <em>every</em> client on it.</span>
         </div>
       )}
 
       {mutation.isError && (
-        <p className="mt-3 text-sm text-red-500">
+        <p className="mt-3 text-sm text-bad">
           {(mutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Setup failed'}
         </p>
       )}
@@ -270,8 +270,8 @@ function VoucherGenerator({ deviceId, userProfiles, networkName, onCreated }: {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Plus className="w-4 h-4 text-green-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Generate vouchers</h3>
+        <Plus className="w-4 h-4 text-good" />
+        <h3 className="text-sm font-semibold text-ink">Generate vouchers</h3>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
@@ -281,12 +281,12 @@ function VoucherGenerator({ deviceId, userProfiles, networkName, onCreated }: {
         <div>
           <label className="label">Valid for (hours)</label>
           <input type="number" min={0} className="input" step="any" value={durationHours} onChange={e => setDurationHours(parseFloat(e.target.value) || 0)} />
-          <p className="text-[10px] text-gray-400 mt-0.5">0 = unlimited</p>
+          <p className="text-[10px] text-ink-4 mt-0.5">0 = unlimited</p>
         </div>
         <div>
           <label className="label">Data cap (MB)</label>
           <input type="number" min={0} className="input" step="any" value={dataCapMB} onChange={e => setDataCapMB(parseFloat(e.target.value) || 0)} />
-          <p className="text-[10px] text-gray-400 mt-0.5">0 = unlimited</p>
+          <p className="text-[10px] text-ink-4 mt-0.5">0 = unlimited</p>
         </div>
         <div>
           <label className="label">Speed profile</label>
@@ -300,7 +300,7 @@ function VoucherGenerator({ deviceId, userProfiles, networkName, onCreated }: {
         </div>
       </div>
       {mutation.isError && (
-        <p className="mt-3 text-sm text-red-500">
+        <p className="mt-3 text-sm text-bad">
           {(mutation.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to create vouchers'}
         </p>
       )}
@@ -316,13 +316,13 @@ function VoucherGenerator({ deviceId, userProfiles, networkName, onCreated }: {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setResult(null)}>
           <div className="card w-full max-w-lg p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-3">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{result.length} voucher{result.length !== 1 ? 's' : ''} created</h3>
-              <button className="ml-auto text-gray-400 hover:text-gray-600" onClick={() => setResult(null)}><X className="w-4 h-4" /></button>
+              <CheckCircle className="w-5 h-5 text-good" />
+              <h3 className="text-sm font-semibold text-ink">{result.length} voucher{result.length !== 1 ? 's' : ''} created</h3>
+              <button className="ml-auto text-ink-4 hover:text-ink-2" onClick={() => setResult(null)}><X className="w-4 h-4" /></button>
             </div>
             <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto mb-4">
               {result.map(c => (
-                <div key={c} className="px-2 py-1.5 rounded bg-gray-100 dark:bg-slate-700 text-center font-mono text-sm text-gray-800 dark:text-slate-200">{c}</div>
+                <div key={c} className="px-2 py-1.5 rounded bg-surface-3 text-center font-mono text-sm text-ink">{c}</div>
               ))}
             </div>
             <div className="flex justify-end gap-2">
@@ -408,8 +408,8 @@ export default function GuestWifiPage() {
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Guest WiFi</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+          <h1 className="text-xl font-bold text-ink">Guest WiFi</h1>
+          <p className="text-sm text-ink-3 mt-0.5">
             Captive portal, vouchers, and guest session management (RouterOS Hotspot)
           </p>
         </div>
@@ -427,16 +427,16 @@ export default function GuestWifiPage() {
       </div>
 
       {online.length === 0 ? (
-        <div className="card p-10 text-center text-sm text-gray-400 dark:text-slate-500">No online devices.</div>
+        <div className="card p-10 text-center text-sm text-ink-3">No online devices.</div>
       ) : isLoading ? (
-        <div className="card p-10 text-center text-sm text-gray-400 dark:text-slate-500">
+        <div className="card p-10 text-center text-sm text-ink-3">
           <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />Loading hotspot state…
         </div>
       ) : !hasServer ? (
         canWrite
           ? <SetupWizard deviceId={devId} interfaces={overview?.interfaces ?? []}
               isAP={(() => { const d = online.find(x => x.id === devId); return !!d && hasRadios(d); })()} onDone={invalidateAll} />
-          : <div className="card p-10 text-center text-sm text-gray-400 dark:text-slate-500">No guest network configured on this device.</div>
+          : <div className="card p-10 text-center text-sm text-ink-3">No guest network configured on this device.</div>
       ) : (
         <>
           {/* Server status + KPIs */}
@@ -445,16 +445,16 @@ export default function GuestWifiPage() {
               const disabled = s['disabled'] === 'true';
               return (
                 <div key={s['.id']} className="card p-4 flex items-center gap-3">
-                  <div className={clsx('p-2 rounded-lg', disabled ? 'bg-gray-100 dark:bg-slate-700' : 'bg-green-50 dark:bg-green-900/20')}>
-                    <Wifi className={clsx('w-5 h-5', disabled ? 'text-gray-400' : 'text-green-600 dark:text-green-400')} />
+                  <div className={clsx('p-2 rounded-lg', disabled ? 'bg-surface-3' : 'bg-good-bg')}>
+                    <Wifi className={clsx('w-5 h-5', disabled ? 'text-ink-4' : 'text-good')} />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{s['name']}</div>
-                    <div className="text-xs text-gray-400 dark:text-slate-500 font-mono truncate">{s['interface']} · {disabled ? 'disabled' : 'running'}</div>
+                    <div className="text-sm font-semibold text-ink truncate">{s['name']}</div>
+                    <div className="text-xs text-ink-3 font-mono truncate">{s['interface']} · {disabled ? 'disabled' : 'running'}</div>
                   </div>
                   {canWrite && (
                     <button onClick={() => toggleServer.mutate({ id: s['.id'], disabled: !disabled })}
-                      className={clsx('ml-auto p-1.5 rounded-lg transition-colors', disabled ? 'text-gray-400 hover:text-green-600' : 'text-green-500 hover:text-red-500')}
+                      className={clsx('ml-auto p-1.5 rounded-lg transition-colors', disabled ? 'text-ink-4 hover:text-good' : 'text-good hover:text-bad')}
                       title={disabled ? 'Enable portal' : 'Disable portal'}>
                       <Power className="w-4 h-4" />
                     </button>
@@ -463,17 +463,17 @@ export default function GuestWifiPage() {
               );
             })}
             <div className="card p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20"><Users className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
+              <div className="p-2 rounded-lg bg-accent-soft"><Users className="w-5 h-5 text-accent" /></div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{active.length}</div>
-                <div className="text-xs text-gray-500 dark:text-slate-400">Guests online</div>
+                <div className="text-2xl font-bold text-ink">{active.length}</div>
+                <div className="text-xs text-ink-3">Guests online</div>
               </div>
             </div>
             <div className="card p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-violet-50 dark:bg-violet-900/20"><Ticket className="w-5 h-5 text-violet-600 dark:text-violet-400" /></div>
+              <div className="p-2 rounded-lg bg-violet-bg dark:bg-violet-bg"><Ticket className="w-5 h-5 text-violet dark:text-violet" /></div>
               <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{vouchers.length}</div>
-                <div className="text-xs text-gray-500 dark:text-slate-400">Vouchers issued</div>
+                <div className="text-2xl font-bold text-ink">{vouchers.length}</div>
+                <div className="text-xs text-ink-3">Vouchers issued</div>
               </div>
             </div>
           </div>
@@ -485,50 +485,50 @@ export default function GuestWifiPage() {
 
           {/* Vouchers table */}
           <div className="card overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-              <Ticket className="w-4 h-4 text-violet-500" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Vouchers ({vouchers.length})</h3>
+            <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+              <Ticket className="w-4 h-4 text-violet" />
+              <h3 className="text-sm font-semibold text-ink">Vouchers ({vouchers.length})</h3>
               {vouchers.length > 0 && (
-                <button className="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                <button className="ml-auto text-xs text-accent hover:underline flex items-center gap-1"
                   onClick={() => printVouchers(vouchers.map(v => v['name']), { network: networkName })}>
                   <Printer className="w-3.5 h-3.5" />Print all
                 </button>
               )}
             </div>
             {vouchers.length === 0 ? (
-              <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">No vouchers yet — generate a batch above.</div>
+              <div className="p-6 text-center text-sm text-ink-3">No vouchers yet — generate a batch above.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40">
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Code</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Profile</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Time limit</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Used</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Data</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Batch</th>
-                      <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase" />
+                    <tr className="border-b border-line bg-surface-2/40">
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">Code</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">Profile</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">Time limit</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">Used</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">Data</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">Batch</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-semibold text-ink-3 uppercase" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
+                  <tbody className="divide-y divide-line/50">
                     {vouchers.map((v, i) => {
                       const used = (v['uptime'] && v['uptime'] !== '0s');
                       return (
-                        <tr key={v['.id'] ?? i} className={clsx('hover:bg-blue-50/40 dark:hover:bg-slate-700/30', i % 2 === 0 ? 'bg-white dark:bg-slate-900/20' : 'bg-gray-50 dark:bg-slate-800/40')}>
-                          <td className="px-4 py-2.5 font-mono font-semibold text-gray-900 dark:text-white">{v['name']}</td>
-                          <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">{v['profile'] || 'default'}</td>
-                          <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400"><Clock className="w-3 h-3 inline mr-1" />{v['limit-uptime'] || '∞'}</td>
+                        <tr key={v['.id'] ?? i} className={clsx('hover:bg-accent-soft dark:hover:bg-surface-3', i % 2 === 0 ? 'bg-surface/20' : 'bg-surface-2/40')}>
+                          <td className="px-4 py-2.5 font-mono font-semibold text-ink">{v['name']}</td>
+                          <td className="px-4 py-2.5 text-xs text-ink-3">{v['profile'] || 'default'}</td>
+                          <td className="px-4 py-2.5 text-xs text-ink-3"><Clock className="w-3 h-3 inline mr-1" />{v['limit-uptime'] || '∞'}</td>
                           <td className="px-4 py-2.5 text-xs">
-                            <span className={clsx('px-1.5 py-0.5 rounded-full font-medium', used ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400')}>
+                            <span className={clsx('px-1.5 py-0.5 rounded-full font-medium', used ? 'bg-warn-bg dark:bg-warn-bg text-warn' : 'bg-good-bg text-good')}>
                               {used ? `used ${v['uptime']}` : 'unused'}
                             </span>
                           </td>
-                          <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400"><Database className="w-3 h-3 inline mr-1" />{v['limit-bytes-total'] ? formatBytes(v['limit-bytes-total']) : '∞'}</td>
-                          <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">{(v['comment'] || '').replace('voucher ', '')}</td>
+                          <td className="px-4 py-2.5 text-xs text-ink-3"><Database className="w-3 h-3 inline mr-1" />{v['limit-bytes-total'] ? formatBytes(v['limit-bytes-total']) : '∞'}</td>
+                          <td className="px-4 py-2.5 text-xs text-ink-3">{(v['comment'] || '').replace('voucher ', '')}</td>
                           <td className="px-4 py-2.5 text-right">
                             {canWrite && (
-                              <button onClick={() => deleteUser.mutate(v['.id'])} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-700" title="Delete voucher">
+                              <button onClick={() => deleteUser.mutate(v['.id'])} className="p-1.5 rounded-lg text-ink-4 hover:text-bad hover:bg-bad-bg dark:hover:bg-surface-3" title="Delete voucher">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
@@ -544,36 +544,36 @@ export default function GuestWifiPage() {
 
           {/* Active guests */}
           <div className="card overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-500" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Guests online ({active.length})</h3>
+            <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+              <Users className="w-4 h-4 text-accent" />
+              <h3 className="text-sm font-semibold text-ink">Guests online ({active.length})</h3>
             </div>
             {active.length === 0 ? (
-              <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">No guests connected right now.</div>
+              <div className="p-6 text-center text-sm text-ink-3">No guests connected right now.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40">
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">User / Code</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">IP</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">MAC</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Session</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Down / Up</th>
-                      <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase" />
+                    <tr className="border-b border-line bg-surface-2/40">
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">User / Code</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">IP</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">MAC</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">Session</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase">Down / Up</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-semibold text-ink-3 uppercase" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
+                  <tbody className="divide-y divide-line/50">
                     {active.map((a, i) => (
-                      <tr key={a['.id'] ?? i} className={clsx('hover:bg-blue-50/40 dark:hover:bg-slate-700/30', i % 2 === 0 ? 'bg-white dark:bg-slate-900/20' : 'bg-gray-50 dark:bg-slate-800/40')}>
-                        <td className="px-4 py-2.5 font-mono font-medium text-gray-900 dark:text-white">{a['user'] || '—'}</td>
-                        <td className="px-4 py-2.5 font-mono text-xs text-gray-600 dark:text-slate-400">{a['address'] || '—'}</td>
-                        <td className="px-4 py-2.5 font-mono text-xs text-gray-600 dark:text-slate-400">{a['mac-address'] || '—'}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">{a['uptime'] || '—'}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">{formatBytes(a['bytes-out'])} / {formatBytes(a['bytes-in'])}</td>
+                      <tr key={a['.id'] ?? i} className={clsx('hover:bg-accent-soft dark:hover:bg-surface-3', i % 2 === 0 ? 'bg-surface/20' : 'bg-surface-2/40')}>
+                        <td className="px-4 py-2.5 font-mono font-medium text-ink">{a['user'] || '—'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-ink-2">{a['address'] || '—'}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-ink-2">{a['mac-address'] || '—'}</td>
+                        <td className="px-4 py-2.5 text-xs text-ink-3">{a['uptime'] || '—'}</td>
+                        <td className="px-4 py-2.5 text-xs text-ink-3">{formatBytes(a['bytes-out'])} / {formatBytes(a['bytes-in'])}</td>
                         <td className="px-4 py-2.5 text-right">
                           {canWrite && (
-                            <button onClick={() => kickGuest.mutate(a['.id'])} className="text-xs text-red-500 hover:text-red-600 hover:underline" title="Disconnect guest">
+                            <button onClick={() => kickGuest.mutate(a['.id'])} className="text-xs text-bad hover:text-bad hover:underline" title="Disconnect guest">
                               Disconnect
                             </button>
                           )}
@@ -588,10 +588,10 @@ export default function GuestWifiPage() {
 
           {/* Walled garden */}
           <div className="card overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-              <Globe className="w-4 h-4 text-emerald-500" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Walled garden</h3>
-              <span className="text-xs text-gray-400 dark:text-slate-500">sites reachable before login</span>
+            <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+              <Globe className="w-4 h-4 text-good" />
+              <h3 className="text-sm font-semibold text-ink">Walled garden</h3>
+              <span className="text-xs text-ink-3">sites reachable before login</span>
             </div>
             <div className="p-4 space-y-3">
               {canWrite && (
@@ -604,14 +604,14 @@ export default function GuestWifiPage() {
                 </div>
               )}
               {walledGarden.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-slate-500">No walled-garden entries.</p>
+                <p className="text-sm text-ink-3">No walled-garden entries.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {walledGarden.map((w, i) => (
-                    <span key={w['.id'] ?? i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-xs font-mono">
+                    <span key={w['.id'] ?? i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-good-bg text-good dark:text-good text-xs font-mono">
                       {w['dst-host'] || w['dst-address'] || '—'}
                       {canWrite && (
-                        <button onClick={() => removeWg.mutate(w['.id'])} className="hover:text-red-500"><X className="w-3 h-3" /></button>
+                        <button onClick={() => removeWg.mutate(w['.id'])} className="hover:text-bad"><X className="w-3 h-3" /></button>
                       )}
                     </span>
                   ))}

@@ -110,10 +110,10 @@ export default function CommandsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Terminal className="w-5 h-5 text-blue-500" /> Bulk commands
+        <h1 className="text-xl font-semibold text-ink flex items-center gap-2">
+          <Terminal className="w-5 h-5 text-accent" /> Bulk commands
         </h1>
-        <p className="text-sm text-gray-600 dark:text-slate-300 mt-1 max-w-3xl">
+        <p className="text-sm text-ink-2 mt-1 max-w-3xl">
           Run RouterOS console commands across many devices, in waves, stopping at the first
           failure. Put several commands on separate lines to run them in order. Commands run over
           SSH, so console syntax such as <code>:put</code> works.
@@ -123,7 +123,7 @@ export default function CommandsPage() {
       <div className="card p-5 space-y-4">
         <CommandTemplateBar command={command} onLoad={setCommand} initialTemplateId={initialTemplateId} />
         <label className="block">
-          <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Command</span>
+          <span className="text-sm font-medium text-ink-2">Command</span>
           <textarea
             value={command} onChange={e => setCommand(e.target.value)}
             rows={4} spellCheck={false}
@@ -133,9 +133,9 @@ export default function CommandsPage() {
         </label>
 
         {risky && (
-          <div className="flex gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs dark:border-amber-700/60 dark:bg-amber-900/20">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-            <div className="text-amber-800 dark:text-amber-300">
+          <div className="flex gap-2 rounded-lg border border-warn bg-warn-bg p-3 text-xs dark:border-warn dark:bg-warn-bg">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-warn" />
+            <div className="text-warn dark:text-warn">
               <div className="font-medium">This command can cut management access.</div>
               <ul className="mt-1 list-disc list-inside">
                 {preview?.reasons.map((r, i) => <li key={i}>{r}</li>)}
@@ -151,13 +151,13 @@ export default function CommandsPage() {
         {/* Devices */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+            <span className="text-sm font-medium text-ink-2">
               Devices {selected.length > 0 && `(${selected.length} selected)`}
             </span>
             <div className="flex gap-2 text-xs items-center flex-wrap">
-              <button className="underline text-blue-600 dark:text-blue-400"
+              <button className="underline text-accent"
                       onClick={() => setSelected(devices.map(d => d.id))}>All</button>
-              <button className="underline text-blue-600 dark:text-blue-400"
+              <button className="underline text-accent"
                       onClick={() => setSelected([])}>None</button>
               {/* Selecting by tag is what makes a tag worth having: it is the one
                   grouping that crosses sites and device types, and until now
@@ -182,28 +182,28 @@ export default function CommandsPage() {
         {/* The controls that make this different from a shell loop */}
         <div className="grid sm:grid-cols-3 gap-3">
           <label className="text-xs">
-            <span className="text-gray-500 dark:text-slate-400">Devices per wave</span>
+            <span className="text-ink-3">Devices per wave</span>
             <input type="number" min={1} max={50} value={waveSize}
                    onChange={e => setWaveSize(Math.max(1, Number(e.target.value) || 1))}
                    className="input mt-1 w-full text-sm" />
-            <span className="text-[11px] text-gray-400 dark:text-slate-500">
+            <span className="text-[11px] text-ink-3">
               {preview ? `${preview.waves} wave${preview.waves === 1 ? '' : 's'}` : 'Start small.'}
             </span>
           </label>
           <label className="flex items-start gap-2 text-xs pt-5">
             <input type="checkbox" checked={haltOnFailure} onChange={e => setHaltOnFailure(e.target.checked)} />
-            <span className="text-gray-700 dark:text-slate-300">
+            <span className="text-ink-2">
               Stop at the first failure
-              <span className="block text-[11px] text-gray-400 dark:text-slate-500">
+              <span className="block text-[11px] text-ink-3">
                 The reason to run this here rather than in a loop.
               </span>
             </span>
           </label>
           <label className="flex items-start gap-2 text-xs pt-5">
             <input type="checkbox" checked={useGuard} onChange={e => setUseGuard(e.target.checked)} />
-            <span className="text-gray-700 dark:text-slate-300">
+            <span className="text-ink-2">
               Change Guard
-              <span className="block text-[11px] text-gray-400 dark:text-slate-500">
+              <span className="block text-[11px] text-ink-3">
                 A device that stops answering restores itself.
               </span>
             </span>
@@ -212,7 +212,7 @@ export default function CommandsPage() {
 
         {/* Change Guard arms over the API, which an SSH-only device lacks (#174). */}
         {useGuard && sshOnlySelected.length > 0 && (
-          <p className="text-xs rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-300">
+          <p className="text-xs rounded-lg border border-warn bg-warn-bg p-3 text-warn dark:border-warn dark:bg-warn-bg dark:text-warn">
             {sshOnlySelected.length === 1 ? `${sshOnlySelected[0].name.trim()} was` : `${sshOnlySelected.length} selected devices were`} added
             over SSH only. Change Guard needs the RouterOS API, so with it on {sshOnlySelected.length === 1 ? 'that device fails' : 'they fail'}.
             To turn the API on (<span className="mono">/ip service enable api-ssl</span>), run without Change Guard.
@@ -220,10 +220,10 @@ export default function CommandsPage() {
         )}
 
         {needsAck && (
-          <label className="flex items-start gap-2 text-xs rounded-lg border border-red-300 bg-red-50 p-3 dark:border-red-700/60 dark:bg-red-900/20">
+          <label className="flex items-start gap-2 text-xs rounded-lg border border-bad bg-bad-bg p-3 dark:border-red-700/60 dark:bg-bad-bg">
             <input type="checkbox" className="mt-0.5" checked={acknowledged}
                    onChange={e => setAcknowledged(e.target.checked)} />
-            <span className="text-red-800 dark:text-red-300">
+            <span className="text-bad dark:text-bad">
               I am running a command that can cut management access, with Change Guard off. If a
               device becomes unreachable it will stay that way until someone attends to it physically.
             </span>
@@ -237,12 +237,12 @@ export default function CommandsPage() {
             {startRun.isPending ? 'Starting…' : `Run on ${selected.length || 0} device${selected.length === 1 ? '' : 's'}`}
           </button>
           {preview?.unreachable && preview.unreachable.length > 0 && (
-            <span className="text-xs text-amber-700 dark:text-amber-400">
+            <span className="text-xs text-warn">
               {preview.unreachable.length} selected device(s) have no SSH credential and will fail.
             </span>
           )}
           {startRun.isError && (
-            <span className="text-xs text-red-600 dark:text-red-400">
+            <span className="text-xs text-bad">
               {(startRun.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not start'}
             </span>
           )}
@@ -251,24 +251,24 @@ export default function CommandsPage() {
 
       {/* Results */}
       <div className="card overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Recent runs</h2>
+        <div className="px-5 py-3 border-b border-line">
+          <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">Recent runs</h2>
         </div>
         {runs.length === 0 ? (
-          <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">Nothing run yet.</div>
+          <div className="p-6 text-center text-sm text-ink-3">Nothing run yet.</div>
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-slate-800">
+          <div className="divide-y divide-line-soft dark:divide-line-soft">
             {runs.map(r => (
               <div key={r.id}>
-                <button className="w-full px-5 py-3 flex items-center gap-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700/40"
+                <button className="w-full px-5 py-3 flex items-center gap-3 text-left hover:bg-surface-2/40"
                         onClick={() => setOpenRun(openRun === r.id ? null : r.id)}>
-                  {openRun === r.id ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-                  <span className="font-mono text-xs text-gray-900 dark:text-white truncate flex-1">{r.command}</span>
+                  {openRun === r.id ? <ChevronDown className="w-4 h-4 text-ink-4" /> : <ChevronRight className="w-4 h-4 text-ink-4" />}
+                  <span className="font-mono text-xs text-ink truncate flex-1">{r.command}</span>
                   <span className={`text-xs px-2 py-0.5 rounded ${
-                    r.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                    : r.status === 'running' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
-                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'}`}>{r.status}</span>
-                  <span className="text-xs text-gray-500 dark:text-slate-400 tabular-nums">
+                    r.status === 'completed' ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good'
+                    : r.status === 'running' ? 'bg-accent-soft text-accent dark:bg-accent-soft dark:text-accent'
+                    : 'bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn'}`}>{r.status}</span>
+                  <span className="text-xs text-ink-3 tabular-nums">
                     {r.succeeded}/{r.total}
                   </span>
                 </button>
@@ -289,19 +289,19 @@ export default function CommandsPage() {
                       </button>
                     </div>
                     {detail.devices.map(d => (
-                      <div key={d.id} className="text-xs border-b border-gray-100 dark:border-slate-800 last:border-0 py-1.5">
+                      <div key={d.id} className="text-xs border-b border-line-soft dark:border-line-soft last:border-0 py-1.5">
                         <button className="flex items-center gap-2 w-full text-left"
                                 onClick={() => setExpanded(e => ({ ...e, [d.id]: !e[d.id] }))}>
-                          <span className="text-gray-400 w-12">wave {d.wave}</span>
-                          <span className="text-gray-900 dark:text-white flex-1 truncate">{d.device_name.trim()}</span>
-                          {d.guarded && <ShieldCheck className="w-3 h-3 text-gray-400" />}
+                          <span className="text-ink-4 w-12">wave {d.wave}</span>
+                          <span className="text-ink flex-1 truncate">{d.device_name.trim()}</span>
+                          {d.guarded && <ShieldCheck className="w-3 h-3 text-ink-4" />}
                           <span className={
-                            d.status === 'success' ? 'text-green-600 dark:text-green-400'
-                            : d.status === 'skipped' ? 'text-gray-400'
-                            : 'text-red-600 dark:text-red-400'}>{d.status}</span>
+                            d.status === 'success' ? 'text-good'
+                            : d.status === 'skipped' ? 'text-ink-4'
+                            : 'text-bad'}>{d.status}</span>
                         </button>
                         {expanded[d.id] && (
-                          <pre className="mt-1 ml-14 whitespace-pre-wrap break-words text-[11px] text-gray-600 dark:text-slate-300">
+                          <pre className="mt-1 ml-14 whitespace-pre-wrap break-words text-[11px] text-ink-2">
                             {d.error ? `${d.error}\n` : ''}{d.output || (d.status === 'success' ? '(no output)' : '')}
                           </pre>
                         )}

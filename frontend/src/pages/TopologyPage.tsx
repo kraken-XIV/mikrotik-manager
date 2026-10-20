@@ -341,8 +341,8 @@ export default function TopologyPage() {
     return (
       <div className="space-y-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Network Topology</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+          <h1 className="text-xl font-bold text-ink">Network Topology</h1>
+          <p className="text-sm text-ink-3 mt-1">
             {fleetSize} devices in {scopeSites.length} sites. Choose a site to map, or open a device&apos;s own view from its page.
           </p>
         </div>
@@ -368,7 +368,7 @@ export default function TopologyPage() {
   }
 
   if (isLoading || !data) {
-    return <div className="flex items-center justify-center h-96 text-gray-400">Loading topology…</div>;
+    return <div className="flex items-center justify-center h-96 text-ink-4">Loading topology…</div>;
   }
 
   const hasData = (data?.devices?.length ?? 0) > 0;
@@ -383,24 +383,24 @@ export default function TopologyPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Network Topology</h1>
+        <h1 className="text-xl font-bold text-ink">Network Topology</h1>
         <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
           <button
             onClick={toggleClients}
             className={clsx('flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors',
-              showClients ? 'bg-sky-600 text-white border-sky-700 hover:bg-sky-500'
-                : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/40')}
+              showClients ? 'bg-info text-white border-info hover:bg-info'
+                : 'border-line text-ink-2 hover:bg-surface-2/40')}
             title="Show client devices under the switch port or access point they connect through"
           >
             <Users className="w-4 h-4" />{showClients ? 'Hide clients' : 'Show clients'}
           </button>
           {showClients && (
-            <label className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-slate-300" title="Open a device's clients into one group per VLAN first">
+            <label className="flex items-center gap-1.5 text-sm text-ink-2" title="Open a device's clients into one group per VLAN first">
               <input type="checkbox" checked={byVlan} onChange={toggleByVlan} /> By VLAN
             </label>
           )}
           {showClients && expanded.size > 0 && (
-            <button className="text-sm text-sky-700 dark:text-sky-300 hover:underline flex items-center gap-1" onClick={() => setExpanded(new Set())}>
+            <button className="text-sm text-info dark:text-info hover:underline flex items-center gap-1" onClick={() => setExpanded(new Set())}>
               <ChevronUp className="w-3.5 h-3.5" />Collapse clients
             </button>
           )}
@@ -413,8 +413,8 @@ export default function TopologyPage() {
               className={clsx(
                 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors',
                 connectMode
-                  ? 'bg-purple-600 text-white border-purple-700 hover:bg-purple-500'
-                  : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/40'
+                  ? 'bg-violet text-white border-violet hover:bg-violet'
+                  : 'border-line text-ink-2 hover:bg-surface-2/40'
               )}
               title={connectMode ? 'Exit connect mode' : 'Draw links between devices and your own nodes'}
             >
@@ -429,7 +429,7 @@ export default function TopologyPage() {
               <RefreshCw className={clsx('w-4 h-4', discoverMutation.isPending && 'animate-spin')} />
               Discover
             </button>
-            <button onClick={resetLayout} className="text-sm text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-white flex items-center gap-1"
+            <button onClick={resetLayout} className="text-sm text-ink-3 hover:text-ink dark:text-ink-3 dark:hover:text-white flex items-center gap-1"
               title="Forget where things were moved to and lay the map out automatically again">
               <RotateCcw className="w-3.5 h-3.5" />Reset layout
             </button>
@@ -465,16 +465,16 @@ export default function TopologyPage() {
       )}
 
       {connectMode && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 text-sm text-purple-700 dark:text-purple-300">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-violet-bg dark:bg-violet-bg border border-violet dark:border-purple-800 text-sm text-violet dark:text-violet">
           <Link2 className="w-4 h-4 flex-shrink-0" />
           Drag from any blue handle to another node to draw a link: devices, your own nodes and neighbours discovery found can all be linked.
           Click any link to choose which side of each card it attaches to, or to remove a hand-drawn one.
-          {linkError && <span className="ml-auto text-red-600 dark:text-red-400">{linkError}</span>}
+          {linkError && <span className="ml-auto text-bad">{linkError}</span>}
         </div>
       )}
 
       {graph && graph.orphanCount > 0 && !connectMode && !focus && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-sm text-orange-700 dark:text-orange-300">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-warn-bg dark:bg-warn-bg border border-warn dark:border-warn text-sm text-warn dark:text-warn">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {graph.orphanCount} device{graph.orphanCount !== 1 ? 's have' : ' has'} no discovered connections.
           Use <strong className="mx-1">Connect Mode</strong> to draw links, or run <strong className="mx-1">Discover</strong> to re-scan.
@@ -483,10 +483,10 @@ export default function TopologyPage() {
 
       {!hasData ? (
         <div className="card p-16 flex flex-col items-center gap-4 text-center">
-          <GitBranch className="w-16 h-16 text-gray-300 dark:text-slate-600" />
+          <GitBranch className="w-16 h-16 text-ink-4" />
           <div>
-            <p className="font-medium text-gray-700 dark:text-slate-300">No topology data yet</p>
-            <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">
+            <p className="font-medium text-ink-2">No topology data yet</p>
+            <p className="text-sm text-ink-3 mt-1">
               Add devices and click &quot;Discover&quot; to map your network via LLDP neighbors.
             </p>
           </div>
@@ -521,7 +521,7 @@ export default function TopologyPage() {
               maxZoom={2.5}
               deleteKeyCode={null}
               className={clsx(
-                'topology-reactflow h-full min-h-[400px] bg-slate-50 dark:bg-slate-800',
+                'topology-reactflow h-full min-h-[400px] bg-surface-2 dark:bg-surface-2',
                 theme === 'dark' && 'dark',
                 connectMode && 'cursor-crosshair'
               )}
@@ -543,21 +543,21 @@ export default function TopologyPage() {
           </div>
 
           {/* Legend */}
-          <div className="card px-4 py-3 flex flex-wrap gap-4 text-xs text-gray-500 dark:text-slate-400">
-            <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-gray-400" /><span>Discovered (LLDP/CDP/MNDP)</span></div>
+          <div className="card px-4 py-3 flex flex-wrap gap-4 text-xs text-ink-3">
+            <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-surface-3" /><span>Discovered (LLDP/CDP/MNDP)</span></div>
             <div className="flex items-center gap-1.5"><div style={{ width: 16, borderTop: '2px dashed #8b5cf6' }} /><span>Drawn by hand</span></div>
             {hasStp && (
               <>
-                <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-blue-500" /><span>Root port (uplink)</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-green-500" /><span>Designated port</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-accent" /><span>Root port (uplink)</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-good" /><span>Designated port</span></div>
                 <div className="flex items-center gap-1.5"><div style={{ width: 16, borderTop: '2px dashed #ef4444' }} /><span>Blocked by spanning tree</span></div>
-                <div className="flex items-center gap-1.5"><span className="text-amber-500 font-bold">★</span><span>Root bridge</span></div>
+                <div className="flex items-center gap-1.5"><span className="text-warn font-bold">★</span><span>Root bridge</span></div>
               </>
             )}
-            <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded border-dashed border border-gray-400" /><span>Seen by discovery, not managed</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded border-dashed border border-violet-500" /><span>Your own node</span></div>
-            {showClients && <div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-sky-500" /><span>Clients (click to show each)</span></div>}
-            <span className="ml-auto text-gray-400">Drag cards to arrange the map (saved for everyone) · click a link to choose where it attaches · hover a device to light up its links</span>
+            <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded border-dashed border border-line" /><span>Seen by discovery, not managed</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded border-dashed border border-violet" /><span>Your own node</span></div>
+            {showClients && <div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-info" /><span>Clients (click to show each)</span></div>}
+            <span className="ml-auto text-ink-4">Drag cards to arrange the map (saved for everyone) · click a link to choose where it attaches · hover a device to light up its links</span>
           </div>
         </>
       )}
@@ -573,13 +573,13 @@ export default function TopologyPage() {
       {/* Discovered links table */}
       {discovered.length > 0 && (
         <div className="card overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Discovered Links ({discovered.length})</h3>
+          <div className="px-4 py-3 border-b border-line">
+            <h3 className="text-sm font-semibold text-ink">Discovered Links ({discovered.length})</h3>
           </div>
           <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white dark:bg-slate-800">
-                <tr className="border-b border-gray-100 dark:border-slate-700">
+              <thead className="sticky top-0 bg-surface">
+                <tr className="border-b border-line-soft">
                   <th className="table-header px-4 py-2.5 text-left">From Device</th>
                   <th className="table-header px-4 py-2.5 text-left">Local Port</th>
                   <th className="table-header px-4 py-2.5 text-left">Remote Port</th>
@@ -589,22 +589,22 @@ export default function TopologyPage() {
                   <th className="table-header px-4 py-2.5 text-left">STP Role</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+              <tbody className="divide-y divide-line table-zebra">
                 {discovered.map((link) => (
-                  <tr key={link.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{link.from_device_name || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">{link.from_interface || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">{link.to_interface || '—'}</td>
-                    <td className="px-4 py-2.5 text-gray-700 dark:text-slate-300">{link.to_device_name || link.neighbor_identity || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">{link.neighbor_address || '—'}</td>
+                  <tr key={link.id} className="hover:bg-surface-2/30">
+                    <td className="px-4 py-2.5 font-medium text-ink">{link.from_device_name || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-ink-3">{link.from_interface || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-ink-3">{link.to_interface || '—'}</td>
+                    <td className="px-4 py-2.5 text-ink-2">{link.to_device_name || link.neighbor_identity || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-ink-3">{link.neighbor_address || '—'}</td>
                     <td className="px-4 py-2.5 text-xs">
                       {link.link_type ? (
                         <span className={clsx('px-1.5 py-0.5 rounded font-medium uppercase',
-                          link.link_type === 'lldp' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-                          link.link_type === 'cdp'  && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-                          link.link_type === 'mndp' && 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-                          link.link_type === 'stp'  && 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
-                          !['lldp','cdp','mndp','stp'].includes(link.link_type) && 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300',
+                          link.link_type === 'lldp' && 'bg-good-bg text-good dark:bg-good-bg dark:text-good',
+                          link.link_type === 'cdp'  && 'bg-accent-soft text-accent dark:bg-accent-soft dark:text-accent',
+                          link.link_type === 'mndp' && 'bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn',
+                          link.link_type === 'stp'  && 'bg-violet-bg text-violet dark:bg-violet-bg dark:text-violet',
+                          !['lldp','cdp','mndp','stp'].includes(link.link_type) && 'bg-surface-3 text-ink-2 dark:bg-surface-3 dark:text-ink-2',
                         )}>
                           {link.link_type}
                         </span>
@@ -613,9 +613,9 @@ export default function TopologyPage() {
                     <td className="px-4 py-2.5 text-xs">
                       {link.stp_role ? (
                         <span className={clsx('px-1.5 py-0.5 rounded font-medium',
-                          link.stp_role === 'root' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-                          link.stp_role === 'designated' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-                          (link.stp_role === 'alternate' || link.stp_role === 'backup') && 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+                          link.stp_role === 'root' && 'bg-accent-soft text-accent dark:bg-accent-soft dark:text-accent',
+                          link.stp_role === 'designated' && 'bg-good-bg text-good dark:bg-good-bg dark:text-good',
+                          (link.stp_role === 'alternate' || link.stp_role === 'backup') && 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad',
                         )}>
                           {link.stp_role}
                         </span>

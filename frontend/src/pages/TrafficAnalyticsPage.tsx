@@ -127,8 +127,8 @@ export default function TrafficAnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Traffic</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">Per-client traffic analytics from NetFlow/IPFIX</p>
+          <h1 className="text-xl font-bold text-ink">Traffic</h1>
+          <p className="text-sm text-ink-3">Per-client traffic analytics from NetFlow/IPFIX</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="card p-1 flex rounded-lg gap-1">
@@ -136,14 +136,14 @@ export default function TrafficAnalyticsPage() {
               <button key={r} onClick={() => setRange(r)}
                 className={clsx('px-3 py-1 rounded-md text-sm font-medium transition-colors',
                   range === r
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')}>
+                    ? 'bg-accent text-accent-fg shadow-sm'
+                    : 'text-ink-2 hover:bg-surface-3')}>
                 {r}
               </button>
             ))}
           </div>
           <Link to="/network-services/netflow"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-sm text-ink-2 hover:bg-surface-3 transition-colors">
             <Settings2 className="w-3.5 h-3.5" />Configure
           </Link>
         </div>
@@ -157,14 +157,14 @@ export default function TrafficAnalyticsPage() {
 
       {!isLoading && !hasData && !(seriesError || clientsError || appsError) && (
         <div className="card p-12 text-center space-y-3">
-          <Activity className="w-10 h-10 mx-auto text-gray-300 dark:text-slate-600" />
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">No traffic data yet</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 max-w-md mx-auto">
+          <Activity className="w-10 h-10 mx-auto text-ink-4" />
+          <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">No traffic data yet</h2>
+          <p className="text-sm text-ink-3 max-w-md mx-auto">
             Enable the NetFlow collector and turn on traffic export for your routers to start
             collecting per-client usage and protocol analytics.
           </p>
           <Link to="/network-services/netflow"
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-accent hover:bg-accent text-accent-fg text-sm font-medium rounded-lg transition-colors">
             <Settings2 className="w-3.5 h-3.5" />Set up NetFlow
           </Link>
         </div>
@@ -175,28 +175,28 @@ export default function TrafficAnalyticsPage() {
           {/* Totals */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="card p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                <ArrowDown className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 rounded-lg bg-accent-soft dark:bg-accent-soft">
+                <ArrowDown className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <div className="text-xs text-gray-400 dark:text-slate-500">Download ({range})</div>
-                <div className="text-lg font-bold text-gray-900 dark:text-white">{formatBytes(totalDownload)}</div>
+                <div className="text-xs text-ink-3">Download ({range})</div>
+                <div className="text-lg font-bold text-ink">{formatBytes(totalDownload)}</div>
               </div>
             </div>
             <div className="card p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-                <ArrowUp className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <div className="p-2 rounded-lg bg-violet-bg dark:bg-violet-bg">
+                <ArrowUp className="w-5 h-5 text-violet dark:text-violet" />
               </div>
               <div>
-                <div className="text-xs text-gray-400 dark:text-slate-500">Upload ({range})</div>
-                <div className="text-lg font-bold text-gray-900 dark:text-white">{formatBytes(totalUpload)}</div>
+                <div className="text-xs text-ink-3">Upload ({range})</div>
+                <div className="text-lg font-bold text-ink">{formatBytes(totalUpload)}</div>
               </div>
             </div>
           </div>
 
           {/* Throughput chart */}
           <div className="card p-5">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200 mb-4">Network Traffic</h2>
+            <h2 className="text-sm font-semibold text-ink-2 dark:text-ink mb-4">Network Traffic</h2>
             <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={series}>
                 <defs>
@@ -226,7 +226,7 @@ export default function TrafficAnalyticsPage() {
 
           {/* Inbound packets chart */}
           <div className="card p-5">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200 mb-4">Inbound Packets</h2>
+            <h2 className="text-sm font-semibold text-ink-2 dark:text-ink mb-4">Inbound Packets</h2>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={series}>
                 <defs>
@@ -251,11 +251,11 @@ export default function TrafficAnalyticsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             {/* Top talkers */}
             <div className="card overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 space-y-2">
+              <div className="px-5 py-3 border-b border-line space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <BarChart3 className="w-4 h-4 text-blue-500" />
-                  <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Top Talkers</h2>
-                  <span className="text-xs text-gray-400 dark:text-slate-500 ml-auto">
+                  <BarChart3 className="w-4 h-4 text-accent" />
+                  <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">Top Talkers</h2>
+                  <span className="text-xs text-ink-3 ml-auto">
                     {clientQuery.trim()
                       ? `${visibleClients.length} of ${topClients.length}`
                       : `top ${topClients.length}`}
@@ -279,32 +279,32 @@ export default function TrafficAnalyticsPage() {
                 </div>
               </div>
               {topClients.length === 0
-                ? <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">No client traffic recorded.</div>
+                ? <div className="p-6 text-center text-sm text-ink-3">No client traffic recorded.</div>
                 : visibleClients.length === 0
-                ? <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">
+                ? <div className="p-6 text-center text-sm text-ink-3">
                     No client in the top {topClients.length} matches “{clientQuery.trim()}”.
                   </div>
                 : (
-                  <div className="divide-y divide-gray-100 dark:divide-slate-800">
+                  <div className="divide-y divide-line-soft dark:divide-line-soft">
                     {visibleClients.map(c => {
                       const isReal = c.mac !== 'unknown' && c.mac !== 'other';
                       return (
                         <div key={c.mac}
                           onClick={() => isReal && navigate(`/clients/${encodeURIComponent(c.mac)}`)}
-                          className={clsx('px-5 py-2', isReal && 'cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-700/40 transition-colors')}>
+                          className={clsx('px-5 py-2', isReal && 'cursor-pointer hover:bg-accent-soft dark:hover:bg-surface-3 transition-colors')}>
                           <div className="flex items-center justify-between mb-1">
                             <div className="min-w-0">
-                              <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{clientLabel(c)}</span>
+                              <span className="text-sm font-medium text-ink truncate">{clientLabel(c)}</span>
                               {isReal && (
-                                <span className="ml-2 font-mono text-xs text-gray-400 dark:text-slate-500">{c.ip_address || c.mac}</span>
+                                <span className="ml-2 font-mono text-xs text-ink-3">{c.ip_address || c.mac}</span>
                               )}
                             </div>
-                            <span className="text-sm font-semibold text-gray-700 dark:text-slate-200 flex-shrink-0">{formatBytes(c.total_bytes)}</span>
+                            <span className="text-sm font-semibold text-ink-2 dark:text-ink flex-shrink-0">{formatBytes(c.total_bytes)}</span>
                           </div>
-                          <div className="h-1.5 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
-                            <div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.max(2, (c.total_bytes / maxClientBytes) * 100)}%` }} />
+                          <div className="h-1.5 rounded-full bg-surface-3 overflow-hidden">
+                            <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(2, (c.total_bytes / maxClientBytes) * 100)}%` }} />
                           </div>
-                          <div className="mt-0.5 flex gap-3 text-xs text-gray-400 dark:text-slate-500">
+                          <div className="mt-0.5 flex gap-3 text-xs text-ink-3">
                             <span className="inline-flex items-center gap-0.5"><ArrowDown className="w-3 h-3" />{formatBytes(c.download_bytes)}</span>
                             <span className="inline-flex items-center gap-0.5"><ArrowUp className="w-3 h-3" />{formatBytes(c.upload_bytes)}</span>
                           </div>
@@ -319,12 +319,12 @@ export default function TrafficAnalyticsPage() {
             <div className="space-y-6">
             {/* App categories */}
             <div className="card overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-indigo-500" />
-                <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Traffic by Application</h2>
+              <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+                <Activity className="w-4 h-4 text-info" />
+                <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">Traffic by Application</h2>
               </div>
               {apps.length === 0
-                ? <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">No application data recorded.</div>
+                ? <div className="p-6 text-center text-sm text-ink-3">No application data recorded.</div>
                 : (
                   <div className="p-5 flex flex-col sm:flex-row sm:items-center gap-5">
                     {/* Donut — grows to fill the available space */}
@@ -347,8 +347,8 @@ export default function TrafficAnalyticsPage() {
                       </ResponsiveContainer>
                       {/* Center label */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-[11px] uppercase tracking-wide text-gray-400 dark:text-slate-500">Total</span>
-                        <span className="text-base font-bold text-gray-900 dark:text-white">{formatBytes(totalAppBytes)}</span>
+                        <span className="text-[11px] uppercase tracking-wide text-ink-3">Total</span>
+                        <span className="text-base font-bold text-ink">{formatBytes(totalAppBytes)}</span>
                       </div>
                     </div>
                     {/* Legend — uses the vertical space beside the donut */}
@@ -356,11 +356,11 @@ export default function TrafficAnalyticsPage() {
                       {apps.slice(0, 12).map((a, i) => (
                         <div key={a.app} className="flex items-center gap-2 text-sm">
                           <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: APP_COLORS[i % APP_COLORS.length] }} />
-                          <span className="text-gray-700 dark:text-slate-300 flex-1 truncate">{a.app}</span>
-                          <span className="text-gray-500 dark:text-slate-400 text-xs w-12 text-right">
+                          <span className="text-ink-2 flex-1 truncate">{a.app}</span>
+                          <span className="text-ink-3 text-xs w-12 text-right">
                             {totalAppBytes > 0 ? `${((a.bytes / totalAppBytes) * 100).toFixed(1)}%` : ''}
                           </span>
-                          <span className="font-medium text-gray-900 dark:text-white w-20 text-right">{formatBytes(a.bytes)}</span>
+                          <span className="font-medium text-ink w-20 text-right">{formatBytes(a.bytes)}</span>
                         </div>
                       ))}
                     </div>
@@ -370,16 +370,16 @@ export default function TrafficAnalyticsPage() {
 
             {/* Flow sources & data health */}
             <div className="card overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between gap-2">
+            <div className="px-5 py-3 border-b border-line flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <RouterIcon className="w-4 h-4 text-cyan-500" />
-                <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">Flow Sources &amp; Data Health</h2>
+                <RouterIcon className="w-4 h-4 text-info" />
+                <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">Flow Sources &amp; Data Health</h2>
               </div>
               <span className={clsx('inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium',
                 status?.listening
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                  : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400')}>
-                <span className={clsx('w-1.5 h-1.5 rounded-full', status?.listening ? 'bg-emerald-500' : 'bg-gray-400')} />
+                  ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good'
+                  : 'bg-surface-3 text-ink-3 dark:bg-surface-3 dark:text-ink-3')}>
+                <span className={clsx('w-1.5 h-1.5 rounded-full', status?.listening ? 'bg-good' : 'bg-surface-3')} />
                 {status?.listening ? `Listening :${status.port}` : 'Collector stopped'}
               </span>
             </div>
@@ -387,38 +387,38 @@ export default function TrafficAnalyticsPage() {
               {/* The charts and the sources below follow the site selector; the
                   collector's own counters cover everything it receives (#236). */}
               {status?.site_filtered && (
-                <p className="text-xs text-gray-400 dark:text-slate-500">
+                <p className="text-xs text-ink-3">
                   Showing this site&apos;s flow sources. Packet and attribution counts cover the whole collector.
                 </p>
               )}
               {/* Health summary */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
-                  <div className="text-xs text-gray-400 dark:text-slate-500">Packets received{status?.site_filtered ? ' (all sites)' : ''}</div>
-                  <div className="text-base font-bold text-gray-900 dark:text-white">{formatCount(pktReceived)}</div>
+                  <div className="text-xs text-ink-3">Packets received{status?.site_filtered ? ' (all sites)' : ''}</div>
+                  <div className="text-base font-bold text-ink">{formatCount(pktReceived)}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 dark:text-slate-500">Flows attributed{status?.site_filtered ? ' (all sites)' : ''}</div>
-                  <div className="text-base font-bold text-gray-900 dark:text-white">{formatCount(status?.flowsAttributed || 0)}</div>
+                  <div className="text-xs text-ink-3">Flows attributed{status?.site_filtered ? ' (all sites)' : ''}</div>
+                  <div className="text-base font-bold text-ink">{formatCount(status?.flowsAttributed || 0)}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 dark:text-slate-500">Attribution rate{status?.site_filtered ? ' (all sites)' : ''}</div>
+                  <div className="text-xs text-ink-3">Attribution rate{status?.site_filtered ? ' (all sites)' : ''}</div>
                   <div className={clsx('text-base font-bold',
-                    attributionRate >= 90 ? 'text-emerald-600 dark:text-emerald-400'
-                      : attributionRate >= 60 ? 'text-amber-600 dark:text-amber-400'
-                        : 'text-red-600 dark:text-red-400')}>
+                    attributionRate >= 90 ? 'text-good'
+                      : attributionRate >= 60 ? 'text-warn'
+                        : 'text-bad')}>
                     {pktReceived > 0 ? `${attributionRate.toFixed(0)}%` : '—'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 dark:text-slate-500">{status?.site_filtered ? 'Exporting devices here' : 'Exporting devices'}</div>
-                  <div className="text-base font-bold text-gray-900 dark:text-white">{exporters.length}</div>
+                  <div className="text-xs text-ink-3">{status?.site_filtered ? 'Exporting devices here' : 'Exporting devices'}</div>
+                  <div className="text-base font-bold text-ink">{exporters.length}</div>
                 </div>
               </div>
 
               {/* Low-attribution hint */}
               {pktReceived > 0 && attributionRate < 90 && (
-                <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+                <div className="flex items-start gap-2 text-xs text-warn bg-warn-bg rounded-lg px-3 py-2">
                   <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                   <span>
                     {formatCount(pktUnattributed)} packets came from an unrecognized exporter (often NAT in the path).
@@ -429,19 +429,19 @@ export default function TrafficAnalyticsPage() {
 
               {/* Per-exporter rows */}
               {exporters.length === 0
-                ? <div className="text-sm text-gray-400 dark:text-slate-500">{status?.site_filtered ? 'No routers in this site have exported flows yet.' : 'No routers have exported flows yet.'} <Link to="/network-services/netflow" className="text-blue-600 dark:text-blue-400 hover:underline">Configure NetFlow export →</Link></div>
+                ? <div className="text-sm text-ink-3">{status?.site_filtered ? 'No routers in this site have exported flows yet.' : 'No routers have exported flows yet.'} <Link to="/network-services/netflow" className="text-accent hover:underline">Configure NetFlow export →</Link></div>
                 : (
-                  <div className="divide-y divide-gray-100 dark:divide-slate-800 -mb-1">
+                  <div className="divide-y divide-line-soft dark:divide-line-soft -mb-1">
                     {exporters.map(e => (
                       <div key={e.deviceId} className="flex items-center justify-between py-2 gap-3">
                         <div className="min-w-0 flex items-center gap-2">
-                          <RouterIcon className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 flex-shrink-0" />
-                          <span className="text-sm text-gray-700 dark:text-slate-200 truncate">{e.deviceName}</span>
+                          <RouterIcon className="w-3.5 h-3.5 text-ink-3 flex-shrink-0" />
+                          <span className="text-sm text-ink-2 dark:text-ink truncate">{e.deviceName}</span>
                         </div>
-                        <div className="flex items-center gap-4 flex-shrink-0 text-xs text-gray-500 dark:text-slate-400">
+                        <div className="flex items-center gap-4 flex-shrink-0 text-xs text-ink-3">
                           <span>{formatCount(e.flows)} flows</span>
                           <span>{formatCount(e.packets)} pkts</span>
-                          <span className="w-24 text-right text-gray-400 dark:text-slate-500">
+                          <span className="w-24 text-right text-ink-3">
                             {e.lastSeen ? `${formatDistanceToNow(parseISO(e.lastSeen))} ago` : 'never'}
                           </span>
                         </div>
