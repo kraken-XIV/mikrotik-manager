@@ -23,7 +23,7 @@ function RunButton({ loading, onClick, label = 'Run' }: { loading: boolean; onCl
 
 function ErrorBox({ message }: { message: string }) {
   return (
-    <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
+    <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg text-sm text-bad dark:text-bad">
       <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
       {message}
     </div>
@@ -31,22 +31,22 @@ function ErrorBox({ message }: { message: string }) {
 }
 
 function ResultTable({ headers, rows }: { headers: string[]; rows: (string | null)[][] }) {
-  if (!rows.length) return <p className="text-sm text-gray-400 dark:text-slate-500">No results.</p>;
+  if (!rows.length) return <p className="text-sm text-ink-3">No results.</p>;
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs font-mono">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-slate-700">
+          <tr className="border-b border-line">
             {headers.map((h) => (
-              <th key={h} className="px-3 py-1.5 text-left text-gray-500 dark:text-slate-400 font-medium">{h}</th>
+              <th key={h} className="px-3 py-1.5 text-left text-ink-3 font-medium">{h}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50 table-zebra">
+        <tbody className="divide-y divide-line/50 table-zebra">
           {rows.map((row, i) => (
-            <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-700/20">
+            <tr key={i} className="hover:bg-surface-2/20">
               {row.map((cell, j) => (
-                <td key={j} className="px-3 py-1.5 text-gray-700 dark:text-slate-300">{cell ?? '—'}</td>
+                <td key={j} className="px-3 py-1.5 text-ink-2">{cell ?? '—'}</td>
               ))}
             </tr>
           ))}
@@ -132,15 +132,15 @@ function PingTool({ deviceId, interfaces }: { deviceId: number; interfaces: stri
             ])}
           />
           {summary && (
-            <div className="flex flex-wrap gap-4 p-3 bg-gray-50 dark:bg-slate-700/40 rounded-lg text-xs font-mono text-gray-600 dark:text-slate-400">
-              <span>Sent: <b className="text-gray-900 dark:text-white">{summary['sent']}</b></span>
-              <span>Received: <b className="text-gray-900 dark:text-white">{summary['received']}</b></span>
+            <div className="flex flex-wrap gap-4 p-3 bg-surface-2 dark:bg-surface-3 rounded-lg text-xs font-mono text-ink-2">
+              <span>Sent: <b className="text-ink">{summary['sent']}</b></span>
+              <span>Received: <b className="text-ink">{summary['received']}</b></span>
               <span>Loss: <b className={clsx(
-                summary['packet-loss'] === '0%' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                summary['packet-loss'] === '0%' ? 'text-good' : 'text-bad'
               )}>{summary['packet-loss']}</b></span>
-              {summary['avg-rtt'] && <span>Avg RTT: <b className="text-gray-900 dark:text-white">{summary['avg-rtt']}ms</b></span>}
-              {summary['min-rtt'] && <span>Min: <b className="text-gray-900 dark:text-white">{summary['min-rtt']}ms</b></span>}
-              {summary['max-rtt'] && <span>Max: <b className="text-gray-900 dark:text-white">{summary['max-rtt']}ms</b></span>}
+              {summary['avg-rtt'] && <span>Avg RTT: <b className="text-ink">{summary['avg-rtt']}ms</b></span>}
+              {summary['min-rtt'] && <span>Min: <b className="text-ink">{summary['min-rtt']}ms</b></span>}
+              {summary['max-rtt'] && <span>Max: <b className="text-ink">{summary['max-rtt']}ms</b></span>}
             </div>
           )}
         </div>
@@ -184,7 +184,7 @@ function TracerouteTool({ deviceId }: { deviceId: number }) {
         <RunButton loading={loading} onClick={run} />
       </div>
       {loading && (
-        <p className="text-sm text-gray-500 dark:text-slate-400">Tracing route — this may take up to 60 seconds…</p>
+        <p className="text-sm text-ink-3">Tracing route — this may take up to 60 seconds…</p>
       )}
       {error && <ErrorBox message={error} />}
       {results && (
@@ -244,26 +244,26 @@ function IpScanTool({ deviceId, interfaces }: { deviceId: number; interfaces: st
           <option value="">Select interface…</option>
           {interfaces.map((i) => <option key={i} value={i}>{i}</option>)}
         </select>
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer select-none">
+        <label className="flex items-center gap-2 text-sm text-ink-2 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={rdns}
             onChange={(e) => setRdns(e.target.checked)}
-            className="w-4 h-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 cursor-pointer"
+            className="w-4 h-4 rounded border-line text-accent cursor-pointer"
           />
           Reverse DNS
         </label>
         <RunButton loading={loading} onClick={run} label="Scan" />
       </div>
       {loading && (
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <p className="text-sm text-ink-3">
           Scanning{rdns ? ' + resolving hostnames' : ''} — results appear when scan completes…
         </p>
       )}
       {error && <ErrorBox message={error} />}
       {results && (
         <div className="space-y-2">
-          <p className="text-xs text-gray-500 dark:text-slate-400">{results.length} host{results.length !== 1 ? 's' : ''} found</p>
+          <p className="text-xs text-ink-3">{results.length} host{results.length !== 1 ? 's' : ''} found</p>
           <ResultTable
             headers={rdns ? ['IP Address', 'Hostname', 'MAC Address'] : ['IP Address', 'MAC Address']}
             rows={results.map((r) =>
@@ -318,7 +318,7 @@ function WolTool({ deviceId, interfaces }: { deviceId: number; interfaces: strin
       </div>
       {error && <ErrorBox message={error} />}
       {success && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm text-green-700 dark:text-green-300">
+        <div className="flex items-center gap-2 p-3 bg-good-bg border border-good dark:border-good rounded-lg text-sm text-good dark:text-good">
           <CheckCircle className="w-4 h-4 shrink-0" />
           {success}
         </div>
@@ -352,10 +352,10 @@ function RebootSection({ deviceId }: { deviceId: number }) {
     <div className="card p-5">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <RotateCcw className="w-4 h-4 text-orange-500 shrink-0" />
+          <RotateCcw className="w-4 h-4 text-warn shrink-0" />
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Reboot Device</h3>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+            <h3 className="text-sm font-semibold text-ink">Reboot Device</h3>
+            <p className="text-xs text-ink-3 mt-0.5">
               Sends a reboot command to the device. It will be briefly unreachable while restarting.
             </p>
           </div>
@@ -363,7 +363,7 @@ function RebootSection({ deviceId }: { deviceId: number }) {
         <button
           onClick={run}
           disabled={loading}
-          className="btn-secondary flex items-center gap-2 shrink-0 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+          className="btn-secondary flex items-center gap-2 shrink-0 text-warn dark:text-warn border-warn dark:border-warn hover:bg-warn-bg dark:hover:bg-warn-bg"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
           {loading ? 'Rebooting…' : 'Reboot'}
@@ -371,7 +371,7 @@ function RebootSection({ deviceId }: { deviceId: number }) {
       </div>
       {error && <div className="mt-3"><ErrorBox message={error} /></div>}
       {success && (
-        <div className="flex items-center gap-2 mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm text-green-700 dark:text-green-300">
+        <div className="flex items-center gap-2 mt-3 p-3 bg-good-bg border border-good dark:border-good rounded-lg text-sm text-good dark:text-good">
           <CheckCircle className="w-4 h-4 shrink-0" />
           {success}
         </div>
@@ -430,7 +430,7 @@ function PacketCaptureTool({ deviceId, interfaces }: { deviceId: number; interfa
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-gray-500 dark:text-slate-400">
+      <p className="text-xs text-ink-3">
         Captures packets using the RouterOS sniffer and downloads a PCAP file you can open in Wireshark.
         Requires SSH credentials on the device.
       </p>
@@ -453,7 +453,7 @@ function PacketCaptureTool({ deviceId, interfaces }: { deviceId: number; interfa
         <RunButton loading={loading} onClick={run} label="Capture" />
       </div>
       {loading && (
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <p className="text-sm text-ink-3">
           Capturing for {duration}s — please wait…
         </p>
       )}
@@ -462,7 +462,7 @@ function PacketCaptureTool({ deviceId, interfaces }: { deviceId: number; interfa
         <a
           href={downloadUrl}
           download={fileName}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-good hover:bg-good text-white rounded-lg text-sm font-medium transition-colors"
         >
           <Download className="w-4 h-4" />
           Download {fileName}
@@ -515,7 +515,7 @@ function BandwidthTestTool({ deviceId }: { deviceId: number }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-gray-500 dark:text-slate-400">
+      <p className="text-xs text-ink-3">
         Measures throughput between this device (client) and a target (server). When targeting a managed
         device, the bandwidth-test server is automatically enabled and disabled for you.
       </p>
@@ -525,16 +525,16 @@ function BandwidthTestTool({ deviceId }: { deviceId: number }) {
         <button
           onClick={() => setMode('managed')}
           className={clsx('px-3 py-1 rounded text-xs font-medium border transition-colors', mode === 'managed'
-            ? 'bg-blue-600 text-white border-blue-600'
-            : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400')}
+            ? 'bg-accent text-accent-fg border-accent'
+            : 'border-line text-ink-2 hover:border-accent')}
         >
           Managed device
         </button>
         <button
           onClick={() => setMode('manual')}
           className={clsx('px-3 py-1 rounded text-xs font-medium border transition-colors', mode === 'manual'
-            ? 'bg-blue-600 text-white border-blue-600'
-            : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400')}
+            ? 'bg-accent text-accent-fg border-accent'
+            : 'border-line text-ink-2 hover:border-accent')}
         >
           Manual IP
         </button>
@@ -573,13 +573,13 @@ function BandwidthTestTool({ deviceId }: { deviceId: number }) {
       </div>
 
       {mode === 'manual' && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
+        <p className="text-xs text-warn">
           Manual mode: ensure the bandwidth-test server is running on the target device before starting.
         </p>
       )}
 
       {loading && (
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <p className="text-sm text-ink-3">
           Running {duration}s bandwidth test — please wait…
         </p>
       )}
@@ -587,18 +587,18 @@ function BandwidthTestTool({ deviceId }: { deviceId: number }) {
       {result && (
         <div className="grid grid-cols-2 gap-3">
           {(result.direction === 'both' || result.direction === 'transmit') && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{result.tx_mbps} Mbps</div>
-              <div className="text-xs text-blue-500 dark:text-blue-400 mt-1">TX (Upload to {result.target_ip})</div>
+            <div className="p-4 bg-accent-soft border border-accent dark:border-accent rounded-lg text-center">
+              <div className="text-2xl font-bold text-accent dark:text-accent">{result.tx_mbps} Mbps</div>
+              <div className="text-xs text-accent mt-1">TX (Upload to {result.target_ip})</div>
             </div>
           )}
           {(result.direction === 'both' || result.direction === 'receive') && (
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-700 dark:text-green-300">{result.rx_mbps} Mbps</div>
-              <div className="text-xs text-green-500 dark:text-green-400 mt-1">RX (Download from {result.target_ip})</div>
+            <div className="p-4 bg-good-bg border border-good dark:border-good rounded-lg text-center">
+              <div className="text-2xl font-bold text-good dark:text-good">{result.rx_mbps} Mbps</div>
+              <div className="text-xs text-good dark:text-good mt-1">RX (Download from {result.target_ip})</div>
             </div>
           )}
-          <div className="col-span-2 text-xs text-gray-500 dark:text-slate-400 text-center">
+          <div className="col-span-2 text-xs text-ink-3 text-center">
             {result.duration}s {result.protocol.toUpperCase()} test
           </div>
         </div>
@@ -613,8 +613,8 @@ function ToolCard({ title, icon: Icon, children }: { title: string; icon: React.
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Icon className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <Icon className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink">{title}</h3>
       </div>
       {children}
     </div>
@@ -666,7 +666,7 @@ export default function ToolsTab({ deviceId }: { deviceId: number }) {
 
       {canWrite && (
         <ToolCard title="Wake-on-LAN" icon={Wifi}>
-          <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
+          <p className="text-xs text-ink-3 mb-3">
             Sends a WoL magic packet from this MikroTik device to wake a sleeping host on the network.
           </p>
           <WolTool deviceId={deviceId} interfaces={interfaceNames} />

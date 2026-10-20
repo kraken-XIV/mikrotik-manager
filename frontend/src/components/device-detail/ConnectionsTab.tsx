@@ -9,8 +9,8 @@ import SortableHeader, { type SortDir } from '../common/SortableHeader';
 import { endpoint, sortConnections, type ConnSortKey } from '../../utils/connections';
 
 const PROTO_COLOR: Record<string, string> = {
-  tcp: 'text-blue-600 dark:text-blue-400', udp: 'text-violet-600 dark:text-violet-400',
-  icmp: 'text-amber-600 dark:text-amber-400',
+  tcp: 'text-accent', udp: 'text-violet dark:text-violet',
+  icmp: 'text-warn',
 };
 
 const LIMITS = [200, 500, 2000];
@@ -50,10 +50,10 @@ export default function ConnectionsTab({ deviceId }: { deviceId: number }) {
   const tracking = (data?.tracking?.enabled ?? '').toLowerCase();
   const trackLabel = tracking === 'yes' ? 'on' : tracking === 'auto' ? 'auto' : tracking === 'no' ? 'off' : '';
   const trackStyle = tracking === 'yes'
-    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+    ? 'bg-good-bg text-good'
     : tracking === 'no'
-    ? 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'
-    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400';
+    ? 'bg-surface-3 text-ink-3'
+    : 'bg-warn-bg dark:bg-warn-bg text-warn';
   const emptyMessage = tracking === 'no'
     ? 'Connection tracking is disabled on this device, so no connections are recorded. Enable it (or add a firewall/NAT rule) to populate this table.'
     : tracking === 'auto'
@@ -64,9 +64,9 @@ export default function ConnectionsTab({ deviceId }: { deviceId: number }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg flex items-center justify-center"><Activity className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" /></div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-            Active Connections <span className="text-gray-400 font-normal">
+          <div className="w-7 h-7 bg-info-bg dark:bg-info-bg rounded-lg flex items-center justify-center"><Activity className="w-3.5 h-3.5 text-info dark:text-info" /></div>
+          <h3 className="text-sm font-semibold text-ink">
+            Active Connections <span className="text-ink-4 font-normal">
               ({total !== null ? total.toLocaleString() : all.length.toLocaleString()}{data?.truncated ? `, showing the first ${all.length.toLocaleString()}` : ''})
             </span>
           </h3>
@@ -85,10 +85,10 @@ export default function ConnectionsTab({ deviceId }: { deviceId: number }) {
             {LIMITS.map(l => <option key={l} value={l}>First {l.toLocaleString()}</option>)}
           </select>
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-4" />
             <input className="input pl-8 py-1.5 text-xs w-48" placeholder="Filter shown rows…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300">
+          <label className="flex items-center gap-1.5 text-xs text-ink-2">
             <input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} /> Auto-refresh
           </label>
           <button onClick={() => refetch()} disabled={isFetching} className="btn-secondary flex items-center gap-1.5 text-xs py-1.5">
@@ -98,14 +98,14 @@ export default function ConnectionsTab({ deviceId }: { deviceId: number }) {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-gray-400"><RefreshCw className="w-4 h-4 animate-spin inline mr-2" />Loading connections…</div>
+        <div className="text-center py-8 text-ink-4"><RefreshCw className="w-4 h-4 animate-spin inline mr-2" />Loading connections…</div>
       ) : rows.length === 0 ? (
-        <div className="card p-8 text-center text-gray-400 max-w-2xl mx-auto text-sm">{all.length === 0 ? emptyMessage : 'No connections match your filter.'}</div>
+        <div className="card p-8 text-center text-ink-4 max-w-2xl mx-auto text-sm">{all.length === 0 ? emptyMessage : 'No connections match your filter.'}</div>
       ) : (
         <div className="card overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+              <tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
                 {header('Proto', 'proto')}
                 {header('Source', 'src')}
                 {header('Port', 'sport', 'right')}
@@ -116,7 +116,7 @@ export default function ConnectionsTab({ deviceId }: { deviceId: number }) {
                 {header('Bytes', 'bytes', 'right')}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+            <tbody className="divide-y divide-line table-zebra">
               {rows.map((c, i) => {
                 const src = endpoint(c, 'src');
                 const dst = endpoint(c, 'dst');
@@ -125,15 +125,15 @@ export default function ConnectionsTab({ deviceId }: { deviceId: number }) {
                 const replRate = c['repl-rate'] || '0';
                 const bytes = (c['orig-bytes'] ? Number(c['orig-bytes']) : 0) + (c['repl-bytes'] ? Number(c['repl-bytes']) : 0);
                 return (
-                  <tr key={c['.id'] ?? i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className={clsx('px-3 py-2 text-xs font-semibold uppercase', PROTO_COLOR[proto] ?? 'text-gray-500')}>{proto || '—'}</td>
-                    <td className="px-3 py-2 font-mono text-xs text-gray-600 dark:text-slate-300">{src.ip}</td>
-                    <td className="px-3 py-2 font-mono text-xs text-right text-gray-500 dark:text-slate-400">{src.port || '—'}</td>
-                    <td className="px-3 py-2 font-mono text-xs text-gray-600 dark:text-slate-300">{dst.ip}</td>
-                    <td className="px-3 py-2 font-mono text-xs text-right text-gray-500 dark:text-slate-400">{dst.port || '—'}</td>
-                    <td className="px-3 py-2 text-xs text-gray-500 dark:text-slate-400">{c['tcp-state'] || c.state || '—'}</td>
-                    <td className="px-3 py-2 text-right text-xs text-gray-500 dark:text-slate-400 font-mono">{replRate !== '0' || origRate !== '0' ? `${replRate}/${origRate}` : '—'}</td>
-                    <td className="px-3 py-2 text-right text-xs text-gray-500 dark:text-slate-400">{bytes > 0 ? formatBytes(bytes) : '—'}</td>
+                  <tr key={c['.id'] ?? i} className="hover:bg-surface-2/30">
+                    <td className={clsx('px-3 py-2 text-xs font-semibold uppercase', PROTO_COLOR[proto] ?? 'text-ink-3')}>{proto || '—'}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-ink-2">{src.ip}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-right text-ink-3">{src.port || '—'}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-ink-2">{dst.ip}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-right text-ink-3">{dst.port || '—'}</td>
+                    <td className="px-3 py-2 text-xs text-ink-3">{c['tcp-state'] || c.state || '—'}</td>
+                    <td className="px-3 py-2 text-right text-xs text-ink-3 font-mono">{replRate !== '0' || origRate !== '0' ? `${replRate}/${origRate}` : '—'}</td>
+                    <td className="px-3 py-2 text-right text-xs text-ink-3">{bytes > 0 ? formatBytes(bytes) : '—'}</td>
                   </tr>
                 );
               })}
@@ -141,7 +141,7 @@ export default function ConnectionsTab({ deviceId }: { deviceId: number }) {
           </table>
         </div>
       )}
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-4">
         Live from the device&apos;s connection tracking table. Only the first {limit.toLocaleString()} connections are read, so a busy
         router isn&apos;t asked for its whole table; the protocol filter is applied by the router, the text filter and sorting to the rows shown.
         {auto ? ' Refreshing every 30 seconds.' : ' Refresh to update, or turn on auto-refresh (every 30 seconds).'}

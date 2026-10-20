@@ -28,23 +28,23 @@ export default function SshOnlyBanner({ device }: { device: Device }) {
   const lastReason = result ? null : device.api_check_error;
 
   return (
-    <div className="card p-4 border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-900/10 space-y-2">
+    <div className="card p-4 border-warn dark:border-warn bg-amber-50/60 dark:bg-amber-900/10 space-y-2">
       <div className="flex items-start gap-3">
-        <TerminalSquare className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <TerminalSquare className="w-5 h-5 text-warn flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0 space-y-1.5 text-sm">
-          <p className="font-medium text-gray-900 dark:text-white">Added over SSH only: the RouterOS API isn&apos;t enabled yet</p>
-          <p className="text-gray-600 dark:text-slate-300">
+          <p className="font-medium text-ink">Added over SSH only: the RouterOS API isn&apos;t enabled yet</p>
+          <p className="text-ink-2">
             Bulk commands, templates, the terminal, backups and config history work now. Live status, graphs, clients,
             ports, VLANs and the other tabs need the API. Turn on api-ssl (for example a bulk command run without Change
             Guard: <code className="mono text-xs">/ip service enable api-ssl</code>) and the manager switches over by itself,
             usually within a minute.
           </p>
-          <p className="text-xs text-gray-500 dark:text-slate-400">
+          <p className="text-xs text-ink-3">
             The API is tried with the login <span className="mono">{device.api_username}</span>; change it in Edit Device if the API uses another one.
             {checked && <> Last checked {checked.toLocaleString()}{lastReason ? `: ${lastReason}` : '.'}</>}
           </p>
           {result && (
-            <p className={result.ok ? 'flex items-center gap-1.5 text-green-700 dark:text-green-400' : 'text-amber-800 dark:text-amber-300'}>
+            <p className={result.ok ? 'flex items-center gap-1.5 text-good' : 'text-warn dark:text-warn'}>
               {result.ok && <CheckCircle className="w-4 h-4" />}{result.text}
             </p>
           )}

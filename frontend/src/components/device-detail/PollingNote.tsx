@@ -71,7 +71,7 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Polling and backups</h3>
+        <h3 className="text-sm font-semibold text-ink">Polling and backups</h3>
         {canEdit && !draft && (
           <button onClick={openEdit} className="btn-secondary flex items-center gap-1.5 text-xs py-1.5">
             <Pencil className="w-3.5 h-3.5" /> Edit
@@ -80,7 +80,7 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
       </div>
 
       <table className="w-full text-sm">
-        <tbody className="divide-y divide-gray-100 dark:divide-slate-700/60">
+        <tbody className="divide-y divide-line/60">
           {POLL_ROWS.map((r) => {
             const eff = data.effective[r.key];
             if (!eff) return null;
@@ -88,11 +88,11 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
             const dependsOff = r.dependsOn && (draft?.[r.dependsOn]?.value ?? data.effective[r.dependsOn]?.value) === false;
             return (
               <tr key={r.key} className={clsx(dependsOff && 'opacity-50')}>
-                <td className="py-2 pr-3 text-gray-600 dark:text-slate-300">{r.label}</td>
+                <td className="py-2 pr-3 text-ink-2">{r.label}</td>
                 {!d ? (
                   <>
-                    <td className="py-2 pr-3 font-mono text-gray-900 dark:text-white whitespace-nowrap">{show(eff.value, r.unit)}</td>
-                    <td className={clsx('py-2 text-xs whitespace-nowrap text-right', eff.source === 'device' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-400')}>
+                    <td className="py-2 pr-3 font-mono text-ink whitespace-nowrap">{show(eff.value, r.unit)}</td>
+                    <td className={clsx('py-2 text-xs whitespace-nowrap text-right', eff.source === 'device' ? 'text-accent font-medium' : 'text-ink-4')}>
                       {fromWhere(eff.source)}
                     </td>
                   </>
@@ -110,18 +110,18 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
                           <span className="flex items-center gap-1.5">
                             <input type="number" className="input py-1 w-28 text-center" value={String(d.value)} min={r.min} max={r.max} aria-label={r.label}
                               onChange={(e) => set(r.key, { value: e.target.value === '' ? '' as unknown as number : Number(e.target.value) })} />
-                            <span className="text-xs text-gray-400">{r.unit}</span>
+                            <span className="text-xs text-ink-4">{r.unit}</span>
                           </span>
                         )
                       ) : (
-                        <span className="font-mono text-gray-500 dark:text-slate-400">
+                        <span className="font-mono text-ink-3">
                           {show((data.inherited?.[r.key] ?? eff).value, r.unit)}
-                          <span className="font-sans text-xs text-gray-400"> · {fromWhere((data.inherited?.[r.key] ?? eff).source)}</span>
+                          <span className="font-sans text-xs text-ink-4"> · {fromWhere((data.inherited?.[r.key] ?? eff).source)}</span>
                         </span>
                       )}
                     </td>
                     <td className="py-1.5 text-right whitespace-nowrap">
-                      <label className="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300 cursor-pointer">
+                      <label className="inline-flex items-center gap-1.5 text-xs text-ink-2 cursor-pointer">
                         <input type="checkbox" checked={d.own}
                           onChange={(e) => set(r.key, { own: e.target.checked, ...(e.target.checked ? {} : { value: (data.inherited?.[r.key] ?? eff).value }) })} />
                         set for this device
@@ -137,13 +137,13 @@ export default function PollingNote({ deviceId, siteId }: { deviceId: number; si
 
       {draft && (
         <div className="mt-4 space-y-3">
-          <p className="text-xs text-gray-400 dark:text-slate-500">
+          <p className="text-xs text-ink-3">
             Unticked settings follow {data.site?.name ? `site ${data.site.name}` : 'the site'} or the global setting.
           </p>
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+              <AlertCircle className="w-4 h-4 text-bad shrink-0 mt-0.5" />
+              <p className="text-sm text-bad">{error}</p>
             </div>
           )}
           <div className="flex items-center gap-2">

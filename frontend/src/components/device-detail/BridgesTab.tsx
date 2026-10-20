@@ -92,15 +92,15 @@ export default function BridgesTab({ deviceId, deviceName, onGoToPorts }: {
   });
   const busy = add.isPending || update.isPending || filtering.isPending || remove.isPending;
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
-  if (loadError) return <div className="card p-6 text-sm text-red-500">{errText(loadError)}</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading…</div>;
+  if (loadError) return <div className="card p-6 text-sm text-bad">{errText(loadError)}</div>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <p className="text-sm text-ink-3">
           Bridges on this device. Ports join or leave a bridge on the{' '}
-          {onGoToPorts ? <button type="button" className="text-blue-600 dark:text-blue-400 hover:underline" onClick={() => onGoToPorts('')}>Ports</button> : 'Ports'} tab.
+          {onGoToPorts ? <button type="button" className="text-accent hover:underline" onClick={() => onGoToPorts('')}>Ports</button> : 'Ports'} tab.
         </p>
         <div className="flex items-center gap-2">
           <button onClick={() => refetch()} disabled={isFetching} className="btn-secondary flex items-center gap-2 text-sm">
@@ -115,8 +115,8 @@ export default function BridgesTab({ deviceId, deviceName, onGoToPorts }: {
 
       {note && (
         <div className={clsx('flex gap-2 p-3 rounded-lg border text-sm',
-          note.ok ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-            : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300')}>
+          note.ok ? 'border-good dark:border-good bg-good-bg text-good dark:text-good'
+            : 'border-bad dark:border-bad bg-bad-bg text-bad dark:text-bad')}>
           {!note.ok && <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
           <p className="flex-1">{note.text}</p>
           <button type="button" onClick={() => setNote(null)} className="opacity-60 hover:opacity-100"><X className="w-4 h-4" /></button>
@@ -125,7 +125,7 @@ export default function BridgesTab({ deviceId, deviceName, onGoToPorts }: {
 
       {adding && (
         <div className="card p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">New bridge</h3>
+          <h3 className="text-sm font-semibold text-ink">New bridge</h3>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div><label className="label">Name</label>
               <input className="input font-mono" value={adding.name} placeholder="bridge-guest" autoFocus
@@ -136,12 +136,12 @@ export default function BridgesTab({ deviceId, deviceName, onGoToPorts }: {
               </select></div>
             <div><label className="label">Comment</label>
               <input className="input" value={adding.comment} placeholder="Optional" onChange={(e) => setAdding({ ...adding, comment: e.target.value })} /></div>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 mt-6">
+            <label className="flex items-center gap-2 text-sm text-ink-2 mt-6">
               <input type="checkbox" checked={adding.vlan_filtering} onChange={(e) => setAdding({ ...adding, vlan_filtering: e.target.checked })} />
               VLAN filtering
             </label>
           </div>
-          <p className="text-xs text-gray-400">An empty bridge changes nothing that&apos;s forwarding. Add ports to it on the Ports tab afterwards.</p>
+          <p className="text-xs text-ink-4">An empty bridge changes nothing that&apos;s forwarding. Add ports to it on the Ports tab afterwards.</p>
           <div className="flex gap-2">
             <button onClick={() => add.mutate(adding)} disabled={busy || !adding.name.trim()} className="btn-primary flex items-center gap-2 text-sm">
               {add.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Create
@@ -152,7 +152,7 @@ export default function BridgesTab({ deviceId, deviceName, onGoToPorts }: {
       )}
 
       {bridges.length === 0 && !adding && (
-        <div className="card p-8 text-center text-gray-400 dark:text-slate-500 flex flex-col items-center gap-2">
+        <div className="card p-8 text-center text-ink-3 flex flex-col items-center gap-2">
           <Network className="w-6 h-6" /> No bridges on this device.
         </div>
       )}
@@ -166,16 +166,16 @@ export default function BridgesTab({ deviceId, deviceName, onGoToPorts }: {
         return (
           <div key={b.id || b.name} className={clsx('card p-4 space-y-3', b.disabled && 'opacity-70')}>
             <div className="flex items-center gap-2 flex-wrap">
-              <Network className="w-4 h-4 text-blue-500" />
-              <h3 className="font-mono font-semibold text-gray-900 dark:text-white">{b.name}</h3>
+              <Network className="w-4 h-4 text-accent" />
+              <h3 className="font-mono font-semibold text-ink">{b.name}</h3>
               <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium',
-                b.disabled ? 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400'
-                  : b.running ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400')}>
+                b.disabled ? 'bg-surface-3 text-ink-3 dark:bg-surface-3 dark:text-ink-3'
+                  : b.running ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good'
+                    : 'bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn')}>
                 {b.disabled ? 'disabled' : b.running ? 'running' : 'not running'}
               </span>
-              <span className="text-xs text-gray-500 dark:text-slate-400 font-mono">{b.protocolMode.toUpperCase()}{b.priority ? ` · priority ${b.priority}` : ''}</span>
-              {b.comment && <span className="text-xs text-gray-400">· {b.comment}</span>}
+              <span className="text-xs text-ink-3 font-mono">{b.protocolMode.toUpperCase()}{b.priority ? ` · priority ${b.priority}` : ''}</span>
+              {b.comment && <span className="text-xs text-ink-4">· {b.comment}</span>}
               {canWrite && !e && !b.dynamic && (
                 <div className="ml-auto flex items-center gap-1">
                   <button type="button" title="Edit" disabled={busy}
@@ -184,13 +184,13 @@ export default function BridgesTab({ deviceId, deviceName, onGoToPorts }: {
                   <button type="button" disabled={busy || !emptyBridge}
                     title={emptyBridge ? 'Delete this bridge' : 'Only a bridge with no ports, addresses or VLANs can be deleted'}
                     onClick={() => { if (confirm(`Delete bridge ${b.name}?`)) { setNote(null); remove.mutate({ b }); } }}
-                    className="p-1.5 rounded text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:hover:text-gray-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                    className="p-1.5 rounded text-ink-4 hover:text-bad disabled:opacity-30 disabled:hover:text-ink-4"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               )}
             </div>
 
             {e && (
-              <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 space-y-3">
+              <div className="rounded-lg border border-line p-3 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div><label className="label">Name</label>
                     <input className="input font-mono" value={e.form.name} onChange={(ev) => setEditing({ ...e, form: { ...e.form, name: ev.target.value } })} /></div>
@@ -204,11 +204,11 @@ export default function BridgesTab({ deviceId, deviceName, onGoToPorts }: {
                   <div><label className="label">Comment</label>
                     <input className="input" value={e.form.comment} onChange={(ev) => setEditing({ ...e, form: { ...e.form, comment: ev.target.value } })} /></div>
                 </div>
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+                <label className="flex items-center gap-2 text-sm text-ink-2">
                   <input type="checkbox" checked={e.form.enabled} onChange={(ev) => setEditing({ ...e, form: { ...e.form, enabled: ev.target.checked } })} />
                   Enabled
                 </label>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-ink-4">
                   Renaming keeps the bridge&apos;s ports, VLANs and addresses. Changing spanning tree reconverges the bridge;
                   on the bridge the manager connects through, both run with auto-revert. Disabling that bridge is predicted
                   as a lockout and asks first.
@@ -225,45 +225,45 @@ export default function BridgesTab({ deviceId, deviceName, onGoToPorts }: {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <div className="text-xs text-gray-500 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                  Ports ({b.ports.length}){b.ports.length > 0 && <span className="text-gray-400">· {hw} hardware{cpu ? `, ${cpu} CPU` : ''}</span>}
+                <div className="text-xs text-ink-3 mb-1 flex items-center gap-1.5">
+                  Ports ({b.ports.length}){b.ports.length > 0 && <span className="text-ink-4">· {hw} hardware{cpu ? `, ${cpu} CPU` : ''}</span>}
                 </div>
-                {b.ports.length === 0 ? <span className="text-gray-400">none</span> : (
+                {b.ports.length === 0 ? <span className="text-ink-4">none</span> : (
                   <div className="flex flex-wrap gap-1">
                     {b.ports.map((p) => (
                       <span key={p.name}
                         title={[p.hw ? 'Switched by the switch chip' : 'Switched by the CPU', p.pvid ? `PVID ${p.pvid}` : '', p.role ?? '', p.inactive ? 'inactive' : '', p.disabled ? 'disabled' : ''].filter(Boolean).join(' · ')}
                         className={clsx('px-1.5 py-0.5 rounded font-mono text-xs border',
-                          p.disabled || p.inactive ? 'border-gray-200 text-gray-400 dark:border-slate-700' : 'border-gray-300 text-gray-700 dark:border-slate-600 dark:text-slate-200')}>
-                        {p.name}{!p.hw && <Cpu className="w-3 h-3 inline ml-0.5 -mt-0.5 text-amber-500" />}
+                          p.disabled || p.inactive ? 'border-line text-ink-4 dark:border-line' : 'border-line text-ink-2 dark:border-line dark:text-ink')}>
+                        {p.name}{!p.hw && <Cpu className="w-3 h-3 inline ml-0.5 -mt-0.5 text-warn" />}
                       </span>
                     ))}
                   </div>
                 )}
               </div>
               <div>
-                <div className="text-xs text-gray-500 dark:text-slate-400 mb-1 flex items-center gap-2">
+                <div className="text-xs text-ink-3 mb-1 flex items-center gap-2">
                   VLAN filtering
                   {canWrite && !b.dynamic && (
                     <button type="button" disabled={busy}
                       onClick={() => { setNote(null); filtering.mutate({ b, on: !b.vlanFiltering }); }}
-                      className="text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40">
+                      className="text-accent hover:underline disabled:opacity-40">
                       turn {b.vlanFiltering ? 'off' : 'on'}
                     </button>
                   )}
                 </div>
-                <span className={b.vlanFiltering ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-slate-400'}>{b.vlanFiltering ? 'On' : 'Off'}</span>
-                {b.vlans.length > 0 && <span className="text-xs text-gray-400"> · VLANs {b.vlans.join(', ')}</span>}
+                <span className={b.vlanFiltering ? 'text-good' : 'text-ink-3'}>{b.vlanFiltering ? 'On' : 'Off'}</span>
+                {b.vlans.length > 0 && <span className="text-xs text-ink-4"> · VLANs {b.vlans.join(', ')}</span>}
                 {!!b.dynamicVlans?.length && (
-                  <span className="text-xs text-gray-400" title="VLANs RouterOS added for a port's PVID or a wifi interface, with no entry of their own">
+                  <span className="text-xs text-ink-4" title="VLANs RouterOS added for a port's PVID or a wifi interface, with no entry of their own">
                     {' '}· {b.vlans.length > 0 ? 'also' : 'VLANs'} {b.dynamicVlans.join(', ')} (dynamic)
                   </span>
                 )}
               </div>
               <div>
-                <div className="text-xs text-gray-500 dark:text-slate-400 mb-1">Addresses</div>
-                {b.addresses.length ? <span className="font-mono text-xs text-gray-700 dark:text-slate-300">{b.addresses.join(', ')}</span> : <span className="text-gray-400">none</span>}
-                {b.mtu && <div className="text-xs text-gray-400 mt-1">MTU {b.mtu}{b.macAddress ? ` · ${b.macAddress}` : ''}</div>}
+                <div className="text-xs text-ink-3 mb-1">Addresses</div>
+                {b.addresses.length ? <span className="font-mono text-xs text-ink-2">{b.addresses.join(', ')}</span> : <span className="text-ink-4">none</span>}
+                {b.mtu && <div className="text-xs text-ink-4 mt-1">MTU {b.mtu}{b.macAddress ? ` · ${b.macAddress}` : ''}</div>}
               </div>
             </div>
           </div>

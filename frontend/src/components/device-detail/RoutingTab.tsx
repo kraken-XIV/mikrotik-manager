@@ -41,17 +41,17 @@ function KVTable({ rows }: { rows: Record<string, string>[] }) {
     <div className="card overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+          <tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
             {keys.map(k => (
               <th key={k} className="table-header px-4 py-2.5 text-left">{k}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+        <tbody className="divide-y divide-line table-zebra">
           {rows.map((r, i) => (
-            <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+            <tr key={i} className="hover:bg-surface-2/30">
               {keys.map(k => (
-                <td key={k} className="px-4 py-2.5 font-mono text-xs text-gray-700 dark:text-slate-300">
+                <td key={k} className="px-4 py-2.5 font-mono text-xs text-ink-2">
                   {String(r[k] ?? '')}
                 </td>
               ))}
@@ -64,13 +64,13 @@ function KVTable({ rows }: { rows: Record<string, string>[] }) {
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="text-center py-8 text-gray-400 dark:text-slate-500">{text}</p>;
+  return <p className="text-center py-8 text-ink-3">{text}</p>;
 }
 
 function SectionHeader({ title, onRefresh, isFetching }: { title: string; onRefresh: () => void; isFetching: boolean }) {
   return (
     <div className="flex items-center justify-between mb-4">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
       <button onClick={onRefresh} disabled={isFetching} className="btn-secondary flex items-center gap-1.5 text-xs py-1.5">
         <RefreshCw className={clsx('w-3.5 h-3.5', isFetching && 'animate-spin')} /> Refresh
       </button>
@@ -157,7 +157,7 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
   ])).sort((a, b) => (a === 'main' ? -1 : b === 'main' ? 1 : a.localeCompare(b)));
   const shownRoutes = (routes as Record<string, string>[]).filter(r => tableFilter === 'all' || tableOf(r) === tableFilter);
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading...</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading...</div>;
 
   return (
     <div className="space-y-4">
@@ -168,7 +168,7 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
             {tableNames.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           {deleteError && (
-            <span className="text-sm text-red-500 flex items-center gap-1">
+            <span className="text-sm text-bad flex items-center gap-1">
               <AlertCircle className="w-4 h-4" />{deleteError}
             </span>
           )}
@@ -187,7 +187,7 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
 
       {canWrite && showAdd && (
         <div className="card p-4 space-y-3">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">New Static Route</h4>
+          <h4 className="text-sm font-semibold text-ink">New Static Route</h4>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <div><label className="label">Routing table</label>
               <select className="input" value={form.routing_table} onChange={e => setForm(f => ({ ...f, routing_table: e.target.value }))}>
@@ -203,7 +203,7 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
             <div><label className="label">Comment</label>
               <input className="input" value={form.comment} onChange={e => setForm(f => ({ ...f, comment: e.target.value }))} placeholder="Optional" /></div>
           </div>
-          {addError && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{addError}</div>}
+          {addError && <div className="flex items-center gap-2 text-sm text-bad"><AlertCircle className="w-4 h-4" />{addError}</div>}
           <div className="flex gap-2">
             <button onClick={() => addMutation.mutate(false)} disabled={!form.dst_address || !form.gateway || addMutation.isPending} className="btn-primary flex items-center gap-2 text-sm">
               {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add Route
@@ -221,7 +221,7 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+              <tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
                 <th className="table-header px-4 py-2.5 text-left">Destination</th>
                 <th className="table-header px-4 py-2.5 text-left">Gateway</th>
                 <th className="table-header px-4 py-2.5 text-left">Interface</th>
@@ -232,39 +232,39 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
                 {canWrite && <th className="table-header px-4 py-2.5 w-10" />}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+            <tbody className="divide-y divide-line table-zebra">
               {shownRoutes.map((r, i) => {
                 const rtype = typeOf(r);
                 const active = r['active'] === 'true' || r['flags']?.includes('A');
                 const dynamic = isDynamic(r);
                 const routeId = r['.id'] || '';
                 return (
-                  <tr key={routeId || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-mono text-gray-900 dark:text-white">{r['dst-address'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{r['gateway'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{r['interface'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">
+                  <tr key={routeId || i} className="hover:bg-surface-2/30">
+                    <td className="px-4 py-2.5 font-mono text-ink">{r['dst-address'] || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-ink-3">{r['gateway'] || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-ink-3">{r['interface'] || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-ink-3">
                       {tableOf(r)}
                       {r['vrf-interface'] && <span className="ml-1 text-xs text-gray-400 dark:text-slate-500">({r['vrf-interface']})</span>}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{r['distance'] || '—'}</td>
+                    <td className="px-4 py-2.5 text-ink-3">{r['distance'] || '—'}</td>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-1.5">
-                        <span className={clsx('text-xs font-medium', active ? 'text-green-600 dark:text-green-400' : 'text-gray-400')}>
+                        <span className={clsx('text-xs font-medium', active ? 'text-good' : 'text-ink-4')}>
                           {active ? 'Active' : 'Inactive'}
                         </span>
-                        {dynamic && <span className="text-xs text-gray-400 dark:text-slate-500">(dynamic)</span>}
+                        {dynamic && <span className="text-xs text-ink-3">(dynamic)</span>}
                         {rtype && <span className="text-xs font-medium text-amber-600 dark:text-amber-400">{rtype}</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-gray-400 dark:text-slate-500 text-xs">{r['comment'] || ''}</td>
+                    <td className="px-4 py-2.5 text-ink-3 text-xs">{r['comment'] || ''}</td>
                     {canWrite && (
                       <td className="px-4 py-2.5">
                         {!dynamic && routeId && (
                           <button
                             onClick={() => { if (confirm(`Remove route to ${r['dst-address']}?`)) deleteMutation.mutate({ routeId }); }}
                             disabled={deleteMutation.isPending}
-                            className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
+                            className="p-1 rounded text-ink-4 hover:text-bad transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -336,7 +336,7 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading…</div>;
 
   const instances = (data?.instances as Record<string, string>[]) || [];
   const areas     = (data?.areas     as Record<string, string>[]) || [];
@@ -345,7 +345,7 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
 
   return (
     <div className="space-y-6">
-      {error && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{error}</div>}
+      {error && <div className="flex items-center gap-2 text-sm text-bad"><AlertCircle className="w-4 h-4" />{error}</div>}
 
       {/* Instances */}
       <div>
@@ -374,20 +374,20 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
         {instances.length === 0 ? <Empty text="No OSPF instances." /> : (
           <div className="card overflow-hidden">
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+              <thead><tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
                 <th className="table-header px-4 py-2.5 text-left">Name</th>
                 <th className="table-header px-4 py-2.5 text-left">Router ID</th>
                 <th className="table-header px-4 py-2.5 text-left">State</th>
                 {canWrite && <th className="w-10" />}
               </tr></thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+              <tbody className="divide-y divide-line table-zebra">
                 {instances.map((inst, i) => (
-                  <tr key={inst['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{inst['name'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{inst['router-id'] || '—'}</td>
-                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{inst['state'] || inst['status'] || '—'}</td>
+                  <tr key={inst['.id'] || i} className="hover:bg-surface-2/30">
+                    <td className="px-4 py-2.5 font-medium text-ink">{inst['name'] || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-ink-3">{inst['router-id'] || '—'}</td>
+                    <td className="px-4 py-2.5 text-ink-3">{inst['state'] || inst['status'] || '—'}</td>
                     {canWrite && <td className="px-4 py-2.5">
-                      {inst['.id'] && <button onClick={() => { if (confirm('Remove instance?')) removeInstanceMutation.mutate(inst['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
+                      {inst['.id'] && <button onClick={() => { if (confirm('Remove instance?')) removeInstanceMutation.mutate(inst['.id']); }} className="p-1 text-ink-4 hover:text-bad"><Trash2 className="w-3.5 h-3.5" /></button>}
                     </td>}
                   </tr>
                 ))}
@@ -399,7 +399,7 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
 
       {/* Areas */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Areas</h3>
+        <h3 className="text-sm font-semibold text-ink mb-3">Areas</h3>
         {canWrite && (
           <div className="mb-3">
             {showAddArea ? (
@@ -425,20 +425,20 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
         {areas.length === 0 ? <Empty text="No OSPF areas." /> : (
           <div className="card overflow-hidden">
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+              <thead><tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
                 <th className="table-header px-4 py-2.5 text-left">Name</th>
                 <th className="table-header px-4 py-2.5 text-left">Area</th>
                 <th className="table-header px-4 py-2.5 text-left">Instance</th>
                 {canWrite && <th className="w-10" />}
               </tr></thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+              <tbody className="divide-y divide-line table-zebra">
                 {areas.map((a, i) => (
-                  <tr key={a['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{a['name'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{a['area'] || a['area-id'] || '—'}</td>
-                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{a['instance'] || '—'}</td>
+                  <tr key={a['.id'] || i} className="hover:bg-surface-2/30">
+                    <td className="px-4 py-2.5 font-medium text-ink">{a['name'] || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-ink-3">{a['area'] || a['area-id'] || '—'}</td>
+                    <td className="px-4 py-2.5 text-ink-3">{a['instance'] || '—'}</td>
                     {canWrite && <td className="px-4 py-2.5">
-                      {a['.id'] && <button onClick={() => { if (confirm('Remove area?')) removeAreaMutation.mutate(a['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
+                      {a['.id'] && <button onClick={() => { if (confirm('Remove area?')) removeAreaMutation.mutate(a['.id']); }} className="p-1 text-ink-4 hover:text-bad"><Trash2 className="w-3.5 h-3.5" /></button>}
                     </td>}
                   </tr>
                 ))}
@@ -451,14 +451,14 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
       {/* Interfaces (read-only) */}
       {interfaces.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Interfaces</h3>
+          <h3 className="text-sm font-semibold text-ink mb-3">Interfaces</h3>
           <KVTable rows={interfaces} />
         </div>
       )}
 
       {/* Neighbors (read-only) */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Neighbors</h3>
+        <h3 className="text-sm font-semibold text-ink mb-3">Neighbors</h3>
         {neighbors.length === 0 ? <Empty text="No OSPF neighbors." /> : <KVTable rows={neighbors} />}
       </div>
     </div>
@@ -493,7 +493,7 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading…</div>;
 
   const connections = (data?.connections as Record<string, string>[]) || [];
   const sessions    = (data?.sessions    as Record<string, string>[]) || [];
@@ -504,7 +504,7 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
 
   return (
     <div className="space-y-6">
-      {error && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{error}</div>}
+      {error && <div className="flex items-center gap-2 text-sm text-bad"><AlertCircle className="w-4 h-4" />{error}</div>}
 
       {/* Connections */}
       <div>
@@ -538,7 +538,7 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-ink-4">
                   {oneInstance
                     ? `The connection joins this device's BGP instance ${oneInstance['name']}${oneInstance['as'] ? ` (AS ${oneInstance['as']})` : ''}.`
                     : instances.length > 1
@@ -561,22 +561,22 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
         {connections.length === 0 ? <Empty text="No BGP connections configured." /> : (
           <div className="card overflow-hidden">
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+              <thead><tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
                 <th className="table-header px-4 py-2.5 text-left">Name</th>
                 <th className="table-header px-4 py-2.5 text-left">Remote Address</th>
                 <th className="table-header px-4 py-2.5 text-left">Remote AS</th>
                 <th className="table-header px-4 py-2.5 text-left">Role</th>
                 {canWrite && <th className="w-10" />}
               </tr></thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+              <tbody className="divide-y divide-line table-zebra">
                 {connections.map((c, i) => (
-                  <tr key={c['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{c['name'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{c['remote.address'] || c['remote-address'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{c['remote.as'] || c['remote-as'] || '—'}</td>
-                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{c['local.role'] || c['local-role'] || '—'}</td>
+                  <tr key={c['.id'] || i} className="hover:bg-surface-2/30">
+                    <td className="px-4 py-2.5 font-medium text-ink">{c['name'] || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-ink-3">{c['remote.address'] || c['remote-address'] || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-ink-3">{c['remote.as'] || c['remote-as'] || '—'}</td>
+                    <td className="px-4 py-2.5 text-ink-3">{c['local.role'] || c['local-role'] || '—'}</td>
                     {canWrite && <td className="px-4 py-2.5">
-                      {c['.id'] && <button onClick={() => { if (confirm('Remove BGP connection?')) removeMutation.mutate(c['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
+                      {c['.id'] && <button onClick={() => { if (confirm('Remove BGP connection?')) removeMutation.mutate(c['.id']); }} className="p-1 text-ink-4 hover:text-bad"><Trash2 className="w-3.5 h-3.5" /></button>}
                     </td>}
                   </tr>
                 ))}
@@ -589,7 +589,7 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
       {/* Sessions (read-only) */}
       {sessions.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Active Sessions</h3>
+          <h3 className="text-sm font-semibold text-ink mb-3">Active Sessions</h3>
           <KVTable rows={sessions} />
         </div>
       )}
@@ -624,13 +624,13 @@ function RouteFiltersSubTab({ deviceId }: { deviceId: number }) {
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading…</div>;
 
   const rules = (data?.rules as Record<string, string>[]) || [];
 
   return (
     <div className="space-y-4">
-      {error && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{error}</div>}
+      {error && <div className="flex items-center gap-2 text-sm text-bad"><AlertCircle className="w-4 h-4" />{error}</div>}
       <SectionHeader title="Route Filter Rules" onRefresh={refetch} isFetching={isFetching} />
 
       {canWrite && (
@@ -667,7 +667,7 @@ function RouteFiltersSubTab({ deviceId }: { deviceId: number }) {
       {rules.length === 0 ? <Empty text="No route filter rules." /> : (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+            <thead><tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
               <th className="table-header px-4 py-2.5 text-left">#</th>
               <th className="table-header px-4 py-2.5 text-left">Chain</th>
               <th className="table-header px-4 py-2.5 text-left">Action</th>
@@ -675,20 +675,20 @@ function RouteFiltersSubTab({ deviceId }: { deviceId: number }) {
               <th className="table-header px-4 py-2.5 text-left">Comment</th>
               {canWrite && <th className="w-10" />}
             </tr></thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+            <tbody className="divide-y divide-line table-zebra">
               {rules.map((r, i) => (
-                <tr key={r['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-2.5 text-gray-400 dark:text-slate-500 text-xs">{i + 1}</td>
-                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{r['chain'] || '—'}</td>
+                <tr key={r['.id'] || i} className="hover:bg-surface-2/30">
+                  <td className="px-4 py-2.5 text-ink-3 text-xs">{i + 1}</td>
+                  <td className="px-4 py-2.5 font-medium text-ink">{r['chain'] || '—'}</td>
                   <td className="px-4 py-2.5">
-                    <span className={clsx('text-xs font-medium', r['action'] === 'accept' ? 'text-green-600 dark:text-green-400' : 'text-red-500')}>
+                    <span className={clsx('text-xs font-medium', r['action'] === 'accept' ? 'text-good' : 'text-bad')}>
                       {r['action'] || '—'}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">{r['rule'] || r['prefix'] || r['dst-address'] || '—'}</td>
-                  <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">{r['comment'] || ''}</td>
+                  <td className="px-4 py-2.5 font-mono text-xs text-ink-3">{r['rule'] || r['prefix'] || r['dst-address'] || '—'}</td>
+                  <td className="px-4 py-2.5 text-xs text-ink-3">{r['comment'] || ''}</td>
                   {canWrite && <td className="px-4 py-2.5">
-                    {r['.id'] && <button onClick={() => { if (confirm('Remove filter rule?')) removeMutation.mutate(r['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
+                    {r['.id'] && <button onClick={() => { if (confirm('Remove filter rule?')) removeMutation.mutate(r['.id']); }} className="p-1 text-ink-4 hover:text-bad"><Trash2 className="w-3.5 h-3.5" /></button>}
                   </td>}
                 </tr>
               ))}
@@ -727,11 +727,11 @@ function TablesSubTab({ deviceId }: { deviceId: number }) {
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading…</div>;
 
   return (
     <div className="space-y-4">
-      {error && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{error}</div>}
+      {error && <div className="flex items-center gap-2 text-sm text-bad"><AlertCircle className="w-4 h-4" />{error}</div>}
       <SectionHeader title="Routing Tables" onRefresh={refetch} isFetching={isFetching} />
 
       {canWrite && (
@@ -740,7 +740,7 @@ function TablesSubTab({ deviceId }: { deviceId: number }) {
             <div className="card p-4 space-y-3">
               <div className="flex items-end gap-3">
                 <div className="flex-1"><label className="label">Table Name</label><input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="my-table" /></div>
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 mb-1 cursor-pointer">
+                <label className="flex items-center gap-2 text-sm text-ink-2 mb-1 cursor-pointer">
                   <input type="checkbox" checked={form.fib} onChange={e => setForm(f => ({ ...f, fib: e.target.checked }))} className="rounded" />
                   FIB
                 </label>
@@ -762,18 +762,18 @@ function TablesSubTab({ deviceId }: { deviceId: number }) {
       {tables.length === 0 ? <Empty text="No custom routing tables." /> : (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+            <thead><tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
               <th className="table-header px-4 py-2.5 text-left">Name</th>
               <th className="table-header px-4 py-2.5 text-left">FIB</th>
               {canWrite && <th className="w-10" />}
             </tr></thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+            <tbody className="divide-y divide-line table-zebra">
               {tables.map((t, i) => (
-                <tr key={t['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{t['name'] || '—'}</td>
-                  <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{t['fib'] === 'true' ? 'Yes' : 'No'}</td>
+                <tr key={t['.id'] || i} className="hover:bg-surface-2/30">
+                  <td className="px-4 py-2.5 font-medium text-ink">{t['name'] || '—'}</td>
+                  <td className="px-4 py-2.5 text-ink-3">{t['fib'] === 'true' ? 'Yes' : 'No'}</td>
                   {canWrite && <td className="px-4 py-2.5">
-                    {t['.id'] && <button onClick={() => { if (confirm(`Remove table "${t['name']}"?`)) removeMutation.mutate(t['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
+                    {t['.id'] && <button onClick={() => { if (confirm(`Remove table "${t['name']}"?`)) removeMutation.mutate(t['.id']); }} className="p-1 text-ink-4 hover:text-bad"><Trash2 className="w-3.5 h-3.5" /></button>}
                   </td>}
                 </tr>
               ))}
@@ -792,7 +792,7 @@ export default function RoutingTab({ deviceId, deviceName }: { deviceId: number;
   return (
     <div className="space-y-4">
       {/* Sub-tab bar */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-slate-700">
+      <div className="flex gap-1 border-b border-line">
         {SUB_TABS.map(tab => (
           <button
             key={tab}
@@ -800,8 +800,8 @@ export default function RoutingTab({ deviceId, deviceName }: { deviceId: number;
             className={clsx(
               'px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px',
               activeSubTab === tab
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+                ? 'border-accent text-accent dark:border-accent'
+                : 'border-transparent text-ink-3 hover:text-ink-2 dark:hover:text-ink-2'
             )}
           >
             {tab}

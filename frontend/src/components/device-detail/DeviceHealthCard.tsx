@@ -42,9 +42,9 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
   return (
     <div className="card p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <HeartPulse className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex-1">Hardware health</h3>
-        {save.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
+        <HeartPulse className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink flex-1">Hardware health</h3>
+        {save.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-ink-4" />}
       </div>
 
       {status === 'degraded' ? (
@@ -69,11 +69,11 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
           ))}
         </div>
       ) : status === 'ok' ? (
-        <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+        <div className="flex items-center gap-2 text-sm text-good">
           <CheckCircle2 className="w-4 h-4" /> Power supplies, fans and temperatures are fine.
         </div>
       ) : (
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <p className="text-sm text-ink-3">
           {device.health_checked_at
             ? 'This device reports no power supply, fan or temperature readings.'
             : 'Not checked yet. Health is read every few minutes while the device is online.'}
@@ -81,7 +81,7 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
       )}
 
       {ignoredIssues.length > 0 && (
-        <div className="text-xs text-gray-500 dark:text-slate-400 space-y-1">
+        <div className="text-xs text-ink-3 space-y-1">
           <div>Ignored on this device:</div>
           {ignoredIssues.map((i) => (
             <div key={i.item} className="flex items-center gap-3">
@@ -96,8 +96,8 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
         </div>
       )}
 
-      <div className="pt-3 border-t border-gray-100 dark:border-slate-700 space-y-2">
-        <label className="flex items-start gap-2 text-sm text-gray-800 dark:text-slate-200">
+      <div className="pt-3 border-t border-line-soft space-y-2">
+        <label className="flex items-start gap-2 text-sm text-ink">
           <input
             type="checkbox"
             className="mt-0.5"
@@ -107,14 +107,14 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
           />
           <span>
             Expected to go offline at times
-            <span className="block text-xs text-gray-500 dark:text-slate-400">
+            <span className="block text-xs text-ink-3">
               For solar or battery powered devices, or anything that drops out normally. Shown grey
               instead of red when offline, with no alert each time.
             </span>
           </span>
         </label>
         {device.intermittent && (
-          <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 pl-6">
+          <div className="flex items-center gap-2 text-sm text-ink-2 pl-6">
             Alert if offline for more than
             <input
               type="number"
@@ -131,12 +131,12 @@ export default function DeviceHealthCard({ device }: { device: Device }) {
                 }
               }}
             />
-            hours <span className="text-xs text-gray-500">(0 = never)</span>
+            hours <span className="text-xs text-ink-3">(0 = never)</span>
           </div>
         )}
       </div>
 
-      {save.isError && <div className="text-sm text-red-600">Could not save.</div>}
+      {save.isError && <div className="text-sm text-bad">Could not save.</div>}
     </div>
   );
 }

@@ -23,12 +23,12 @@ const PORT_PRESETS  = [
 ];
 
 const ACTION_COLOR: Record<string, string> = {
-  accept: 'text-green-600 dark:text-green-400', drop: 'text-red-600 dark:text-red-400',
-  reject: 'text-red-500 dark:text-red-400', log: 'text-yellow-600 dark:text-yellow-400',
-  passthrough: 'text-blue-600 dark:text-blue-400', jump: 'text-purple-600 dark:text-purple-400',
-  return: 'text-indigo-500 dark:text-indigo-400', masquerade: 'text-orange-600 dark:text-orange-400',
-  'src-nat': 'text-blue-600 dark:text-blue-400', 'dst-nat': 'text-cyan-600 dark:text-cyan-400',
-  netmap: 'text-teal-600 dark:text-teal-400', redirect: 'text-violet-600 dark:text-violet-400',
+  accept: 'text-good', drop: 'text-bad',
+  reject: 'text-bad', log: 'text-warn',
+  passthrough: 'text-accent', jump: 'text-violet dark:text-violet',
+  return: 'text-info dark:text-info', masquerade: 'text-warn dark:text-warn',
+  'src-nat': 'text-accent', 'dst-nat': 'text-info dark:text-info',
+  netmap: 'text-teal-600 dark:text-teal-400', redirect: 'text-violet dark:text-violet',
 };
 
 const NAT_CHAINS  = ['srcnat', 'dstnat'];
@@ -41,9 +41,9 @@ function errMsg(err: unknown) {
 function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <div className="flex items-center justify-between">
-      <label className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</label>
+      <label className="text-sm font-medium text-ink-2">{label}</label>
       <button type="button" onClick={() => onChange(!value)}
-        className={clsx('relative inline-flex h-6 w-11 items-center rounded-full transition-colors', value ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600')}>
+        className={clsx('relative inline-flex h-6 w-11 items-center rounded-full transition-colors', value ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3')}>
         <span className={clsx('inline-block h-4 w-4 transform rounded-full bg-white transition-transform', value ? 'translate-x-6' : 'translate-x-1')} />
       </button>
     </div>
@@ -137,8 +137,8 @@ function EndpointPicker({
         {(['any', 'address', 'list'] as Endpoint[]).map(k => (
           <button key={k} type="button" onClick={() => onKind(k)}
             className={clsx('px-2.5 py-1 text-xs font-medium rounded-md border transition-colors capitalize',
-              kind === k ? 'bg-blue-600 border-blue-600 text-white'
-                : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300')}>
+              kind === k ? 'bg-accent border-accent text-white'
+                : 'bg-surface border-line text-ink-2')}>
             {k === 'list' ? 'Address List' : k}
           </button>
         ))}
@@ -178,9 +178,9 @@ function RuleModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h3 className="font-semibold text-ink">{title}</h3>
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-5">
           {/* Action chips */}
@@ -191,9 +191,9 @@ function RuleModal({
                 <button key={a} type="button" onClick={() => set('action', a)}
                   className={clsx('px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors',
                     form.action === a
-                      ? a === 'accept' ? 'bg-green-600 border-green-600 text-white'
-                        : 'bg-red-600 border-red-600 text-white'
-                      : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300')}>
+                      ? a === 'accept' ? 'bg-good border-green-600 text-white'
+                        : 'bg-bad border-red-600 text-white'
+                      : 'bg-surface border-line text-ink-2')}>
                   {lbl}
                 </button>
               ))}
@@ -237,7 +237,7 @@ function RuleModal({
               <div className="flex flex-wrap gap-1.5 mb-1.5">
                 {PORT_PRESETS.map(p => (
                   <button key={p.port} type="button" onClick={() => set('dst_port', p.port)}
-                    className="px-2 py-1 text-xs rounded-md border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-blue-400">
+                    className="px-2 py-1 text-xs rounded-md border border-line text-ink-2 hover:border-accent">
                     {p.label}
                   </button>
                 ))}
@@ -259,8 +259,8 @@ function RuleModal({
               {CONN_STATES.map(s => (
                 <button key={s} type="button" onClick={() => toggleState(s)}
                   className={clsx('px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
-                    states.includes(s) ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300')}>{s}</button>
+                    states.includes(s) ? 'bg-accent border-accent text-white'
+                      : 'bg-surface border-line text-ink-2')}>{s}</button>
               ))}
             </div>
           </div>
@@ -271,15 +271,15 @@ function RuleModal({
           <Toggle label="Disabled" value={form.disabled} onChange={v => set('disabled', v)} />
 
           {/* Live plain-English preview */}
-          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-sm text-blue-800 dark:text-blue-300">
+          <div className="p-3 rounded-lg bg-accent-soft text-sm text-accent dark:text-accent">
             <span className="text-xs uppercase tracking-wide opacity-60">Preview</span>
             <div className="font-medium">{ruleSummary(formToRuleish(form))}</div>
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+              <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-bad">{error}</p>
             </div>
           )}
           <div className="flex items-center justify-end gap-3 pt-2">
@@ -346,43 +346,43 @@ function AddressListsCard({ deviceId, deviceName }: { deviceId: number; deviceNa
     <div className="card overflow-hidden">
       <GuardedWriteUi state={guard} deviceId={deviceId} deviceName={deviceName} pending={addMut.isPending || delMut.isPending || togMut.isPending} />
       <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2 p-4 text-left">
-        <div className="w-7 h-7 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
-          <List className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+        <div className="w-7 h-7 bg-info-bg dark:bg-info-bg rounded-lg flex items-center justify-center flex-shrink-0">
+          <List className="w-3.5 h-3.5 text-info dark:text-info" />
         </div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex-1">
-          Address Lists <span className="text-gray-400 font-normal">({entries.length} entries, {listNames.length} lists)</span>
+        <h3 className="text-sm font-semibold text-ink flex-1">
+          Address Lists <span className="text-ink-4 font-normal">({entries.length} entries, {listNames.length} lists)</span>
         </h3>
-        <span className="text-xs text-gray-400">{open ? 'Hide' : 'Show'}</span>
+        <span className="text-xs text-ink-4">{open ? 'Hide' : 'Show'}</span>
       </button>
       {open && (
         <div className="px-4 pb-4 space-y-3">
-          <p className="text-xs text-gray-500 dark:text-slate-400">
+          <p className="text-xs text-ink-3">
             Reusable address objects. Reference a list from any firewall rule&apos;s Source/Destination instead of repeating IPs.
           </p>
-          {err && !adding && <p className="text-xs text-red-500">{err}</p>}
+          {err && !adding && <p className="text-xs text-bad">{err}</p>}
           {listNames.length === 0 ? (
-            <div className="text-sm text-gray-400 py-3 text-center">No address lists yet.</div>
+            <div className="text-sm text-ink-4 py-3 text-center">No address lists yet.</div>
           ) : listNames.map(name => (
-            <div key={name} className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
-              <div className="px-3 py-1.5 bg-gray-50 dark:bg-slate-800 text-xs font-semibold text-gray-700 dark:text-slate-200 font-mono">{name}</div>
-              <div className="divide-y divide-gray-100 dark:divide-slate-700/50">
+            <div key={name} className="border border-line rounded-lg overflow-hidden">
+              <div className="px-3 py-1.5 bg-surface-2 text-xs font-semibold text-ink-2 dark:text-ink font-mono">{name}</div>
+              <div className="divide-y divide-line/50">
                 {(grouped.get(name) ?? []).map(e => {
                   const off = e.disabled === 'true';
                   const busy = togMut.isPending && togMut.variables?.id === e['.id'];
                   return (
                     <div key={e['.id']} className="flex items-center gap-2 px-3 py-1.5 text-xs">
-                      <span className={clsx('font-mono', off ? 'text-gray-400 line-through' : 'text-gray-700 dark:text-slate-300')}>{e.address}</span>
-                      {e.comment && <span className="text-gray-400 italic truncate">{e.comment}</span>}
-                      {off && <span className="text-gray-400 text-[10px] uppercase tracking-wide">disabled</span>}
-                      {e.dynamic === 'true' && <span className="text-amber-500 text-[10px]">dynamic</span>}
+                      <span className={clsx('font-mono', off ? 'text-ink-4 line-through' : 'text-ink-2')}>{e.address}</span>
+                      {e.comment && <span className="text-ink-4 italic truncate">{e.comment}</span>}
+                      {off && <span className="text-ink-4 text-[10px] uppercase tracking-wide">disabled</span>}
+                      {e.dynamic === 'true' && <span className="text-warn text-[10px]">dynamic</span>}
                       {canWrite && e.dynamic !== 'true' && (
                         <div className="ml-auto flex items-center gap-2">
                           <button onClick={() => toggle(e['.id'], !off)} disabled={busy}
                             title={off ? 'Enable this entry' : 'Disable this entry (it stays in the list)'}
-                            className={clsx('disabled:opacity-40', off ? 'text-gray-400 hover:text-green-600' : 'text-green-600 hover:text-gray-500')}>
+                            className={clsx('disabled:opacity-40', off ? 'text-ink-4 hover:text-good' : 'text-good hover:text-ink-3')}>
                             <Power className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => remove(e['.id'])} title="Remove this entry" className="text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => remove(e['.id'])} title="Remove this entry" className="text-ink-4 hover:text-bad"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       )}
                     </div>
@@ -392,14 +392,14 @@ function AddressListsCard({ deviceId, deviceName }: { deviceId: number; deviceNa
             </div>
           ))}
           {canWrite && (adding ? (
-            <div className="border border-blue-200 dark:border-blue-800 rounded-lg p-3 space-y-2">
+            <div className="border border-accent dark:border-accent rounded-lg p-3 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <input className="input" value={list} onChange={e => setList(e.target.value)} placeholder="list name (e.g. Trusted)" list="al-names" />
                 <datalist id="al-names">{listNames.map(n => <option key={n} value={n} />)}</datalist>
                 <input className="input font-mono" value={address} onChange={e => setAddress(e.target.value)} placeholder="192.168.1.0/24 or host" />
               </div>
               <input className="input" value={comment} onChange={e => setComment(e.target.value)} placeholder="comment (optional)" />
-              {err && <p className="text-xs text-red-500">{err}</p>}
+              {err && <p className="text-xs text-bad">{err}</p>}
               <div className="flex justify-end gap-2">
                 <button onClick={() => { setAdding(false); setErr(''); }} className="btn-secondary text-xs py-1">Cancel</button>
                 <button onClick={add} disabled={!list || !address || addMut.isPending} className="btn-primary text-xs py-1">Add Entry</button>
@@ -419,10 +419,10 @@ function AddressListsCard({ deviceId, deviceName }: { deviceId: number; deviceNa
 // ─── Counters cell ────────────────────────────────────────────────────────────
 function Counters({ r }: { r: Row }) {
   const bytes = Number(r.bytes || 0); const packets = Number(r.packets || 0);
-  if (packets === 0) return <span className="text-[11px] text-gray-300 dark:text-slate-600" title="No packets matched — possible dead rule">0</span>;
+  if (packets === 0) return <span className="text-[11px] text-ink-4" title="No packets matched — possible dead rule">0</span>;
   return (
-    <span className="text-[11px] text-gray-500 dark:text-slate-400" title={`${packets} packets / ${bytes} bytes`}>
-      {formatCount(packets)} pkts<br /><span className="text-gray-400">{formatBytes(bytes)}</span>
+    <span className="text-[11px] text-ink-3" title={`${packets} packets / ${bytes} bytes`}>
+      {formatCount(packets)} pkts<br /><span className="text-ink-4">{formatBytes(bytes)}</span>
     </span>
   );
 }
@@ -440,7 +440,7 @@ function RuleTable({
     <div className="card overflow-hidden overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+          <tr className="border-b border-line bg-surface-2 dark:bg-surface-3">
             <th className="table-header px-3 py-2.5 text-left w-8">#</th>
             <th className="table-header px-3 py-2.5 text-left">Action</th>
             <th className="table-header px-3 py-2.5 text-left">Rule</th>
@@ -449,38 +449,38 @@ function RuleTable({
             {canWrite && <th className="table-header px-3 py-2.5 w-32" />}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
+        <tbody className="divide-y divide-line table-zebra">
           {rows.map((r, i) => {
             const disabled = r.disabled === 'true';
             const fullIdx = fullOrder.findIndex(x => x['.id'] === r['.id']);
             return (
-              <tr key={r['.id'] ?? i} className={clsx('hover:bg-gray-50 dark:hover:bg-slate-700/30', disabled && 'opacity-40')}>
-                <td className="px-3 py-2 text-gray-400 text-xs">{fullIdx >= 0 ? fullIdx + 1 : i + 1}</td>
-                <td className={clsx('px-3 py-2 text-xs font-bold uppercase', ACTION_COLOR[r.action] ?? 'text-gray-500')}>
+              <tr key={r['.id'] ?? i} className={clsx('hover:bg-surface-2/30', disabled && 'opacity-40')}>
+                <td className="px-3 py-2 text-ink-4 text-xs">{fullIdx >= 0 ? fullIdx + 1 : i + 1}</td>
+                <td className={clsx('px-3 py-2 text-xs font-bold uppercase', ACTION_COLOR[r.action] ?? 'text-ink-3')}>
                   {r.action}{r['jump-target'] ? ` → ${r['jump-target']}` : ''}
                 </td>
-                <td className="px-3 py-2 text-xs text-gray-600 dark:text-slate-300 font-mono max-w-[320px] truncate" title={summaryFn(r)}>
-                  <span className="text-gray-400">{r.chain}</span> · {summaryFn(r)}
+                <td className="px-3 py-2 text-xs text-ink-2 font-mono max-w-[320px] truncate" title={summaryFn(r)}>
+                  <span className="text-ink-4">{r.chain}</span> · {summaryFn(r)}
                 </td>
                 <td className="px-3 py-2"><Counters r={r} /></td>
-                <td className="px-3 py-2 text-xs text-gray-400 dark:text-slate-500 italic max-w-[120px] truncate">{r.comment || ''}</td>
+                <td className="px-3 py-2 text-xs text-ink-3 italic max-w-[120px] truncate">{r.comment || ''}</td>
                 {canWrite && (
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-0.5 justify-end">
                       {canReorder && (
                         <>
                           <button disabled={fullIdx <= 0} onClick={() => onMove(r, 'up')} title="Move up"
-                            className="p-1 rounded text-gray-400 hover:text-blue-500 disabled:opacity-20"><ArrowUp className="w-3.5 h-3.5" /></button>
+                            className="p-1 rounded text-ink-4 hover:text-accent disabled:opacity-20"><ArrowUp className="w-3.5 h-3.5" /></button>
                           <button disabled={fullIdx >= fullOrder.length - 1} onClick={() => onMove(r, 'down')} title="Move down"
-                            className="p-1 rounded text-gray-400 hover:text-blue-500 disabled:opacity-20"><ArrowDown className="w-3.5 h-3.5" /></button>
+                            className="p-1 rounded text-ink-4 hover:text-accent disabled:opacity-20"><ArrowDown className="w-3.5 h-3.5" /></button>
                         </>
                       )}
                       <button title={disabled ? 'Enable' : 'Disable'} onClick={() => onToggle(r)}
-                        className={clsx('p-1 rounded', disabled ? 'text-gray-400 hover:text-green-500' : 'text-green-500')}>
-                        <span className={clsx('inline-block w-2 h-2 rounded-full', disabled ? 'bg-gray-400' : 'bg-green-500')} />
+                        className={clsx('p-1 rounded', disabled ? 'text-ink-4 hover:text-good' : 'text-good')}>
+                        <span className={clsx('inline-block w-2 h-2 rounded-full', disabled ? 'bg-surface-3' : 'bg-good')} />
                       </button>
-                      <button onClick={() => onEdit(r)} className="p-1 rounded text-gray-400 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => onDelete(r)} className="p-1 rounded text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => onEdit(r)} className="p-1 rounded text-ink-4 hover:text-accent"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => onDelete(r)} className="p-1 rounded text-ink-4 hover:text-bad"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>
                 )}
@@ -558,9 +558,9 @@ function NatModal({ title, form, setForm, onSave, onReview, onClose, isPending, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h3 className="font-semibold text-ink">{title}</h3>
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-5">
           <div>
@@ -569,8 +569,8 @@ function NatModal({ title, form, setForm, onSave, onReview, onClose, isPending, 
               {([['port-forward', 'Port Forward'], ['masquerade', 'Masquerade (Internet sharing)'], ['one-to-one', '1:1 NAT'], ['custom', 'Custom']] as [NatPattern, string][]).map(([p, lbl]) => (
                 <button key={p} type="button" onClick={() => setPattern(p)}
                   className={clsx('px-3 py-2 text-sm font-medium rounded-lg border text-left transition-colors',
-                    form.pattern === p ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300')}>
+                    form.pattern === p ? 'bg-accent border-accent text-white'
+                      : 'bg-surface border-line text-ink-2')}>
                   {lbl}
                 </button>
               ))}
@@ -635,7 +635,7 @@ function NatModal({ title, form, setForm, onSave, onReview, onClose, isPending, 
             <input className="input" value={form.comment} onChange={e => set('comment', e.target.value)} placeholder="Optional description…" /></div>
           <Toggle label="Disabled" value={form.disabled} onChange={v => set('disabled', v)} />
 
-          <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-sm text-orange-800 dark:text-orange-300">
+          <div className="p-3 rounded-lg bg-warn-bg dark:bg-warn-bg text-sm text-warn dark:text-warn">
             <span className="text-xs uppercase tracking-wide opacity-60">Preview</span>
             <div className="font-medium">{natSummary({
               action: form.action, chain: form.chain, protocol: form.protocol, 'dst-port': form.dst_port,
@@ -645,9 +645,9 @@ function NatModal({ title, form, setForm, onSave, onReview, onClose, isPending, 
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+              <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-bad">{error}</p>
             </div>
           )}
           <div className="flex items-center justify-end gap-3 pt-2">
@@ -691,17 +691,17 @@ function NatCard({ deviceId }: { deviceId: number }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap pt-2">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-orange-50 dark:bg-orange-900/20 rounded-lg flex items-center justify-center"><ArrowRightLeft className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" /></div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">NAT <span className="text-gray-400 font-normal">({rules.length})</span></h3>
+          <div className="w-7 h-7 bg-warn-bg dark:bg-warn-bg rounded-lg flex items-center justify-center"><ArrowRightLeft className="w-3.5 h-3.5 text-warn dark:text-warn" /></div>
+          <h3 className="text-sm font-semibold text-ink">NAT <span className="text-ink-4 font-normal">({rules.length})</span></h3>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => refetch()} disabled={isFetching} className="btn-secondary flex items-center gap-1.5 text-xs py-1.5"><RefreshCw className={clsx('w-3.5 h-3.5', isFetching && 'animate-spin')} /> Refresh</button>
           {canWrite && <button onClick={() => { setForm(EMPTY_NAT); setErr(''); setShowAdd(true); }} className="btn-primary flex items-center gap-1.5 text-xs py-1.5"><Plus className="w-3.5 h-3.5" /> Add NAT</button>}
         </div>
       </div>
-      {err && <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">{err}</div>}
-      {isLoading ? <div className="text-center py-6 text-gray-400"><RefreshCw className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
-        : rules.length === 0 ? <div className="card p-8 text-center text-gray-400">No NAT rules.</div>
+      {err && <div className="p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg text-sm text-bad">{err}</div>}
+      {isLoading ? <div className="text-center py-6 text-ink-4"><RefreshCw className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+        : rules.length === 0 ? <div className="card p-8 text-center text-ink-4">No NAT rules.</div>
         : <RuleTable rows={rules} fullOrder={rules} canWrite={canWrite} canReorder summaryFn={natSummary}
             onEdit={r => { setForm(natRuleToForm(r)); setErr(''); setEditing(r); }}
             onToggle={r => toggleMut.mutate({ id: r['.id'], disabled: !(r.disabled === 'true') })}
@@ -788,23 +788,23 @@ export default function FirewallTab({ deviceId, deviceName }: { deviceId: number
   const allChains = ['all', ...Array.from(new Set(rules.map(r => r.chain).filter(Boolean))).sort()];
   const filtered = chainFilter === 'all' ? rules : rules.filter(r => r.chain === chainFilter);
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading…</div>;
 
   return (
     <div className="space-y-4">
       <AddressListsCard deviceId={deviceId} deviceName={deviceName} />
 
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center"><Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /></div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Firewall Filter Rules</h3>
+        <div className="w-7 h-7 bg-accent-soft rounded-lg flex items-center justify-center"><Shield className="w-3.5 h-3.5 text-accent" /></div>
+        <h3 className="text-sm font-semibold text-ink">Firewall Filter Rules</h3>
       </div>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg flex-wrap">
+        <div className="flex items-center gap-1 bg-surface-3 p-1 rounded-lg flex-wrap">
           {allChains.map(c => (
             <button key={c} onClick={() => setChainFilter(c)}
               className={clsx('px-3 py-1 text-xs font-medium rounded-md transition-colors capitalize',
-                chainFilter === c ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-slate-400')}>
+                chainFilter === c ? 'bg-white dark:bg-surface-3 text-ink shadow-sm' : 'text-ink-3')}>
               {c === 'all' ? `All (${rules.length})` : `${c} (${rules.filter(r => r.chain === c).length})`}
             </button>
           ))}
@@ -819,12 +819,12 @@ export default function FirewallTab({ deviceId, deviceName }: { deviceId: number
       </div>
 
       {chainFilter !== 'all' && (
-        <p className="text-xs text-gray-400 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> Switch to &quot;All&quot; to reorder rules (order is global across chains).</p>
+        <p className="text-xs text-ink-4 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> Switch to &quot;All&quot; to reorder rules (order is global across chains).</p>
       )}
-      {err && <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">{err}</div>}
+      {err && <div className="p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg text-sm text-bad">{err}</div>}
       <GuardedWriteUi state={guard} deviceId={deviceId} deviceName={deviceName} pending={anyPending} />
 
-      {filtered.length === 0 ? <div className="card p-8 text-center text-gray-400">No firewall rules{chainFilter !== 'all' ? ` in "${chainFilter}"` : ''}.</div>
+      {filtered.length === 0 ? <div className="card p-8 text-center text-ink-4">No firewall rules{chainFilter !== 'all' ? ` in "${chainFilter}"` : ''}.</div>
         : <RuleTable rows={filtered} fullOrder={rules} canWrite={canWrite} canReorder={chainFilter === 'all'} summaryFn={ruleSummary}
             onEdit={r => { setForm(ruleToForm(r)); setErr(''); setEditing(r); }}
             onToggle={r => toggle(r['.id'], !(r.disabled === 'true'))}
@@ -836,7 +836,7 @@ export default function FirewallTab({ deviceId, deviceName }: { deviceId: number
         onClose={() => setEditing(null)} onSave={submitEdit} onReview={() => devicesApi.updateFirewallRule(deviceId, editing['.id'], fwPayload(form, false, true))} />}
 
       {/* NAT is available on all RouterOS devices */}
-      <div className="border-t border-gray-200 dark:border-slate-700 pt-2" />
+      <div className="border-t border-line pt-2" />
       <NatCard deviceId={deviceId} />
     </div>
   );

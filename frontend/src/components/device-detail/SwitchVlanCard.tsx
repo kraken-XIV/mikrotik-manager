@@ -32,7 +32,7 @@ function PortPicker({ all, chosen, onChange }: { all: string[]; chosen: string[]
   return (
     <div className="flex flex-wrap gap-x-3 gap-y-1">
       {all.map((p) => (
-        <label key={p} className="flex items-center gap-1 font-mono text-xs text-gray-700 dark:text-slate-300">
+        <label key={p} className="flex items-center gap-1 font-mono text-xs text-ink-2">
           <input type="checkbox" checked={chosen.includes(p)}
             onChange={(e) => onChange(e.target.checked ? [...chosen, p] : chosen.filter((x) => x !== p))} />
           {p}
@@ -105,16 +105,16 @@ export default function SwitchVlanCard({ view, deviceId }: { view: SwitchVlanVie
   return (
     <div className="card p-4 space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
-        <Cpu className="w-4 h-4 text-indigo-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Switch chip VLANs</h3>
+        <Cpu className="w-4 h-4 text-info" />
+        <h3 className="text-sm font-semibold text-ink">Switch chip VLANs</h3>
         <span className={clsx('px-2 py-0.5 rounded-full text-xs font-medium',
-          view.inUse ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300')}>
+          view.inUse ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good' : 'bg-surface-3 text-ink-2 dark:bg-surface-3 dark:text-ink-2')}>
           {view.inUse ? 'In use' : 'Not set up'}
         </span>
-        {chip && <span className="text-xs text-gray-400 dark:text-slate-500 font-mono">{chip}</span>}
-        {busy && <RefreshCw className="w-3.5 h-3.5 animate-spin text-gray-400 ml-auto" />}
+        {chip && <span className="text-xs text-ink-3 font-mono">{chip}</span>}
+        {busy && <RefreshCw className="w-3.5 h-3.5 animate-spin text-ink-4 ml-auto" />}
       </div>
-      <p className="text-xs text-gray-500 dark:text-slate-400">
+      <p className="text-xs text-ink-3">
         This device&apos;s switch chip keeps VLANs in its own table (Switch, VLAN in WinBox) rather than with
         bridge VLAN filtering, which on this chip moves switching to the CPU.
         {canWrite && ' Every change here runs with Change Guard’s auto-revert required, since these settings can cut the device off: if it stops answering, it restores its previous configuration and restarts.'}
@@ -122,15 +122,15 @@ export default function SwitchVlanCard({ view, deviceId }: { view: SwitchVlanVie
 
       {note && (
         <div className={clsx('flex gap-2 p-2.5 rounded-lg border text-xs',
-          note.ok ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-            : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300')}>
+          note.ok ? 'border-good dark:border-good bg-good-bg text-good dark:text-good'
+            : 'border-bad dark:border-bad bg-bad-bg text-bad dark:text-bad')}>
           <p className="flex-1">{note.text}</p>
           <button type="button" onClick={() => setNote(null)} className="opacity-60 hover:opacity-100"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
 
       {view.filteringBridges.length > 0 && (
-        <div className="flex gap-2 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-800 dark:text-amber-300">
+        <div className="flex gap-2 p-2.5 rounded-lg border border-warn dark:border-warn bg-warn-bg text-xs text-warn dark:text-warn">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
           <p>
             VLAN filtering is on for {view.filteringBridges.join(', ')}. On this switch chip that bridge&apos;s
@@ -141,7 +141,7 @@ export default function SwitchVlanCard({ view, deviceId }: { view: SwitchVlanVie
 
       <table className="w-full text-xs">
         <thead>
-          <tr className="text-left text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+          <tr className="text-left text-ink-3 border-b border-line">
             <th className="py-1.5 pr-3 font-medium w-28">VLAN</th>
             <th className="py-1.5 pr-3 font-medium">Ports</th>
             <th className="py-1.5 pr-3 font-medium w-20">Switch</th>
@@ -150,58 +150,58 @@ export default function SwitchVlanCard({ view, deviceId }: { view: SwitchVlanVie
         </thead>
         <tbody>
           {view.vlans.length === 0 && !adding && (
-            <tr><td colSpan={4} className="py-2 text-gray-400 dark:text-slate-500">The switch VLAN table is empty.</td></tr>
+            <tr><td colSpan={4} className="py-2 text-ink-3">The switch VLAN table is empty.</td></tr>
           )}
           {view.vlans.map((v: Entry) => editing?.id === v.id ? (
-            <tr key={v.id} className="border-b border-gray-100 dark:border-slate-800 bg-blue-50/50 dark:bg-slate-700/40">
-              <td className="py-2 pr-3 font-mono text-gray-900 dark:text-white align-top">
+            <tr key={v.id} className="border-b border-line-soft dark:border-line-soft bg-blue-50/50 dark:bg-surface-3">
+              <td className="py-2 pr-3 font-mono text-ink align-top">
                 {v.vlanId}
-                <label className="flex items-center gap-1 mt-1 font-sans text-gray-600 dark:text-slate-300">
+                <label className="flex items-center gap-1 mt-1 font-sans text-ink-2">
                   <input type="checkbox" checked={!editing.disabled} onChange={(e) => setEditing({ ...editing, disabled: !e.target.checked })} /> enabled
                 </label>
               </td>
               <td className="py-2 pr-3"><PortPicker all={allPorts} chosen={editing.ports} onChange={(ports) => setEditing({ ...editing, ports })} /></td>
-              <td className="py-2 pr-3 font-mono text-gray-500 dark:text-slate-400 align-top">{v.switch}</td>
+              <td className="py-2 pr-3 font-mono text-ink-3 align-top">{v.switch}</td>
               <td className="py-2 align-top">
                 <div className="flex gap-1">
                   <button type="button" title="Save" disabled={busy || editing.ports.length === 0}
-                    onClick={() => update.mutate(editing)} className="p-1 text-green-600 disabled:opacity-40"><Check className="w-3.5 h-3.5" /></button>
-                  <button type="button" title="Cancel" onClick={() => setEditing(null)} className="p-1 text-gray-400"><X className="w-3.5 h-3.5" /></button>
+                    onClick={() => update.mutate(editing)} className="p-1 text-good disabled:opacity-40"><Check className="w-3.5 h-3.5" /></button>
+                  <button type="button" title="Cancel" onClick={() => setEditing(null)} className="p-1 text-ink-4"><X className="w-3.5 h-3.5" /></button>
                 </div>
               </td>
             </tr>
           ) : (
-            <tr key={v.id || `${v.switch}-${v.vlanId}`} className={clsx('border-b border-gray-100 dark:border-slate-800', v.disabled && 'opacity-50')}>
-              <td className="py-1.5 pr-3 font-mono text-gray-900 dark:text-white">{v.vlanId}{v.disabled && <span className="ml-1 text-gray-400">(disabled)</span>}</td>
-              <td className="py-1.5 pr-3 font-mono text-gray-700 dark:text-slate-300">{v.ports.join(', ') || '—'}</td>
-              <td className="py-1.5 pr-3 font-mono text-gray-500 dark:text-slate-400">{v.switch}</td>
+            <tr key={v.id || `${v.switch}-${v.vlanId}`} className={clsx('border-b border-line-soft dark:border-line-soft', v.disabled && 'opacity-50')}>
+              <td className="py-1.5 pr-3 font-mono text-ink">{v.vlanId}{v.disabled && <span className="ml-1 text-ink-4">(disabled)</span>}</td>
+              <td className="py-1.5 pr-3 font-mono text-ink-2">{v.ports.join(', ') || '—'}</td>
+              <td className="py-1.5 pr-3 font-mono text-ink-3">{v.switch}</td>
               {canWrite && (
                 <td className="py-1.5">
                   <div className="flex gap-1">
                     <button type="button" title="Edit" disabled={busy}
                       onClick={() => { setNote(null); setAdding(null); setEditing({ id: v.id, ports: v.ports, disabled: v.disabled }); }}
-                      className="p-1 text-gray-400 hover:text-blue-500"><Pencil className="w-3.5 h-3.5" /></button>
+                      className="p-1 text-ink-4 hover:text-accent"><Pencil className="w-3.5 h-3.5" /></button>
                     <button type="button" title="Remove" disabled={busy}
                       onClick={() => { if (confirm(`Remove switch VLAN ${v.vlanId}? Change Guard's auto-revert covers it.`)) { setNote(null); remove.mutate(v.id); } }}
-                      className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                      className="p-1 text-ink-4 hover:text-bad"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </td>
               )}
             </tr>
           ))}
           {adding && (
-            <tr className="border-b border-gray-100 dark:border-slate-800 bg-blue-50/50 dark:bg-slate-700/40">
+            <tr className="border-b border-line-soft dark:border-line-soft bg-blue-50/50 dark:bg-surface-3">
               <td className="py-2 pr-3 align-top">
                 <input className="input py-1 text-xs font-mono w-20" placeholder="VLAN" value={adding.vlan} aria-label="VLAN ID"
                   onChange={(e) => setAdding({ ...adding, vlan: e.target.value.replace(/[^0-9]/g, '') })} />
               </td>
               <td className="py-2 pr-3"><PortPicker all={allPorts} chosen={adding.ports} onChange={(ports) => setAdding({ ...adding, ports })} /></td>
-              <td className="py-2 pr-3 font-mono text-gray-500 dark:text-slate-400 align-top">{view.switches[0]?.name}</td>
+              <td className="py-2 pr-3 font-mono text-ink-3 align-top">{view.switches[0]?.name}</td>
               <td className="py-2 align-top">
                 <div className="flex gap-1">
                   <button type="button" title="Add" disabled={busy || !adding.vlan || Number(adding.vlan) > 4095 || adding.ports.length === 0}
-                    onClick={() => add.mutate({ vlan: Number(adding.vlan), ports: adding.ports })} className="p-1 text-green-600 disabled:opacity-40"><Check className="w-3.5 h-3.5" /></button>
-                  <button type="button" title="Cancel" onClick={() => setAdding(null)} className="p-1 text-gray-400"><X className="w-3.5 h-3.5" /></button>
+                    onClick={() => add.mutate({ vlan: Number(adding.vlan), ports: adding.ports })} className="p-1 text-good disabled:opacity-40"><Check className="w-3.5 h-3.5" /></button>
+                  <button type="button" title="Cancel" onClick={() => setAdding(null)} className="p-1 text-ink-4"><X className="w-3.5 h-3.5" /></button>
                 </div>
               </td>
             </tr>
@@ -217,7 +217,7 @@ export default function SwitchVlanCard({ view, deviceId }: { view: SwitchVlanVie
       {view.ports.length > 0 && (
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-left text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+            <tr className="text-left text-ink-3 border-b border-line">
               <th className="py-1.5 pr-3 font-medium">Port</th>
               <th className="py-1.5 pr-3 font-medium">VLAN mode</th>
               <th className="py-1.5 pr-3 font-medium">VLAN header</th>
@@ -230,9 +230,9 @@ export default function SwitchVlanCard({ view, deviceId }: { view: SwitchVlanVie
               const e = portEdits[p.name];
               const cur = { ...p, ...(e ?? {}) };
               return (
-                <tr key={`${p.switch}-${p.name}`} className="border-b border-gray-100 dark:border-slate-800">
-                  <td className="py-1.5 pr-3 font-mono text-gray-900 dark:text-white">{p.name}</td>
-                  <td className="py-1.5 pr-3 font-mono text-gray-700 dark:text-slate-300" title={MODE_HELP[cur.vlanMode]}>
+                <tr key={`${p.switch}-${p.name}`} className="border-b border-line-soft dark:border-line-soft">
+                  <td className="py-1.5 pr-3 font-mono text-ink">{p.name}</td>
+                  <td className="py-1.5 pr-3 font-mono text-ink-2" title={MODE_HELP[cur.vlanMode]}>
                     {canWrite ? (
                       <select className="input py-0.5 text-xs font-mono w-28" value={cur.vlanMode} aria-label={`VLAN mode for ${p.name}`}
                         onChange={(ev) => portEdit(p.name, { vlanMode: ev.target.value }, p)}>
@@ -240,7 +240,7 @@ export default function SwitchVlanCard({ view, deviceId }: { view: SwitchVlanVie
                       </select>
                     ) : (p.vlanMode || '—')}
                   </td>
-                  <td className="py-1.5 pr-3 font-mono text-gray-700 dark:text-slate-300" title={HEADER_HELP[cur.vlanHeader]}>
+                  <td className="py-1.5 pr-3 font-mono text-ink-2" title={HEADER_HELP[cur.vlanHeader]}>
                     {canWrite ? (
                       <select className="input py-0.5 text-xs font-mono w-36" value={cur.vlanHeader} aria-label={`VLAN header for ${p.name}`}
                         onChange={(ev) => portEdit(p.name, { vlanHeader: ev.target.value }, p)}>
@@ -248,7 +248,7 @@ export default function SwitchVlanCard({ view, deviceId }: { view: SwitchVlanVie
                       </select>
                     ) : (p.vlanHeader || '—')}
                   </td>
-                  <td className="py-1.5 pr-3 font-mono text-gray-700 dark:text-slate-300">
+                  <td className="py-1.5 pr-3 font-mono text-ink-2">
                     {canWrite ? (
                       <input className="input py-0.5 text-xs font-mono w-20" value={cur.defaultVlanId} aria-label={`Default VLAN for ${p.name}`}
                         onChange={(ev) => portEdit(p.name, { defaultVlanId: ev.target.value.trim() }, p)} placeholder="auto" />
@@ -260,9 +260,9 @@ export default function SwitchVlanCard({ view, deviceId }: { view: SwitchVlanVie
                         <div className="flex gap-1">
                           <button type="button" title="Save" disabled={busy}
                             onClick={() => { setNote(null); setPort.mutate({ name: p.name, edit: e }); }}
-                            className="p-1 text-green-600 disabled:opacity-40"><Check className="w-3.5 h-3.5" /></button>
+                            className="p-1 text-good disabled:opacity-40"><Check className="w-3.5 h-3.5" /></button>
                           <button type="button" title="Undo" onClick={() => setPortEdits((x) => { const n = { ...x }; delete n[p.name]; return n; })}
-                            className="p-1 text-gray-400"><X className="w-3.5 h-3.5" /></button>
+                            className="p-1 text-ink-4"><X className="w-3.5 h-3.5" /></button>
                         </div>
                       )}
                     </td>
