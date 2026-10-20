@@ -1,5 +1,6 @@
 // Side-effect polyfill must precede dependencies, independent of import sorting.
 import 'reflect-metadata';
+
 import * as x509 from '@peculiar/x509';
 import { createPrivateKey, generateKeyPairSync, X509Certificate } from 'crypto';
 

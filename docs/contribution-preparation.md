@@ -6,3 +6,5 @@ Source: 1b8bc03, re-applied mechanically to current upstream instead of copying 
 Run root format:check, both package lint/types/tests/build and frontend lint:css. Reconcile all rules/exclusions with v1.0 before proposing.
 
 Formatter compatibility exceptions (test-only): explicit leading reflect-metadata import in the PKI suite; retain the console-format detector while distinguishing a single-argument trailing comma from a real extra argument. Positive/negative scanner fixtures remain active. No product security behaviour is changed.
+
+Formatting also relocates the existing GlobalSearch set-state-in-effect directive to the same setResults call after its one-line conditional expands. This preserves an upstream local exception; it does not introduce a global rule exclusion or change runtime logic.

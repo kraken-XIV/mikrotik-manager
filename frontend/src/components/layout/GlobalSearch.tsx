@@ -58,8 +58,8 @@ export default function GlobalSearch() {
 
   // Fetch when debounced query is long enough
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (debouncedQuery.length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults(null);
       return;
     }
