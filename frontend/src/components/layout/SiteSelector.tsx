@@ -193,12 +193,12 @@ export default function SiteSelector({ isCollapsed, onNavigate }: Props) {
                 className="w-full px-2 py-1.5 text-[12.5px] rounded border bg-transparent"
                 style={{ borderColor: 'var(--line)', color: 'var(--ink)' }}
               />
-              {error && <div className="text-[11px] text-red-500">{error}</div>}
+              {error && <div className="text-[11px] text-bad">{error}</div>}
               <div className="flex gap-2">
                 <button
                   onClick={() => saveMutation.mutate()}
                   disabled={saveMutation.isPending}
-                  className="flex-1 px-2 py-1.5 text-[12px] rounded bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
+                  className="flex-1 px-2 py-1.5 text-[12px] rounded bg-accent text-accent-fg hover:bg-accent disabled:opacity-50"
                 >
                   {saveMutation.isPending ? 'Saving…' : 'Save'}
                 </button>
@@ -247,7 +247,7 @@ export default function SiteSelector({ isCollapsed, onNavigate }: Props) {
                   >
                     <Globe className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--ink-3)' }} />
                     <span className="flex-1 text-left">{allLabel}</span>
-                    {currentSiteId == null && currentGroupId == null && <Check className="w-3.5 h-3.5 text-blue-500" />}
+                    {currentSiteId == null && currentGroupId == null && <Check className="w-3.5 h-3.5 text-accent" />}
                   </button>
                   <div className="my-1 h-px" style={{ background: 'var(--line)' }} />
                 </>
@@ -267,7 +267,7 @@ export default function SiteSelector({ isCollapsed, onNavigate }: Props) {
                       <FolderOpen className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--ink-3)' }} />
                       <span className="flex-1 text-left truncate">{g.name}</span>
                       <span className="text-[10.5px] flex-shrink-0" style={{ color: 'var(--ink-4)' }}>{g.device_count}</span>
-                      {currentGroup?.id === g.id && <Check className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />}
+                      {currentGroup?.id === g.id && <Check className="w-3.5 h-3.5 text-accent flex-shrink-0" />}
                     </button>
                   ))}
                   <div className="px-3 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-4)' }}>Sites</div>
@@ -293,7 +293,7 @@ export default function SiteSelector({ isCollapsed, onNavigate }: Props) {
                     <span className="text-[10.5px] flex-shrink-0" style={{ color: 'var(--ink-4)' }}>
                       {s.device_count}
                     </span>
-                    {shown?.id === s.id && <Check className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />}
+                    {shown?.id === s.id && <Check className="w-3.5 h-3.5 text-accent flex-shrink-0" />}
                   </button>
                   {canWrite && (
                     <button

@@ -24,7 +24,7 @@ type Readiness = ReturnType<typeof useGuardReadiness>;
 function ReadinessNote({ readiness, blocking }: { readiness: Readiness; blocking: boolean }) {
   if (readiness.isLoading) {
     return (
-      <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-slate-400">
+      <div className="flex items-start gap-2 text-xs text-ink-3">
         <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin" />
         <span>Checking that this device can undo the change by itself if it goes wrong…</span>
       </div>
@@ -32,7 +32,7 @@ function ReadinessNote({ readiness, blocking }: { readiness: Readiness; blocking
   }
   if (readiness.isError || !readiness.data) {
     return (
-      <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400">
+      <div className="flex items-start gap-2 text-xs text-warn">
         <AlertTriangle className="w-4 h-4 flex-shrink-0" />
         <span>
           Couldn&apos;t check auto-revert on this device. If it can&apos;t be armed when you apply,
@@ -43,8 +43,8 @@ function ReadinessNote({ readiness, blocking }: { readiness: Readiness; blocking
   }
   if (readiness.data.ready) {
     return (
-      <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-slate-400">
-        <ShieldCheck className="w-4 h-4 flex-shrink-0 text-green-600 dark:text-green-400" />
+      <div className="flex items-start gap-2 text-xs text-ink-3">
+        <ShieldCheck className="w-4 h-4 flex-shrink-0 text-good" />
         <span>
           Auto-revert is ready: the device saves a restore point first. If it stops responding
           after this change, it restores itself automatically and comes back.
@@ -53,7 +53,7 @@ function ReadinessNote({ readiness, blocking }: { readiness: Readiness; blocking
     );
   }
   return (
-    <div className="rounded-lg border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-3 text-xs text-red-800 dark:text-red-300 flex items-start gap-2">
+    <div className="rounded-lg border border-bad bg-bad-bg dark:border-bad p-3 text-xs text-bad dark:text-bad flex items-start gap-2">
       <ShieldAlert className="w-4 h-4 flex-shrink-0" />
       <span>
         This device can&apos;t undo a change by itself right now
@@ -98,31 +98,31 @@ export default function ChangeGuardDialog({
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-md mx-4 p-6 space-y-4">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
+          <AlertTriangle className="w-6 h-6 text-warn flex-shrink-0" />
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">{description}</p>
+            <h3 className="font-semibold text-ink">{title}</h3>
+            <p className="mt-1 text-sm text-ink-2">{description}</p>
           </div>
         </div>
 
         {reason && (
-          <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-3">
-            <p className="text-sm text-amber-800 dark:text-amber-300">{reason}</p>
+          <div className="rounded-lg border border-warn bg-warn-bg dark:border-warn p-3">
+            <p className="text-sm text-warn dark:text-warn">{reason}</p>
           </div>
         )}
 
         {deviceId ? (
           <ReadinessNote readiness={readiness} blocking={false} />
         ) : protectedByGuard ? (
-          <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-slate-400">
-            <ShieldCheck className="w-4 h-4 flex-shrink-0 text-green-600 dark:text-green-400" />
+          <div className="flex items-start gap-2 text-xs text-ink-3">
+            <ShieldCheck className="w-4 h-4 flex-shrink-0 text-good" />
             <span>
               Protected: the device saves a restore point first. If it stops responding after
               this change, it restores itself automatically and comes back.
             </span>
           </div>
         ) : (
-          <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400">
+          <div className="flex items-start gap-2 text-xs text-warn">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             <span>
               Auto-revert is not available for this device, so this change cannot be undone
@@ -136,7 +136,7 @@ export default function ChangeGuardDialog({
           <button
             onClick={onConfirm}
             disabled={pending}
-            className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg flex items-center gap-2"
+            className="px-4 py-1.5 bg-warn hover:bg-warn disabled:opacity-50 text-white text-sm font-medium rounded-lg flex items-center gap-2"
           >
             {pending && <RefreshCw className="w-4 h-4 animate-spin" />}
             {confirmLabel}
@@ -214,13 +214,13 @@ export function LockoutVerdictDialog({
       <div className="card w-full max-w-lg mx-4 p-6 space-y-4 max-h-[85vh] overflow-y-auto">
         <div className="flex items-start gap-3">
           {critical
-            ? <ShieldAlert className="w-6 h-6 text-red-500 flex-shrink-0" />
-            : <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />}
+            ? <ShieldAlert className="w-6 h-6 text-bad flex-shrink-0" />
+            : <AlertTriangle className="w-6 h-6 text-warn flex-shrink-0" />}
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">
+            <h3 className="font-semibold text-ink">
               {critical ? 'This will disconnect the device' : 'This leaves management fragile'}
             </h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">{verdict.headline}</p>
+            <p className="mt-1 text-sm text-ink-2">{verdict.headline}</p>
           </div>
         </div>
 
@@ -229,35 +229,35 @@ export function LockoutVerdictDialog({
             key={v.id}
             className={
               v.severity === 'critical'
-                ? 'rounded-lg border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-3'
-                : 'rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-3'
+                ? 'rounded-lg border border-bad bg-bad-bg dark:border-bad p-3'
+                : 'rounded-lg border border-warn bg-warn-bg dark:border-warn p-3'
             }
           >
             <p className={`text-xs font-semibold uppercase tracking-wide ${
               v.severity === 'critical'
-                ? 'text-red-700 dark:text-red-400'
-                : 'text-amber-700 dark:text-amber-400'
+                ? 'text-bad dark:text-bad'
+                : 'text-warn'
             }`}>{v.title}</p>
             <p className={`mt-1 text-sm ${
               v.severity === 'critical'
-                ? 'text-red-800 dark:text-red-300'
-                : 'text-amber-800 dark:text-amber-300'
+                ? 'text-bad dark:text-bad'
+                : 'text-warn dark:text-warn'
             }`}>{v.detail}</p>
           </div>
         ))}
 
         {verdict.path.hops.length > 0 && (
-          <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3">
-            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-gray-500 dark:text-slate-400">
+          <div className="rounded-lg border border-line p-3">
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-ink-3">
               <Route className="w-3.5 h-3.5" />
               How the manager reaches this device
             </div>
             <ul className="space-y-1.5">
               {verdict.path.hops.map((h, i) => (
-                <li key={i} className="text-xs text-gray-600 dark:text-slate-300">
-                  <span className="mono text-[11px] text-gray-400 dark:text-slate-500">{h.kind}</span>{' '}
+                <li key={i} className="text-xs text-ink-2">
+                  <span className="mono text-[11px] text-ink-3">{h.kind}</span>{' '}
                   <span className="font-medium">{h.name}</span>
-                  <div className="text-gray-500 dark:text-slate-400">{h.reason}</div>
+                  <div className="text-ink-3">{h.reason}</div>
                 </li>
               ))}
             </ul>
@@ -267,7 +267,7 @@ export function LockoutVerdictDialog({
         {verdict.warnings.length > 0 && (
           <ul className="space-y-1">
             {verdict.warnings.map((w, i) => (
-              <li key={i} className="text-xs text-gray-500 dark:text-slate-400">• {w}</li>
+              <li key={i} className="text-xs text-ink-3">• {w}</li>
             ))}
           </ul>
         )}
@@ -290,7 +290,7 @@ export function LockoutVerdictDialog({
         {deviceId ? (
           <ReadinessNote readiness={readiness} blocking />
         ) : (
-          <p className="text-xs text-gray-500 dark:text-slate-400">
+          <p className="text-xs text-ink-3">
             This change requires auto-revert: if the device can&apos;t arm it, the change is
             refused rather than applied without a way back.
           </p>
@@ -302,7 +302,7 @@ export function LockoutVerdictDialog({
             onClick={onConfirm}
             disabled={pending || !canConfirm}
             className={`px-4 py-1.5 disabled:opacity-50 text-white text-sm font-medium rounded-lg flex items-center gap-2 ${
-              critical ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'
+              critical ? 'bg-bad hover:bg-bad' : 'bg-warn hover:bg-warn'
             }`}
           >
             {pending && <RefreshCw className="w-4 h-4 animate-spin" />}
@@ -409,7 +409,7 @@ export function GuardedWriteUi({
   return (
     <>
       {state.notice && (
-        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-800 dark:text-amber-300 flex items-start gap-2">
+        <div className="p-3 bg-warn-bg border border-warn dark:border-warn rounded-lg text-sm text-warn dark:text-warn flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span className="flex-1">{state.notice}</span>
           <button onClick={() => state.setNotice(null)} className="text-xs underline">Dismiss</button>

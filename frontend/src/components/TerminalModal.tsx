@@ -260,7 +260,7 @@ export default function TerminalModal({ deviceId, deviceName, onClose }: Props) 
       {/* Window */}
       <div
         ref={windowRef}
-        className="flex flex-col bg-slate-900 shadow-2xl border border-slate-700 overflow-hidden"
+        className="flex flex-col bg-surface shadow-2xl border border-line overflow-hidden"
         style={maximized
           ? { position: 'fixed', inset: 0, zIndex: 10000, borderRadius: 0 }
           : { position: 'fixed', left: pos.x, top: pos.y, width: size.w, height: size.h,
@@ -278,30 +278,30 @@ export default function TerminalModal({ deviceId, deviceName, onClose }: Props) 
 
         {/* Title bar — drag target */}
         <div
-          className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 border-b border-slate-700 select-none shrink-0"
+          className="flex items-center gap-2 px-4 py-2.5 bg-surface-2 border-b border-line select-none shrink-0"
           style={{ cursor: maximized ? 'default' : 'grab' }}
           onMouseDown={handleTitleMouseDown}
           onDoubleClick={toggleMaximize}
         >
-          <TerminalSquare className="w-4 h-4 text-green-400 shrink-0" />
-          <span className="text-sm font-medium text-slate-200 flex-1 truncate">
+          <TerminalSquare className="w-4 h-4 text-good shrink-0" />
+          <span className="text-sm font-medium text-ink flex-1 truncate">
             SSH — {deviceName}
           </span>
 
           {connState === 'connecting' && (
-            <span className="flex items-center gap-1.5 text-xs text-yellow-400">
+            <span className="flex items-center gap-1.5 text-xs text-warn">
               <RefreshCw className="w-3 h-3 animate-spin" /> Connecting…
             </span>
           )}
           {connState === 'ready' && (
-            <span className="flex items-center gap-1.5 text-xs text-green-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Connected
+            <span className="flex items-center gap-1.5 text-xs text-good">
+              <span className="w-1.5 h-1.5 rounded-full bg-good animate-pulse" /> Connected
             </span>
           )}
           {(connState === 'error' || connState === 'closed') && (
             <button
               onClick={handleReconnect}
-              className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 px-2 py-0.5 rounded border border-blue-700 hover:border-blue-500 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-accent hover:text-accent px-2 py-0.5 rounded border border-accent hover:border-accent transition-colors"
             >
               <RefreshCw className="w-3 h-3" /> Reconnect
             </button>
@@ -309,14 +309,14 @@ export default function TerminalModal({ deviceId, deviceName, onClose }: Props) 
 
           <button
             onClick={toggleMaximize}
-            className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors"
+            className="p-1 rounded text-ink-3 hover:text-ink hover:bg-surface-3 transition-colors"
             title={maximized ? 'Restore' : 'Maximize'}
           >
             {maximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-slate-700 transition-colors"
+            className="p-1 rounded text-ink-3 hover:text-bad hover:bg-surface-3 transition-colors"
             title="Close"
           >
             <X className="w-4 h-4" />
@@ -325,7 +325,7 @@ export default function TerminalModal({ deviceId, deviceName, onClose }: Props) 
 
         {/* Error banner */}
         {connState === 'error' && errorMsg && (
-          <div className="flex items-start gap-2 px-4 py-2.5 bg-red-900/40 border-b border-red-800 text-sm text-red-300">
+          <div className="flex items-start gap-2 px-4 py-2.5 bg-bad-bg border-b border-bad text-sm text-bad">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>

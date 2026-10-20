@@ -78,7 +78,7 @@ export default function RomonCard({ sites }: { sites: Site[] }) {
         Keep RoMON on, with the secret its RoMON network uses, per site or group (a site&apos;s setting wins over its group&apos;s, and both over
         the fleet default). The Security page flags devices that differ and can apply the setting; nothing changes on its own.
       </p>
-      {error && <p className="px-4 pt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="px-4 pt-2 text-sm text-bad">{error}</p>}
 
       {editing && (
         <div className="px-4 py-3 space-y-3" style={{ borderBottom: '1px solid var(--line)' }}>
@@ -124,9 +124,9 @@ export default function RomonCard({ sites }: { sites: Site[] }) {
               <td className="px-4 py-2.5 w-20">
                 {mayEdit(t) && (
                   <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => start(t)} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400" title="Edit"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => start(t)} className="p-1.5 rounded hover:bg-surface-3 text-ink-4" title="Edit"><Pencil className="w-3.5 h-3.5" /></button>
                     {rowFor(t) && (
-                      <button onClick={() => void clear(t)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-400 hover:text-red-500" title="Remove this setting"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => void clear(t)} className="p-1.5 rounded hover:bg-bad-bg dark:hover:bg-red-950/40 text-ink-4 hover:text-bad" title="Remove this setting"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
                   </div>
                 )}

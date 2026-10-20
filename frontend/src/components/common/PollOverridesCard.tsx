@@ -57,8 +57,8 @@ export default function PollOverridesCard({ scope, id, siteId, compact = false }
 
   return (
     <div className={compact ? '' : 'card p-5'}>
-      {!compact && <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Polling and backups</h3>}
-      <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+      {!compact && <h3 className="font-semibold text-ink mb-1">Polling and backups</h3>}
+      <p className="text-xs text-ink-3 mb-4">
         {scope === 'site'
           ? 'Devices in this site use these instead of the global settings, unless a device overrides them itself.'
           : 'Only for a device that needs to differ from its site, such as one on a slow backup link. Each change saves straight away.'}
@@ -72,8 +72,8 @@ export default function PollOverridesCard({ scope, id, siteId, compact = false }
           return (
             <div key={r.key} className={`flex items-center justify-between gap-3 ${off ? 'opacity-50' : ''}`}>
               <div className="min-w-0">
-                <div className="text-sm text-gray-700 dark:text-slate-300">{r.label}</div>
-                <div className="text-xs text-gray-400">
+                <div className="text-sm text-ink-2">{r.label}</div>
+                <div className="text-xs text-ink-4">
                   {show(eff.value, r.unit)} · {own ? 'set here' : `from ${fromWhere(eff.source)}`}
                 </div>
               </div>
@@ -93,7 +93,7 @@ export default function PollOverridesCard({ scope, id, siteId, compact = false }
                       submitted it, closing the dialog (#261). */}
                   <button
                     type="button"
-                    className="text-xs text-blue-600 hover:underline w-14 text-right"
+                    className="text-xs text-accent hover:underline w-14 text-right"
                     onClick={() => save.mutate({ [r.key]: own ? null : eff.value })}
                   >
                     {own ? 'Inherit' : 'Override'}
@@ -104,7 +104,7 @@ export default function PollOverridesCard({ scope, id, siteId, compact = false }
           );
         })}
       </div>
-      {save.isError && <p className="text-xs text-red-600 mt-2">{(save.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Couldn’t save'}</p>}
+      {save.isError && <p className="text-xs text-bad mt-2">{(save.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Couldn’t save'}</p>}
     </div>
   );
 }

@@ -56,27 +56,27 @@ function Controller({ c }: { c: CapsmanController }) {
     <div className="card overflow-hidden">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-200 dark:border-slate-700"
+        className="w-full flex items-center gap-3 px-4 py-3 text-left border-b border-line"
       >
-        {open ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-        <Server className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        {open ? <ChevronDown className="w-4 h-4 text-ink-4" /> : <ChevronRight className="w-4 h-4 text-ink-4" />}
+        <Server className="w-4 h-4 text-accent" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               to={`/devices/${c.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-sm font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+              className="text-sm font-semibold text-ink hover:text-accent dark:hover:text-accent"
             >
               {c.name}
             </Link>
-            <span className="mono text-[11px] text-gray-400">{c.ip_address}</span>
+            <span className="mono text-[11px] text-ink-4">{c.ip_address}</span>
             {c.wifi_role === 'controller_cap' && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent font-medium">
                 controller + local radios
               </span>
             )}
           </div>
-          <div className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+          <div className="text-[11px] text-ink-3 mt-0.5">
             {c.access_points.length} access point{c.access_points.length !== 1 ? 's' : ''} ·{' '}
             {rows.length} radio{rows.length !== 1 ? 's' : ''} ·{' '}
             {c.client_count} client{c.client_count !== 1 ? 's' : ''}
@@ -87,9 +87,9 @@ function Controller({ c }: { c: CapsmanController }) {
       {open && (
         <div className="p-4 space-y-4">
           {unmanaged.length > 0 && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
-              <p className="text-sm text-amber-800 dark:text-amber-300">
+            <div className="flex items-start gap-2 rounded-lg border border-warn dark:border-warn bg-warn-bg p-3">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-warn" />
+              <p className="text-sm text-warn dark:text-warn">
                 {unmanaged.length} access point{unmanaged.length !== 1 ? 's are' : ' is'} provisioned by this
                 controller but not added to the fleet. Add {unmanaged.length !== 1 ? 'them' : 'it'} to see
                 clients, health and history.
@@ -100,40 +100,40 @@ function Controller({ c }: { c: CapsmanController }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-slate-700">
+                <tr className="border-b border-line">
                   {['Access point', 'Interface', 'SSID', 'Channel', 'Clients', 'Status'].map((h) => (
                     <th key={h} className="table-header px-3 py-2 text-left whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+              <tbody className="divide-y divide-line">
                 {rows.map((r) => (
-                  <tr key={r.key} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                  <tr key={r.key} className="hover:bg-surface-2/30">
                     <td className="px-3 py-2 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         {r.deviceId != null ? (
-                          <Link to={`/devices/${r.deviceId}`} className="text-xs font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
+                          <Link to={`/devices/${r.deviceId}`} className="text-xs font-medium text-ink hover:text-accent dark:hover:text-accent">
                             {r.deviceName}
                           </Link>
                         ) : (
-                          <span className="text-xs text-gray-500 dark:text-slate-400">{r.deviceName}</span>
+                          <span className="text-xs text-ink-3">{r.deviceName}</span>
                         )}
                         {r.local && (
-                          <span className="text-[9px] px-1 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">local</span>
+                          <span className="text-[9px] px-1 py-0.5 rounded bg-surface-3 text-ink-2">local</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 mono text-xs text-gray-600 dark:text-slate-300 whitespace-nowrap">{r.interfaceName}</td>
-                    <td className="px-3 py-2 text-xs font-medium text-gray-900 dark:text-white">{r.ssid || <span className="text-gray-400">—</span>}</td>
-                    <td className="px-3 py-2 mono text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">{r.channel || <span className="text-gray-400">—</span>}</td>
-                    <td className="px-3 py-2 mono num-tab text-xs text-gray-600 dark:text-slate-300">
-                      {r.clients ?? <span className="text-gray-400">—</span>}
+                    <td className="px-3 py-2 mono text-xs text-ink-2 whitespace-nowrap">{r.interfaceName}</td>
+                    <td className="px-3 py-2 text-xs font-medium text-ink">{r.ssid || <span className="text-ink-4">—</span>}</td>
+                    <td className="px-3 py-2 mono text-xs text-ink-3 whitespace-nowrap">{r.channel || <span className="text-ink-4">—</span>}</td>
+                    <td className="px-3 py-2 mono num-tab text-xs text-ink-2">
+                      {r.clients ?? <span className="text-ink-4">—</span>}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className={clsx(
                         'text-[10px] px-1.5 py-0.5 rounded font-medium',
-                        r.running ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                          : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                        r.running ? 'bg-good-bg text-good'
+                          : 'bg-warn-bg dark:bg-warn-bg text-warn dark:text-warn'
                       )}>
                         {r.running ? 'running' : 'idle'}
                       </span>
@@ -146,26 +146,26 @@ function Controller({ c }: { c: CapsmanController }) {
 
           {c.configurations.length > 0 && (
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 mb-2">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-3 mb-2">
                 Configurations
               </div>
               <div className="flex flex-wrap gap-2">
                 {c.configurations.map((cfg) => (
-                  <div key={cfg.name} className="rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 max-w-sm">
-                    <div className="text-xs font-medium text-gray-900 dark:text-white">{cfg.name}</div>
-                    <div className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+                  <div key={cfg.name} className="rounded-lg border border-line px-3 py-2 max-w-sm">
+                    <div className="text-xs font-medium text-ink">{cfg.name}</div>
+                    <div className="text-[11px] text-ink-3 mt-0.5">
                       {[cfg.ssid && `SSID ${cfg.ssid}`, cfg.band, cfg.mode, cfg.security]
                         .filter(Boolean).join(' · ') || 'no details reported'}
                     </div>
                     {/* The rule and the configuration it applies are one idea. */}
                     {cfg.rules.length > 0 && (
-                      <ul className="mt-1.5 space-y-0.5 border-t border-gray-100 dark:border-slate-700 pt-1.5">
+                      <ul className="mt-1.5 space-y-0.5 border-t border-line-soft pt-1.5">
                         {cfg.rules.map((p) => (
-                          <li key={p.ros_id} className="text-[11px] text-gray-500 dark:text-slate-400">
-                            <span className="mono text-gray-400">{p.action || 'rule'}</span>
-                            {p.radio_mac && <span className="mono text-gray-400"> {p.radio_mac}</span>}
-                            {p.disabled && <span className="text-gray-400"> · disabled</span>}
-                            {p.comment && <span className="text-gray-400"> — {p.comment}</span>}
+                          <li key={p.ros_id} className="text-[11px] text-ink-3">
+                            <span className="mono text-ink-4">{p.action || 'rule'}</span>
+                            {p.radio_mac && <span className="mono text-ink-4"> {p.radio_mac}</span>}
+                            {p.disabled && <span className="text-ink-4"> · disabled</span>}
+                            {p.comment && <span className="text-ink-4"> — {p.comment}</span>}
                           </li>
                         ))}
                       </ul>
@@ -180,16 +180,16 @@ function Controller({ c }: { c: CapsmanController }) {
               rather than dropping, since that usually means a stale reference. */}
           {c.provisioning.length > 0 && (
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 mb-2">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-3 mb-2">
                 Unmatched provisioning rules
               </div>
               <ul className="space-y-1">
                 {c.provisioning.map((p) => (
-                  <li key={p.ros_id} className="text-[11px] text-gray-600 dark:text-slate-300">
-                    <span className="mono text-gray-400">{p.action || 'rule'}</span>
+                  <li key={p.ros_id} className="text-[11px] text-ink-2">
+                    <span className="mono text-ink-4">{p.action || 'rule'}</span>
                     {p.master_configuration && <> → <span className="font-medium">{p.master_configuration}</span></>}
-                    {p.radio_mac && <span className="mono text-gray-400"> ({p.radio_mac})</span>}
-                    {p.comment && <span className="text-gray-400"> — {p.comment}</span>}
+                    {p.radio_mac && <span className="mono text-ink-4"> ({p.radio_mac})</span>}
+                    {p.comment && <span className="text-ink-4"> — {p.comment}</span>}
                   </li>
                 ))}
               </ul>
@@ -215,15 +215,15 @@ export default function CapsmanPanel() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-          <Server className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+        <div className="w-7 h-7 bg-accent-soft rounded-lg flex items-center justify-center">
+          <Server className="w-3.5 h-3.5 text-accent" />
         </div>
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">CAPsMAN</h3>
-        <span className="text-[11px] text-gray-500 dark:text-slate-400">
+        <h3 className="text-sm font-semibold text-ink">CAPsMAN</h3>
+        <span className="text-[11px] text-ink-3">
           {controllers.length} controller{controllers.length !== 1 ? 's' : ''} · read-only
         </span>
       </div>
-      <p className="text-xs text-gray-500 dark:text-slate-400">
+      <p className="text-xs text-ink-3">
         These access points are provisioned centrally, so their configuration lives on the controller
         rather than on the AP itself. Editing is intentionally not offered here yet: a CAPsMAN change
         applies to every bound AP at once.

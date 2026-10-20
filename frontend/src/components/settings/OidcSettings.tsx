@@ -15,9 +15,9 @@ export default function OidcSettings({ isAdmin }: { isAdmin: boolean }) {
   });
 
   if (!isAdmin) {
-    return <div className="card p-6 text-sm text-gray-400 dark:text-slate-500">Single sign-on can only be configured by administrators.</div>;
+    return <div className="card p-6 text-sm text-ink-3">Single sign-on can only be configured by administrators.</div>;
   }
-  if (!data) return <div className="card p-6 text-sm text-gray-400 dark:text-slate-500">Loading…</div>;
+  if (!data) return <div className="card p-6 text-sm text-ink-3">Loading…</div>;
 
   // Remount when the loaded config identity changes so form state re-initializes.
   return <OidcForm key={data.redirect_uri} initial={data} />;
@@ -73,11 +73,11 @@ function OidcForm({ initial }: { initial: OidcConfigView }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-        <KeyRound className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Single Sign-On (OIDC)</h3>
-        <span className="text-xs text-gray-400 dark:text-slate-500">authenticate against your identity provider</span>
-        <label className="ml-auto flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+      <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+        <KeyRound className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink">Single Sign-On (OIDC)</h3>
+        <span className="text-xs text-ink-3">authenticate against your identity provider</span>
+        <label className="ml-auto flex items-center gap-2 text-sm text-ink-2">
           <input type="checkbox" checked={form.enabled} onChange={(e) => set('enabled', e.target.checked)} />
           Enabled
         </label>
@@ -88,7 +88,7 @@ function OidcForm({ initial }: { initial: OidcConfigView }) {
         <div>
           <label className="label">Redirect URI (register this with your provider)</label>
           <div className="flex items-center gap-2">
-            <code className="flex-1 px-2 py-1.5 rounded bg-gray-50 dark:bg-slate-800 font-mono text-xs break-all text-gray-700 dark:text-slate-300">{form.redirect_uri}</code>
+            <code className="flex-1 px-2 py-1.5 rounded bg-surface-2 font-mono text-xs break-all text-ink-2">{form.redirect_uri}</code>
             <button className="btn-secondary flex items-center gap-1.5" onClick={copyRedirect}>
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}{copied ? 'Copied' : 'Copy'}
             </button>
@@ -106,7 +106,7 @@ function OidcForm({ initial }: { initial: OidcConfigView }) {
             <input className="input w-full" value={form.client_id} onChange={(e) => set('client_id', e.target.value)} />
           </div>
           <div>
-            <label className="label">Client Secret {form.has_secret && <span className="text-green-600 dark:text-green-400">(configured)</span>}</label>
+            <label className="label">Client Secret {form.has_secret && <span className="text-good">(configured)</span>}</label>
             <input className="input w-full" type="password" value={secret} placeholder={form.has_secret ? '•••••••• (leave blank to keep)' : 'none — public client'} onChange={(e) => setSecret(e.target.value)} />
           </div>
           <div>
@@ -124,14 +124,14 @@ function OidcForm({ initial }: { initial: OidcConfigView }) {
             <RefreshCw className={test.isPending ? 'w-4 h-4 animate-spin' : 'w-4 h-4'} />Test discovery
           </button>
           {testResult && (
-            <span className={`flex items-center gap-1.5 text-xs ${testResult.ok ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            <span className={`flex items-center gap-1.5 text-xs ${testResult.ok ? 'text-good' : 'text-bad'}`}>
               {testResult.ok ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}{testResult.msg}
             </span>
           )}
         </div>
 
         {/* Claim mapping */}
-        <div className="grid gap-3 sm:grid-cols-3 pt-2 border-t border-gray-100 dark:border-slate-700/50">
+        <div className="grid gap-3 sm:grid-cols-3 pt-2 border-t border-line-soft/50">
           <div>
             <label className="label">Username claim</label>
             <input className="input w-full" value={form.username_claim} onChange={(e) => set('username_claim', e.target.value)} />
@@ -153,11 +153,11 @@ function OidcForm({ initial }: { initial: OidcConfigView }) {
             {groupRows.map((row, i) => (
               <div key={i} className="flex items-center gap-2">
                 <input className="input flex-1" placeholder="IdP group name" value={row.group} onChange={(e) => setGroupRows(groupRows.map((r, j) => j === i ? { ...r, group: e.target.value } : r))} />
-                <span className="text-gray-400">→</span>
+                <span className="text-ink-4">→</span>
                 <select className="input w-36" value={row.role} onChange={(e) => setGroupRows(groupRows.map((r, j) => j === i ? { ...r, role: e.target.value as UserRole } : r))}>
                   {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
-                <button className="p-1.5 text-gray-400 hover:text-red-600" onClick={() => setGroupRows(groupRows.filter((_, j) => j !== i))}><Trash2 className="w-3.5 h-3.5" /></button>
+                <button className="p-1.5 text-ink-4 hover:text-bad" onClick={() => setGroupRows(groupRows.filter((_, j) => j !== i))}><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             ))}
             <button className="btn-secondary flex items-center gap-1.5" onClick={() => setGroupRows([...groupRows, { group: '', role: 'viewer' }])}>
@@ -173,12 +173,12 @@ function OidcForm({ initial }: { initial: OidcConfigView }) {
         </div>
 
         {/* Provisioning */}
-        <div className="grid gap-2 pt-2 border-t border-gray-100 dark:border-slate-700/50">
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+        <div className="grid gap-2 pt-2 border-t border-line-soft/50">
+          <label className="flex items-center gap-2 text-sm text-ink-2">
             <input type="checkbox" checked={form.auto_provision} onChange={(e) => set('auto_provision', e.target.checked)} />
             Auto-provision new users on first sign-in
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-ink-2">
             <input type="checkbox" checked={form.link_by_verified_email} onChange={(e) => set('link_by_verified_email', e.target.checked)} />
             Link to existing accounts by verified email
           </label>
@@ -192,12 +192,12 @@ function OidcForm({ initial }: { initial: OidcConfigView }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 pt-2 border-t border-gray-100 dark:border-slate-700/50">
+        <div className="flex items-center gap-3 pt-2 border-t border-line-soft/50">
           <button className="btn-primary flex items-center gap-1.5" disabled={save.isPending} onClick={() => save.mutate()}>
             {save.isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}Save
           </button>
-          {saved && <span className="text-xs text-green-600 dark:text-green-400">Saved</span>}
-          {save.isError && <span className="text-xs text-red-600 dark:text-red-400">{(save.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Save failed'}</span>}
+          {saved && <span className="text-xs text-good">Saved</span>}
+          {save.isError && <span className="text-xs text-bad">{(save.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Save failed'}</span>}
         </div>
       </div>
     </div>

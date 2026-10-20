@@ -49,7 +49,7 @@ export default function TagRow({ tag, canEdit, onDelete }: Props) {
           type="color"
           value={color}
           onChange={(e) => setColor(e.target.value)}
-          className="w-8 h-8 rounded cursor-pointer border border-gray-300 dark:border-slate-600 p-0.5 flex-shrink-0"
+          className="w-8 h-8 rounded cursor-pointer border border-line p-0.5 flex-shrink-0"
           aria-label="Tag colour"
         />
         <input
@@ -67,12 +67,12 @@ export default function TagRow({ tag, canEdit, onDelete }: Props) {
         <button
           onClick={() => save.mutate()}
           disabled={!valid || save.isPending}
-          className="p-1.5 rounded text-green-600 hover:bg-green-500/10 disabled:opacity-40"
+          className="p-1.5 rounded text-good hover:bg-green-500/10 disabled:opacity-40"
           title="Save"
         >
           {save.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
         </button>
-        <button onClick={cancel} className="p-1.5 rounded text-gray-400 hover:text-gray-600" title="Cancel">
+        <button onClick={cancel} className="p-1.5 rounded text-ink-4 hover:text-ink-2" title="Cancel">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -83,8 +83,8 @@ export default function TagRow({ tag, canEdit, onDelete }: Props) {
     <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
       <div className="flex items-center gap-3 min-w-0">
         <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: tag.color }} />
-        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{tag.name}</span>
-        <span className="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
+        <span className="text-sm font-medium text-ink truncate">{tag.name}</span>
+        <span className="text-xs text-ink-3 flex-shrink-0">
           {count} device{count !== 1 ? 's' : ''}
         </span>
       </div>
@@ -92,14 +92,14 @@ export default function TagRow({ tag, canEdit, onDelete }: Props) {
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={start}
-            className="p-1 rounded text-gray-400 hover:text-blue-500 transition-colors"
+            className="p-1 rounded text-ink-4 hover:text-accent transition-colors"
             title="Rename or recolour"
           >
             <Pencil className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(tag.id)}
-            className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
+            className="p-1 rounded text-ink-4 hover:text-bad transition-colors"
             title="Delete"
           >
             <Trash2 className="w-4 h-4" />

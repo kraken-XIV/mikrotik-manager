@@ -29,10 +29,10 @@ export default function NodeEditor({ node, onClose, onSaved }: { node: TopologyN
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="card w-full max-w-md mx-4 p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900 dark:text-white">{node ? 'Edit node' : 'Add a node'}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <h3 className="font-semibold text-ink">{node ? 'Edit node' : 'Add a node'}</h3>
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2"><X className="w-5 h-5" /></button>
         </div>
-        <p className="text-xs text-gray-500 dark:text-slate-400">
+        <p className="text-xs text-ink-3">
           Something on your network the manager doesn&apos;t manage: the ISP modem, a server, an unmanaged switch.
           Connect it to a device with Connect Mode.
         </p>
@@ -54,10 +54,10 @@ export default function NodeEditor({ node, onClose, onSaved }: { node: TopologyN
           <label className="label">Notes (optional)</label>
           <textarea className="input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000} />
         </div>
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-bad">{error}</p>}
         <div className="flex items-center gap-2 pt-1">
           {node && (
-            <button className="text-sm text-red-600 hover:underline mr-auto" disabled={del.isPending}
+            <button className="text-sm text-bad hover:underline mr-auto" disabled={del.isPending}
               onClick={() => { if (window.confirm(`Delete ${node.name} and its links?`)) del.mutate(); }}>
               Delete node
             </button>

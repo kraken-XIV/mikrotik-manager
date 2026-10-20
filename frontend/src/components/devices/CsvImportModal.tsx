@@ -122,16 +122,16 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="card w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex items-center justify-between p-5 border-b border-line">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-500" />
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Import devices from CSV</h2>
+            <FileText className="w-5 h-5 text-accent" />
+            <h2 className="text-base font-semibold text-ink">Import devices from CSV</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="p-5 space-y-4">
-          <div className="text-[13px] text-gray-600 dark:text-slate-300 space-y-2">
+          <div className="text-[13px] text-ink-2 space-y-2">
             <p>
               Start from the template: open it in Excel or Google Sheets, replace the example rows with
               your devices (one per row), and save as CSV. Up to {MAX_ROWS} devices per file.
@@ -141,10 +141,10 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
             </button>
           </div>
 
-          <details className="text-[12.5px] rounded border border-gray-200 dark:border-slate-700">
-            <summary className="cursor-pointer px-3 py-2 text-gray-700 dark:text-slate-300 select-none">What goes in each column</summary>
+          <details className="text-[12.5px] rounded border border-line">
+            <summary className="cursor-pointer px-3 py-2 text-ink-2 select-none">What goes in each column</summary>
             <table className="w-full">
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-line-soft dark:divide-line-soft">
                 {[
                   ['ip_address', 'Required', 'The device\'s IP address or hostname.'],
                   ['name', 'Optional', 'What to call it here. Blank uses the address.'],
@@ -165,22 +165,22 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
                   ['notes', 'Optional', 'Anything you like.'],
                 ].map(([col, need, what]) => (
                   <tr key={col}>
-                    <td className="px-3 py-1.5 mono text-gray-900 dark:text-white whitespace-nowrap align-top">{col}</td>
-                    <td className="px-2 py-1.5 text-gray-500 whitespace-nowrap align-top">{need}</td>
-                    <td className="px-3 py-1.5 text-gray-600 dark:text-slate-300">{what}</td>
+                    <td className="px-3 py-1.5 mono text-ink whitespace-nowrap align-top">{col}</td>
+                    <td className="px-2 py-1.5 text-ink-3 whitespace-nowrap align-top">{need}</td>
+                    <td className="px-3 py-1.5 text-ink-2">{what}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p className="px-3 py-2 text-[11.5px] text-gray-500 border-t border-gray-100 dark:border-slate-800">
+            <p className="px-3 py-2 text-[11.5px] text-ink-3 border-t border-line-soft dark:border-line-soft">
               Each device needs a login: either a preset, or a username and password. Leave the example
               rows in by mistake and they&apos;re skipped. Commas, semicolons or tabs between columns all work.
             </p>
           </details>
 
-          <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-6 cursor-pointer border-gray-300 dark:border-slate-600 hover:border-blue-400">
-            <Upload className="w-5 h-5 text-gray-400" />
-            <span className="text-sm text-gray-600 dark:text-slate-300">
+          <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-6 cursor-pointer border-line hover:border-accent">
+            <Upload className="w-5 h-5 text-ink-4" />
+            <span className="text-sm text-ink-2">
               {fileName || 'Choose a .csv file'}
             </span>
             <input
@@ -194,20 +194,20 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
           {parsed && (
             <div className="space-y-3">
               {parsed.fileErrors.map((m) => (
-                <div key={m} className="flex items-start gap-2 text-[12px] rounded p-2.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">
+                <div key={m} className="flex items-start gap-2 text-[12px] rounded p-2.5 bg-bad-bg text-bad dark:text-bad">
                   <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" /> {m}
                 </div>
               ))}
 
               <div className="flex flex-wrap gap-4 text-[13px]">
-                <span className="text-green-700 dark:text-green-400">{ready.length} ready to import</span>
+                <span className="text-good">{ready.length} ready to import</span>
                 {newSites.length > 0 && (
-                  <span className="text-gray-600 dark:text-slate-300">
+                  <span className="text-ink-2">
                     makes {newSites.length} new site{newSites.length === 1 ? '' : 's'}: {shortList(newSites)}
                   </span>
                 )}
                 {skipped.length > 0 && (
-                  <span className="text-gray-500">
+                  <span className="text-ink-3">
                     {skipped.length} skipped
                     {' ('}
                     {[
@@ -217,38 +217,38 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
                     {')'}
                   </span>
                 )}
-                {broken.length > 0 && <span className="text-red-600 dark:text-red-400">{broken.length} with problems</span>}
+                {broken.length > 0 && <span className="text-bad">{broken.length} with problems</span>}
               </div>
 
               {parsed.ignoredColumns.length > 0 && (
-                <p className="text-[11.5px] text-gray-400">
+                <p className="text-[11.5px] text-ink-4">
                   Ignored columns: <span className="mono">{parsed.ignoredColumns.join(', ')}</span>
                 </p>
               )}
               {(parsed.notes ?? []).map((n) => (
-                <p key={n} className="text-[11.5px] text-amber-600 dark:text-amber-400">{n}</p>
+                <p key={n} className="text-[11.5px] text-warn">{n}</p>
               ))}
 
               {broken.length > 0 && (
-                <div className="rounded border border-gray-200 dark:border-slate-700 max-h-48 overflow-y-auto">
+                <div className="rounded border border-line max-h-48 overflow-y-auto">
                   {broken.map((r) => (
-                    <div key={r.line} className="flex gap-3 px-3 py-1.5 text-[12px] border-b last:border-0 border-gray-100 dark:border-slate-800">
-                      <span className="mono text-gray-400 w-14 shrink-0">line {r.line}</span>
-                      <span className="text-red-600 dark:text-red-400">{r.errors.join(' ')}</span>
+                    <div key={r.line} className="flex gap-3 px-3 py-1.5 text-[12px] border-b last:border-0 border-line-soft dark:border-line-soft">
+                      <span className="mono text-ink-4 w-14 shrink-0">line {r.line}</span>
+                      <span className="text-bad">{r.errors.join(' ')}</span>
                     </div>
                   ))}
                 </div>
               )}
               {broken.length > 0 && ready.length > 0 && (
-                <p className="text-[11.5px] text-gray-500">Rows with problems are left out. The rest can be imported now.</p>
+                <p className="text-[11.5px] text-ink-3">Rows with problems are left out. The rest can be imported now.</p>
               )}
             </div>
           )}
 
           {(running || results) && (
-            <div className="rounded border border-gray-200 dark:border-slate-700 p-3 space-y-2">
+            <div className="rounded border border-line p-3 space-y-2">
               <div className="flex items-center gap-2 text-[13px]">
-                {running ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <Check className="w-4 h-4 text-green-500" />}
+                {running ? <Loader2 className="w-4 h-4 animate-spin text-accent" /> : <Check className="w-4 h-4 text-good" />}
                 <span>
                   {running
                     ? `Adding ${progress.done} of ${progress.total}${progress.current ? `: ${progress.current}` : ''}`
@@ -256,14 +256,14 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
                 </span>
               </div>
               {running && (
-                <p className="text-[11.5px] text-gray-400">
+                <p className="text-[11.5px] text-ink-4">
                   This runs on the server. You can close this dialog and it will keep going.
                 </p>
               )}
               {results && failCount > 0 && (
                 <div className="max-h-40 overflow-y-auto">
                   {results.filter((r) => !r.ok).map((r) => (
-                    <div key={r.ip} className="text-[12px] text-red-600 dark:text-red-400">
+                    <div key={r.ip} className="text-[12px] text-bad">
                       <span className="mono">{r.ip}</span>: {r.message}
                     </div>
                   ))}
@@ -272,10 +272,10 @@ export default function CsvImportModal({ existingAddresses, onClose, onSuccess }
             </div>
           )}
 
-          {error && <div className="text-[12px] text-red-600">{error}</div>}
+          {error && <div className="text-[12px] text-bad">{error}</div>}
         </div>
 
-        <div className="flex justify-end gap-2 p-5 border-t border-gray-200 dark:border-slate-700">
+        <div className="flex justify-end gap-2 p-5 border-t border-line">
           <button onClick={onClose} className="btn-secondary text-[12px]">{results && !running ? 'Close' : 'Cancel'}</button>
           <button
             onClick={runImport}

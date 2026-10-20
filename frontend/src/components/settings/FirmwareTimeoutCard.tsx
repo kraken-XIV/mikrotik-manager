@@ -49,42 +49,42 @@ export default function FirmwareTimeoutCard({ settings, onSave, saving }: Props)
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-1">
-        <Clock className="w-4 h-4 text-blue-500" />
-        <h3 className="font-semibold text-gray-900 dark:text-white">Firmware rollout timeouts</h3>
+        <Clock className="w-4 h-4 text-accent" />
+        <h3 className="font-semibold text-ink">Firmware rollout timeouts</h3>
       </div>
-      <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+      <p className="text-xs text-ink-3 mb-4">
         Applied at the start of each rollout, so a change needs no restart and a rollout in
         flight keeps the values it began with.
       </p>
 
       <div className="grid sm:grid-cols-2 gap-4">
         <label className="text-sm">
-          <span className="text-gray-700 dark:text-slate-300">Download timeout</span>
+          <span className="text-ink-2">Download timeout</span>
           <div className="flex items-center gap-2 mt-1">
             <input
               type="number" min={MIN} max={MAX} value={download}
               onChange={(e) => setDownload(e.target.value)}
               className="input w-24"
             />
-            <span className="text-xs text-gray-400">minutes</span>
+            <span className="text-xs text-ink-4">minutes</span>
           </div>
-          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
+          <p className="text-[11px] text-ink-3 mt-1">
             Waiting for the image to land. A device that fails to download is never rebooted,
             so raising this costs a delay rather than a risk.
           </p>
         </label>
 
         <label className="text-sm">
-          <span className="text-gray-700 dark:text-slate-300">Reboot timeout</span>
+          <span className="text-ink-2">Reboot timeout</span>
           <div className="flex items-center gap-2 mt-1">
             <input
               type="number" min={MIN} max={MAX} value={reboot}
               onChange={(e) => setReboot(e.target.value)}
               className="input w-24"
             />
-            <span className="text-xs text-gray-400">minutes</span>
+            <span className="text-xs text-ink-4">minutes</span>
           </div>
-          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
+          <p className="text-[11px] text-ink-3 mt-1">
             Waiting for the device to come back after the flash. CRS switches have been
             reported needing a full 12 minutes; raise it if your hardware is slower.
           </p>

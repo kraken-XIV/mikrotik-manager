@@ -47,7 +47,7 @@ export default function ReviewChangesButton({ request, requests, onApply, applyL
         {busy ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
         Review changes
       </button>
-      {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
+      {error && <span className="text-xs text-bad">{error}</span>}
       {preview && (
         <ChangePreviewModal preview={preview} deviceName={deviceName} onApply={onApply} applyLabel={applyLabel}
           onClose={() => setPreview(null)} />

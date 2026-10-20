@@ -45,15 +45,15 @@ export default function DarkSiteCard({ isAdmin }: Props) {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-1">
-        <Moon className="w-4 h-4 text-blue-500" />
-        <h3 className="font-semibold text-gray-900 dark:text-white">Dark Site Mode</h3>
+        <Moon className="w-4 h-4 text-accent" />
+        <h3 className="font-semibold text-ink">Dark Site Mode</h3>
         {offCount > 0 && (
-          <span className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
+          <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-3 text-ink-2">
             {offCount} of {features.length} off
           </span>
         )}
       </div>
-      <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+      <p className="text-xs text-ink-3 mb-4">
         Every feature that makes a request to the internet on its own. Turn off what an isolated
         or restricted network should not reach; everything else keeps working. Alert channels
         such as Slack, Telegram, ntfy and webhooks are not listed here because they only send
@@ -61,16 +61,16 @@ export default function DarkSiteCard({ isAdmin }: Props) {
       </p>
 
       {isLoading ? (
-        <p className="text-sm text-gray-400">Loading…</p>
+        <p className="text-sm text-ink-4">Loading…</p>
       ) : (
         <div className="space-y-4">
           {features.map((f) => (
             <div key={f.key} className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="text-sm font-medium text-gray-700 dark:text-slate-300">{f.label}</div>
-                <div className="text-[11px] font-mono text-gray-400 dark:text-slate-500 break-words">{f.destination}</div>
+                <div className="text-sm font-medium text-ink-2">{f.label}</div>
+                <div className="text-[11px] font-mono text-ink-3 break-words">{f.destination}</div>
                 {!f.enabled && (
-                  <div className="text-[11.5px] text-amber-600 dark:text-amber-400 mt-0.5">{f.cost}</div>
+                  <div className="text-[11.5px] text-warn mt-0.5">{f.cost}</div>
                 )}
               </div>
               <button
@@ -80,7 +80,7 @@ export default function DarkSiteCard({ isAdmin }: Props) {
                 className={clsx(
                   'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
                   isAdmin ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-                  f.enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
+                  f.enabled ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3'
                 )}
               >
                 <span className={clsx(
@@ -94,8 +94,8 @@ export default function DarkSiteCard({ isAdmin }: Props) {
       )}
 
       {isAdmin && features.length > 0 && (
-        <div className="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-gray-100 dark:border-slate-700">
-          {save.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
+        <div className="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-line-soft">
+          {save.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-ink-4" />}
           <button
             onClick={() => setAll(true)}
             disabled={save.isPending || offCount === 0}

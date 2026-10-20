@@ -56,11 +56,11 @@ export default function ListInput({
     <div>
       <div className={`input w-full flex flex-wrap items-center gap-1 min-h-[2.25rem] py-1 ${disabled ? 'opacity-60' : ''}`}>
         {value.map((entry) => (
-          <span key={entry} className="inline-flex items-center gap-1 rounded bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 font-mono text-xs text-gray-800 dark:text-slate-200">
+          <span key={entry} className="inline-flex items-center gap-1 rounded bg-surface-3 px-1.5 py-0.5 font-mono text-xs text-ink">
             {entry}
             {!disabled && (
               <button type="button" aria-label={`Remove ${entry}`} onClick={() => onChange(value.filter((v) => v !== entry))}
-                className="text-gray-400 hover:text-red-500"><X className="w-3 h-3" /></button>
+                className="text-ink-4 hover:text-bad"><X className="w-3 h-3" /></button>
             )}
           </span>
         ))}
@@ -76,7 +76,7 @@ export default function ListInput({
           onBlur={() => { if (draft.trim()) add(draft); }}
         />
       </div>
-      {error && <p className="mt-0.5 text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-0.5 text-xs text-bad">{error}</p>}
     </div>
   );
 }

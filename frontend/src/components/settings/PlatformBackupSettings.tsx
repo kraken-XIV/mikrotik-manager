@@ -23,8 +23,8 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 function Note({ ok, text, onClose }: { ok: boolean; text: string; onClose?: () => void }) {
   return (
     <div className={clsx('flex items-start gap-2 p-3 rounded-lg border text-sm',
-      ok ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-        : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300')}>
+      ok ? 'border-good dark:border-good bg-good-bg text-good dark:text-good'
+        : 'border-bad dark:border-bad bg-bad-bg text-bad dark:text-bad')}>
       {ok ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
       <p className="flex-1">{text}</p>
       {onClose && <button type="button" onClick={onClose} className="opacity-60 hover:opacity-100"><X className="w-4 h-4" /></button>}
@@ -38,24 +38,24 @@ function PassphraseInput({ value, onChange, placeholder, autoFocus }: { value: s
     <div className="relative">
       <input className="input pr-9 font-mono" type={show ? 'text' : 'password'} value={value} autoFocus={autoFocus}
         autoComplete="new-password" placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
-      <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" onClick={() => setShow((s) => !s)}
+      <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-4" onClick={() => setShow((s) => !s)}
         title={show ? 'Hide' : 'Show'}>{show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
     </div>
   );
 }
 
 function DestinationPicker({ all, chosen, onChange }: { all: PlatformBackupDestination[]; chosen: number[]; onChange: (ids: number[]) => void }) {
-  if (!all.length) return <p className="text-xs text-gray-400">Only this server. Add a destination below to also copy backups off it.</p>;
+  if (!all.length) return <p className="text-xs text-ink-4">Only this server. Add a destination below to also copy backups off it.</p>;
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1">
-      <span className="flex items-center gap-1.5 text-sm text-gray-500"><input type="checkbox" checked disabled /> This server</span>
+      <span className="flex items-center gap-1.5 text-sm text-ink-3"><input type="checkbox" checked disabled /> This server</span>
       {all.map((d) => {
         const Icon = TYPE_ICON[d.type];
         return (
-          <label key={d.id} className={clsx('flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300', !d.enabled && 'opacity-50')}>
+          <label key={d.id} className={clsx('flex items-center gap-1.5 text-sm text-ink-2', !d.enabled && 'opacity-50')}>
             <input type="checkbox" disabled={!d.enabled} checked={chosen.includes(d.id)}
               onChange={(e) => onChange(e.target.checked ? [...chosen, d.id] : chosen.filter((x) => x !== d.id))} />
-            <Icon className="w-3.5 h-3.5 text-gray-400" /> {d.name}
+            <Icon className="w-3.5 h-3.5 text-ink-4" /> {d.name}
           </label>
         );
       })}
@@ -78,22 +78,22 @@ function BackupNowCard({ hasSaved, min, destinations, onDone }: { hasSaved: bool
   });
   return (
     <div className="card p-5 space-y-4">
-      <h3 className="font-semibold text-gray-900 dark:text-white">Back up now</h3>
+      <h3 className="font-semibold text-ink">Back up now</h3>
       <div className="flex flex-wrap gap-4 text-sm">
         {(Object.keys(CONTENTS_LABEL) as PlatformBackupContents[]).map((c) => (
-          <label key={c} className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
+          <label key={c} className="flex items-center gap-2 text-ink-2">
             <input type="radio" checked={contents === c} onChange={() => setContents(c)} /> {CONTENTS_LABEL[c]}
           </label>
         ))}
       </div>
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-4">
         {contents === 'config'
           ? 'Devices and their stored logins, sites, users and roles, settings, alerting, templates, secrets, tags and topology layout. Small; no history.'
           : 'Everything in the database, history included (events, clients, change history). Larger, and slower to make.'}
       </p>
       <div className="space-y-2">
         {hasSaved && (
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-ink-2">
             <input type="checkbox" checked={useSaved} onChange={(e) => setUseSaved(e.target.checked)} /> Use the schedule’s saved passphrase
           </label>
         )}
@@ -128,11 +128,11 @@ function ScheduleCard({ schedule, min, destinations, onSaved }: { schedule: Plat
   return (
     <div className="card p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <Clock className="w-4 h-4 text-blue-500" />
-        <h3 className="font-semibold text-gray-900 dark:text-white">Schedule</h3>
-        {schedule.last_run_at && <span className="text-xs text-gray-400">last ran {formatDistanceToNow(new Date(schedule.last_run_at), { addSuffix: true })}</span>}
+        <Clock className="w-4 h-4 text-accent" />
+        <h3 className="font-semibold text-ink">Schedule</h3>
+        {schedule.last_run_at && <span className="text-xs text-ink-4">last ran {formatDistanceToNow(new Date(schedule.last_run_at), { addSuffix: true })}</span>}
       </div>
-      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+      <label className="flex items-center gap-2 text-sm text-ink-2">
         <input type="checkbox" checked={f.enabled} onChange={(e) => setF({ ...f, enabled: e.target.checked })} /> Back up automatically
       </label>
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -157,14 +157,14 @@ function ScheduleCard({ schedule, min, destinations, onSaved }: { schedule: Plat
         <div><label className="label">Keep</label>
           <input type="number" min={1} max={365} className="input" value={f.keep} onChange={(e) => setF({ ...f, keep: Number(e.target.value) || 1 })} /></div>
       </div>
-      <p className="text-xs text-gray-400">The time is in the app’s time zone (Settings → General). Keep is how many scheduled and manual backups stay on this server; each destination keeps its own number.</p>
+      <p className="text-xs text-ink-4">The time is in the app’s time zone (Settings → General). Keep is how many scheduled and manual backups stay on this server; each destination keeps its own number.</p>
       <div><label className="label">Send to</label><DestinationPicker all={destinations} chosen={f.destination_ids} onChange={(ids) => setF({ ...f, destination_ids: ids })} /></div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
         <div><label className="label">{schedule.has_passphrase ? 'New passphrase (leave empty to keep the saved one)' : `Passphrase (at least ${min} characters)`}</label>
           <PassphraseInput value={pass} onChange={setPass} /></div>
         <div><label className="label">Passphrase again</label><PassphraseInput value={pass2} onChange={setPass2} /></div>
       </div>
-      <div className="flex gap-2 p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-800 dark:text-amber-300">
+      <div className="flex gap-2 p-3 rounded-lg border border-warn dark:border-warn bg-warn-bg text-xs text-warn dark:text-warn">
         <AlertTriangle className="w-4 h-4 shrink-0" />
         <p>Backups are encrypted with this passphrase, and it’s the only way to open them. Keep a copy somewhere other than this server: if it’s lost, so are the backups.</p>
       </div>
@@ -173,7 +173,7 @@ function ScheduleCard({ schedule, min, destinations, onSaved }: { schedule: Plat
         disabled={save.isPending || passMismatch || (pass !== '' && pass.length < min) || (f.enabled && !schedule.has_passphrase && !pass)}>
         {save.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Save schedule
       </button>
-      {passMismatch && <span className="text-xs text-red-500 ml-2">The passphrases don’t match.</span>}
+      {passMismatch && <span className="text-xs text-bad ml-2">The passphrases don’t match.</span>}
     </div>
   );
 }
@@ -206,9 +206,9 @@ function DestinationModal({ initial, onClose, onSaved }: { initial: DestForm; on
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white">{editing ? 'Edit destination' : 'Add destination'}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h3 className="font-semibold text-ink">{editing ? 'Edit destination' : 'Add destination'}</h3>
+          <button onClick={onClose} className="text-ink-4 hover:text-ink-2"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {!editing && (
@@ -218,7 +218,7 @@ function DestinationModal({ initial, onClose, onSaved }: { initial: DestForm; on
                 return (
                   <button key={t} type="button" onClick={() => setF({ ...f, type: t, config: {}, secrets: {} })}
                     className={clsx('flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-sm',
-                      f.type === t ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300')}>
+                      f.type === t ? 'border-accent bg-accent-soft text-accent dark:text-accent' : 'border-line text-ink-2')}>
                     <Icon className="w-4 h-4" /> {TYPE_LABEL[t]}
                   </button>
                 );
@@ -240,7 +240,7 @@ function DestinationModal({ initial, onClose, onSaved }: { initial: DestForm; on
               <div><label className="label">Access key</label><input className="input font-mono" value={cfg('accessKeyId')} onChange={(e) => setCfg('accessKeyId', e.target.value)} /></div>
               <div><label className="label">Secret key</label><PassphraseInput value={f.secrets.secretAccessKey ?? ''} onChange={(v) => setSec('secretAccessKey', v)} placeholder={secretHint} /></div>
             </div>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+            <label className="flex items-center gap-2 text-sm text-ink-2">
               <input type="checkbox" checked={!!f.config.pathStyle} onChange={(e) => setCfg('pathStyle', e.target.checked)} /> Path-style addressing (MinIO and most self-hosted storage)
             </label>
           </>)}
@@ -261,9 +261,9 @@ function DestinationModal({ initial, onClose, onSaved }: { initial: DestForm; on
                 <PassphraseInput value={f.secrets.passphrase ?? ''} onChange={(v) => setSec('passphrase', v)} placeholder={secretHint} /></div>
             )}
             {cfg('hostKey') && (
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-ink-4">
                 Host key saved: <span className="font-mono break-all">{cfg('hostKey')}</span>. Uploads are refused if the server presents a different one.{' '}
-                <button type="button" className="text-blue-500 hover:underline" onClick={() => setCfg('hostKey', '')}>Forget it</button> if the server really changed; the next test saves the new one.
+                <button type="button" className="text-accent hover:underline" onClick={() => setCfg('hostKey', '')}>Forget it</button> if the server really changed; the next test saves the new one.
               </p>
             )}
           </>)}
@@ -275,9 +275,9 @@ function DestinationModal({ initial, onClose, onSaved }: { initial: DestForm; on
               </select></div>
             <div><label className="label">Send to (leave empty for the channel’s recipients)</label>
               <input className="input" value={Array.isArray(f.config.recipients) ? (f.config.recipients as unknown as string[]).join(', ') : cfg('recipients')} onChange={(e) => setCfg('recipients', e.target.value)} placeholder="backups@example.com" /></div>
-            <p className="text-xs text-gray-400">For configuration backups: a full database backup is usually too big for email (over 20 MB is refused).</p>
+            <p className="text-xs text-ink-4">For configuration backups: a full database backup is usually too big for email (over 20 MB is refused).</p>
           </>)}
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-ink-2">
             <input type="checkbox" checked={f.enabled} onChange={(e) => setF({ ...f, enabled: e.target.checked })} /> Enabled
           </label>
           {err && <Note ok={false} text={err} onClose={() => setErr('')} />}
@@ -305,33 +305,33 @@ function DestinationsCard({ destinations, onChange }: { destinations: PlatformBa
   return (
     <div className="card p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900 dark:text-white">Destinations</h3>
+        <h3 className="font-semibold text-ink">Destinations</h3>
         <button className="btn-secondary text-sm flex items-center gap-1.5" onClick={() => setModal({ type: 's3', name: '', enabled: true, keep: 14, config: {}, secrets: {} })}>
           <Plus className="w-3.5 h-3.5" /> Add destination
         </button>
       </div>
-      <p className="text-xs text-gray-400">Every backup stays on this server. A destination also copies it off the server, so it survives losing the server.</p>
-      {destinations.length === 0 && <p className="text-sm text-gray-400">No destinations yet.</p>}
+      <p className="text-xs text-ink-4">Every backup stays on this server. A destination also copies it off the server, so it survives losing the server.</p>
+      {destinations.length === 0 && <p className="text-sm text-ink-4">No destinations yet.</p>}
       {destinations.map((d) => {
         const Icon = TYPE_ICON[d.type];
         const where = d.type === 's3' ? `${d.config.bucket ?? ''}${d.config.prefix ? `/${d.config.prefix}` : ''}`
           : d.type === 'sftp' ? `${d.config.username ?? ''}@${d.config.host ?? ''}:${d.config.directory || '~'}`
             : (Array.isArray(d.config.recipients) && d.config.recipients.length ? (d.config.recipients as string[]).join(', ') : 'the channel’s recipients');
         return (
-          <div key={d.id} className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 space-y-2">
+          <div key={d.id} className="rounded-lg border border-line p-3 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <Icon className="w-4 h-4 text-gray-400" />
-              <span className="font-medium text-gray-900 dark:text-white">{d.name}</span>
-              <span className="text-xs text-gray-400">{TYPE_LABEL[d.type]} · <span className="font-mono">{where}</span>{d.type !== 'email' ? ` · keeps ${d.keep}` : ''}</span>
-              {!d.enabled && <span className="text-xs text-gray-400">(disabled)</span>}
+              <Icon className="w-4 h-4 text-ink-4" />
+              <span className="font-medium text-ink">{d.name}</span>
+              <span className="text-xs text-ink-4">{TYPE_LABEL[d.type]} · <span className="font-mono">{where}</span>{d.type !== 'email' ? ` · keeps ${d.keep}` : ''}</span>
+              {!d.enabled && <span className="text-xs text-ink-4">(disabled)</span>}
               <div className="ml-auto flex items-center gap-1">
                 <button className="btn-secondary text-xs py-1" disabled={test.isPending} onClick={() => test.mutate(d.id)}>
                   {test.isPending && test.variables === d.id ? <Loader2 className="w-3 h-3 animate-spin inline" /> : 'Test'}
                 </button>
-                <button className="p-1.5 text-gray-400 hover:text-blue-500" title="Edit"
+                <button className="p-1.5 text-ink-4 hover:text-accent" title="Edit"
                   onClick={() => setModal({ id: d.id, type: d.type, name: d.name, enabled: d.enabled, keep: d.keep, config: d.config as Record<string, string | boolean>, secrets: {} })}>
                   <Pencil className="w-3.5 h-3.5" /></button>
-                <button className="p-1.5 text-gray-400 hover:text-red-500" title="Delete"
+                <button className="p-1.5 text-ink-4 hover:text-bad" title="Delete"
                   onClick={() => { if (confirm(`Delete destination ${d.name}? Backups already there stay there.`)) remove.mutate(d.id); }}>
                   <Trash2 className="w-3.5 h-3.5" /></button>
               </div>
@@ -356,33 +356,33 @@ function CompareView({ result, mode }: { result: PlatformBackupCompare; mode: 'c
     d.added ? `${d.added} added` : '', d.removed ? `${d.removed} removed` : '', d.changed ? `${d.changed} changed` : '',
   ].filter(Boolean).join(', ');
   return (
-    <div className="rounded-md border border-gray-200 dark:border-slate-700 p-3 space-y-2 max-h-72 overflow-y-auto">
-      <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">Restoring this backup would change:</p>
+    <div className="rounded-md border border-line p-3 space-y-2 max-h-72 overflow-y-auto">
+      <p className="text-xs font-semibold text-ink-2 dark:text-ink">Restoring this backup would change:</p>
       {result.identical ? (
-        <p className="text-xs text-green-700 dark:text-green-400">Nothing in the configuration: it matches this server{mode === 'full' && result.history.length ? ' (history differs, below)' : ''}.</p>
+        <p className="text-xs text-good">Nothing in the configuration: it matches this server{mode === 'full' && result.history.length ? ' (history differs, below)' : ''}.</p>
       ) : result.tables.map((d) => (
         <div key={d.table} className="text-xs">
           <button type="button" className="flex items-center gap-1 w-full text-left hover:underline" onClick={() => setOpen(open === d.table ? null : d.table)}>
-            <span className="font-medium text-gray-800 dark:text-slate-200">{d.label}</span>
-            <span className="text-gray-500">{counts(d)}</span>
+            <span className="font-medium text-ink">{d.label}</span>
+            <span className="text-ink-3">{counts(d)}</span>
           </button>
           {open === d.table && (
-            <ul className="ml-3 mt-1 space-y-0.5 text-gray-600 dark:text-slate-400">
-              {d.samples.added.map((r) => <li key={`a${r}`}><span className="text-green-600">+</span> {r}</li>)}
-              {d.samples.removed.map((r) => <li key={`r${r}`}><span className="text-red-600">−</span> {r}</li>)}
-              {d.samples.changed.map((c) => <li key={`c${c.row}`}><span className="text-amber-600">~</span> {c.row}: {c.fields.join(', ')}</li>)}
+            <ul className="ml-3 mt-1 space-y-0.5 text-ink-2">
+              {d.samples.added.map((r) => <li key={`a${r}`}><span className="text-good">+</span> {r}</li>)}
+              {d.samples.removed.map((r) => <li key={`r${r}`}><span className="text-bad">−</span> {r}</li>)}
+              {d.samples.changed.map((c) => <li key={`c${c.row}`}><span className="text-warn">~</span> {c.row}: {c.fields.join(', ')}</li>)}
               {(d.added + d.removed + d.changed) > (d.samples.added.length + d.samples.removed.length + d.samples.changed.length) && <li className="italic">and more</li>}
             </ul>
           )}
         </div>
       ))}
       {mode === 'full' && result.history.length > 0 && (
-        <div className="text-xs text-gray-500 dark:text-slate-400 pt-1 border-t border-gray-100 dark:border-slate-700">
+        <div className="text-xs text-ink-3 pt-1 border-t border-line-soft">
           History replaced too: {result.history.slice(0, 6).map((h) => `${h.table} ${h.current.toLocaleString()} → ${h.backup.toLocaleString()}`).join(', ')}{result.history.length > 6 ? ', …' : ''}
         </div>
       )}
-      {mode === 'config' && <p className="text-[11px] text-gray-400">Live state polling keeps up to date (status, versions, last seen) isn’t counted. Devices the backup doesn’t have go with their history.</p>}
-      {result.skippedTables.length > 0 && <p className="text-[11px] text-gray-400">Not restored here (this version doesn’t have them): {result.skippedTables.join(', ')}</p>}
+      {mode === 'config' && <p className="text-[11px] text-ink-4">Live state polling keeps up to date (status, versions, last seen) isn’t counted. Devices the backup doesn’t have go with their history.</p>}
+      {result.skippedTables.length > 0 && <p className="text-[11px] text-ink-4">Not restored here (this version doesn’t have them): {result.skippedTables.join(', ')}</p>}
     </div>
   );
 }
@@ -403,26 +403,26 @@ function RestoreDialog({ source, appVersion, onClose, onStarted }: { source: Res
   const compare = useMutation({ mutationFn: () => platformBackupApi.compare(src, pass).then((r) => r.data), onError: (e) => setErr(errText(e)) });
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="card w-full max-w-lg mx-4 border-2 border-red-500">
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center gap-2"><RotateCcw className="w-5 h-5" /> Restore a platform backup</h3>
-          <button onClick={onClose} disabled={go.isPending} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+      <div className="card w-full max-w-lg mx-4 border-2 border-bad">
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h3 className="text-lg font-semibold text-bad flex items-center gap-2"><RotateCcw className="w-5 h-5" /> Restore a platform backup</h3>
+          <button onClick={onClose} disabled={go.isPending} className="text-ink-4 hover:text-ink-2"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4 text-sm">
           <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1">
-            <dt className="text-gray-500">Backup</dt><dd className="font-mono text-xs break-all">{source.label}</dd>
-            <dt className="text-gray-500">Made</dt><dd>{new Date(source.header.created_at).toLocaleString()} by MikroTik Manager {source.header.app_version}</dd>
-            <dt className="text-gray-500">Holds</dt><dd>{CONTENTS_LABEL[source.header.contents]}</dd>
+            <dt className="text-ink-3">Backup</dt><dd className="font-mono text-xs break-all">{source.label}</dd>
+            <dt className="text-ink-3">Made</dt><dd>{new Date(source.header.created_at).toLocaleString()} by MikroTik Manager {source.header.app_version}</dd>
+            <dt className="text-ink-3">Holds</dt><dd>{CONTENTS_LABEL[source.header.contents]}</dd>
           </dl>
           <div><label className="label">Passphrase</label><PassphraseInput value={pass} autoFocus onChange={(v) => { setPass(v); setChecked(false); }} /></div>
           <div className="space-y-2">
             <label className="flex items-start gap-2"><input type="radio" className="mt-1" checked={mode === 'config'} onChange={() => setMode('config')} />
-              <span><span className="font-medium">Configuration only</span><br /><span className="text-xs text-gray-500">Replaces devices, users, settings and the rest of the setup. History is kept for devices that are in the backup; devices that aren’t are removed with their history.</span></span></label>
+              <span><span className="font-medium">Configuration only</span><br /><span className="text-xs text-ink-3">Replaces devices, users, settings and the rest of the setup. History is kept for devices that are in the backup; devices that aren’t are removed with their history.</span></span></label>
             <label className={clsx('flex items-start gap-2', source.header.contents !== 'config+database' && 'opacity-40')}>
               <input type="radio" className="mt-1" disabled={source.header.contents !== 'config+database'} checked={mode === 'full'} onChange={() => setMode('full')} />
-              <span><span className="font-medium">Everything</span><br /><span className="text-xs text-gray-500">Replaces the whole database with the backup, history included. Use this to move MikroTik Manager to a new server.</span></span></label>
+              <span><span className="font-medium">Everything</span><br /><span className="text-xs text-ink-3">Replaces the whole database with the backup, history included. Use this to move MikroTik Manager to a new server.</span></span></label>
           </div>
-          <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-xs text-red-700 dark:text-red-300 space-y-1">
+          <div className="rounded-md bg-bad-bg border border-bad dark:border-bad p-3 text-xs text-bad dark:text-bad space-y-1">
             <p>The current state is backed up first (with this passphrase), so you can go back. MikroTik Manager then pauses, restores, and restarts; everyone is signed out.</p>
             <p>This server’s platform backup settings, destinations and backups, device config backup files and metrics are left as they are.</p>
           </div>
@@ -487,11 +487,11 @@ function RestoreProgress({ initial }: { initial: PlatformRestoreState }) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div className="card w-full max-w-md mx-4 p-6 text-center space-y-4">
-        {back ? <CheckCircle2 className="w-10 h-10 mx-auto text-green-500" /> : state.phase === 'failed' ? <XCircle className="w-10 h-10 mx-auto text-red-500" /> : <Loader2 className="w-10 h-10 mx-auto animate-spin text-blue-500" />}
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        {back ? <CheckCircle2 className="w-10 h-10 mx-auto text-good" /> : state.phase === 'failed' ? <XCircle className="w-10 h-10 mx-auto text-bad" /> : <Loader2 className="w-10 h-10 mx-auto animate-spin text-accent" />}
+        <h3 className="text-lg font-semibold text-ink">
           {back ? 'Restored' : state.phase === 'failed' ? 'The restore failed' : 'Restoring'}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-slate-300">
+        <p className="text-sm text-ink-2">
           {back ? 'MikroTik Manager is back with the restored data. Sign in again to continue.' : state.phase === 'failed' ? (state.error ? `Nothing was changed. ${state.error}` : state.message) : state.message || 'Working…'}
         </p>
         {back && <button className="btn-primary" onClick={() => { logout(); window.location.href = '/login'; }}>Sign in</button>}
@@ -542,14 +542,14 @@ export default function PlatformBackupSettings() {
     if (data?.restore && data.restore.phase !== 'idle' && !restoring) setRestoring(data.restore);
   }, [data?.restore, restoring]);
 
-  if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
-  if (error || !data) return <div className="card p-5 text-sm text-red-500">{errText(error)}</div>;
+  if (isLoading) return <div className="text-center py-8 text-ink-4">Loading…</div>;
+  if (error || !data) return <div className="card p-5 text-sm text-bad">{errText(error)}</div>;
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2"><HardDrive className="w-5 h-5" /> Backup &amp; Restore</h2>
-        <p className="text-sm text-gray-500 dark:text-slate-400">
+        <h2 className="text-lg font-semibold text-ink flex items-center gap-2"><HardDrive className="w-5 h-5" /> Backup &amp; Restore</h2>
+        <p className="text-sm text-ink-3">
           Backups of MikroTik Manager itself, to restore it here or move it to a new server. Device config backups and metrics aren’t included.
         </p>
       </div>
@@ -563,7 +563,7 @@ export default function PlatformBackupSettings() {
 
       <div className="card p-5 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Backups</h3>
+          <h3 className="font-semibold text-ink">Backups</h3>
           <div className="flex items-center gap-2">
             <button className="btn-secondary text-sm flex items-center gap-1.5" onClick={refresh}><RefreshCw className="w-3.5 h-3.5" /> Refresh</button>
             <button className="btn-secondary text-sm flex items-center gap-1.5" disabled={upload !== null} onClick={() => fileRef.current?.click()}>
@@ -572,27 +572,27 @@ export default function PlatformBackupSettings() {
             <input ref={fileRef} type="file" accept=".mtmbackup" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />
           </div>
         </div>
-        {data.backups.length === 0 ? <p className="text-sm text-gray-400">No platform backups yet.</p> : (
+        {data.backups.length === 0 ? <p className="text-sm text-ink-4">No platform backups yet.</p> : (
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-gray-200 dark:border-slate-700 text-left">
+            <thead><tr className="border-b border-line text-left">
               {['Made', 'What', 'How', 'Size', 'Result', ''].map((h) => <th key={h} className="table-header px-3 py-2">{h}</th>)}
             </tr></thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-line">
               {data.backups.map((b) => (
                 <tr key={b.id}>
-                  <td className="px-3 py-2" title={b.file_name}>{new Date(b.created_at).toLocaleString()}<div className="text-xs text-gray-400">{b.app_version}{b.created_by ? ` · ${b.created_by}` : ''}</div></td>
+                  <td className="px-3 py-2" title={b.file_name}>{new Date(b.created_at).toLocaleString()}<div className="text-xs text-ink-4">{b.app_version}{b.created_by ? ` · ${b.created_by}` : ''}</div></td>
                   <td className="px-3 py-2">{CONTENTS_LABEL[b.contents]}</td>
                   <td className="px-3 py-2 capitalize">{b.trigger.replace('-', ' ')}</td>
                   <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{mb(b.size_bytes)}</td>
                   <td className="px-3 py-2">
-                    {b.status === 'running' && <span className="flex items-center gap-1 text-blue-600"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running</span>}
-                    {b.status === 'failed' && <span className="text-red-600" title={b.error ?? ''}>Failed: {b.error}</span>}
+                    {b.status === 'running' && <span className="flex items-center gap-1 text-accent"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running</span>}
+                    {b.status === 'failed' && <span className="text-bad" title={b.error ?? ''}>Failed: {b.error}</span>}
                     {b.status === 'success' && (
                       <div className="flex flex-wrap gap-1">
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">this server</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-good-bg text-good dark:bg-good-bg dark:text-good">this server</span>
                         {b.destinations.map((d) => (
                           <span key={d.id} title={d.error ?? (d.pruned ? `removed ${d.pruned} older` : '')}
-                            className={clsx('px-1.5 py-0.5 rounded text-xs', d.ok ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400')}>
+                            className={clsx('px-1.5 py-0.5 rounded text-xs', d.ok ? 'bg-good-bg text-good dark:bg-good-bg dark:text-good' : 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad')}>
                             {d.name}{d.ok ? '' : ': failed'}
                           </span>
                         ))}
@@ -601,13 +601,13 @@ export default function PlatformBackupSettings() {
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-right">
                     {b.status === 'success' && (<>
-                      <button className="p-1.5 text-gray-400 hover:text-blue-500" title="Download" onClick={() => void download(b)}><Download className="w-3.5 h-3.5" /></button>
-                      <button className="p-1.5 text-gray-400 hover:text-orange-500" title="Restore"
+                      <button className="p-1.5 text-ink-4 hover:text-accent" title="Download" onClick={() => void download(b)}><Download className="w-3.5 h-3.5" /></button>
+                      <button className="p-1.5 text-ink-4 hover:text-warn" title="Restore"
                         onClick={() => setRestoreFrom({ backup_id: b.id, label: b.file_name, header: { format: 1, app_version: b.app_version ?? '', created_at: b.created_at, contents: b.contents } })}>
                         <RotateCcw className="w-3.5 h-3.5" /></button>
                     </>)}
                     {b.status !== 'running' && (
-                      <button className="p-1.5 text-gray-400 hover:text-red-500" title="Delete"
+                      <button className="p-1.5 text-ink-4 hover:text-bad" title="Delete"
                         onClick={() => { if (confirm(`Delete ${b.file_name} from this server? Copies at destinations stay.`)) remove.mutate(b.id); }}>
                         <Trash2 className="w-3.5 h-3.5" /></button>
                     )}

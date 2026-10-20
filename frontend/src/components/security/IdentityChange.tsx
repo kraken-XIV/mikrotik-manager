@@ -29,23 +29,23 @@ function ChangeDetails({ pin, deviceId, deviceName }: { pin: IdentityPin; device
   });
 
   return (
-    <div className="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-900 dark:text-red-200 space-y-2">
+    <div className="rounded-lg border border-bad dark:border-bad bg-bad-bg p-4 text-sm text-red-900 dark:text-bad space-y-2">
       <div className="flex items-start gap-2">
-        <ShieldAlert className="w-5 h-5 flex-shrink-0 text-red-600 dark:text-red-400" />
+        <ShieldAlert className="w-5 h-5 flex-shrink-0 text-bad" />
         <div className="flex-1">
           <p className="font-semibold">
             {isSerial ? `A different device is answering at ${deviceName}'s address` : `${deviceName}'s ${pin.label} has changed`}
             {pin.mismatch_at ? ` (seen ${new Date(pin.mismatch_at).toLocaleString()})` : ''}
           </p>
           {isSerial ? (
-            <p className="mt-1 text-red-800 dark:text-red-300">
+            <p className="mt-1 text-bad dark:text-bad">
               It reports a different serial number, so the manager stopped polling it before reading or changing
               anything, and backups, commands and firmware for {deviceName} won&apos;t run on it. If {deviceName} was
               replaced, accept the new device. If two devices swapped addresses (DHCP), correct the address in
               Edit Device instead.
             </p>
           ) : (
-            <p className="mt-1 text-red-800 dark:text-red-300">
+            <p className="mt-1 text-bad dark:text-bad">
               The manager stopped connecting to it over {isCert ? 'API-SSL' : 'SSH'} before sending its login, because
               it no longer presents the {noun} the manager first saw. That is expected after a reset or a replaced {noun}.
               It is also what someone posing as the device would look like, so check it before trusting it.
@@ -54,22 +54,22 @@ function ChangeDetails({ pin, deviceId, deviceName }: { pin: IdentityPin; device
         </div>
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs font-mono break-all">
-        <dt className="font-sans text-red-700 dark:text-red-400">{isSerial ? 'On record' : 'Trusted'}</dt><dd>{pin.display}</dd>
-        <dt className="font-sans text-red-700 dark:text-red-400">{isSerial ? 'Now reports' : 'Now presents'}</dt><dd className="font-semibold">{pin.seen_display}</dd>
+        <dt className="font-sans text-bad dark:text-bad">{isSerial ? 'On record' : 'Trusted'}</dt><dd>{pin.display}</dd>
+        <dt className="font-sans text-bad dark:text-bad">{isSerial ? 'Now reports' : 'Now presents'}</dt><dd className="font-semibold">{pin.seen_display}</dd>
       </dl>
-      <p className="text-xs text-red-800 dark:text-red-300">
+      <p className="text-xs text-bad dark:text-bad">
         {isSerial
           ? <>To check: the serial number is on the device&apos;s label, and in <strong>System → RouterBOARD</strong>.</>
           : isCert
           ? <>To check: on the device, <strong>System → Certificates</strong>, open the certificate the api-ssl service uses and compare its <strong>Fingerprint</strong>.</>
-          : <>To check: from a computer on a network you trust, run <code className="px-1 bg-red-100 dark:bg-red-900/40 rounded">ssh-keyscan -p PORT ADDRESS | ssh-keygen -lf -</code> and compare.</>}
+          : <>To check: from a computer on a network you trust, run <code className="px-1 bg-bad-bg dark:bg-bad-bg rounded">ssh-keyscan -p PORT ADDRESS | ssh-keygen -lf -</code> and compare.</>}
       </p>
       {isAdmin ? (
         confirming ? (
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs">{isSerial ? `Make this device ${deviceName} from now on?` : `Trust this new ${noun} for ${deviceName}?`}</span>
             <button onClick={() => trust.mutate()} disabled={trust.isPending}
-              className="px-3 py-1 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-medium flex items-center gap-1.5 disabled:opacity-50">
+              className="px-3 py-1 rounded-md bg-bad hover:bg-bad text-white text-xs font-medium flex items-center gap-1.5 disabled:opacity-50">
               {trust.isPending ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Yes, trust it
             </button>
             <button onClick={() => setConfirming(false)} className="btn-secondary text-xs py-1">Cancel</button>
@@ -81,7 +81,7 @@ function ChangeDetails({ pin, deviceId, deviceName }: { pin: IdentityPin; device
         <p className="text-xs italic">{isSerial ? 'An admin has to accept the new device.' : `An admin has to trust the new ${noun}.`}</p>
       )}
       {trust.isError && (
-        <p className="text-xs text-red-700">{(trust.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not trust it'}</p>
+        <p className="text-xs text-bad">{(trust.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not trust it'}</p>
       )}
     </div>
   );
@@ -113,7 +113,7 @@ export function PendingIdentityCard() {
   if (pending.length === 0) return null;
   return (
     <div className="space-y-2">
-      <h2 className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
+      <h2 className="text-sm font-semibold text-bad dark:text-bad flex items-center gap-2">
         <ShieldAlert className="w-4 h-4" /> {pending.length} device{pending.length === 1 ? '' : 's'} with a changed certificate, host key or serial number
       </h2>
       {pending.map((p) => (

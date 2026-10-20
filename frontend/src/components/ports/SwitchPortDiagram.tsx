@@ -354,18 +354,18 @@ function PortPacketGraph({
   return (
     <div className="card p-5 flex flex-col h-full">
       <div className="flex items-center gap-2 mb-4 shrink-0">
-        <Activity className="w-4 h-4 text-purple-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+        <Activity className="w-4 h-4 text-violet" />
+        <h3 className="text-sm font-semibold text-ink">
           {portName} — Packets/s
         </h3>
       </div>
 
       {isLoading ? (
-        <div className="flex-1 min-h-[200px] flex items-center justify-center text-gray-400 dark:text-slate-500 text-sm">
+        <div className="flex-1 min-h-[200px] flex items-center justify-center text-ink-3 text-sm">
           Loading packet data…
         </div>
       ) : packetData.length === 0 ? (
-        <div className="flex-1 min-h-[200px] flex items-center justify-center text-gray-400 dark:text-slate-500 text-sm">
+        <div className="flex-1 min-h-[200px] flex items-center justify-center text-ink-3 text-sm">
           No packet data yet for {portName} in the selected range
         </div>
       ) : (
@@ -475,7 +475,7 @@ function PortInfoCard({ deviceId, portName, errors, errorsPerMin = 10, flapsPerH
   if (isLoading) {
     return (
       <div className="card p-5 flex items-center justify-center h-full min-h-[200px]">
-        <RefreshCw className="w-4 h-4 animate-spin text-gray-400" />
+        <RefreshCw className="w-4 h-4 animate-spin text-ink-4" />
       </div>
     );
   }
@@ -484,7 +484,7 @@ function PortInfoCard({ deviceId, portName, errors, errorsPerMin = 10, flapsPerH
   if (!d || Object.keys(d).length === 0) {
     return (
       <div className="card p-5 flex items-center justify-center h-full min-h-[200px]">
-        <p className="text-sm text-gray-400 dark:text-slate-500 text-center">No physical info available</p>
+        <p className="text-sm text-ink-3 text-center">No physical info available</p>
       </div>
     );
   }
@@ -613,37 +613,37 @@ function PortClientRows({ clients }: { clients: PortClient[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40">
-            <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Host / Vendor</th>
-            <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">MAC</th>
-            <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">IP</th>
-            <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">VLAN</th>
-            <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Connected</th>
+          <tr className="border-b border-line bg-surface-2/40">
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase tracking-wide">Host / Vendor</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase tracking-wide">MAC</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase tracking-wide">IP</th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-ink-3 uppercase tracking-wide">VLAN</th>
+            <th className="px-4 py-2.5 text-right text-xs font-semibold text-ink-3 uppercase tracking-wide">Connected</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
+        <tbody className="divide-y divide-line/50">
           {clients.map((c, i) => {
             const name = c.custom_name || c.hostname;
             return (
               <tr key={c.mac_address}
-                className={clsx('transition-colors hover:bg-blue-50/40 dark:hover:bg-slate-700/30',
-                  i % 2 === 0 ? 'bg-white dark:bg-slate-900/20' : 'bg-gray-50 dark:bg-slate-800/40')}>
+                className={clsx('transition-colors hover:bg-accent-soft dark:hover:bg-surface-3',
+                  i % 2 === 0 ? 'bg-surface/20' : 'bg-surface-2/40')}>
                 <td className="px-4 py-2.5">
                   <Link to={`/clients/${encodeURIComponent(c.mac_address)}`}
-                    className="font-medium text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1.5">
+                    className="font-medium text-accent hover:underline inline-flex items-center gap-1.5">
                     {c.client_type === 'wireless' && <Wifi className="w-3 h-3 flex-shrink-0" />}
-                    {name || <span className="text-gray-400 dark:text-slate-500 italic">No hostname</span>}
+                    {name || <span className="text-ink-3 italic">No hostname</span>}
                   </Link>
-                  {c.vendor && <div className="text-xs text-gray-400 dark:text-slate-500 truncate">{c.vendor}</div>}
+                  {c.vendor && <div className="text-xs text-ink-3 truncate">{c.vendor}</div>}
                 </td>
-                <td className="px-4 py-2.5 font-mono text-xs text-gray-600 dark:text-slate-400">{c.mac_address}</td>
-                <td className="px-4 py-2.5 font-mono text-xs text-gray-600 dark:text-slate-400">{c.ip_address || '—'}</td>
-                <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-slate-400">
+                <td className="px-4 py-2.5 font-mono text-xs text-ink-2">{c.mac_address}</td>
+                <td className="px-4 py-2.5 font-mono text-xs text-ink-2">{c.ip_address || '—'}</td>
+                <td className="px-4 py-2.5 text-xs text-ink-3">
                   {c.vlan_id != null
-                    ? <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded font-mono">{c.vlan_id}</span>
+                    ? <span className="px-1.5 py-0.5 bg-accent-soft dark:bg-accent-soft text-accent dark:text-accent rounded font-mono">{c.vlan_id}</span>
                     : '—'}
                 </td>
-                <td className="px-4 py-2.5 text-right text-xs text-gray-500 dark:text-slate-400"
+                <td className="px-4 py-2.5 text-right text-xs text-ink-3"
                   title={c.first_seen ? new Date(c.first_seen).toLocaleString() : undefined}>
                   {c.first_seen ? formatDistanceToNow(new Date(c.first_seen), { addSuffix: false }) : '—'}
                 </td>
@@ -680,30 +680,30 @@ function PortClientsCard({ deviceId, portName }: { deviceId: number; portName: s
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-        <Users className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+      <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+        <Users className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink">
           Connected Clients
-          <span className="ml-2 text-xs font-normal text-gray-400 dark:text-slate-500 font-mono">{portName}</span>
+          <span className="ml-2 text-xs font-normal text-ink-3 font-mono">{portName}</span>
         </h3>
         {!isLoading && !isUplink && (
-          <span className="ml-auto text-xs text-gray-400 dark:text-slate-500">
+          <span className="ml-auto text-xs text-ink-3">
             {connected.length} device{connected.length !== 1 ? 's' : ''}
           </span>
         )}
       </div>
 
       {isLoading ? (
-        <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">
+        <div className="p-6 text-center text-sm text-ink-3">
           <RefreshCw className="w-4 h-4 animate-spin inline mr-1" />Loading…
         </div>
       ) : isUplink ? (
         <div className="p-5 space-y-3">
           <div className="flex items-start gap-2.5">
-            <Link2 className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <Link2 className="w-4 h-4 text-warn mt-0.5 flex-shrink-0" />
             <div className="text-sm">
-              <div className="font-medium text-gray-800 dark:text-slate-200">This looks like an uplink / trunk port</div>
-              <p className="text-gray-500 dark:text-slate-400 mt-0.5">
+              <div className="font-medium text-ink">This looks like an uplink / trunk port</div>
+              <p className="text-ink-3 mt-0.5">
                 {data?.reason}. The {data?.mac_count} MAC address{data?.mac_count !== 1 ? 'es' : ''} learned here are
                 reachable <em>through</em> this port, not physically connected to it.
               </p>
@@ -711,23 +711,23 @@ function PortClientsCard({ deviceId, portName }: { deviceId: number; portName: s
           </div>
           <button
             onClick={() => setShowMacTable(v => !v)}
-            className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-xs font-medium text-accent hover:underline"
           >
             {showMacTable ? 'Hide' : 'View'} MAC table ({data?.mac_count})
           </button>
           {showMacTable && (
             macTable
-              ? <div className="-mx-5 -mb-5 border-t border-gray-100 dark:border-slate-700/60">
-                  <div className="px-5 py-2 text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-800/40">
+              ? <div className="-mx-5 -mb-5 border-t border-line-soft/60">
+                  <div className="px-5 py-2 text-xs text-ink-3 bg-surface-2/40">
                     Reachable via this port — not necessarily physically connected.
                   </div>
                   <PortClientRows clients={macTable.clients} />
                 </div>
-              : <div className="text-xs text-gray-400"><RefreshCw className="w-3 h-3 animate-spin inline mr-1" />Loading…</div>
+              : <div className="text-xs text-ink-4"><RefreshCw className="w-3 h-3 animate-spin inline mr-1" />Loading…</div>
           )}
         </div>
       ) : connected.length === 0 ? (
-        <div className="p-6 text-center text-sm text-gray-400 dark:text-slate-500">
+        <div className="p-6 text-center text-sm text-ink-3">
           No clients currently connected to this port.
         </div>
       ) : (
@@ -1306,12 +1306,12 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
 
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-48 text-gray-400">Loading ports...</div>;
+    return <div className="flex items-center justify-center h-48 text-ink-4">Loading ports...</div>;
   }
 
   if (ports.length === 0) {
     return (
-      <div className="card p-8 text-center text-gray-400 dark:text-slate-500">
+      <div className="card p-8 text-center text-ink-3">
         No switchable ports found for this device.
         <br />
         <span className="text-sm">Ports appear after the device is synced.</span>
@@ -1792,11 +1792,11 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
       {editingPort && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+            <div className="flex items-center justify-between p-5 border-b border-line">
+              <h3 className="font-semibold text-ink">
                 Configure {editingPort.name}
               </h3>
-              <button onClick={() => setEditingPort(null)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setEditingPort(null)} className="text-ink-4 hover:text-ink-2">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1804,17 +1804,17 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
             <div className="p-5 space-y-5">
               {/* Basic settings */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                <h4 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3">
                   Basic
                 </h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700 dark:text-slate-300">Port Enabled</label>
+                    <label className="text-sm font-medium text-ink-2">Port Enabled</label>
                     <button
                       onClick={() => setEditForm((f) => ({ ...f, disabled: !f.disabled }))}
                       className={clsx(
                         'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                        !editForm.disabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
+                        !editForm.disabled ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3'
                       )}
                     >
                       <span className={clsx(
@@ -1851,14 +1851,14 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                       max={9216}
                       placeholder="1500"
                     />
-                    <p className="text-xs text-gray-400 mt-1">Standard: 1500 · Jumbo frames: 9000</p>
+                    <p className="text-xs text-ink-4 mt-1">Standard: 1500 · Jumbo frames: 9000</p>
                   </div>
                 </div>
               </div>
 
               {/* PoE */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                <h4 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3">
                   PoE Out (Ethernet only)
                 </h4>
                 <select
@@ -1871,14 +1871,14 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                   <option value="forced-on">Forced-on (always supply power)</option>
                   <option value="off">Off (disabled)</option>
                 </select>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-ink-4 mt-1">
                   Only applies to PoE-capable interfaces. Ignored if not supported.
                 </p>
               </div>
 
               {/* Link / Physical */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                <h4 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3">
                   Link Settings
                 </h4>
                 <div className="space-y-3">
@@ -1965,18 +1965,18 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                       <option value="clause-91">Clause 91 (Reed-Solomon)</option>
                       <option value="off">Off</option>
                     </select>
-                    <p className="text-xs text-gray-400 mt-1">Only applies to ports that support FEC.</p>
+                    <p className="text-xs text-ink-4 mt-1">Only applies to ports that support FEC.</p>
                   </div>
                 </div>
               </div>
 
               {/* VLAN */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                <h4 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3">
                   VLAN Configuration
                 </h4>
                 {vlans.length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-slate-500">
+                  <p className="text-sm text-ink-3">
                     No VLANs configured on this device. Create VLANs in the VLANs tab first.
                   </p>
                 ) : (
@@ -2015,7 +2015,7 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                             </option>
                           ))}
                         </select>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-ink-4 mt-1">
                           Port will be untagged member of this VLAN
                         </p>
                       </div>
@@ -2057,9 +2057,9 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                                   title={native ? 'Native VLAN (PVID), carried untagged' : v.name || `VLAN ${v.vlan_id}`}
                                   className={clsx(
                                     'flex items-center gap-1.5 px-2 py-1 rounded border text-xs select-none',
-                                    native ? 'opacity-40 cursor-not-allowed border-gray-200 dark:border-slate-700'
-                                      : on ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 cursor-pointer'
-                                      : 'border-gray-200 dark:border-slate-700 cursor-pointer'
+                                    native ? 'opacity-40 cursor-not-allowed border-line'
+                                      : on ? 'border-accent bg-accent-soft dark:bg-accent-soft cursor-pointer'
+                                      : 'border-line cursor-pointer'
                                   )}
                                 >
                                   <input
@@ -2072,7 +2072,7 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                                     }
                                   />
                                   <span className="mono">{v.vlan_id}</span>
-                                  {label && <span className="text-gray-500 dark:text-slate-400">{label}</span>}
+                                  {label && <span className="text-ink-3">{label}</span>}
                                 </label>
                               );
                             })}
@@ -2085,7 +2085,7 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                             }
                             placeholder="e.g. 10,20,100-110"
                           />
-                          <div className="text-xs text-gray-400 mt-1">
+                          <div className="text-xs text-ink-4 mt-1">
                             The same list as text, for copying between switches. Ranges like 100-110
                             are accepted. VLANs not listed above are created on the bridge when saved.
                           </div>
@@ -2097,16 +2097,16 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
               </div>
 
               {saveNotice && (
-                <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-amber-700 dark:text-amber-300">{saveNotice}</p>
+                <div className="flex items-start gap-2 p-3 bg-warn-bg border border-warn dark:border-warn rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-warn flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-warn dark:text-warn">{saveNotice}</p>
                 </div>
               )}
 
               {saveError && (
-                <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-600 dark:text-red-400">{saveError}</p>
+                <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-bad">{saveError}</p>
                 </div>
               )}
 
@@ -2146,12 +2146,12 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
       {showCreateTrunkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="card w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Link2 className="w-4 h-4 text-amber-500" />
+            <div className="flex items-center justify-between p-5 border-b border-line">
+              <h3 className="font-semibold text-ink flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-warn" />
                 Create Trunk / Bond
               </h3>
-              <button onClick={() => setShowCreateTrunkModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowCreateTrunkModal(false)} className="text-ink-4 hover:text-ink-2">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -2168,9 +2168,9 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
 
               <div>
                 <label className="label">Member Ports</label>
-                <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-600">
+                <div className="flex flex-wrap gap-1.5 p-2 bg-surface-2 rounded-lg border border-line">
                   {Array.from(selectedPorts).map(n => (
-                    <span key={n} className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-mono rounded">
+                    <span key={n} className="px-2 py-0.5 bg-warn-bg dark:bg-warn-bg text-warn dark:text-warn text-xs font-mono rounded">
                       {n}
                     </span>
                   ))}
@@ -2231,7 +2231,7 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                     placeholder="1"
                     min={1}
                   />
-                  <p className="text-xs text-gray-400 mt-1">Min active members required</p>
+                  <p className="text-xs text-ink-4 mt-1">Min active members required</p>
                 </div>
                 <div>
                   <label className="label">MTU (optional)</label>
@@ -2248,9 +2248,9 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
               </div>
 
               {bondError && (
-                <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-600 dark:text-red-400">{bondError}</p>
+                <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-bad">{bondError}</p>
                 </div>
               )}
 
@@ -2286,12 +2286,12 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
       {editingBond && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="card w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Link2 className="w-4 h-4 text-amber-500" />
+            <div className="flex items-center justify-between p-5 border-b border-line">
+              <h3 className="font-semibold text-ink flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-warn" />
                 Edit Bond: <span className="font-mono ml-1">{editingBond.name}</span>
               </h3>
-              <button onClick={() => setEditingBond(null)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setEditingBond(null)} className="text-ink-4 hover:text-ink-2">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -2300,18 +2300,18 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                 <label className="label">Member Ports</label>
                 <div className="space-y-1.5">
                   {bondEditForm.members.map(m => (
-                    <div key={m} className="flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
-                      <span className="font-mono text-sm text-gray-900 dark:text-white">{m}</span>
+                    <div key={m} className="flex items-center justify-between px-3 py-1.5 bg-surface-2 rounded border border-line">
+                      <span className="font-mono text-sm text-ink">{m}</span>
                       <button
                         onClick={() => setBondEditForm(f => ({ ...f, members: f.members.filter(x => x !== m) }))}
-                        className="text-red-400 hover:text-red-600 p-0.5"
+                        className="text-bad hover:text-bad p-0.5"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))}
                   {bondEditForm.members.length === 0 && (
-                    <p className="text-sm text-gray-400 italic">No members — bond will be empty</p>
+                    <p className="text-sm text-ink-4 italic">No members — bond will be empty</p>
                   )}
                 </div>
                 {(() => {
@@ -2411,9 +2411,9 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
               </div>
 
               {bondError && (
-                <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-600 dark:text-red-400">{bondError}</p>
+                <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-bad">{bondError}</p>
                 </div>
               )}
 
@@ -2464,29 +2464,29 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="card w-full max-w-md mx-4">
-              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Network className="w-4 h-4 text-blue-500" />
+              <div className="flex items-center justify-between p-5 border-b border-line">
+                <h3 className="font-semibold text-ink flex items-center gap-2">
+                  <Network className="w-4 h-4 text-accent" />
                   Configure {editingBridge.name}
                 </h3>
-                <button onClick={() => setEditingBridge(null)} className="text-gray-400 hover:text-gray-600">
+                <button onClick={() => setEditingBridge(null)} className="text-ink-4 hover:text-ink-2">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="p-5 space-y-5">
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                  <h4 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-3">
                     Bridge Settings
                   </h4>
-                  <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
+                  <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-surface-2/50 border border-line">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">VLAN Filtering</p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                      <p className="text-sm font-medium text-ink">VLAN Filtering</p>
+                      <p className="text-xs text-ink-3 mt-1">
                         Enables VLAN-aware switching on this bridge. Required for tagged/untagged VLAN rules to be enforced on member ports.
                       </p>
                       {!vlanFiltering && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
+                        <p className="text-xs text-warn mt-2 font-medium">
                           ⚠ Currently disabled — VLAN tag rules on member ports are not enforced.
                         </p>
                       )}
@@ -2503,7 +2503,7 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                       disabled={isPending}
                       className={clsx(
                         'relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 mt-1',
-                        vlanFiltering ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                        vlanFiltering ? 'bg-accent' : 'bg-surface-3 dark:bg-surface-3',
                         isPending && 'opacity-60 cursor-not-allowed'
                       )}
                     >
@@ -2516,27 +2516,27 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                  <h4 className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-2">
                     Ports
                   </h4>
                   {members.length ? (
                     <div className="flex flex-wrap gap-1.5">
                       {members.map((p) => (
-                        <span key={p.name} className="mono text-[11px] px-2 py-[3px] rounded border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200"
+                        <span key={p.name} className="mono text-[11px] px-2 py-[3px] rounded border border-line text-ink-2 dark:text-ink"
                           title={hwOffloaded(p) ? 'Hardware offloaded' : 'Switched by the CPU'}>
                           {p.name}{hwOffloaded(p) ? '' : ' · CPU'}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-500 dark:text-slate-400">No ports. Select ports on the faceplate and use Move to bridge.</p>
+                    <p className="text-xs text-ink-3">No ports. Select ports on the faceplate and use Move to bridge.</p>
                   )}
                 </div>
 
                 {bridgeError && (
-                  <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-600 dark:text-red-400">{bridgeError}</p>
+                  <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-bad">{bridgeError}</p>
                   </div>
                 )}
 
@@ -2546,7 +2546,7 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                       onClick={() => { setBridgeError(''); setConfirmDeleteBridge(editingBridge.name); }}
                       disabled={members.length > 0 || deleteBridgeMutation.isPending}
                       title={members.length > 0 ? 'Move its ports out first' : undefined}
-                      className="btn-secondary text-red-600 dark:text-red-400 flex items-center gap-1.5 disabled:opacity-50"
+                      className="btn-secondary text-bad flex items-center gap-1.5 disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Delete bridge
                     </button>
@@ -2586,22 +2586,22 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="card w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Network className="w-4 h-4 text-blue-500" />
+              <div className="flex items-center justify-between p-5 border-b border-line">
+                <h3 className="font-semibold text-ink flex items-center gap-2">
+                  <Network className="w-4 h-4 text-accent" />
                   Move to bridge
                 </h3>
-                <button onClick={() => setMoveOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <button onClick={() => setMoveOpen(false)} className="text-ink-4 hover:text-ink-2">
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="p-5 space-y-4">
                 <div>
-                  <div className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Ports</div>
+                  <div className="text-xs font-semibold text-ink-3 uppercase tracking-wider mb-2">Ports</div>
                   <div className="flex flex-wrap gap-1.5">
                     {moving.map((p) => (
-                      <span key={p.name} className="mono text-[11px] px-2 py-[3px] rounded border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200">
-                        {p.name}<span className="text-gray-400 dark:text-slate-500"> · {bridgeOf(p) ?? 'no bridge'}</span>
+                      <span key={p.name} className="mono text-[11px] px-2 py-[3px] rounded border border-line text-ink-2 dark:text-ink">
+                        {p.name}<span className="text-ink-3"> · {bridgeOf(p) ?? 'no bridge'}</span>
                       </span>
                     ))}
                   </div>
@@ -2619,18 +2619,18 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                     <label className="label">New bridge name</label>
                     <input className="input" value={newBridgeName} maxLength={32} placeholder="bridge-iot"
                       onChange={(e) => setNewBridgeName(e.target.value)} />
-                    <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">Created with RSTP and VLAN filtering off.</p>
+                    <p className="text-[11px] text-ink-3 mt-1">Created with RSTP and VLAN filtering off.</p>
                   </div>
                 )}
                 {moveTarget === NO_BRIDGE && (
-                  <p className="text-xs text-gray-600 dark:text-slate-300">
+                  <p className="text-xs text-ink-2">
                     Out of every bridge, a port stops switching with the others. That’s what you want for a routed port with an address of its own, such as a WAN port.
                   </p>
                 )}
                 {hwWarn && (
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-amber-800 dark:text-amber-300">
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-warn-bg border border-warn dark:border-warn">
+                    <AlertTriangle className="w-4 h-4 text-warn flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-warn dark:text-warn">
                       The switch chip on this device hardware-switches one bridge, and that’s {offloadedElsewhere.join(', ')}.
                       Ports in {target || 'the new bridge'} will most likely be switched by the CPU: slower, with CPU load rising with traffic.
                       To keep networks apart on one switch chip, VLANs on a single bridge keep hardware switching.
@@ -2638,10 +2638,10 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                   </div>
                 )}
                 {addressWarning && (
-                  <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 space-y-2">
+                  <div className="p-3 rounded-lg bg-bad-bg border border-bad dark:border-bad space-y-2">
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                      <div className="text-xs text-red-700 dark:text-red-300">
+                      <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+                      <div className="text-xs text-bad dark:text-bad">
                         {addressWarning.map((w) => <div key={w}>{w}.</div>)}
                         <div className="mt-1">An address on a port stops working once the port is in a bridge. On a router this is how a WAN port ends up cut off.</div>
                       </div>
@@ -2652,9 +2652,9 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
                   </div>
                 )}
                 {moveError && (
-                  <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-600 dark:text-red-400">{moveError}</p>
+                  <div className="flex items-start gap-2 p-3 bg-bad-bg border border-bad dark:border-bad rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-bad flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-bad">{moveError}</p>
                   </div>
                 )}
                 <div className="flex items-center justify-end gap-2 pt-1">
@@ -2724,8 +2724,8 @@ export default function SwitchPortDiagram({ deviceId, deviceName, deviceModel, a
           className={clsx(
             'fixed bottom-4 right-4 z-[70] max-w-md rounded-lg border p-3 text-sm shadow-lg',
             guardNotice.tone === 'ok'
-              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
-              : 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300'
+              ? 'bg-good-bg border-good dark:border-good text-good'
+              : 'bg-warn-bg border-warn dark:border-warn text-warn dark:text-warn'
           )}
         >
           <div className="flex items-start gap-2">

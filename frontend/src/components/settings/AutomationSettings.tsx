@@ -42,30 +42,30 @@ function TokensSection({ isAdmin }: { isAdmin: boolean }) {
   const del = useMutation({ mutationFn: (id: number) => automationApi.deleteToken(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['api-tokens'] }) });
 
   if (!isAdmin) {
-    return <div className="card p-6 text-sm text-gray-400 dark:text-slate-500">API tokens can only be managed by administrators.</div>;
+    return <div className="card p-6 text-sm text-ink-3">API tokens can only be managed by administrators.</div>;
   }
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-        <KeyRound className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">API Tokens</h3>
-        <span className="text-xs text-gray-400 dark:text-slate-500">for scripting &amp; IaC — send as <span className="font-mono">Authorization: Bearer mtm_…</span></span>
+      <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+        <KeyRound className="w-4 h-4 text-accent" />
+        <h3 className="text-sm font-semibold text-ink">API Tokens</h3>
+        <span className="text-xs text-ink-3">for scripting &amp; IaC — send as <span className="font-mono">Authorization: Bearer mtm_…</span></span>
       </div>
 
       <div className="p-5 space-y-4">
         {/* Newly created token (shown once) */}
         {newToken && (
-          <div className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-3">
-            <div className="flex items-center gap-2 mb-2 text-sm font-medium text-green-700 dark:text-green-400">
+          <div className="rounded-lg border border-good dark:border-good bg-good-bg p-3">
+            <div className="flex items-center gap-2 mb-2 text-sm font-medium text-good">
               <Check className="w-4 h-4" />Token created — copy it now, it won&apos;t be shown again
             </div>
             <div className="flex items-center gap-2">
-              <code className="flex-1 px-2 py-1.5 rounded bg-white dark:bg-slate-800 font-mono text-xs break-all text-gray-800 dark:text-slate-200">{newToken}</code>
+              <code className="flex-1 px-2 py-1.5 rounded bg-surface font-mono text-xs break-all text-ink">{newToken}</code>
               <button className="btn-secondary flex items-center gap-1.5 text-xs" onClick={() => { navigator.clipboard.writeText(newToken); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}{copied ? 'Copied' : 'Copy'}
               </button>
-              <button className="p-1.5 text-gray-400 hover:text-gray-600" onClick={() => setNewToken(null)}><X className="w-4 h-4" /></button>
+              <button className="p-1.5 text-ink-4 hover:text-ink-2" onClick={() => setNewToken(null)}><X className="w-4 h-4" /></button>
             </div>
           </div>
         )}
@@ -87,22 +87,22 @@ function TokensSection({ isAdmin }: { isAdmin: boolean }) {
 
         {/* List */}
         {tokens.length > 0 && (
-          <div className="divide-y divide-gray-100 dark:divide-slate-700/50 -mx-1">
+          <div className="divide-y divide-line/50 -mx-1">
             {tokens.map(t => (
               <div key={t.id} className="flex items-center gap-3 py-2.5 px-1">
-                <code className="font-mono text-xs text-gray-500 dark:text-slate-400">{t.prefix}…</code>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{t.name}</span>
-                <span className={clsx('px-1.5 py-0.5 rounded text-[10px] font-bold uppercase', t.scope === 'write' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400')}>{t.scope}</span>
-                <span className="text-xs text-gray-400 dark:text-slate-500">
+                <code className="font-mono text-xs text-ink-3">{t.prefix}…</code>
+                <span className="text-sm font-medium text-ink">{t.name}</span>
+                <span className={clsx('px-1.5 py-0.5 rounded text-[10px] font-bold uppercase', t.scope === 'write' ? 'bg-warn-bg dark:bg-warn-bg text-warn' : 'bg-surface-3 text-ink-3')}>{t.scope}</span>
+                <span className="text-xs text-ink-3">
                   {t.last_used_at ? `used ${formatDistanceToNow(new Date(t.last_used_at))} ago` : 'never used'}
                   {t.expires_at ? ` · expires ${formatDistanceToNow(new Date(t.expires_at), { addSuffix: true })}` : ''}
                 </span>
-                <button className="ml-auto p-1.5 text-gray-400 hover:text-red-600" onClick={() => { if (confirm(`Revoke the API token "${t.name}"? Anything using it stops working at once.`)) del.mutate(t.id); }} title="Revoke"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button className="ml-auto p-1.5 text-ink-4 hover:text-bad" onClick={() => { if (confirm(`Revoke the API token "${t.name}"? Anything using it stops working at once.`)) del.mutate(t.id); }} title="Revoke"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             ))}
           </div>
         )}
-        <p className="text-xs text-gray-400 dark:text-slate-500">Write tokens map to Operator privileges; no token can perform admin actions or manage other tokens.</p>
+        <p className="text-xs text-ink-3">Write tokens map to Operator privileges; no token can perform admin actions or manage other tokens.</p>
       </div>
     </div>
   );
@@ -140,37 +140,37 @@ function WebhooksSection() {
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-        <WebhookIcon className="w-4 h-4 text-violet-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Outbound Webhooks</h3>
-        <span className="text-xs text-gray-400 dark:text-slate-500">POST JSON on events · HMAC-signed with <span className="font-mono">X-MTM-Signature</span></span>
+      <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+        <WebhookIcon className="w-4 h-4 text-violet" />
+        <h3 className="text-sm font-semibold text-ink">Outbound Webhooks</h3>
+        <span className="text-xs text-ink-3">POST JSON on events · HMAC-signed with <span className="font-mono">X-MTM-Signature</span></span>
       </div>
 
       <div className="p-5 space-y-4">
         {/* existing */}
         {webhooks.map(h => (
-          <div key={h.id} className="rounded-lg border border-gray-200 dark:border-slate-700 p-3">
+          <div key={h.id} className="rounded-lg border border-line p-3">
             <div className="flex items-center gap-2 mb-1.5">
-              <span className={clsx('w-2 h-2 rounded-full flex-shrink-0', h.enabled ? 'bg-green-500' : 'bg-gray-400')} />
-              <span className="text-sm font-medium text-gray-900 dark:text-white">{h.name}</span>
-              {h.has_secret && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">signed</span>}
-              {h.last_status != null && <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', h.last_status >= 200 && h.last_status < 300 ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400')}>last: {h.last_status || 'err'}</span>}
+              <span className={clsx('w-2 h-2 rounded-full flex-shrink-0', h.enabled ? 'bg-good' : 'bg-surface-3')} />
+              <span className="text-sm font-medium text-ink">{h.name}</span>
+              {h.has_secret && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-soft dark:bg-accent-soft text-accent">signed</span>}
+              {h.last_status != null && <span className={clsx('text-[10px] px-1.5 py-0.5 rounded', h.last_status >= 200 && h.last_status < 300 ? 'bg-good-bg text-good' : 'bg-bad-bg text-bad')}>last: {h.last_status || 'err'}</span>}
               <div className="ml-auto flex items-center gap-1">
-                {testResult[h.id] && <span className="text-xs text-gray-500 dark:text-slate-400 mr-1">{testResult[h.id]}</span>}
-                <button className="p-1.5 text-gray-400 hover:text-blue-600" title="Send test" onClick={() => test.mutate(h.id)}><Send className="w-3.5 h-3.5" /></button>
-                <button className="p-1.5 text-gray-400 hover:text-amber-600" title={h.enabled ? 'Disable' : 'Enable'} onClick={() => toggle.mutate({ id: h.id, enabled: !h.enabled })}><Power className="w-3.5 h-3.5" /></button>
-                <button className="p-1.5 text-gray-400 hover:text-red-600" title="Delete" onClick={() => { if (confirm(`Delete the webhook "${h.name}"?`)) del.mutate(h.id); }}><Trash2 className="w-3.5 h-3.5" /></button>
+                {testResult[h.id] && <span className="text-xs text-ink-3 mr-1">{testResult[h.id]}</span>}
+                <button className="p-1.5 text-ink-4 hover:text-accent" title="Send test" onClick={() => test.mutate(h.id)}><Send className="w-3.5 h-3.5" /></button>
+                <button className="p-1.5 text-ink-4 hover:text-warn" title={h.enabled ? 'Disable' : 'Enable'} onClick={() => toggle.mutate({ id: h.id, enabled: !h.enabled })}><Power className="w-3.5 h-3.5" /></button>
+                <button className="p-1.5 text-ink-4 hover:text-bad" title="Delete" onClick={() => { if (confirm(`Delete the webhook "${h.name}"?`)) del.mutate(h.id); }}><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
-            <div className="font-mono text-xs text-gray-500 dark:text-slate-400 truncate">{h.url}</div>
+            <div className="font-mono text-xs text-ink-3 truncate">{h.url}</div>
             <div className="flex flex-wrap gap-1 mt-1.5">
-              {h.events.map(e => <span key={e} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">{EVENT_LABEL[e] || e}</span>)}
+              {h.events.map(e => <span key={e} className="text-[10px] px-1.5 py-0.5 rounded bg-surface-3 text-ink-3">{EVENT_LABEL[e] || e}</span>)}
             </div>
           </div>
         ))}
 
         {/* create */}
-        <div className="rounded-lg border border-dashed border-gray-300 dark:border-slate-600 p-3 space-y-2.5">
+        <div className="rounded-lg border border-dashed border-line p-3 space-y-2.5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Name (e.g. Slack, PagerDuty)" />
             <input className="input sm:col-span-2 font-mono text-sm" value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} placeholder="https://hooks.example.com/…" />
@@ -180,7 +180,7 @@ function WebhooksSection() {
             {events.map(e => (
               <button key={e} onClick={() => toggleEvent(e)}
                 className={clsx('text-xs px-2 py-1 rounded-md border transition-colors',
-                  form.events.has(e) ? 'bg-violet-100 dark:bg-violet-900/30 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300' : 'border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700')}>
+                  form.events.has(e) ? 'bg-violet-bg dark:bg-violet-bg border-violet-300 dark:border-violet text-violet dark:text-violet' : 'border-line text-ink-3 hover:bg-surface-2')}>
                 {EVENT_LABEL[e] || e}
               </button>
             ))}
@@ -190,7 +190,7 @@ function WebhooksSection() {
               <Plus className="w-4 h-4" />Add webhook
             </button>
           </div>
-          {create.isError && <p className="text-xs text-red-500 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{(create.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed'}</p>}
+          {create.isError && <p className="text-xs text-bad flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{(create.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed'}</p>}
         </div>
       </div>
     </div>
@@ -220,33 +220,33 @@ function ReportsSection() {
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2">
-        <Mail className="w-4 h-4 text-emerald-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Scheduled Reports</h3>
-        <span className="text-xs text-gray-400 dark:text-slate-500">emailed fleet summaries — uses your Alerting SMTP settings</span>
+      <div className="px-5 py-3 border-b border-line flex items-center gap-2">
+        <Mail className="w-4 h-4 text-good" />
+        <h3 className="text-sm font-semibold text-ink">Scheduled Reports</h3>
+        <span className="text-xs text-ink-3">emailed fleet summaries — uses your Alerting SMTP settings</span>
       </div>
 
       <div className="p-5 space-y-4">
         {reports.map(r => (
-          <div key={r.id} className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-3">
-            <span className={clsx('w-2 h-2 rounded-full flex-shrink-0', r.enabled ? 'bg-green-500' : 'bg-gray-400')} />
+          <div key={r.id} className="flex items-center gap-3 rounded-lg border border-line p-3">
+            <span className={clsx('w-2 h-2 rounded-full flex-shrink-0', r.enabled ? 'bg-good' : 'bg-surface-3')} />
             <div className="min-w-0">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">{r.name} <span className="text-xs font-normal text-gray-400 capitalize">· {r.frequency}</span></div>
-              <div className="text-xs text-gray-400 dark:text-slate-500 truncate">{r.recipients}</div>
+              <div className="text-sm font-medium text-ink">{r.name} <span className="text-xs font-normal text-ink-4 capitalize">· {r.frequency}</span></div>
+              <div className="text-xs text-ink-3 truncate">{r.recipients}</div>
             </div>
-            <span className="text-xs text-gray-400 dark:text-slate-500 ml-2">
+            <span className="text-xs text-ink-3 ml-2">
               {r.last_sent_at ? `last ${formatDistanceToNow(new Date(r.last_sent_at))} ago` : `next ${formatDistanceToNow(new Date(r.next_run_at), { addSuffix: true })}`}
             </span>
             <div className="ml-auto flex items-center gap-1">
-              {sendMsg[r.id] && <span className="text-xs text-gray-500 dark:text-slate-400 mr-1">{sendMsg[r.id]}</span>}
-              <button className="p-1.5 text-gray-400 hover:text-blue-600" title="Send now" onClick={() => sendNow.mutate(r.id)} disabled={sendNow.isPending}><Send className="w-3.5 h-3.5" /></button>
-              <button className="p-1.5 text-gray-400 hover:text-amber-600" title={r.enabled ? 'Disable' : 'Enable'} onClick={() => toggle.mutate({ id: r.id, enabled: !r.enabled })}><Power className="w-3.5 h-3.5" /></button>
-              <button className="p-1.5 text-gray-400 hover:text-red-600" title="Delete" onClick={() => { if (confirm(`Delete the scheduled report "${r.name}"?`)) del.mutate(r.id); }}><Trash2 className="w-3.5 h-3.5" /></button>
+              {sendMsg[r.id] && <span className="text-xs text-ink-3 mr-1">{sendMsg[r.id]}</span>}
+              <button className="p-1.5 text-ink-4 hover:text-accent" title="Send now" onClick={() => sendNow.mutate(r.id)} disabled={sendNow.isPending}><Send className="w-3.5 h-3.5" /></button>
+              <button className="p-1.5 text-ink-4 hover:text-warn" title={r.enabled ? 'Disable' : 'Enable'} onClick={() => toggle.mutate({ id: r.id, enabled: !r.enabled })}><Power className="w-3.5 h-3.5" /></button>
+              <button className="p-1.5 text-ink-4 hover:text-bad" title="Delete" onClick={() => { if (confirm(`Delete the scheduled report "${r.name}"?`)) del.mutate(r.id); }}><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           </div>
         ))}
 
-        <div className="rounded-lg border border-dashed border-gray-300 dark:border-slate-600 p-3 flex flex-wrap items-end gap-2">
+        <div className="rounded-lg border border-dashed border-line p-3 flex flex-wrap items-end gap-2">
           <div><label className="label">Name</label><input className="input w-44" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Weekly summary" /></div>
           <div><label className="label">Frequency</label>
             <select className="input w-32" value={form.frequency} onChange={e => setForm(f => ({ ...f, frequency: e.target.value }))}>
@@ -255,7 +255,7 @@ function ReportsSection() {
           </div>
           <div className="flex-1 min-w-[200px]"><label className="label">Recipients</label><input className="input" value={form.recipients} onChange={e => setForm(f => ({ ...f, recipients: e.target.value }))} placeholder="ops@company.com, noc@company.com" /></div>
           <button className="btn-primary flex items-center gap-1.5" disabled={!form.name.trim() || !form.recipients.trim() || create.isPending} onClick={() => create.mutate()}><Plus className="w-4 h-4" />Add</button>
-          {create.isError && <p className="text-xs text-red-500 w-full flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{(create.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed'}</p>}
+          {create.isError && <p className="text-xs text-bad w-full flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{(create.error as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed'}</p>}
         </div>
       </div>
     </div>

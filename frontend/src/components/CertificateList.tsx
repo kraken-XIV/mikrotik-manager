@@ -15,12 +15,12 @@ import type { DeviceCertificate, CertState } from '../services/api';
  */
 
 const STYLE: Record<CertState, { cls: string; Icon: typeof ShieldCheck; label: string }> = {
-  revoked:         { cls: 'text-red-600 dark:text-red-400',       Icon: ShieldOff,   label: 'Revoked' },
-  expired:         { cls: 'text-red-600 dark:text-red-400',       Icon: ShieldX,     label: 'Expired' },
-  expiring:        { cls: 'text-amber-600 dark:text-amber-400',   Icon: ShieldAlert, label: 'Expiring' },
-  'not-yet-valid': { cls: 'text-amber-600 dark:text-amber-400',   Icon: Clock,       label: 'Not yet valid' },
-  valid:           { cls: 'text-green-600 dark:text-green-400',   Icon: ShieldCheck, label: 'Valid' },
-  unknown:         { cls: 'text-gray-400 dark:text-slate-500',    Icon: ShieldAlert, label: 'Unknown' },
+  revoked:         { cls: 'text-bad',       Icon: ShieldOff,   label: 'Revoked' },
+  expired:         { cls: 'text-bad',       Icon: ShieldX,     label: 'Expired' },
+  expiring:        { cls: 'text-warn',   Icon: ShieldAlert, label: 'Expiring' },
+  'not-yet-valid': { cls: 'text-warn',   Icon: Clock,       label: 'Not yet valid' },
+  valid:           { cls: 'text-good',   Icon: ShieldCheck, label: 'Valid' },
+  unknown:         { cls: 'text-ink-3',    Icon: ShieldAlert, label: 'Unknown' },
 };
 
 /** "in 12 days" / "3 days ago" — the number people actually act on. */
@@ -96,7 +96,7 @@ export default function CertificateList({
 
   if (certificates.length === 0) {
     return (
-      <p className="text-sm text-gray-400 dark:text-slate-500 py-3">
+      <p className="text-sm text-ink-3 py-3">
         {emptyText ?? 'No certificates found on this device.'}
       </p>
     );
@@ -109,24 +109,24 @@ export default function CertificateList({
       {(expiredCount > 0 || capsmanCount > 0) && (
         <div className="flex items-center justify-end gap-4 pb-2">
           {capsmanCount > 0 && (
-            <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 cursor-pointer select-none"
+            <label className="flex items-center gap-2 text-xs text-ink-3 cursor-pointer select-none"
               title="Certificates CAPsMAN generated for itself and its CAPs, valid until 2038">
               <input
                 type="checkbox"
                 checked={showCapsman}
                 onChange={(e) => setShowCapsman(e.target.checked)}
-                className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                className="rounded border-line text-accent focus:ring-accent"
               />
               Show CAPsMAN certificates ({capsmanCount})
             </label>
           )}
           {expiredCount > 0 && (
-          <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 cursor-pointer select-none">
+          <label className="flex items-center gap-2 text-xs text-ink-3 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={hideExpired}
               onChange={(e) => setHideExpired(e.target.checked)}
-              className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+              className="rounded border-line text-accent focus:ring-accent"
             />
             Hide expired ({expiredCount})
           </label>
@@ -135,14 +135,14 @@ export default function CertificateList({
       )}
 
       {visible.length === 0 ? (
-        <p className="text-sm text-gray-400 dark:text-slate-500 py-3">
+        <p className="text-sm text-ink-3 py-3">
           {certificates.length} certificate{certificates.length === 1 ? ' is' : 's are'} hidden by the filters above.
         </p>
       ) : (
       <div className={clsx('overflow-x-auto', maxHeight && 'overflow-y-auto')} style={maxHeight ? { maxHeight } : undefined}>
       <table className="w-full text-sm">
         <thead className={clsx(maxHeight && 'sticky top-0 z-[1]')} style={maxHeight ? { background: 'var(--surface)' } : undefined}>
-          <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-700">
+          <tr className="text-left text-xs uppercase tracking-wide text-ink-3 border-b border-line">
             {showDevice && <th className="px-3 py-2 font-medium">Device</th>}
             <th className="px-3 py-2 font-medium">Certificate</th>
             <th className="px-3 py-2 font-medium">Expires</th>
@@ -156,34 +156,34 @@ export default function CertificateList({
             return (
               <tr
                 key={`${c.device_id}-${c.name}`}
-                className="border-b border-gray-100 dark:border-slate-800 last:border-0"
+                className="border-b border-line-soft dark:border-line-soft last:border-0"
               >
                 {showDevice && (
-                  <td className="px-3 py-2 text-gray-900 dark:text-white whitespace-nowrap">
+                  <td className="px-3 py-2 text-ink whitespace-nowrap">
                     {c.device_name}
                   </td>
                 )}
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-gray-900 dark:text-white">{c.name}</span>
+                    <span className="font-medium text-ink">{c.name}</span>
                     {c.is_authority && (
                       // A CA expiring invalidates everything it signed, so it is
                       // worth distinguishing at a glance.
                       <span
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                        className="text-[10px] px-1.5 py-0.5 rounded bg-violet-bg dark:bg-violet-bg text-violet dark:text-violet"
                         title="Certificate authority — its expiry invalidates everything it signed"
                       >
                         CA
                       </span>
                     )}
                     {c.has_private_key && (
-                      <KeyRound className="w-3 h-3 text-gray-400" aria-label="Has private key" />
+                      <KeyRound className="w-3 h-3 text-ink-4" aria-label="Has private key" />
                     )}
                     {c.revoked && (
                       // The expiry date on a revoked certificate is meaningless
                       // but still rendered, so say why it does not count.
                       <span
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+                        className="text-[10px] px-1.5 py-0.5 rounded bg-bad-bg text-bad dark:text-bad"
                         title="Withdrawn by its issuing CA — no longer usable regardless of its expiry date"
                       >
                         REVOKED
@@ -191,13 +191,13 @@ export default function CertificateList({
                     )}
                   </div>
                   {c.common_name && c.common_name !== c.name && (
-                    <div className="text-xs text-gray-500 dark:text-slate-400">{c.common_name}</div>
+                    <div className="text-xs text-ink-3">{c.common_name}</div>
                   )}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {c.invalid_after ? (
                     <>
-                      <div className="text-gray-900 dark:text-white">
+                      <div className="text-ink">
                         {format(new Date(c.invalid_after), 'd MMM yyyy')}
                       </div>
                       {c.revoked ? (
@@ -214,10 +214,10 @@ export default function CertificateList({
                       )}
                     </>
                   ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-ink-4">—</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-gray-500 dark:text-slate-400 whitespace-nowrap">
+                <td className="px-3 py-2 text-ink-3 whitespace-nowrap">
                   {c.key_type ? `${c.key_type.toUpperCase()}${c.key_size ? ` ${c.key_size}` : ''}` : '—'}
                 </td>
                 <td className="px-3 py-2 text-right">
@@ -235,7 +235,7 @@ export default function CertificateList({
       )}
 
       {hideExpired && visible.length > 0 && (
-        <p className="text-xs text-gray-400 dark:text-slate-500 pt-2">
+        <p className="text-xs text-ink-3 pt-2">
           {expiredCount} expired certificate{expiredCount === 1 ? '' : 's'} hidden.
         </p>
       )}

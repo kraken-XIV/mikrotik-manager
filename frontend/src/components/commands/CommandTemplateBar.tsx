@@ -65,7 +65,7 @@ export default function CommandTemplateBar({ command, onLoad, initialTemplateId 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <BookMarked className="w-4 h-4 text-gray-400" />
+        <BookMarked className="w-4 h-4 text-ink-4" />
         <select
           className="input py-1 text-sm w-auto"
           value={loaded?.id ?? ''}
@@ -91,14 +91,14 @@ export default function CommandTemplateBar({ command, onLoad, initialTemplateId 
           </button>
         )}
         {loaded && (
-          <button type="button" className="text-xs text-red-600 flex items-center gap-1" disabled={remove.isPending}
+          <button type="button" className="text-xs text-bad flex items-center gap-1" disabled={remove.isPending}
                   onClick={() => { if (confirm(`Delete the template "${loaded.name}"?`)) remove.mutate(); }}>
             <Trash2 className="w-3.5 h-3.5" /> Delete template
           </button>
         )}
       </div>
       {loaded?.description && !saving && (
-        <p className="text-xs text-gray-500 dark:text-slate-400">{loaded.description}</p>
+        <p className="text-xs text-ink-3">{loaded.description}</p>
       )}
       {saving && (
         <div className="flex flex-wrap items-center gap-2">
@@ -108,10 +108,10 @@ export default function CommandTemplateBar({ command, onLoad, initialTemplateId 
                  value={description} onChange={(e) => setDescription(e.target.value)} />
           <button type="button" className="btn-primary text-xs py-1.5" disabled={!name.trim() || create.isPending}
                   onClick={() => create.mutate()}>Save</button>
-          <button type="button" className="text-gray-400" onClick={() => setSaving(false)} aria-label="Cancel"><X className="w-4 h-4" /></button>
+          <button type="button" className="text-ink-4" onClick={() => setSaving(false)} aria-label="Cancel"><X className="w-4 h-4" /></button>
         </div>
       )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-bad">{error}</p>}
     </div>
   );
 }

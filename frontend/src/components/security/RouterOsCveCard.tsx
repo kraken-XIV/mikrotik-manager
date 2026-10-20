@@ -16,10 +16,10 @@ import { useCanWrite } from '../../hooks/useCanWrite';
  */
 
 const SEVERITY_LOOK = new Map<string, string>([
-  ['CRITICAL', 'bg-red-600 text-white'],
-  ['HIGH', 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'],
-  ['MEDIUM', 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'],
-  ['LOW', 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300'],
+  ['CRITICAL', 'bg-bad text-white'],
+  ['HIGH', 'bg-bad-bg text-bad dark:bg-bad-bg dark:text-bad'],
+  ['MEDIUM', 'bg-warn-bg text-warn dark:bg-warn-bg dark:text-warn'],
+  ['LOW', 'bg-surface-3 text-ink-2 dark:bg-surface-3 dark:text-ink-2'],
 ]);
 
 function SeverityPill({ c }: { c: FleetCve }) {
@@ -56,11 +56,11 @@ export default function RouterOsCveCard() {
 
   return (
     <div className="card overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2 flex-wrap">
-        <Bug className="w-4 h-4 text-red-500" />
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200">RouterOS vulnerabilities</h2>
+      <div className="px-5 py-3 border-b border-line flex items-center gap-2 flex-wrap">
+        <Bug className="w-4 h-4 text-bad" />
+        <h2 className="text-sm font-semibold text-ink-2 dark:text-ink">RouterOS vulnerabilities</h2>
         {data && data.enabled && (
-          <span className="text-xs text-gray-400 dark:text-slate-500">
+          <span className="text-xs text-ink-3">
             {affected.length === 0
               ? `none known for the ${data.versions.length} version${data.versions.length === 1 ? '' : 's'} in use`
               : `${affected.length} of ${data.versions.length} versions in use have known CVEs`}
@@ -69,32 +69,32 @@ export default function RouterOsCveCard() {
         )}
         {canWrite && data?.enabled && (
           <button onClick={() => refresh.mutate()} disabled={refresh.isPending}
-                  className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200">
+                  className="ml-auto flex items-center gap-1.5 text-xs text-ink-3 hover:text-ink-2 dark:text-ink-3 dark:hover:text-ink">
             <RefreshCw className={clsx('w-3.5 h-3.5', refresh.isPending && 'animate-spin')} /> Check now
           </button>
         )}
       </div>
 
-      {isLoading && <p className="px-5 py-4 text-sm text-gray-400">Loading…</p>}
+      {isLoading && <p className="px-5 py-4 text-sm text-ink-4">Loading…</p>}
 
       {data && !data.enabled && (
-        <p className="px-5 py-4 text-sm text-gray-500 dark:text-slate-400">
-          Turned off in <Link to="/settings" className="text-blue-600 hover:underline">Dark Site Mode</Link>, so the list
+        <p className="px-5 py-4 text-sm text-ink-3">
+          Turned off in <Link to="/settings" className="text-accent hover:underline">Dark Site Mode</Link>, so the list
           of known vulnerabilities isn&apos;t downloaded.
         </p>
       )}
 
       {data?.enabled && !data.fetched_at && (
-        <p className="px-5 py-4 text-sm text-gray-500 dark:text-slate-400">
+        <p className="px-5 py-4 text-sm text-ink-3">
           {data.last_error ? `The list couldn't be downloaded yet: ${data.last_error}.` : 'The list hasn’t been downloaded yet; it is fetched once a day.'}
           {canWrite && ' Use Check now to fetch it.'}
         </p>
       )}
 
-      {error && <p className="px-5 pt-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="px-5 pt-3 text-sm text-bad">{error}</p>}
 
       {data?.enabled && data.fetched_at && (
-        <div className="divide-y divide-gray-100 dark:divide-slate-700/60">
+        <div className="divide-y divide-line/60">
           {data.versions.map((v) => {
             const isOpen = open.has(v.version);
             const sure = sureOf(v);
@@ -104,21 +104,21 @@ export default function RouterOsCveCard() {
             return (
               <div key={v.version}>
                 <button onClick={() => expandable && toggle(v.version)}
-                        className={clsx('w-full px-5 py-2.5 flex items-center gap-3 text-left', expandable && 'hover:bg-gray-50 dark:hover:bg-slate-700/30')}>
-                  <ChevronRight className={clsx('w-4 h-4 text-gray-400 transition-transform', isOpen && 'rotate-90', !expandable && 'invisible')} />
-                  <span className="mono text-sm font-medium text-gray-900 dark:text-white w-28">{v.version}</span>
-                  <span className="text-xs text-gray-500 dark:text-slate-400 w-24">
+                        className={clsx('w-full px-5 py-2.5 flex items-center gap-3 text-left', expandable && 'hover:bg-surface-2/30')}>
+                  <ChevronRight className={clsx('w-4 h-4 text-ink-4 transition-transform', isOpen && 'rotate-90', !expandable && 'invisible')} />
+                  <span className="mono text-sm font-medium text-ink w-28">{v.version}</span>
+                  <span className="text-xs text-ink-3 w-24">
                     {v.devices.length} device{v.devices.length === 1 ? '' : 's'}
                   </span>
                   {sure.length === 0 ? (
-                    <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                    <span className="flex items-center gap-1 text-xs text-good">
                       <ShieldCheck className="w-3.5 h-3.5" /> No known CVEs
                     </span>
                   ) : (
-                    <span className="flex items-center gap-2 text-xs text-gray-700 dark:text-slate-300 flex-wrap">
+                    <span className="flex items-center gap-2 text-xs text-ink-2 flex-wrap">
                       {sure.length} CVE{sure.length === 1 ? '' : 's'}
                       {exploited > 0 && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-600 text-white text-[11px] font-medium">
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-bad text-white text-[11px] font-medium">
                           <Flame className="w-3 h-3" /> {exploited} actively exploited
                         </span>
                       )}
@@ -126,7 +126,7 @@ export default function RouterOsCveCard() {
                     </span>
                   )}
                   {unsure > 0 && (
-                    <span className="text-xs text-gray-400 dark:text-slate-500">
+                    <span className="text-xs text-ink-3">
                       + {unsure} that may not apply
                     </span>
                   )}
@@ -145,35 +145,35 @@ export default function RouterOsCveCard() {
                       <div key={c.id} className={clsx('text-sm', c.uncertain && 'opacity-60')}>
                         <div className="flex items-center gap-2 flex-wrap">
                           <a href={`https://nvd.nist.gov/vuln/detail/${c.id}`} target="_blank" rel="noopener noreferrer"
-                             className="mono font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                             className="mono font-medium text-accent hover:underline flex items-center gap-1">
                             {c.id} <ExternalLink className="w-3 h-3" />
                           </a>
                           <SeverityPill c={c} />
                           {c.known_exploited && (
-                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-600 text-white text-[11px] font-medium">
+                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-bad text-white text-[11px] font-medium">
                               <Flame className="w-3 h-3" /> Actively exploited
                             </span>
                           )}
-                          {c.fixed_in && <span className="text-xs text-green-700 dark:text-green-400">Fixed in {c.fixed_in}</span>}
-                          {c.hardware_specific && <span className="text-xs text-gray-400">Only on some hardware</span>}
+                          {c.fixed_in && <span className="text-xs text-good">Fixed in {c.fixed_in}</span>}
+                          {c.hardware_specific && <span className="text-xs text-ink-4">Only on some hardware</span>}
                         </div>
                         {c.uncertain && (
-                          <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">May not apply: {c.uncertain}.</p>
+                          <p className="text-xs text-warn mt-0.5">May not apply: {c.uncertain}.</p>
                         )}
                         {c.release_note && (
-                          <p className="text-xs text-gray-600 dark:text-slate-300 mt-0.5">
+                          <p className="text-xs text-ink-2 mt-0.5">
                             MikroTik&apos;s release notes for {c.release_note.version}: <span className="italic">&ldquo;{c.release_note.line}&rdquo;</span>
                           </p>
                         )}
                         {c.summary
-                          ? <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 line-clamp-2">{c.summary}</p>
+                          ? <p className="text-xs text-ink-3 mt-0.5 line-clamp-2">{c.summary}</p>
                           : c.source === 'release_notes' && (
-                            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">NVD has no details for it yet, so it isn&apos;t rated.</p>
+                            <p className="text-xs text-ink-3 mt-0.5">NVD has no details for it yet, so it isn&apos;t rated.</p>
                           )}
                       </div>
                     ))}
                     {v.corrected.map((c) => (
-                      <p key={c.id} className="text-xs text-gray-400 dark:text-slate-500">
+                      <p key={c.id} className="text-xs text-ink-3">
                         Not shown: <span className="mono">{c.id}</span>. NVD lists it for this version, but {c.reason}.
                       </p>
                     ))}
@@ -182,7 +182,7 @@ export default function RouterOsCveCard() {
               </div>
             );
           })}
-          <p className="px-5 py-2.5 text-[11px] text-gray-400 dark:text-slate-500">
+          <p className="px-5 py-2.5 text-[11px] text-ink-3">
             From NIST&apos;s National Vulnerability Database, with CISA&apos;s list of actively exploited ones and the CVEs
             MikroTik&apos;s release notes name as fixed; checked{' '}
             {new Date(data.fetched_at).toLocaleString()}. Matched by version only: many need a particular service
