@@ -156,7 +156,7 @@ export default function GraphsTab({ deviceId }: Props) {
               <YAxis tickFormatter={formatBps} tick={{ fontSize: 10 }} width={72} />
               <Tooltip {...chartTooltip} formatter={(v) => formatBps(v as number)} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Line type="monotone" dataKey="rx" stroke="#3b82f6" name="RX (download)" dot={false} strokeWidth={2} />
+              <Line className="chart-series-a" type="monotone" dataKey="rx" stroke="var(--accent)" name="RX (download)" dot={false} strokeWidth={2} />
               <Line type="monotone" dataKey="tx" stroke="#10b981" name="TX (upload)" dot={false} strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>

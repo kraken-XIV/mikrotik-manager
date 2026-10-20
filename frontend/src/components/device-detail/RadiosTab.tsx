@@ -276,7 +276,7 @@ function WirelessCharts({ deviceId, ifaces }: { deviceId: number; ifaces: Wirele
                 contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px' }}
                 formatter={(v: number) => [v, 'Clients']}
               />
-              <Line type="monotone" dataKey="clients" stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={{ r: 3 }} />
+              <Line className="chart-series-a" type="monotone" dataKey="clients" stroke="var(--accent)" strokeWidth={2} dot={false} activeDot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         ) : (

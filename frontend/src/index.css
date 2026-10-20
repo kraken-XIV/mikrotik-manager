@@ -302,3 +302,8 @@
     fill-opacity: 0.92;
   }
 }
+
+/* Accent-aware primary chart series; secondary series retain semantic colours. */
+.chart-series-a { stroke: var(--accent); }
+.chart-series-a-fill { fill: var(--accent-soft); }
+.chart-accent-stop { stop-color: var(--accent); }

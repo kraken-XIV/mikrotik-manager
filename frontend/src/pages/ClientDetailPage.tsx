@@ -687,10 +687,10 @@ function TrafficCard({ mac }: { mac: string }) {
               }}
             />
             <Legend wrapperStyle={{ fontSize: '11px' }} />
-            <Area
+            <Area className="chart-series-a"
               type="monotone"
               dataKey="Upload"
-              stroke="#3b82f6"
+              stroke="var(--accent)"
               fill="#3b82f620"
               strokeWidth={1.5}
               dot={false}
@@ -815,7 +815,7 @@ function AppTrafficCard({ mac }: { mac: string }) {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px' }} />
-                <Area type="monotone" dataKey="Download" stroke="#3b82f6" fill="#3b82f620" strokeWidth={1.5} dot={false} />
+                <Area className="chart-series-a" type="monotone" dataKey="Download" stroke="var(--accent)" fill="#3b82f620" strokeWidth={1.5} dot={false} />
                 <Area type="monotone" dataKey="Upload" stroke="#8b5cf6" fill="#8b5cf620" strokeWidth={1.5} dot={false} />
               </AreaChart>
             </ResponsiveContainer>

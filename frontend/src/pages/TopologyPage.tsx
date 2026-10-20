@@ -62,7 +62,7 @@ function toFlowEdge(e: GraphEdge, anchors: Anchors, colors: Record<string, strin
   if (e.kind === 'client') {
     return { id: e.id, source: e.source, target: e.target, type: 'topo', data: { ...data, label: undefined }, style: { stroke: '#7dd3fc', strokeWidth: 1 } };
   }
-  const look = e.role === 'root' ? { stroke: '#3b82f6' }
+  const look = e.role === 'root' ? { stroke: 'var(--accent)' }
     : e.role === 'designated' ? { stroke: '#22c55e' }
       : e.role === 'blocked' ? { stroke: '#ef4444', strokeDasharray: '6,3' }
         : { stroke: '#94a3b8' };

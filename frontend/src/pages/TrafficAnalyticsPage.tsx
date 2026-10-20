@@ -201,8 +201,8 @@ export default function TrafficAnalyticsPage() {
               <AreaChart data={series}>
                 <defs>
                   <linearGradient id="dl" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    <stop className="chart-accent-stop" offset="5%" stopColor="var(--accent)" stopOpacity={0.35} />
+                    <stop className="chart-accent-stop" offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="ul" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.35} />
@@ -218,7 +218,7 @@ export default function TrafficAnalyticsPage() {
                   {...chartTooltip}
                 />
                 <Legend formatter={(v: string) => (v === 'download' ? 'Download' : 'Upload')} />
-                <Area type="monotone" dataKey="download" stroke="#3b82f6" fill="url(#dl)" strokeWidth={2} />
+                <Area className="chart-series-a" type="monotone" dataKey="download" stroke="var(--accent)" fill="url(#dl)" strokeWidth={2} />
                 <Area type="monotone" dataKey="upload" stroke="#8b5cf6" fill="url(#ul)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>

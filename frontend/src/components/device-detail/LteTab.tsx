@@ -446,8 +446,8 @@ export default function LteTab({ deviceId }: Props) {
                      label={{ value: 'dB', angle: 90, position: 'insideRight', fontSize: 11 }} />
               <Tooltip {...chartTooltip} />
               <Legend />
-              <Line yAxisId="dbm" type="monotone" dataKey="rsrp" name="RSRP (dBm)"
-                    stroke="#3b82f6" dot={false} strokeWidth={2} connectNulls />
+              <Line className="chart-series-a" yAxisId="dbm" type="monotone" dataKey="rsrp" name="RSRP (dBm)"
+                    stroke="var(--accent)" dot={false} strokeWidth={2} connectNulls />
               <Line yAxisId="dbm" type="monotone" dataKey="rssi" name="RSSI (dBm)"
                     stroke="#94a3b8" dot={false} strokeWidth={1} connectNulls />
               <Line yAxisId="db" type="monotone" dataKey="sinr" name="SINR (dB)"
