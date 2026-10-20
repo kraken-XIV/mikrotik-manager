@@ -1,6 +1,6 @@
 {
   "name": "mikrotik-manager",
-  "version": "0.72.0-beta",
+  "version": "0.75.0-beta",
   "private": true,
   "description": "Repo-wide tooling root for the mikrotik-manager monorepo: Prettier formatting and pre-commit hooks. Application code lives in frontend/ and backend/.",
   "license": "AGPL-3.0",
