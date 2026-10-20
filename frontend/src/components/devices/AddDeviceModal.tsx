@@ -1,17 +1,18 @@
-import { useState, FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, CheckCircle, AlertCircle, AlertTriangle, Loader2, KeyRound } from 'lucide-react';
-import {
-  devicesApi,
-  tagsApi,
-  type DuplicateSerialError,
-} from '../../services/api';
-import ConfirmDuplicateModal from './ConfirmDuplicateModal';
-import { parsePort } from '../../utils/parsePort';
-import { API_SSL_PORT, portFieldError } from '../../utils/apiTls';
-import { isValidDeviceAddress, classifyAddress, addressFieldValue } from '../../utils/deviceAddress';
+import { AlertCircle, AlertTriangle, CheckCircle, KeyRound, Loader2, X } from 'lucide-react';
+import { FormEvent, useState } from 'react';
+
 import { useSitePresets } from '../../hooks/useSitePresets';
-import SiteField, { siteFieldPayload, useDefaultSiteField, type SiteFieldValue } from './SiteField';
+import { devicesApi, type DuplicateSerialError, tagsApi } from '../../services/api';
+import { API_SSL_PORT, portFieldError } from '../../utils/apiTls';
+import {
+  addressFieldValue,
+  classifyAddress,
+  isValidDeviceAddress,
+} from '../../utils/deviceAddress';
+import { parsePort } from '../../utils/parsePort';
+import ConfirmDuplicateModal from './ConfirmDuplicateModal';
+import SiteField, { siteFieldPayload, type SiteFieldValue, useDefaultSiteField } from './SiteField';
 
 interface Props {
   onClose: () => void;
@@ -30,7 +31,11 @@ interface Props {
 }
 
 export default function AddDeviceModal({
-  onClose, onSuccess, prefill, embedded = false, submitLabel,
+  onClose,
+  onSuccess,
+  prefill,
+  embedded = false,
+  submitLabel,
 }: Props) {
   const [form, setForm] = useState({
     name: prefill?.name || '',
@@ -69,7 +74,7 @@ export default function AddDeviceModal({
   const toggleTag = (id: number) =>
     setTagIds((cur) => (cur.includes(id) ? cur.filter((t) => t !== id) : [...cur, id]));
 
-  const selectedPreset = presetId != null ? presets.find((p) => p.id === presetId) ?? null : null;
+  const selectedPreset = presetId != null ? (presets.find((p) => p.id === presetId) ?? null) : null;
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -88,13 +93,13 @@ export default function AddDeviceModal({
   const portGiven = form.api_port.trim() !== '';
   const apiSsl = apiSslChoice ?? parsePort(form.api_port, 8728) === API_SSL_PORT;
   const showPlaintextWarning =
-    addressTrimmed.length > 0 && !addressInvalid &&
+    addressTrimmed.length > 0 &&
+    !addressInvalid &&
     classifyAddress(addressTrimmed) !== 'private' &&
-    portGiven && !apiSsl;
+    portGiven &&
+    !apiSsl;
 
-  const createPayload = (
-    opts: { combineWithDeviceId?: number; forceReplace?: boolean } = {}
-  ) => {
+  const createPayload = (opts: { combineWithDeviceId?: number; forceReplace?: boolean } = {}) => {
     const extra = {
       combine_with_device_id: opts.combineWithDeviceId,
       force_replace_existing_by_serial: opts.forceReplace,
@@ -147,8 +152,9 @@ export default function AddDeviceModal({
       setError('Either pick a credential preset or enter username and password');
       return;
     }
-    const portError = selectedPreset ? null
-      : portFieldError(form.api_port, 'API port') ?? portFieldError(form.ssh_port, 'SSH port');
+    const portError = selectedPreset
+      ? null
+      : (portFieldError(form.api_port, 'API port') ?? portFieldError(form.ssh_port, 'SSH port'));
     if (portError) {
       setError(portError);
       return;
@@ -184,7 +190,9 @@ export default function AddDeviceModal({
     setLoading(true);
     setError('');
     try {
-      await devicesApi.create(createPayload({ combineWithDeviceId: duplicateSerial.existing_device.id }));
+      await devicesApi.create(
+        createPayload({ combineWithDeviceId: duplicateSerial.existing_device.id }),
+      );
       onSuccess();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -211,280 +219,308 @@ export default function AddDeviceModal({
   };
 
   const formBody = (
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* Basic info */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="label">Device Name *</label>
-              <input
-                className="input"
-                value={form.name}
-                onChange={(e) => set('name', e.target.value)}
-                placeholder="e.g. Core Switch"
-              />
-            </div>
-            <div>
-              <label className="label">Address (IP or hostname) *</label>
-              <input
-                className="input"
-                value={form.ip_address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="192.168.88.1 or router.example.com"
-              />
-              {addressInvalid && (
-                <p className="text-[11px] text-red-500 mt-1">
-                  Not a valid IP address or hostname.
-                </p>
-              )}
-              {showPlaintextWarning && (
-                <p className="flex items-start gap-1 text-[11px] text-amber-600 dark:text-amber-400 mt-1">
-                  <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                  <span>Credentials travel unencrypted to this address. Prefer api-ssl on port 8729, or a VPN.</span>
-                </p>
-              )}
-            </div>
-            <div className="sm:col-span-2">
-              <SiteField value={site} onChange={setSite} />
-            </div>
-            <div>
-              <label className="label">Device Type</label>
-              <select
-                className="input"
-                value={form.device_type}
-                onChange={(e) => set('device_type', e.target.value)}
-              >
-                <option value="router">Router</option>
-                <option value="switch">Switch</option>
-                <option value="wireless_ap">Wireless AP</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Credentials: preset or manual */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <KeyRound className="w-3.5 h-3.5" />
-              Credentials
-            </h3>
-
-            <label className="flex items-start gap-2 mb-3 p-2.5 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer">
-              <input type="checkbox" className="mt-0.5 w-4 h-4 rounded" checked={sshOnly} onChange={(e) => setSshOnly(e.target.checked)} />
-              <span className="text-sm text-gray-700 dark:text-slate-200">
-                The API isn&apos;t enabled on this device yet
-                <span className="block text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                  Adds it over SSH. Bulk commands, templates, the terminal and backups work straight away, so you can
-                  turn on api-ssl; the manager switches to the API by itself once it answers.
-                </span>
+    <form onSubmit={handleSubmit} className="p-5 space-y-4">
+      {/* Basic info */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <label className="label">Device Name *</label>
+          <input
+            className="input"
+            value={form.name}
+            onChange={(e) => set('name', e.target.value)}
+            placeholder="e.g. Core Switch"
+          />
+        </div>
+        <div>
+          <label className="label">Address (IP or hostname) *</label>
+          <input
+            className="input"
+            value={form.ip_address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="192.168.88.1 or router.example.com"
+          />
+          {addressInvalid && (
+            <p className="text-[11px] text-red-500 mt-1">Not a valid IP address or hostname.</p>
+          )}
+          {showPlaintextWarning && (
+            <p className="flex items-start gap-1 text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+              <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+              <span>
+                Credentials travel unencrypted to this address. Prefer api-ssl on port 8729, or a
+                VPN.
               </span>
-            </label>
+            </p>
+          )}
+        </div>
+        <div className="sm:col-span-2">
+          <SiteField value={site} onChange={setSite} />
+        </div>
+        <div>
+          <label className="label">Device Type</label>
+          <select
+            className="input"
+            value={form.device_type}
+            onChange={(e) => set('device_type', e.target.value)}
+          >
+            <option value="router">Router</option>
+            <option value="switch">Switch</option>
+            <option value="wireless_ap">Wireless AP</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
 
-            {presets.length > 0 && (
-              <div className="mb-3">
-                <label className="label">Use a saved preset</label>
-                <select
+      {/* Credentials: preset or manual */}
+      <div>
+        <h3 className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <KeyRound className="w-3.5 h-3.5" />
+          Credentials
+        </h3>
+
+        <label className="flex items-start gap-2 mb-3 p-2.5 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-0.5 w-4 h-4 rounded"
+            checked={sshOnly}
+            onChange={(e) => setSshOnly(e.target.checked)}
+          />
+          <span className="text-sm text-gray-700 dark:text-slate-200">
+            The API isn&apos;t enabled on this device yet
+            <span className="block text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+              Adds it over SSH. Bulk commands, templates, the terminal and backups work straight
+              away, so you can turn on api-ssl; the manager switches to the API by itself once it
+              answers.
+            </span>
+          </span>
+        </label>
+
+        {presets.length > 0 && (
+          <div className="mb-3">
+            <label className="label">Use a saved preset</label>
+            <select
+              className="input"
+              value={presetId ?? ''}
+              onChange={(e) => setPresetId(e.target.value ? parseInt(e.target.value, 10) : null)}
+            >
+              <option value="">— Enter credentials manually —</option>
+              {presets.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.api_username}
+                  {p.ssh_username ? ` · SSH ${p.ssh_username}` : ''})
+                </option>
+              ))}
+            </select>
+            {selectedPreset && (
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
+                Using preset <strong>{selectedPreset.name}</strong>. The server will pull the API
+                username/password
+                {selectedPreset.has_ssh_password && selectedPreset.ssh_username
+                  ? ' and SSH credentials'
+                  : ''}{' '}
+                from this preset
+                {sshOnly
+                  ? '; its SSH login (or its API login, when it has none) is used for SSH'
+                  : ''}
+                .
+              </p>
+            )}
+          </div>
+        )}
+
+        {!selectedPreset && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">
+                  {sshOnly ? 'SSH Username *' : 'RouterOS Username *'}
+                </label>
+                <input
                   className="input"
-                  value={presetId ?? ''}
-                  onChange={(e) => setPresetId(e.target.value ? parseInt(e.target.value, 10) : null)}
-                >
-                  <option value="">— Enter credentials manually —</option>
-                  {presets.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.api_username}
-                      {p.ssh_username ? ` · SSH ${p.ssh_username}` : ''}
-                      )
-                    </option>
-                  ))}
-                </select>
-                {selectedPreset && (
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
-                    Using preset <strong>{selectedPreset.name}</strong>. The server will pull the
-                    API username/password
-                    {selectedPreset.has_ssh_password && selectedPreset.ssh_username
-                      ? ' and SSH credentials'
-                      : ''}
-                    {' '}from this preset{sshOnly ? '; its SSH login (or its API login, when it has none) is used for SSH' : ''}.
+                  value={form.api_username}
+                  onChange={(e) => set('api_username', e.target.value)}
+                  placeholder="admin"
+                />
+              </div>
+              {sshOnly ? (
+                <div>
+                  <label className="label">SSH Port</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min={1}
+                    max={65535}
+                    value={form.ssh_port}
+                    onChange={(e) => set('ssh_port', e.target.value)}
+                    placeholder="22"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="label">API Port</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min={1}
+                    max={65535}
+                    value={form.api_port}
+                    onChange={(e) => set('api_port', e.target.value)}
+                    placeholder="Auto"
+                  />
+                  {portGiven ? (
+                    <label
+                      className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-200 mt-1.5 cursor-pointer"
+                      title="Tick when this port runs api-ssl, for example a forwarded port behind NAT"
+                    >
+                      <input
+                        type="checkbox"
+                        className="w-3.5 h-3.5 rounded"
+                        checked={apiSsl}
+                        onChange={(e) => setApiSslChoice(e.target.checked)}
+                      />
+                      API-SSL (encrypted)
+                    </label>
+                  ) : (
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      Blank tries API-SSL (8729), then 8728.
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className="col-span-2">
+                <label className="label">
+                  {sshOnly ? 'SSH Password *' : 'RouterOS Password *'}
+                </label>
+                <input
+                  className="input"
+                  type="password"
+                  value={form.api_password}
+                  onChange={(e) => set('api_password', e.target.value)}
+                  placeholder={sshOnly ? 'SSH password' : 'RouterOS API password'}
+                  autoComplete="new-password"
+                />
+                {sshOnly && (
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    The same login is tried on the API once it&apos;s enabled. To use another one,
+                    change the API login in Edit Device later.
                   </p>
                 )}
               </div>
-            )}
+            </div>
 
-            {!selectedPreset && (
-              <>
-                <div className="grid grid-cols-2 gap-3">
+            {/* SSH credentials (optional) */}
+            {!sshOnly && (
+              <details className="group mt-3">
+                <summary className="cursor-pointer text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider select-none">
+                  SSH Credentials (optional, for backup/restore)
+                </summary>
+                <div className="mt-3 grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label">{sshOnly ? 'SSH Username *' : 'RouterOS Username *'}</label>
+                    <label className="label">SSH Username</label>
                     <input
                       className="input"
-                      value={form.api_username}
-                      onChange={(e) => set('api_username', e.target.value)}
+                      value={form.ssh_username}
+                      onChange={(e) => set('ssh_username', e.target.value)}
                       placeholder="admin"
                     />
                   </div>
-                  {sshOnly ? (
-                    <div>
-                      <label className="label">SSH Port</label>
-                      <input
-                        className="input"
-                        type="number"
-                        min={1}
-                        max={65535}
-                        value={form.ssh_port}
-                        onChange={(e) => set('ssh_port', e.target.value)}
-                        placeholder="22"
-                      />
-                    </div>
-                  ) : (
                   <div>
-                    <label className="label">API Port</label>
+                    <label className="label">SSH Port</label>
                     <input
                       className="input"
                       type="number"
                       min={1}
                       max={65535}
-                      value={form.api_port}
-                      onChange={(e) => set('api_port', e.target.value)}
-                      placeholder="Auto"
+                      value={form.ssh_port}
+                      onChange={(e) => set('ssh_port', e.target.value)}
+                      placeholder="22"
                     />
-                    {portGiven ? (
-                      <label className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-200 mt-1.5 cursor-pointer"
-                        title="Tick when this port runs api-ssl, for example a forwarded port behind NAT">
-                        <input type="checkbox" className="w-3.5 h-3.5 rounded" checked={apiSsl} onChange={(e) => setApiSslChoice(e.target.checked)} />
-                        API-SSL (encrypted)
-                      </label>
-                    ) : (
-                      <p className="text-[11px] text-gray-400 mt-1">Blank tries API-SSL (8729), then 8728.</p>
-                    )}
                   </div>
-                  )}
                   <div className="col-span-2">
-                    <label className="label">{sshOnly ? 'SSH Password *' : 'RouterOS Password *'}</label>
+                    <label className="label">SSH Password</label>
                     <input
                       className="input"
                       type="password"
-                      value={form.api_password}
-                      onChange={(e) => set('api_password', e.target.value)}
-                      placeholder={sshOnly ? 'SSH password' : 'RouterOS API password'}
+                      value={form.ssh_password}
+                      onChange={(e) => set('ssh_password', e.target.value)}
                       autoComplete="new-password"
                     />
-                    {sshOnly && (
-                      <p className="text-[11px] text-gray-400 mt-1">
-                        The same login is tried on the API once it&apos;s enabled. To use another one, change the API login in Edit Device later.
-                      </p>
-                    )}
                   </div>
                 </div>
-
-                {/* SSH credentials (optional) */}
-                {!sshOnly && (
-                <details className="group mt-3">
-                  <summary className="cursor-pointer text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider select-none">
-                    SSH Credentials (optional, for backup/restore)
-                  </summary>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="label">SSH Username</label>
-                      <input
-                        className="input"
-                        value={form.ssh_username}
-                        onChange={(e) => set('ssh_username', e.target.value)}
-                        placeholder="admin"
-                      />
-                    </div>
-                    <div>
-                      <label className="label">SSH Port</label>
-                      <input
-                        className="input"
-                        type="number"
-                        min={1}
-                        max={65535}
-                        value={form.ssh_port}
-                        onChange={(e) => set('ssh_port', e.target.value)}
-                        placeholder="22"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="label">SSH Password</label>
-                      <input
-                        className="input"
-                        type="password"
-                        value={form.ssh_password}
-                        onChange={(e) => set('ssh_password', e.target.value)}
-                        autoComplete="new-password"
-                      />
-                    </div>
-                  </div>
-                </details>
-                )}
-              </>
+              </details>
             )}
+          </>
+        )}
+      </div>
+
+      {tags.length > 0 && (
+        <div>
+          <label className="label">Tags (optional)</label>
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((t) => {
+              const on = tagIds.includes(t.id);
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => toggleTag(t.id)}
+                  className="px-2 py-0.5 rounded-full text-xs border"
+                  style={
+                    on
+                      ? { background: t.color + '33', color: t.color, borderColor: t.color }
+                      : { borderColor: 'var(--line, #e5e7eb)', color: 'var(--ink-3, #6b7280)' }
+                  }
+                >
+                  {t.name}
+                </button>
+              );
+            })}
           </div>
+        </div>
+      )}
 
-          {tags.length > 0 && (
-            <div>
-              <label className="label">Tags (optional)</label>
-              <div className="flex flex-wrap gap-1.5">
-                {tags.map((t) => {
-                  const on = tagIds.includes(t.id);
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => toggleTag(t.id)}
-                      className="px-2 py-0.5 rounded-full text-xs border"
-                      style={on
-                        ? { background: t.color + '33', color: t.color, borderColor: t.color }
-                        : { borderColor: 'var(--line, #e5e7eb)', color: 'var(--ink-3, #6b7280)' }}
-                    >
-                      {t.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+      <div>
+        <label className="label">Notes (optional)</label>
+        <textarea
+          className="input"
+          rows={2}
+          value={form.notes}
+          onChange={(e) => set('notes', e.target.value)}
+          placeholder="Any notes about this device..."
+        />
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <Loader2 className="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" />
+          <p className="text-sm text-blue-600 dark:text-blue-400">
+            {sshOnly
+              ? 'Trying the API, then logging in over SSH...'
+              : 'Testing connection and collecting device data...'}
+          </p>
+        </div>
+      )}
+
+      <div className="flex items-center justify-end gap-3 pt-2">
+        <button type="button" onClick={onClose} className="btn-secondary">
+          Cancel
+        </button>
+        <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2">
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <CheckCircle className="w-4 h-4" />
           )}
-
-          <div>
-            <label className="label">Notes (optional)</label>
-            <textarea
-              className="input"
-              rows={2}
-              value={form.notes}
-              onChange={(e) => set('notes', e.target.value)}
-              placeholder="Any notes about this device..."
-            />
-          </div>
-
-          {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            </div>
-          )}
-
-          {loading && (
-            <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <Loader2 className="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" />
-              <p className="text-sm text-blue-600 dark:text-blue-400">
-                {sshOnly ? 'Trying the API, then logging in over SSH...' : 'Testing connection and collecting device data...'}
-              </p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2">
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CheckCircle className="w-4 h-4" />
-              )}
-              {submitLabel || 'Add Device'}
-            </button>
-          </div>
-        </form>
+          {submitLabel || 'Add Device'}
+        </button>
+      </div>
+    </form>
   );
 
   const duplicatePrompt = duplicateSerial && (
@@ -492,7 +528,9 @@ export default function AddDeviceModal({
       duplicate={duplicateSerial}
       pendingName={form.name}
       pendingIp={form.ip_address}
-      onCancel={() => { setDuplicateSerial(null); }}
+      onCancel={() => {
+        setDuplicateSerial(null);
+      }}
       onCombine={handleCombineDuplicate}
       onReplace={handleReplaceDuplicate}
       loading={loading}

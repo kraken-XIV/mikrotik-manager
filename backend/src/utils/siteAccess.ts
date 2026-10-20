@@ -6,10 +6,11 @@
  * devices in other sites. Routes answer "not found" for a device the account
  * can't see, so it can't learn which ids exist elsewhere.
  */
-import type { Request, Response, NextFunction } from 'express';
-import { decodedPath } from './requestPath';
+import type { NextFunction, Request, Response } from 'express';
+
 import { query, queryOne } from '../config/database';
 import type { AuthPayload } from '../middleware/auth';
+import { decodedPath } from './requestPath';
 
 export type Role = 'admin' | 'operator' | 'viewer';
 const RANK: Record<string, number> = { viewer: 0, operator: 1, admin: 2 };
@@ -28,7 +29,10 @@ export function roleInSite(user: AuthPayload, siteId: number | null): string | n
 /** The account's role on a device, or null if it can't see it (or it doesn't exist). */
 export async function roleOnDevice(user: AuthPayload, deviceId: number): Promise<string | null> {
   if (!Number.isSafeInteger(deviceId) || deviceId <= 0) return null;
-  const row = await queryOne<{ site_id: number | null }>(`SELECT site_id FROM devices WHERE id = $1`, [deviceId]);
+  const row = await queryOne<{ site_id: number | null }>(
+    `SELECT site_id FROM devices WHERE id = $1`,
+    [deviceId],
+  );
   if (!row) return null;
   return roleInSite(user, row.site_id);
 }
@@ -37,13 +41,21 @@ export async function roleOnDevice(user: AuthPayload, deviceId: number): Promise
  * The devices in `ids` the account may not act on at `min`, including ids that
  * don't exist. Empty means all allowed.
  */
-export async function devicesDenied(user: AuthPayload, ids: number[], min: Role): Promise<number[]> {
+export async function devicesDenied(
+  user: AuthPayload,
+  ids: number[],
+  min: Role,
+): Promise<number[]> {
   const wanted = [...new Set(ids.filter((n) => Number.isSafeInteger(n) && n > 0))];
   if (wanted.length === 0) return [];
   const rows = await query<{ id: number; site_id: number | null }>(
-    `SELECT id, site_id FROM devices WHERE id = ANY($1::int[])`, [wanted]);
+    `SELECT id, site_id FROM devices WHERE id = ANY($1::int[])`,
+    [wanted],
+  );
   const siteOf = new Map(rows.map((r) => [r.id, r.site_id]));
-  return wanted.filter((id) => !siteOf.has(id) || !roleAtLeast(roleInSite(user, siteOf.get(id) ?? null), min));
+  return wanted.filter(
+    (id) => !siteOf.has(id) || !roleAtLeast(roleInSite(user, siteOf.get(id) ?? null), min),
+  );
 }
 
 /**
@@ -55,13 +67,25 @@ export async function devicesDenied(user: AuthPayload, ids: number[], min: Role)
 export function deviceSiteAccess(getDeviceId: (req: Request) => number | null) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const user = req.user;
-    if (!user?.siteRoles) { next(); return; }
+    if (!user?.siteRoles) {
+      next();
+      return;
+    }
     const deviceId = getDeviceId(req);
-    if (Number.isNaN(deviceId)) { res.status(400).json({ error: 'Malformed request path' }); return; }
-    if (!deviceId) { next(); return; }
+    if (Number.isNaN(deviceId)) {
+      res.status(400).json({ error: 'Malformed request path' });
+      return;
+    }
+    if (!deviceId) {
+      next();
+      return;
+    }
     try {
       const role = await roleOnDevice(user, deviceId);
-      if (!role) { res.status(404).json({ error: 'Device not found' }); return; }
+      if (!role) {
+        res.status(404).json({ error: 'Device not found' });
+        return;
+      }
       user.role = role;
       next();
     } catch {
@@ -96,18 +120,33 @@ export function deviceIdQuery(req: Request): number | null {
  * it isn't about particular devices. A site-scoped account must be able to see
  * every one; its role for the request becomes the lowest it holds among them.
  */
-export function resourceSiteAccess(resolve: (req: Request) => Promise<number[] | null>, notFound = 'Not found') {
+export function resourceSiteAccess(
+  resolve: (req: Request) => Promise<number[] | null>,
+  notFound = 'Not found',
+) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const user = req.user;
-    if (!user?.siteRoles) { next(); return; }
+    if (!user?.siteRoles) {
+      next();
+      return;
+    }
     try {
       const ids = await resolve(req);
-      if (!ids) { next(); return; }
-      if (ids.length === 0) { res.status(404).json({ error: notFound }); return; }
+      if (!ids) {
+        next();
+        return;
+      }
+      if (ids.length === 0) {
+        res.status(404).json({ error: notFound });
+        return;
+      }
       let lowest: string | null = null;
       for (const id of new Set(ids)) {
         const role = await roleOnDevice(user, id);
-        if (!role) { res.status(404).json({ error: notFound }); return; }
+        if (!role) {
+          res.status(404).json({ error: notFound });
+          return;
+        }
         if (lowest === null || !roleAtLeast(role, lowest as Role)) lowest = role;
       }
       user.role = lowest!;
@@ -125,7 +164,10 @@ export function resourceSiteAccess(resolve: (req: Request) => Promise<number[] |
 export async function fluxDeviceFilter(scope: number | number[] | null): Promise<string> {
   if (scope === null) return '';
   const sites = Array.isArray(scope) ? scope : [scope];
-  const rows = await query<{ id: number }>(`SELECT id FROM devices WHERE site_id = ANY($1::int[])`, [sites]);
+  const rows = await query<{ id: number }>(
+    `SELECT id FROM devices WHERE site_id = ANY($1::int[])`,
+    [sites],
+  );
   if (rows.length === 0) return '|> filter(fn: (r) => false)';
   // Ids are integers from the database, so they are safe to inline as strings.
   // `==` joined by `or` rather than contains(), which InfluxDB can't push down

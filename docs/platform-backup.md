@@ -8,10 +8,10 @@ restore it after a mistake or move it to a new server. This is separate from
 
 You choose one of two kinds each time, and for the schedule:
 
-| Kind | Holds | Size |
-|---|---|---|
-| **Configuration** | Devices and their stored logins, sites, users and roles, API tokens, settings, alert rules and channels, webhooks, report schedules, maintenance windows, command and config templates, secrets, tags, firmware mirrors, dismissed findings, the [device certificate](certificates.md) CA and enrolments, and topology layout | Small |
-| **Configuration + database** | Everything in the database, history included: events, clients, change history, outages, audit log and so on | Larger, depending on retention |
+| Kind                         | Holds                                                                                                                                                                                                                                                                                                                         | Size                           |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| **Configuration**            | Devices and their stored logins, sites, users and roles, API tokens, settings, alert rules and channels, webhooks, report schedules, maintenance windows, command and config templates, secrets, tags, firmware mirrors, dismissed findings, the [device certificate](certificates.md) CA and enrolments, and topology layout | Small                          |
+| **Configuration + database** | Everything in the database, history included: events, clients, change history, outages, audit log and so on                                                                                                                                                                                                                   | Larger, depending on retention |
 
 A configuration + database backup can still be restored as configuration only.
 
@@ -68,11 +68,11 @@ server doesn't survive losing the server, so add at least one destination that's
 somewhere else. Each one has its own **Keep** count, and **Test** writes and removes a
 small file to prove the settings work.
 
-| Type | Settings | Notes |
-|---|---|---|
-| **S3-compatible** | Endpoint, region, bucket, optional folder, access key, secret key | AWS S3, Backblaze B2, Wasabi, Cloudflare R2, MinIO. Turn on **path-style addressing** for MinIO and most self-hosted storage |
-| **SFTP** | Host, port, username, folder, password or private key | The server's host key is saved the first time it connects, and uploads are refused if it changes. If the server really changed, edit the destination, click **Forget it** next to the saved key, and test again |
-| **Email** | An email alert channel to send with, and recipients | Uses that channel's SMTP server, with TLS certificates checked. Backups over 20 MB are refused, so use email for configuration backups and S3 or SFTP for the database |
+| Type              | Settings                                                          | Notes                                                                                                                                                                                                           |
+| ----------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **S3-compatible** | Endpoint, region, bucket, optional folder, access key, secret key | AWS S3, Backblaze B2, Wasabi, Cloudflare R2, MinIO. Turn on **path-style addressing** for MinIO and most self-hosted storage                                                                                    |
+| **SFTP**          | Host, port, username, folder, password or private key             | The server's host key is saved the first time it connects, and uploads are refused if it changes. If the server really changed, edit the destination, click **Forget it** next to the saved key, and test again |
+| **Email**         | An email alert channel to send with, and recipients               | Uses that channel's SMTP server, with TLS certificates checked. Backups over 20 MB are refused, so use email for configuration backups and S3 or SFTP for the database                                          |
 
 For S3, the access key needs permission to put, list and delete objects in the bucket.
 Old backups are only removed from files named `mtm-backup-…`, so a shared bucket or folder
@@ -84,10 +84,10 @@ Restore a backup from the list, or click **Restore from a file…** to upload on
 example on a new server). Enter the passphrase, click **Check passphrase**, choose what to
 restore, and type `RESTORE` to confirm.
 
-| Mode | What happens |
-|---|---|
+| Mode                   | What happens                                                                                                                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Configuration only** | Devices, users, settings and the rest of the setup are replaced with the backup's. History is kept for devices that are in the backup. Devices that aren't in the backup are removed, with their history |
-| **Everything** | The whole database is replaced with the backup, history included. Only for configuration + database backups. Use this to move MikroTik Manager to a new server |
+| **Everything**         | The whole database is replaced with the backup, history included. Only for configuration + database backups. Use this to move MikroTik Manager to a new server                                           |
 
 ### Seeing what a restore would change
 
@@ -141,12 +141,12 @@ The new server can keep its own encryption key; restored secrets are re-encrypte
 
 To back up without the UI, keep these:
 
-| What | Where |
-|---|---|
-| The database | `docker compose exec postgres pg_dump -U mikrotik mikrotik_manager` |
-| The encryption key | `app_data` volume (`secrets.json`), or your `ENCRYPTION_KEY` |
-| Device backups | `backups_data` volume |
-| TLS certificate | `certs_data` volume |
+| What               | Where                                                               |
+| ------------------ | ------------------------------------------------------------------- |
+| The database       | `docker compose exec postgres pg_dump -U mikrotik mikrotik_manager` |
+| The encryption key | `app_data` volume (`secrets.json`), or your `ENCRYPTION_KEY`        |
+| Device backups     | `backups_data` volume                                               |
+| TLS certificate    | `certs_data` volume                                                 |
 
 Store the key **separately** from the database dump. Together they give anyone the admin
 passwords of every managed device; apart, neither does. To restore, bring back all four,

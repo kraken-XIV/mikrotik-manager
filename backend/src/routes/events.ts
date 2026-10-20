@@ -1,11 +1,12 @@
-import { Router, Request, Response } from 'express';
-import { roleAtLeast, roleOnDevice } from '../utils/siteAccess';
+import { Request, Response, Router } from 'express';
+
 import { query } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { siteScopeByNullableDevice } from '../utils/siteScope';
 import { activeSite, writableScope } from '../middleware/site';
 import { CLOCK_CHANGE_SQL } from '../utils/clockLogLines';
 import { parseFirewallLog } from '../utils/firewallLogParser';
+import { roleAtLeast, roleOnDevice } from '../utils/siteAccess';
+import { siteScopeByNullableDevice } from '../utils/siteScope';
 
 /** Most events the list's total counts; past it the page shows "N+". */
 export const EVENTS_COUNT_CAP = 100_000;
@@ -40,7 +41,6 @@ router.get('/topics', async (req: Request, res: Response) => {
   res.json(rows.map((r) => ({ topic: r.token.trim(), count: Number(r.n) })));
 });
 
-
 type FirewallEventRow = {
   id: number;
   device_id: number | null;
@@ -61,24 +61,14 @@ const FIREWALL_ACTION_REGEX = {
   accept: String.raw`\m(accept|accepted|allow|allowed|permit|permitted)\M`,
 } as const;
 
-const FIREWALL_ACTIONS = new Set([
-  'accept',
-  'drop',
-  'reject',
-  'fasttrack',
-  'unknown',
-]);
+const FIREWALL_ACTIONS = new Set(['accept', 'drop', 'reject', 'fasttrack', 'unknown']);
 
 function singleQueryValue(value: unknown): string | undefined | null {
   if (value === undefined) return undefined;
   return typeof value === 'string' ? value : null;
 }
 
-function strictInteger(
-  value: string,
-  min: number,
-  max?: number
-): number | null {
+function strictInteger(value: string, min: number, max?: number): number | null {
   if (!/^\d+$/.test(value)) return null;
 
   const parsed = Number(value);
@@ -121,19 +111,14 @@ router.get('/firewall', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Invalid offset' });
   }
 
-  const deviceId =
-    deviceIdRaw === undefined
-      ? undefined
-      : strictInteger(deviceIdRaw, 1);
+  const deviceId = deviceIdRaw === undefined ? undefined : strictInteger(deviceIdRaw, 1);
 
   if (deviceIdRaw !== undefined && deviceId === null) {
     return res.status(400).json({ error: 'Invalid deviceId' });
   }
 
   const requestedLimit =
-    limitRaw === undefined
-      ? 100
-      : strictInteger(limitRaw, 1, FIREWALL_MAX_LIMIT);
+    limitRaw === undefined ? 100 : strictInteger(limitRaw, 1, FIREWALL_MAX_LIMIT);
 
   if (requestedLimit === null) {
     return res.status(400).json({
@@ -141,10 +126,7 @@ router.get('/firewall', async (req: Request, res: Response) => {
     });
   }
 
-  const requestedOffset =
-    offsetRaw === undefined
-      ? 0
-      : strictInteger(offsetRaw, 0);
+  const requestedOffset = offsetRaw === undefined ? 0 : strictInteger(offsetRaw, 0);
 
   if (requestedOffset === null) {
     return res.status(400).json({
@@ -153,9 +135,7 @@ router.get('/firewall', async (req: Request, res: Response) => {
   }
 
   const sinceDate =
-    sinceRaw === undefined
-      ? new Date(Date.now() - DEFAULT_FIREWALL_WINDOW_MS)
-      : new Date(sinceRaw);
+    sinceRaw === undefined ? new Date(Date.now() - DEFAULT_FIREWALL_WINDOW_MS) : new Date(sinceRaw);
 
   if (Number.isNaN(sinceDate.getTime())) {
     return res.status(400).json({
@@ -171,10 +151,7 @@ router.get('/firewall', async (req: Request, res: Response) => {
 
   const protocolFilter = protocolRaw?.trim().toLowerCase() ?? '';
 
-  if (
-    protocolFilter &&
-    !/^[a-z0-9_-]{1,32}$/.test(protocolFilter)
-  ) {
+  if (protocolFilter && !/^[a-z0-9_-]{1,32}$/.test(protocolFilter)) {
     return res.status(400).json({ error: 'Invalid protocol' });
   }
 
@@ -196,18 +173,13 @@ router.get('/firewall', async (req: Request, res: Response) => {
     params.push(deviceId);
   }
 
-  const siteFilter = siteScopeByNullableDevice(
-    activeSite(req),
-    'e.device_id'
-  );
+  const siteFilter = siteScopeByNullableDevice(activeSite(req), 'e.device_id');
   if (siteFilter) filters.push(siteFilter);
 
   const searchTerm = searchRaw?.trim();
 
   if (searchTerm) {
-    filters.push(
-      `(e.message ILIKE $${idx} OR COALESCE(d.name, '') ILIKE $${idx})`
-    );
+    filters.push(`(e.message ILIKE $${idx} OR COALESCE(d.name, '') ILIKE $${idx})`);
     params.push(`%${searchTerm}%`);
     idx++;
   }
@@ -222,13 +194,8 @@ router.get('/firewall', async (req: Request, res: Response) => {
     ''
   )`;
 
-  const addActionMatch = (
-    pattern: string,
-    negate = false
-  ) => {
-    filters.push(
-      `${prefixSql} ${negate ? '!~*' : '~*'} $${idx++}`
-    );
+  const addActionMatch = (pattern: string, negate = false) => {
+    filters.push(`${prefixSql} ${negate ? '!~*' : '~*'} $${idx++}`);
     params.push(pattern);
   };
 
@@ -255,9 +222,7 @@ router.get('/firewall', async (req: Request, res: Response) => {
 
   if (protocolFilter) {
     filters.push(`e.message ~* $${idx++}`);
-    params.push(
-      String.raw`\mproto[[:space:]]+${protocolFilter}([[:space:](,]|$)`
-    );
+    params.push(String.raw`\mproto[[:space:]]+${protocolFilter}([[:space:](,]|$)`);
   }
 
   const where = filters.join(' AND ');
@@ -276,7 +241,7 @@ router.get('/firewall', async (req: Request, res: Response) => {
      WHERE ${where}
      ORDER BY e.event_time DESC
      LIMIT $${idx} OFFSET $${idx + 1}`,
-    [...params, requestedLimit, requestedOffset]
+    [...params, requestedLimit, requestedOffset],
   );
 
   const countQuery = query<{ total: string }>(
@@ -284,13 +249,10 @@ router.get('/firewall', async (req: Request, res: Response) => {
      FROM events e
      LEFT JOIN devices d ON d.id = e.device_id
      WHERE ${where}`,
-    params
+    params,
   );
 
-  const [rows, totalRows] = await Promise.all([
-    rowsQuery,
-    countQuery,
-  ]);
+  const [rows, totalRows] = await Promise.all([rowsQuery, countQuery]);
 
   // SQL has already narrowed and paged the result. Node only parses the
   // rows that are actually returned to this request.
@@ -298,16 +260,18 @@ router.get('/firewall', async (req: Request, res: Response) => {
     const event = parseFirewallLog(row.message);
     if (!event) return [];
 
-    return [{
-      id: row.id,
-      deviceId: row.device_id,
-      deviceName: row.device_name,
-      eventTime: row.event_time,
-      severity: row.severity,
-      topic: row.topic,
-      rawMessage: row.message,
-      ...event,
-    }];
+    return [
+      {
+        id: row.id,
+        deviceId: row.device_id,
+        deviceName: row.device_name,
+        eventTime: row.event_time,
+        severity: row.severity,
+        topic: row.topic,
+        rawMessage: row.message,
+        ...event,
+      },
+    ];
   });
 
   res.json({
@@ -345,13 +309,18 @@ router.get('/', async (req: Request, res: Response) => {
   if (severity) {
     // Accept comma-separated list e.g. "error,warning"
     // 'error' also includes 'critical' rows
-    const requested = String(severity).split(',').map((s) => s.trim()).filter(Boolean);
+    const requested = String(severity)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     const expanded = new Set<string>();
     for (const s of requested) {
       expanded.add(s);
       if (s === 'error') expanded.add('critical');
     }
-    const placeholders = Array.from(expanded).map(() => `$${idx++}`).join(',');
+    const placeholders = Array.from(expanded)
+      .map(() => `$${idx++}`)
+      .join(',');
     filters.push(`e.severity IN (${placeholders})`);
     params.push(...Array.from(expanded));
   }
@@ -384,7 +353,7 @@ router.get('/', async (req: Request, res: Response) => {
      WHERE ${where}
      ORDER BY e.event_time DESC
      LIMIT $${idx++} OFFSET $${idx++}`,
-    [...params, parseInt(String(limit), 10), parseInt(String(offset), 10)]
+    [...params, parseInt(String(limit), 10), parseInt(String(offset), 10)],
   );
 
   // ?counts=0 returns the rows alone. The dashboard shows five events and never reads
@@ -401,13 +370,13 @@ router.get('/', async (req: Request, res: Response) => {
     // stored event (millions on a busy install), several seconds on every refresh.
     query<{ count: string }>(
       `SELECT COUNT(*) as count FROM (SELECT 1 FROM events e WHERE ${where} LIMIT ${EVENTS_COUNT_CAP + 1}) c`,
-      params
+      params,
     ),
     query<{ count: string }>(
       `SELECT COUNT(*) as count FROM events
        WHERE severity IN ('error','critical') AND event_time > NOW() - INTERVAL '24 hours'
          AND NOT ${CLOCK_CHANGE_SQL}
-         ${siteFilterBare ? `AND ${siteFilterBare}` : ''}`
+         ${siteFilterBare ? `AND ${siteFilterBare}` : ''}`,
     ),
   ]);
 

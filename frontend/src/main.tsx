@@ -1,11 +1,13 @@
+import './index.css';
+
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { actionErrorMessage, useActionErrorStore } from './store/actionErrorStore';
+
 import App from './App';
-import { useSiteStore } from './store/siteStore';
+import { actionErrorMessage, useActionErrorStore } from './store/actionErrorStore';
 import { useAuthStore } from './store/authStore';
-import './index.css';
+import { useSiteStore } from './store/siteStore';
 
 // Initialize theme from storage immediately
 const storedTheme = (() => {
@@ -69,7 +71,7 @@ function SiteScopedQueryProvider({ children }: { children: React.ReactNode }) {
   // The signed-in user is part of the key too (outside review U1): logging
   // out, or someone else signing in on the same tab, starts an empty cache, so
   // nothing the previous user loaded (users, secret-bearing backups) can show.
-  const userId = useAuthStore((s) => (s.isAuthenticated ? s.user?.id ?? 'session' : 'anon'));
+  const userId = useAuthStore((s) => (s.isAuthenticated ? (s.user?.id ?? 'session') : 'anon'));
   const key = `${userId}:${siteId != null ? String(siteId) : groupId != null ? `g${groupId}` : 'all'}`;
   // A new cache per site; `key` is the dependency on purpose.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,5 +88,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <SiteScopedQueryProvider>
       <App />
     </SiteScopedQueryProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

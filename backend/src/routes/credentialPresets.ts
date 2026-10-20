@@ -1,9 +1,15 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne } from '../config/database';
 import { requireAuth } from '../middleware/auth';
-import { presetCaller, canManagePresetSite, canSeePreset, type PresetCaller } from '../utils/presetAccess';
-import { encrypt } from '../utils/crypto';
 import { rateLimitRedis } from '../middleware/rateLimitRedis';
+import { encrypt } from '../utils/crypto';
+import {
+  canManagePresetSite,
+  canSeePreset,
+  type PresetCaller,
+  presetCaller,
+} from '../utils/presetAccess';
 
 const router = Router();
 router.use(requireAuth);
@@ -81,7 +87,7 @@ router.get('/', async (req: Request, res: Response) => {
   const rows = await query<CredentialPresetRow>(
     `SELECT p.*, s.name AS site_name FROM credential_presets p
        LEFT JOIN sites s ON s.id = p.site_id
-      ORDER BY p.site_id NULLS FIRST, p.name ASC`
+      ORDER BY p.site_id NULLS FIRST, p.name ASC`,
   );
   // Each account sees what it may use or manage (#228); admin-only fleet
   // presets stay fleet objects that a site admin sees as an operator would (P1-7).
@@ -126,23 +132,26 @@ router.post('/', presetMutationLimiter, async (req: Request, res: Response) => {
   };
 
   if (!name || !api_username || !api_password) {
-    return res
-      .status(400)
-      .json({ error: 'name, api_username, and api_password are required' });
+    return res.status(400).json({ error: 'name, api_username, and api_password are required' });
   }
   const site = await requestedSite((req.body as { site_id?: unknown }).site_id);
   if (site === 'bad') return res.status(400).json({ error: 'Unknown site' });
   // No site given: fleet-wide for a fleet admin, the only site a site admin
   // runs. An explicit null (fleet-wide) is checked like any other site, never
   // quietly swapped for one.
-  const siteId = site !== undefined
-    ? site
-    : (caller.fleetAdmin ? null : (caller.adminSites.length === 1 ? caller.adminSites[0] : null));
+  const siteId =
+    site !== undefined
+      ? site
+      : caller.fleetAdmin
+        ? null
+        : caller.adminSites.length === 1
+          ? caller.adminSites[0]
+          : null;
   if (!canManagePresetSite(caller, siteId)) return res.status(403).json({ error: MANAGE_REFUSED });
 
   const existing = await queryOne<{ id: number }>(
     `SELECT id FROM credential_presets WHERE name = $1 AND COALESCE(site_id, 0) = COALESCE($2::integer, 0)`,
-    [name, siteId]
+    [name, siteId],
   );
   if (existing) {
     return res.status(409).json({ error: 'A preset with this name already exists' });
@@ -170,7 +179,7 @@ router.post('/', presetMutationLimiter, async (req: Request, res: Response) => {
       notes || null,
       allowOp,
       siteId,
-    ]
+    ],
   );
   return res.status(201).json(toPublic(rows[0], caller));
 });
@@ -183,15 +192,17 @@ router.put('/:id', presetMutationLimiter, async (req: Request, res: Response) =>
 
   const existing = await queryOne<CredentialPresetRow>(
     `SELECT * FROM credential_presets WHERE id = $1`,
-    [id]
+    [id],
   );
   if (!existing) return res.status(404).json({ error: 'Preset not found' });
   if (!canSeePreset(caller, existing)) return res.status(404).json({ error: 'Preset not found' });
-  if (!canManagePresetSite(caller, existing.site_id ?? null)) return res.status(403).json({ error: MANAGE_REFUSED });
+  if (!canManagePresetSite(caller, existing.site_id ?? null))
+    return res.status(403).json({ error: MANAGE_REFUSED });
   const movedTo = await requestedSite((req.body as { site_id?: unknown }).site_id);
   if (movedTo === 'bad') return res.status(400).json({ error: 'Unknown site' });
-  if (movedTo !== undefined && !canManagePresetSite(caller, movedTo)) return res.status(403).json({ error: MANAGE_REFUSED });
-  const targetSite = movedTo === undefined ? existing.site_id ?? null : movedTo;
+  if (movedTo !== undefined && !canManagePresetSite(caller, movedTo))
+    return res.status(403).json({ error: MANAGE_REFUSED });
+  const targetSite = movedTo === undefined ? (existing.site_id ?? null) : movedTo;
 
   const {
     name,
@@ -221,7 +232,7 @@ router.put('/:id', presetMutationLimiter, async (req: Request, res: Response) =>
   if ((typeof name === 'string' && name && name !== existing.name) || movedTo !== undefined) {
     const clash = await queryOne<{ id: number }>(
       `SELECT id FROM credential_presets WHERE name = $1 AND id <> $2 AND COALESCE(site_id, 0) = COALESCE($3::integer, 0)`,
-      [name || existing.name, id, targetSite]
+      [name || existing.name, id, targetSite],
     );
     if (clash) return res.status(409).json({ error: 'A preset with this name already exists' });
   }
@@ -254,21 +265,26 @@ router.put('/:id', presetMutationLimiter, async (req: Request, res: Response) =>
       name || null,
       api_username || null,
       newApiPass,
-      sent(api_port), api_port ?? null,
-      sent(ssh_username), ssh_username || null,
+      sent(api_port),
+      api_port ?? null,
+      sent(ssh_username),
+      ssh_username || null,
       newSshPass,
       clear_ssh_password === true,
-      sent(ssh_port), ssh_port ?? null,
-      sent(notes), notes || null,
+      sent(ssh_port),
+      ssh_port ?? null,
+      sent(notes),
+      notes || null,
       allow_operator_use === undefined ? null : allow_operator_use,
       id,
-      movedTo !== undefined, movedTo === undefined ? null : movedTo,
-    ]
+      movedTo !== undefined,
+      movedTo === undefined ? null : movedTo,
+    ],
   );
 
   const updated = await queryOne<CredentialPresetRow>(
     `SELECT p.*, s.name AS site_name FROM credential_presets p LEFT JOIN sites s ON s.id = p.site_id WHERE p.id = $1`,
-    [id]
+    [id],
   );
   return res.json(toPublic(updated!, caller));
 });
@@ -278,13 +294,15 @@ router.delete('/:id', presetMutationLimiter, async (req: Request, res: Response)
   const id = parseInt(req.params.id, 10);
   if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid id' });
   const caller = presetCaller(req.user);
-  const row = await queryOne<CredentialPresetRow>(`SELECT * FROM credential_presets WHERE id = $1`, [id]);
-  if (!row || !canSeePreset(caller, row)) return res.status(404).json({ error: 'Preset not found' });
-  if (!canManagePresetSite(caller, row.site_id ?? null)) return res.status(403).json({ error: MANAGE_REFUSED });
-  const result = await query(
-    `DELETE FROM credential_presets WHERE id = $1 RETURNING id`,
-    [id]
+  const row = await queryOne<CredentialPresetRow>(
+    `SELECT * FROM credential_presets WHERE id = $1`,
+    [id],
   );
+  if (!row || !canSeePreset(caller, row))
+    return res.status(404).json({ error: 'Preset not found' });
+  if (!canManagePresetSite(caller, row.site_id ?? null))
+    return res.status(403).json({ error: MANAGE_REFUSED });
+  const result = await query(`DELETE FROM credential_presets WHERE id = $1 RETURNING id`, [id]);
   if (!result.length) return res.status(404).json({ error: 'Preset not found' });
   return res.json({ message: 'Preset deleted' });
 });

@@ -1,14 +1,30 @@
-import { useState } from 'react';
-import { useRememberedRange } from '../../hooks/useRememberedRange';
 import { useQuery } from '@tanstack/react-query';
-import { Thermometer, Zap, Wind, Power, Activity, HelpCircle, RefreshCw, HardDrive } from 'lucide-react';
+import clsx from 'clsx';
+import {
+  Activity,
+  HardDrive,
+  HelpCircle,
+  Power,
+  RefreshCw,
+  Thermometer,
+  Wind,
+  Zap,
+} from 'lucide-react';
+import { useState } from 'react';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+import { useRememberedRange } from '../../hooks/useRememberedRange';
 import { devicesApi, metricsApi } from '../../services/api';
 import type { ResourcePoint } from '../../types';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-} from 'recharts';
-import clsx from 'clsx';
 
 interface HealthMetric {
   name: string;
@@ -63,11 +79,16 @@ function parseBytes(val: string): number {
   if (isNaN(n)) return 0;
   const unit = val.replace(/[\d.\s]/g, '').toUpperCase();
   const map: Record<string, number> = {
-    '': 1, B: 1,
-    KB: 1e3, KIB: 1024,
-    MB: 1e6, MIB: 1024 ** 2,
-    GB: 1e9, GIB: 1024 ** 3,
-    TB: 1e12, TIB: 1024 ** 4,
+    '': 1,
+    B: 1,
+    KB: 1e3,
+    KIB: 1024,
+    MB: 1e6,
+    MIB: 1024 ** 2,
+    GB: 1e9,
+    GIB: 1024 ** 3,
+    TB: 1e12,
+    TIB: 1024 ** 4,
   };
   return n * (map[unit] ?? 1);
 }
@@ -127,7 +148,12 @@ function psuColor(state: string): string {
 
 // ─── Card components ──────────────────────────────────────────────────────────
 
-function Section({ title, icon, children, grid = true }: {
+function Section({
+  title,
+  icon,
+  children,
+  grid = true,
+}: {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
@@ -148,7 +174,12 @@ function Section({ title, icon, children, grid = true }: {
   );
 }
 
-function MetricCard({ label, value, unit, valueClass }: {
+function MetricCard({
+  label,
+  value,
+  unit,
+  valueClass,
+}: {
   label: string;
   value: string;
   unit?: string;
@@ -159,7 +190,9 @@ function MetricCard({ label, value, unit, valueClass }: {
       <div className="text-xs text-gray-500 dark:text-slate-400 mb-1">{label}</div>
       <div className={clsx('text-lg font-bold', valueClass || 'text-gray-900 dark:text-white')}>
         {value}
-        {unit && <span className="text-xs font-normal text-gray-500 dark:text-slate-400 ml-1">{unit}</span>}
+        {unit && (
+          <span className="text-xs font-normal text-gray-500 dark:text-slate-400 ml-1">{unit}</span>
+        )}
       </div>
     </div>
   );
@@ -205,7 +238,9 @@ function DiskCard({ disk }: { disk: Record<string, string> }) {
 
       <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400">
         <span>{formatBytes(usedBytes)} used</span>
-        <span>{formatBytes(freeBytes)} free / {formatBytes(totalBytes)}</span>
+        <span>
+          {formatBytes(freeBytes)} free / {formatBytes(totalBytes)}
+        </span>
       </div>
 
       {(model || serial) && (
@@ -219,7 +254,7 @@ function DiskCard({ disk }: { disk: Record<string, string> }) {
 }
 
 function toDisplayTemp(celsius: number, unit: 'C' | 'F'): string {
-  if (unit === 'F') return String(Math.round(celsius * 9 / 5 + 32));
+  if (unit === 'F') return String(Math.round((celsius * 9) / 5 + 32));
   return String(celsius % 1 === 0 ? celsius : celsius.toFixed(1));
 }
 
@@ -232,7 +267,8 @@ function ResourceChart({ deviceId }: { deviceId: number }) {
 
   const { data: rawResources = [] } = useQuery({
     queryKey: ['resources-history', deviceId, range],
-    queryFn: () => metricsApi.deviceResources(deviceId, range).then((r) => r.data as ResourcePoint[]),
+    queryFn: () =>
+      metricsApi.deviceResources(deviceId, range).then((r) => r.data as ResourcePoint[]),
     refetchInterval: 60_000,
   });
 
@@ -244,7 +280,8 @@ function ResourceChart({ deviceId }: { deviceId: number }) {
         : 0;
     return {
       time: new Date(p.time).toLocaleTimeString([], {
-        hour: '2-digit', minute: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
         ...(compact ? {} : { month: 'short', day: 'numeric' }),
       }),
       cpu: Math.round(p.cpu_load || 0),
@@ -257,7 +294,9 @@ function ResourceChart({ deviceId }: { deviceId: number }) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-blue-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">CPU & Memory Usage</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            CPU & Memory Usage
+          </h3>
         </div>
         <div className="flex gap-1">
           {RESOURCE_RANGES.map((r) => (
@@ -268,7 +307,7 @@ function ResourceChart({ deviceId }: { deviceId: number }) {
                 'px-2 py-1 text-xs rounded font-medium transition-colors',
                 range === r
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+                  : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600',
               )}
             >
               {r}
@@ -297,8 +336,22 @@ function ResourceChart({ deviceId }: { deviceId: number }) {
               }}
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Line type="monotone" dataKey="cpu" stroke="#f59e0b" name="CPU Load" dot={false} strokeWidth={2} />
-            <Line type="monotone" dataKey="mem" stroke="#8b5cf6" name="Memory Used" dot={false} strokeWidth={2} />
+            <Line
+              type="monotone"
+              dataKey="cpu"
+              stroke="#f59e0b"
+              name="CPU Load"
+              dot={false}
+              strokeWidth={2}
+            />
+            <Line
+              type="monotone"
+              dataKey="mem"
+              stroke="#8b5cf6"
+              name="Memory Used"
+              dot={false}
+              strokeWidth={2}
+            />
           </LineChart>
         </ResponsiveContainer>
       )}
@@ -307,8 +360,8 @@ function ResourceChart({ deviceId }: { deviceId: number }) {
 }
 
 export default function HardwareTab({ deviceId }: { deviceId: number }) {
-  const [tempUnit, setTempUnit] = useState<'C' | 'F'>(() =>
-    (localStorage.getItem('hw-temp-unit') as 'C' | 'F') || 'C'
+  const [tempUnit, setTempUnit] = useState<'C' | 'F'>(
+    () => (localStorage.getItem('hw-temp-unit') as 'C' | 'F') || 'C',
   );
 
   const setAndPersistUnit = (unit: 'C' | 'F') => {
@@ -354,7 +407,8 @@ export default function HardwareTab({ deviceId }: { deviceId: number }) {
   const power = metrics.filter(isPower);
   const current = metrics.filter(isCurrent);
   const other = metrics.filter(
-    (m) => !isTemperature(m) && !isVoltage(m) && !isFan(m) && !isPsu(m) && !isPower(m) && !isCurrent(m)
+    (m) =>
+      !isTemperature(m) && !isVoltage(m) && !isFan(m) && !isPsu(m) && !isPower(m) && !isCurrent(m),
   );
 
   return (
@@ -370,7 +424,7 @@ export default function HardwareTab({ deviceId }: { deviceId: number }) {
                 'px-2.5 py-1 transition-colors',
                 tempUnit === unit
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700',
               )}
             >
               °{unit}
@@ -396,7 +450,9 @@ export default function HardwareTab({ deviceId }: { deviceId: number }) {
           <div className="lg:col-span-2">
             <Section title="Storage" icon={<HardDrive className="w-4 h-4" />} grid={false}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {disks.map((d, i) => <DiskCard key={d['name'] || i} disk={d} />)}
+                {disks.map((d, i) => (
+                  <DiskCard key={d['name'] || i} disk={d} />
+                ))}
               </div>
             </Section>
           </div>
@@ -483,21 +539,38 @@ export default function HardwareTab({ deviceId }: { deviceId: number }) {
 
         {poeData && poeData.ports.length > 0 && (
           <div className="lg:col-span-2">
-            <Section title={`PoE Budget — ${poeData.totalWatts.toFixed(1)} W total`} icon={<Zap className="w-4 h-4" />} grid={false}>
+            <Section
+              title={`PoE Budget — ${poeData.totalWatts.toFixed(1)} W total`}
+              icon={<Zap className="w-4 h-4" />}
+              grid={false}
+            >
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {poeData.ports.filter(p => p.watts > 0).map((p) => (
-                  <div key={p.port} className="rounded-lg p-3" style={{ background: 'var(--surface-2)' }}>
-                    <div className="text-xs font-mono text-gray-500 dark:text-slate-400 mb-1">{p.port}</div>
-                    <div className="text-lg font-bold text-yellow-500">{p.watts.toFixed(1)} W</div>
-                    <div className="text-xs text-gray-400 dark:text-slate-500">
-                      {p.voltage_v.toFixed(1)} V · {p.current_ma.toFixed(0)} mA
+                {poeData.ports
+                  .filter((p) => p.watts > 0)
+                  .map((p) => (
+                    <div
+                      key={p.port}
+                      className="rounded-lg p-3"
+                      style={{ background: 'var(--surface-2)' }}
+                    >
+                      <div className="text-xs font-mono text-gray-500 dark:text-slate-400 mb-1">
+                        {p.port}
+                      </div>
+                      <div className="text-lg font-bold text-yellow-500">
+                        {p.watts.toFixed(1)} W
+                      </div>
+                      <div className="text-xs text-gray-400 dark:text-slate-500">
+                        {p.voltage_v.toFixed(1)} V · {p.current_ma.toFixed(0)} mA
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {poeData.ports.filter(p => p.watts === 0).length > 0 && (
-                  <div className="rounded-lg p-3 opacity-40" style={{ background: 'var(--surface-2)' }}>
+                  ))}
+                {poeData.ports.filter((p) => p.watts === 0).length > 0 && (
+                  <div
+                    className="rounded-lg p-3 opacity-40"
+                    style={{ background: 'var(--surface-2)' }}
+                  >
                     <div className="text-xs text-gray-500 dark:text-slate-400">
-                      {poeData.ports.filter(p => p.watts === 0).length} port(s) inactive
+                      {poeData.ports.filter((p) => p.watts === 0).length} port(s) inactive
                     </div>
                   </div>
                 )}

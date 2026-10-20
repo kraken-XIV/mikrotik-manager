@@ -1,9 +1,12 @@
 import { encrypt } from '../../../utils/crypto';
-import { getClientSecret, maskedConfig, DEFAULT_OIDC_CONFIG, type OidcConfig } from '../oidcConfig';
+import { DEFAULT_OIDC_CONFIG, getClientSecret, maskedConfig, type OidcConfig } from '../oidcConfig';
 
 describe('OIDC config secret handling', () => {
   it('decrypts a stored client secret', () => {
-    const config: OidcConfig = { ...DEFAULT_OIDC_CONFIG, client_secret_encrypted: encrypt('super-secret') };
+    const config: OidcConfig = {
+      ...DEFAULT_OIDC_CONFIG,
+      client_secret_encrypted: encrypt('super-secret'),
+    };
     expect(getClientSecret(config)).toBe('super-secret');
   });
 
@@ -20,6 +23,8 @@ describe('OIDC config secret handling', () => {
   });
 
   it('reports has_secret=false when unset', () => {
-    expect(maskedConfig({ ...DEFAULT_OIDC_CONFIG, client_secret_encrypted: null }).has_secret).toBe(false);
+    expect(maskedConfig({ ...DEFAULT_OIDC_CONFIG, client_secret_encrypted: null }).has_secret).toBe(
+      false,
+    );
   });
 });

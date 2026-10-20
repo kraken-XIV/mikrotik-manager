@@ -1,13 +1,18 @@
-import { passwordLoginEnabled, passwordLoginRequestedOff } from '../passwordLogin';
 import { loadOidcConfig } from '../../services/oidc/oidcConfig';
+import { passwordLoginEnabled, passwordLoginRequestedOff } from '../passwordLogin';
 
 jest.mock('../../services/oidc/oidcConfig', () => ({ loadOidcConfig: jest.fn() }));
 const mockSso = loadOidcConfig as jest.MockedFunction<typeof loadOidcConfig>;
-const ready = { enabled: true, issuer_url: 'https://idp.example', client_id: 'mtm' } as Awaited<ReturnType<typeof loadOidcConfig>>;
+const ready = { enabled: true, issuer_url: 'https://idp.example', client_id: 'mtm' } as Awaited<
+  ReturnType<typeof loadOidcConfig>
+>;
 
 describe('PASSWORD_LOGIN (#226)', () => {
   const env = process.env.PASSWORD_LOGIN;
-  afterEach(() => { process.env.PASSWORD_LOGIN = env; mockSso.mockReset(); });
+  afterEach(() => {
+    process.env.PASSWORD_LOGIN = env;
+    mockSso.mockReset();
+  });
   jest.spyOn(console, 'warn').mockImplementation(() => {});
 
   it('is on unless set to false', async () => {

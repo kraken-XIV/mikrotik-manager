@@ -4,9 +4,9 @@
  * router as "SW". Dashboard tiles use it too.
  */
 const TYPES: Record<string, { label: string; color: string }> = {
-  wireless_ap: { label: 'AP',  color: 'var(--info)' },
-  switch:      { label: 'SW',  color: 'var(--accent)' },
-  router:      { label: 'RTR', color: 'var(--violet)' },
+  wireless_ap: { label: 'AP', color: 'var(--info)' },
+  switch: { label: 'SW', color: 'var(--accent)' },
+  router: { label: 'RTR', color: 'var(--violet)' },
 };
 
 function deviceTypeLabel(type: string | null | undefined): string {

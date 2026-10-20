@@ -1,20 +1,28 @@
 import {
-  buildSegments, summarise, summariseBands, expandBands, formatDuration,
+  buildSegments,
   type CellEvent,
+  expandBands,
+  formatDuration,
+  summarise,
+  summariseBands,
 } from '../lteDwell';
 
 const T = (iso: string) => new Date(iso);
-const ev = (at: string, cellId: string | null, bands: string | null, enbId: string | null = 'E1'): CellEvent =>
-  ({ at: T(at), cellId, enbId, bands });
+const ev = (
+  at: string,
+  cellId: string | null,
+  bands: string | null,
+  enbId: string | null = 'E1',
+): CellEvent => ({ at: T(at), cellId, enbId, bands });
 
 const NOW = T('2026-09-06T12:00:00Z');
 
 describe('buildSegments', () => {
   it('runs each state until the next change', () => {
-    const segs = buildSegments([
-      ev('2026-09-06T09:00:00Z', 'A', '1'),
-      ev('2026-09-06T10:00:00Z', 'B', '1,3'),
-    ], NOW);
+    const segs = buildSegments(
+      [ev('2026-09-06T09:00:00Z', 'A', '1'), ev('2026-09-06T10:00:00Z', 'B', '1,3')],
+      NOW,
+    );
     expect(segs).toHaveLength(2);
     expect(segs[0]).toMatchObject({ cellId: 'A', seconds: 3600, open: false });
     expect(segs[1]).toMatchObject({ cellId: 'B', seconds: 7200, open: true });
@@ -41,21 +49,24 @@ describe('buildSegments', () => {
   });
 
   it('sorts events that arrive out of order', () => {
-    const segs = buildSegments([
-      ev('2026-09-06T10:00:00Z', 'B', '1'),
-      ev('2026-09-06T09:00:00Z', 'A', '1'),
-    ], NOW);
+    const segs = buildSegments(
+      [ev('2026-09-06T10:00:00Z', 'B', '1'), ev('2026-09-06T09:00:00Z', 'A', '1')],
+      NOW,
+    );
     expect(segs.map((s) => s.cellId)).toEqual(['A', 'B']);
   });
 
   it('discards a state that never actually held', () => {
     // Two changes in the same second describe a transient, not a stretch of
     // time; counting it would inflate the visit count for that cell.
-    const segs = buildSegments([
-      ev('2026-09-06T09:00:00Z', 'A', '1'),
-      ev('2026-09-06T09:00:00Z', 'B', '1'),
-      ev('2026-09-06T10:00:00Z', 'C', '1'),
-    ], NOW);
+    const segs = buildSegments(
+      [
+        ev('2026-09-06T09:00:00Z', 'A', '1'),
+        ev('2026-09-06T09:00:00Z', 'B', '1'),
+        ev('2026-09-06T10:00:00Z', 'C', '1'),
+      ],
+      NOW,
+    );
     expect(segs.map((s) => s.cellId)).toEqual(['B', 'C']);
   });
 
@@ -65,11 +76,14 @@ describe('buildSegments', () => {
 });
 
 describe('summarise', () => {
-  const segs = buildSegments([
-    ev('2026-09-06T06:00:00Z', 'A', '1'),
-    ev('2026-09-06T08:00:00Z', 'B', '1'),
-    ev('2026-09-06T09:00:00Z', 'A', '1'),
-  ], NOW);
+  const segs = buildSegments(
+    [
+      ev('2026-09-06T06:00:00Z', 'A', '1'),
+      ev('2026-09-06T08:00:00Z', 'B', '1'),
+      ev('2026-09-06T09:00:00Z', 'A', '1'),
+    ],
+    NOW,
+  );
 
   it('adds up separate visits to the same cell', () => {
     const totals = summarise(segs, (s) => s.cellId);
@@ -90,10 +104,10 @@ describe('summarise', () => {
   it('ignores segments where the attribute was never reported', () => {
     // Attributing an unreported cell to "unknown" would invent a state the
     // modem never described.
-    const withGap = buildSegments([
-      ev('2026-09-06T09:00:00Z', null, '1'),
-      ev('2026-09-06T10:00:00Z', 'A', '1'),
-    ], NOW);
+    const withGap = buildSegments(
+      [ev('2026-09-06T09:00:00Z', null, '1'), ev('2026-09-06T10:00:00Z', 'A', '1')],
+      NOW,
+    );
     expect(summarise(withGap, (s) => s.cellId).map((t) => t.key)).toEqual(['A']);
   });
 
@@ -115,10 +129,10 @@ describe('summariseBands', () => {
   });
 
   it('adds a band up across the stretches it appeared in', () => {
-    const segs = buildSegments([
-      ev('2026-09-06T10:00:00Z', 'A', '1,3'),
-      ev('2026-09-06T11:00:00Z', 'A', '1'),
-    ], NOW);
+    const segs = buildSegments(
+      [ev('2026-09-06T10:00:00Z', 'A', '1,3'), ev('2026-09-06T11:00:00Z', 'A', '1')],
+      NOW,
+    );
     const b1 = summariseBands(segs, 7200).find((b) => b.label === 'B1')!;
     const b3 = summariseBands(segs, 7200).find((b) => b.label === 'B3')!;
     expect(b1.seconds).toBe(7200);

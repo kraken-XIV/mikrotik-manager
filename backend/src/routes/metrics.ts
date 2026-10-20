@@ -1,25 +1,39 @@
-import { Router, Request, Response } from 'express';
-import { decodedPath } from '../utils/requestPath';
-import { outageLengthSeconds, outageOverlapsSql, outageSecondsInWindow, outageSecondsSql } from '../utils/outageWindow';
-import { deviceSiteAccess } from '../utils/siteAccess';
-import { getQueryApi, bucket } from '../config/influxdb';
-import { query } from '../config/database';
-import { requireAuth } from '../middleware/auth';
-import { siteScopeDevices, siteScopeByDevice, siteScopeByNullableDevice, clientSeriesTag, siteList } from '../utils/siteScope';
-import { activeSite } from '../middleware/site';
 import { fluxString } from '@influxdata/influxdb-client';
-import { latestResources, latestInterfaceCounters } from '../services/latestMetrics';
+import { Request, Response, Router } from 'express';
+
+import { query } from '../config/database';
+import { bucket, getQueryApi } from '../config/influxdb';
+import { requireAuth } from '../middleware/auth';
+import { activeSite } from '../middleware/site';
+import { latestInterfaceCounters, latestResources } from '../services/latestMetrics';
+import {
+  outageLengthSeconds,
+  outageOverlapsSql,
+  outageSecondsInWindow,
+  outageSecondsSql,
+} from '../utils/outageWindow';
+import { decodedPath } from '../utils/requestPath';
+import { deviceSiteAccess } from '../utils/siteAccess';
+import {
+  clientSeriesTag,
+  siteList,
+  siteScopeByDevice,
+  siteScopeByNullableDevice,
+  siteScopeDevices,
+} from '../utils/siteScope';
 
 const router = Router();
 router.use(requireAuth);
 // Per-device metrics: a site-scoped account only reaches its own sites' devices (P1-7).
-router.use(deviceSiteAccess((req) => {
-  // Decoded, as the handler's :id is (GHSA-6xq3-q9m5-7hxp); NaN is refused.
-  const path = decodedPath(req);
-  if (path === null) return NaN;
-  const m = /^\/(?:interface|device)\/(\d+)(?:\/|$)/.exec(path);
-  return m ? parseInt(m[1], 10) : null;
-}));
+router.use(
+  deviceSiteAccess((req) => {
+    // Decoded, as the handler's :id is (GHSA-6xq3-q9m5-7hxp); NaN is refused.
+    const path = decodedPath(req);
+    if (path === null) return NaN;
+    const m = /^\/(?:interface|device)\/(\d+)(?:\/|$)/.exec(path);
+    return m ? parseInt(m[1], 10) : null;
+  }),
+);
 
 function rangeToFlux(range: string): string {
   const allowed = ['1h', '3h', '6h', '12h', '24h', '7d', '30d'];
@@ -47,7 +61,7 @@ router.get('/clients-over-time', async (req: Request, res: Response) => {
       `SELECT COUNT(*) FILTER (WHERE site_id = $1)::int AS in_site,
               COUNT(*)::int AS total
          FROM devices`,
-      [sites[0]]
+      [sites[0]],
     );
     const { in_site = 0, total = 0 } = counts[0] ?? {};
     seriesTags = [clientSeriesTag(sites[0], in_site, total)];
@@ -79,7 +93,9 @@ router.get('/clients-over-time', async (req: Request, res: Response) => {
     });
   } catch {
     // An Influx failure is not an empty series (outside review J3).
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
 
   // If no deduplicated series exists yet (first run, or a site whose history
@@ -95,7 +111,8 @@ router.get('/clients-over-time', async (req: Request, res: Response) => {
     let deviceFilter: string | null = `|> filter(fn: (r) => not (r.device_id =~ /^_/))`;
     if (sites !== null) {
       const ids = await query<{ id: number }>(
-        `SELECT id FROM devices WHERE site_id = ANY($1::int[])`, [sites]
+        `SELECT id FROM devices WHERE site_id = ANY($1::int[])`,
+        [sites],
       );
       // An empty site has no series to fall back to, and must show an empty
       // chart rather than the fleet's (issue #130).
@@ -145,7 +162,7 @@ router.get('/top-clients', async (req: Request, res: Response) => {
      WHERE c.active = TRUE AND (c.tx_bytes + c.rx_bytes) > 0
        ${topFilter ? `AND ${topFilter}` : ''}
      ORDER BY total_bytes DESC LIMIT $1`,
-    [limit]
+    [limit],
   );
 
   res.json(clients);
@@ -181,7 +198,9 @@ router.get('/interface/:deviceId/:interface', async (req: Request, res: Response
     });
   } catch {
     // An Influx failure is not an empty series (outside review J3).
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
 
   // Pivot rx/tx into single objects per timestamp
@@ -226,7 +245,9 @@ router.get('/interface/:deviceId/:interface/packets', async (req: Request, res: 
     });
   } catch {
     // An Influx failure is not an empty series (outside review J3).
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
 
   const pivoted: Record<string, { time: string; rx: number; tx: number }> = {};
@@ -267,7 +288,9 @@ router.get('/device/:deviceId/resources', async (req: Request, res: Response) =>
     });
   } catch {
     // An Influx failure is not an empty series (outside review J3).
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
 
   const pivoted: Record<string, Record<string, unknown>> = {};
@@ -277,7 +300,9 @@ router.get('/device/:deviceId/resources', async (req: Request, res: Response) =>
     pivoted[t][p['field'] as string] = Number(p['value']) || 0;
   }
 
-  res.json(Object.values(pivoted).sort((a, b) => String(a['time']).localeCompare(String(b['time']))));
+  res.json(
+    Object.values(pivoted).sort((a, b) => String(a['time']).localeCompare(String(b['time']))),
+  );
 });
 
 // GET /api/metrics/device/:deviceId/poe - current PoE power per port + 1h time series
@@ -294,7 +319,10 @@ router.get('/device/:deviceId/poe', async (req: Request, res: Response) => {
       |> last()
   `;
 
-  const portData: Record<string, { port: string; watts: number; current_ma: number; voltage_v: number }> = {};
+  const portData: Record<
+    string,
+    { port: string; watts: number; current_ma: number; voltage_v: number }
+  > = {};
   try {
     await queryApi.collectRows(currentFlux, (row, tableMeta) => {
       const port = tableMeta.get(row, 'port') as string;
@@ -305,7 +333,9 @@ router.get('/device/:deviceId/poe', async (req: Request, res: Response) => {
       if (field === 'current_ma') portData[port].current_ma = value;
       if (field === 'voltage_v') portData[port].voltage_v = value;
     });
-  } catch { /* no data */ }
+  } catch {
+    /* no data */
+  }
 
   const historyFlux = `
     from(bucket: "${bucket}")
@@ -325,7 +355,9 @@ router.get('/device/:deviceId/poe', async (req: Request, res: Response) => {
         watts: Number(tableMeta.get(row, '_value')) || 0,
       });
     });
-  } catch { /* no data */ }
+  } catch {
+    /* no data */
+  }
 
   const ports = Object.values(portData);
   const totalWatts = parseFloat(ports.reduce((s, p) => s + p.watts, 0).toFixed(2));
@@ -338,7 +370,9 @@ router.get('/device/:deviceId/availability', async (req: Request, res: Response)
   const deviceId = parseInt(req.params.deviceId, 10);
   const rangeRaw = String(req.query.range || '30d');
   const allowedRanges: Record<string, string> = {
-    '7d': '7 days', '30d': '30 days', '90d': '90 days',
+    '7d': '7 days',
+    '30d': '30 days',
+    '90d': '90 days',
   };
   const intervalStr = allowedRanges[rangeRaw] ?? '30 days';
 
@@ -355,14 +389,20 @@ router.get('/device/:deviceId/availability', async (req: Request, res: Response)
      WHERE device_id = $1
        AND ${outageOverlapsSql(`($2::text)::interval`)}
      ORDER BY went_offline_at DESC`,
-    [deviceId, intervalStr]
+    [deviceId, intervalStr],
   );
 
   const rangeSeconds = parseInt(intervalStr, 10) * 86400;
   const now = new Date();
   const windowStart = new Date(now.getTime() - rangeSeconds * 1000);
-  const totalOutageSec = outages.reduce((sum, o) => sum + outageSecondsInWindow(o, windowStart, now), 0);
-  const uptimePct = Math.max(0, Math.min(100, parseFloat(((1 - totalOutageSec / rangeSeconds) * 100).toFixed(2))));
+  const totalOutageSec = outages.reduce(
+    (sum, o) => sum + outageSecondsInWindow(o, windowStart, now),
+    0,
+  );
+  const uptimePct = Math.max(
+    0,
+    Math.min(100, parseFloat(((1 - totalOutageSec / rangeSeconds) * 100).toFixed(2))),
+  );
   const longestOutage = outages.reduce((max, o) => Math.max(max, outageLengthSeconds(o, now)), 0);
 
   res.json({
@@ -382,14 +422,26 @@ router.get('/resources/latest', async (req: Request, res: Response) => {
   try {
     latest = await latestResources({ strict: true });
   } catch {
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
-  const allowed = await query<{ id: number }>(`SELECT id FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`);
-  const devices: Record<string, { cpu_load: number; memory_used: number; memory_total: number; time: string }> = {};
+  const allowed = await query<{ id: number }>(
+    `SELECT id FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`,
+  );
+  const devices: Record<
+    string,
+    { cpu_load: number; memory_used: number; memory_total: number; time: string }
+  > = {};
   for (const d of allowed) {
     const r = latest.get(String(d.id));
     if (!r || !r.time) continue;
-    devices[String(d.id)] = { cpu_load: r.cpu, memory_used: r.memUsed, memory_total: r.memTotal, time: r.time };
+    devices[String(d.id)] = {
+      cpu_load: r.cpu,
+      memory_used: r.memUsed,
+      memory_total: r.memTotal,
+      time: r.time,
+    };
   }
   res.json({ devices });
 });
@@ -400,7 +452,11 @@ router.get('/resources/latest', async (req: Request, res: Response) => {
 router.get('/resources/cpu-history', async (req: Request, res: Response) => {
   const range = rangeToFlux(String(req.query.range || '1h'));
   const devFilter = siteScopeDevices(activeSite(req));
-  const allowed = new Set((await query<{ id: number }>(`SELECT id FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`)).map((d) => String(d.id)));
+  const allowed = new Set(
+    (
+      await query<{ id: number }>(`SELECT id FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`)
+    ).map((d) => String(d.id)),
+  );
   const flux = `
     from(bucket: ${fluxString(bucket)})
       |> range(start: -${range})
@@ -414,13 +470,18 @@ router.get('/resources/cpu-history', async (req: Request, res: Response) => {
       const id = String(meta.get(row, 'device_id') ?? '');
       if (!allowed.has(id)) return;
       if (!series.has(id)) series.set(id, []);
-      series.get(id)!.push({ t: String(meta.get(row, '_time')), v: Number(meta.get(row, '_value')) || 0 });
+      series
+        .get(id)!
+        .push({ t: String(meta.get(row, '_time')), v: Number(meta.get(row, '_value')) || 0 });
     });
   } catch {
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
   const devices: Record<string, number[]> = {};
-  for (const [id, pts] of series) devices[id] = pts.sort((a, b) => a.t.localeCompare(b.t)).map((p) => Math.round(p.v * 10) / 10);
+  for (const [id, pts] of series)
+    devices[id] = pts.sort((a, b) => a.t.localeCompare(b.t)).map((p) => Math.round(p.v * 10) / 10);
   res.json({ devices });
 });
 
@@ -431,15 +492,23 @@ router.get('/interfaces/latest', async (req: Request, res: Response) => {
   try {
     latest = await latestInterfaceCounters();
   } catch {
-    return res.status(503).json({ error: 'The metrics database could not be read, so this data is unavailable right now.' });
+    return res.status(503).json({
+      error: 'The metrics database could not be read, so this data is unavailable right now.',
+    });
   }
-  const allowed = await query<{ id: number }>(`SELECT id FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`);
-  const devices: Record<string, Record<string, { rx_bytes: number; tx_bytes: number; time: string }>> = {};
+  const allowed = await query<{ id: number }>(
+    `SELECT id FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`,
+  );
+  const devices: Record<
+    string,
+    Record<string, { rx_bytes: number; tx_bytes: number; time: string }>
+  > = {};
   for (const d of allowed) {
     const ifaces = latest.get(String(d.id));
     if (!ifaces) continue;
     // No prototype: an interface named __proto__ or constructor is an ordinary key.
-    const out: Record<string, { rx_bytes: number; tx_bytes: number; time: string }> = Object.create(null);
+    const out: Record<string, { rx_bytes: number; tx_bytes: number; time: string }> =
+      Object.create(null);
     for (const [name, v] of ifaces) {
       if (v.time) out[name] = { rx_bytes: v.rx, tx_bytes: v.tx, time: v.time };
     }
@@ -455,7 +524,13 @@ router.get('/summary', async (req: Request, res: Response) => {
   const cliFilter = siteScopeByDevice(siteId, 'device_id');
   const evtFilter = siteScopeByNullableDevice(siteId, 'device_id');
   const [deviceStats, clientStats, alertStats, availStats, rebootStats] = await Promise.all([
-    query<{ total: string; online: string; offline: string; degraded: string; intermittent_offline: string }>(
+    query<{
+      total: string;
+      online: string;
+      offline: string;
+      degraded: string;
+      intermittent_offline: string;
+    }>(
       // Offline excludes devices marked intermittent: they are expected to drop
       // out and are counted on their own (#168).
       `SELECT
@@ -464,12 +539,12 @@ router.get('/summary', async (req: Request, res: Response) => {
         COUNT(*) FILTER (WHERE status='offline' AND NOT intermittent) as offline,
         COUNT(*) FILTER (WHERE status='online' AND health_status='degraded') as degraded,
         COUNT(*) FILTER (WHERE status='offline' AND intermittent) as intermittent_offline
-       FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`
+       FROM devices ${devFilter ? `WHERE ${devFilter}` : ''}`,
     ),
     query<{ total: string; active: string }>(
       `SELECT COUNT(DISTINCT mac_address) as total,
               COUNT(DISTINCT mac_address) FILTER (WHERE active=TRUE) as active
-       FROM clients ${cliFilter ? `WHERE ${cliFilter}` : ''}`
+       FROM clients ${cliFilter ? `WHERE ${cliFilter}` : ''}`,
     ),
     query<{ critical: string; warning: string }>(
       // The severity test sits in the WHERE as well as the FILTERs: almost every event
@@ -479,28 +554,31 @@ router.get('/summary', async (req: Request, res: Response) => {
         COUNT(*) FILTER (WHERE severity='error') as critical,
         COUNT(*) FILTER (WHERE severity='warning') as warning
        FROM events WHERE severity IN ('error','warning') AND event_time > NOW() - INTERVAL '24 hours'
-         ${evtFilter ? `AND ${evtFilter}` : ''}`
+         ${evtFilter ? `AND ${evtFilter}` : ''}`,
     ),
     query<{ total_outage_sec: string }>(
       // Clipped to the 30 days, ongoing outages included (P2-25).
       `SELECT COALESCE(SUM(${outageSecondsSql(`INTERVAL '30 days'`)}), 0)::bigint::text AS total_outage_sec
        FROM device_availability
        WHERE ${outageOverlapsSql(`INTERVAL '30 days'`)}
-         ${cliFilter ? `AND ${cliFilter}` : ''}`
+         ${cliFilter ? `AND ${cliFilter}` : ''}`,
     ),
     // Reboots the polls didn't see as outages (#326).
     query<{ n: string }>(
       `SELECT COUNT(*)::text AS n FROM device_reboots
-        WHERE boot_at > NOW() - INTERVAL '30 days' ${cliFilter ? `AND ${cliFilter}` : ''}`
+        WHERE boot_at > NOW() - INTERVAL '30 days' ${cliFilter ? `AND ${cliFilter}` : ''}`,
     ).catch(() => [{ n: '0' }]),
   ]);
 
   const deviceTotal = parseInt(deviceStats[0]?.total || '0', 10);
   const totalOutageSec = parseInt(availStats[0]?.total_outage_sec || '0', 10);
   const possibleDeviceSeconds = deviceTotal * 30 * 86400;
-  const fleetUptimePct = possibleDeviceSeconds > 0
-    ? parseFloat(Math.max(0, Math.min(100, (1 - totalOutageSec / possibleDeviceSeconds) * 100)).toFixed(2))
-    : 100;
+  const fleetUptimePct =
+    possibleDeviceSeconds > 0
+      ? parseFloat(
+          Math.max(0, Math.min(100, (1 - totalOutageSec / possibleDeviceSeconds) * 100)).toFixed(2),
+        )
+      : 100;
 
   res.json({
     devices: {

@@ -7,8 +7,15 @@
  * Terminal sessions used to be audited with the socket's peer address, which
  * is always the nginx container (outside review P2-33).
  */
-export function clientIpBehindProxy(forwardedFor: string | string[] | undefined, peer: string | undefined): string {
+export function clientIpBehindProxy(
+  forwardedFor: string | string[] | undefined,
+  peer: string | undefined,
+): string {
   const header = Array.isArray(forwardedFor) ? forwardedFor.join(',') : forwardedFor;
-  const last = header?.split(',').map((s) => s.trim()).filter(Boolean).at(-1);
+  const last = header
+    ?.split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .at(-1);
   return (last || peer || '').replace(/^::ffff:/, '');
 }

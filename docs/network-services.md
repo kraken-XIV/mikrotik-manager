@@ -86,18 +86,18 @@ tab, and turn on the **Routing peer down** alert ([Alerting](alerting.md)) to be
 session drops.
 
 - **BGP:** one row per configured connection (a `peer` on RouterOS 6). It's up when its session
-  is established; a connection with no session is *idle*, one still trying is *connecting*, and a
-  disabled one is *disabled*.
-Adding a BGP connection on a device's Routing tab asks for the name, remote address, remote AS,
-role and local AS. On RouterOS 7.20 and later a connection belongs to a BGP instance, which
-carries the local AS: the device's instance is used (you choose when it has several), and on a
-device with none, one called `default` is created with the local AS you enter. On 7.0 to 7.19 the
-local AS goes on the connection itself, and on RouterOS 6 a peer is added. Before 0.59.1 adding a
-connection failed on 7.20 and later with *missing =instance=*.
+  is established; a connection with no session is _idle_, one still trying is _connecting_, and a
+  disabled one is _disabled_.
+  Adding a BGP connection on a device's Routing tab asks for the name, remote address, remote AS,
+  role and local AS. On RouterOS 7.20 and later a connection belongs to a BGP instance, which
+  carries the local AS: the device's instance is used (you choose when it has several), and on a
+  device with none, one called `default` is created with the local AS you enter. On 7.0 to 7.19 the
+  local AS goes on the connection itself, and on RouterOS 6 a peer is added. Before 0.59.1 adding a
+  connection failed on 7.20 and later with _missing =instance=_.
 
 - **OSPF:** one row per neighbour. RouterOS forgets a neighbour once it stops hearing it, so the
-  manager keeps the last row and marks it *down*. A neighbour gone for a week is dropped from the
-  list. *2-Way* counts as up: on a LAN, two routers that are neither DR nor BDR stop there by
+  manager keeps the last row and marks it _down_. A neighbour gone for a week is dropped from the
+  list. _2-Way_ counts as up: on a LAN, two routers that are neither DR nor BDR stop there by
   design.
 
 ## Logging (syslog)
@@ -145,7 +145,7 @@ Choose where a change goes with **Choose devices** (one or several, with Select 
 asks you to confirm the exact changes and the devices they go to first.
 
 **The form shows what the chosen devices have now**, or, with none chosen, what every listed
-device has. A setting they don't all share shows as *differs* (the slider sits in the middle)
+device has. A setting they don't all share shows as _differs_ (the slider sits in the middle)
 instead of a made-up default.
 
 **Only what you change is sent.** The form remembers which fields you edited and
@@ -169,14 +169,14 @@ The API is `GET /api/network-services/snmp` (every device type) and
 
 Contact, location and trap target can use variables, filled in per device:
 
-| Variable | Value |
-|---|---|
-| `{identity}` | RouterOS identity (`/system identity`). `{$systemidentity}` also works |
-| `{name}` | Device name in the manager |
-| `{ip}` | Management address |
-| `{model}`, `{serial}` | From the device |
-| `{site}` | Site name |
-| `{location}` | The device's location, or its site's address if it has none |
+| Variable              | Value                                                                  |
+| --------------------- | ---------------------------------------------------------------------- |
+| `{identity}`          | RouterOS identity (`/system identity`). `{$systemidentity}` also works |
+| `{name}`              | Device name in the manager                                             |
+| `{ip}`                | Management address                                                     |
+| `{model}`, `{serial}` | From the device                                                        |
+| `{site}`              | Site name                                                              |
+| `{location}`          | The device's location, or its site's address if it has none            |
 
 For example, contact `{identity}@example.com` or location `{site} / {location}`. An unknown
 variable is rejected before anything is written.

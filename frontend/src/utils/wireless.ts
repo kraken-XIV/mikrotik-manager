@@ -12,6 +12,8 @@ export function hasRadios(d: Pick<Device, 'device_type'> & { wifi_role?: string 
 }
 
 /** Covered by the wireless pages: radios of its own, or a CAPsMAN controller. */
-export function isWirelessDevice(d: Pick<Device, 'device_type'> & { wifi_role?: string | null }): boolean {
+export function isWirelessDevice(
+  d: Pick<Device, 'device_type'> & { wifi_role?: string | null },
+): boolean {
   return hasRadios(d) || d.wifi_role === 'controller';
 }

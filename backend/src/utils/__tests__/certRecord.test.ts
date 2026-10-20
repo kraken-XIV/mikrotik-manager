@@ -7,20 +7,40 @@ import { readRevocation } from '../certRecord';
  */
 
 const HEALTHY_LEAF: Record<string, string> = {
-  '.id': '*4', name: 'mtmtest-leaf', 'common-name': 'mtmtest-leaf',
-  'key-type': 'rsa', 'key-size': '2048', 'days-valid': '365',
-  'invalid-before': '2026-09-17 07:49:00', 'invalid-after': '2027-09-17 07:49:00',
-  'serial-number': '7E3A64302194DF73', ca: 'mtmtest-ca', trusted: 'false',
-  'private-key': 'true', crl: 'false', authority: 'true', issued: 'true',
+  '.id': '*4',
+  name: 'mtmtest-leaf',
+  'common-name': 'mtmtest-leaf',
+  'key-type': 'rsa',
+  'key-size': '2048',
+  'days-valid': '365',
+  'invalid-before': '2026-09-17 07:49:00',
+  'invalid-after': '2027-09-17 07:49:00',
+  'serial-number': '7E3A64302194DF73',
+  ca: 'mtmtest-ca',
+  trusted: 'false',
+  'private-key': 'true',
+  crl: 'false',
+  authority: 'true',
+  issued: 'true',
   '.repeated': '{"trusted":["false","false"]}',
 };
 
 const REVOKED_LEAF: Record<string, string> = {
-  '.id': '*4', name: 'mtmtest-leaf', 'common-name': 'mtmtest-leaf',
-  'key-type': 'rsa', 'key-size': '2048', 'days-valid': '365',
-  'invalid-before': '2026-09-17 07:49:00', 'invalid-after': '2027-09-17 07:49:00',
-  'serial-number': '7E3A64302194DF73', ca: 'mtmtest-ca', trusted: 'false',
-  revoked: 'true', 'private-key': 'true', crl: 'false', authority: 'true',
+  '.id': '*4',
+  name: 'mtmtest-leaf',
+  'common-name': 'mtmtest-leaf',
+  'key-type': 'rsa',
+  'key-size': '2048',
+  'days-valid': '365',
+  'invalid-before': '2026-09-17 07:49:00',
+  'invalid-after': '2027-09-17 07:49:00',
+  'serial-number': '7E3A64302194DF73',
+  ca: 'mtmtest-ca',
+  trusted: 'false',
+  revoked: 'true',
+  'private-key': 'true',
+  crl: 'false',
+  authority: 'true',
   '.repeated': '{"revoked":["2026-09-17 07:49:04","true"],"trusted":["false","false"]}',
 };
 
@@ -82,7 +102,8 @@ describe('readRevocation', () => {
   });
 
   it('does not confuse another repeated attribute for revocation', () => {
-    expect(readRevocation({ name: 'x', '.repeated': '{"trusted":["false","false"]}' }).revoked)
-      .toBe(false);
+    expect(
+      readRevocation({ name: 'x', '.repeated': '{"trusted":["false","false"]}' }).revoked,
+    ).toBe(false);
   });
 });

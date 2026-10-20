@@ -1,15 +1,15 @@
-import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, Search, Settings2, ShieldCheck } from 'lucide-react';
-import { format } from 'date-fns';
 import clsx from 'clsx';
+import { format } from 'date-fns';
+import { RefreshCw, Search, Settings2, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 
-import { devicesApi, eventsApi } from '../services/api';
-import type { FirewallEvent } from '../services/api';
 import DevicePicker from '../components/common/DevicePicker';
-import { useSocket } from '../hooks/useSocket';
-import { useCanWrite } from '../hooks/useCanWrite';
 import FirewallMonitoringModal from '../components/firewall/FirewallMonitoringModal';
+import { useCanWrite } from '../hooks/useCanWrite';
+import { useSocket } from '../hooks/useSocket';
+import type { FirewallEvent } from '../services/api';
+import { devicesApi, eventsApi } from '../services/api';
 
 const PAGE_SIZE = 100;
 const FIREWALL_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -50,19 +50,14 @@ export default function FirewallEventsPage() {
   });
 
   const { data, isLoading, isFetching, dataUpdatedAt, refetch } = useQuery({
-    queryKey: [
-      'firewall-events',
-      { search, deviceId, action, protocol, page },
-    ],
+    queryKey: ['firewall-events', { search, deviceId, action, protocol, page }],
     queryFn: () =>
       eventsApi
         .firewall({
           search: search || undefined,
           since: new Date(Date.now() - FIREWALL_WINDOW_MS).toISOString(),
           deviceId: deviceId ? Number(deviceId) : undefined,
-          action: action
-            ? (action as FirewallEvent['action'])
-            : undefined,
+          action: action ? (action as FirewallEvent['action']) : undefined,
           protocol: protocol || undefined,
           limit: PAGE_SIZE,
           offset: page * PAGE_SIZE,
@@ -72,8 +67,7 @@ export default function FirewallEventsPage() {
   });
 
   useSocket({
-    'events:updated': () =>
-      queryClient.invalidateQueries({ queryKey: ['firewall-events'] }),
+    'events:updated': () => queryClient.invalidateQueries({ queryKey: ['firewall-events'] }),
   });
 
   const events = data?.events ?? [];
@@ -104,12 +98,7 @@ export default function FirewallEventsPage() {
             disabled={isFetching}
             className="btn-secondary flex items-center gap-2"
           >
-            <RefreshCw
-              className={clsx(
-                'w-4 h-4',
-                isFetching && 'animate-spin'
-              )}
-            />
+            <RefreshCw className={clsx('w-4 h-4', isFetching && 'animate-spin')} />
             Refresh
           </button>
 
@@ -187,15 +176,11 @@ export default function FirewallEventsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400">
-          Loading...
-        </div>
+        <div className="flex items-center justify-center h-48 text-gray-400">Loading...</div>
       ) : events.length === 0 ? (
         <div className="card p-12 flex flex-col items-center gap-3 text-center">
           <ShieldCheck className="w-12 h-12 text-gray-300 dark:text-slate-600" />
-          <p className="text-gray-500 dark:text-slate-400">
-            No firewall events found
-          </p>
+          <p className="text-gray-500 dark:text-slate-400">No firewall events found</p>
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -222,8 +207,7 @@ export default function FirewallEventsPage() {
                     title={event.rawMessage}
                     className={clsx(
                       'hover:bg-gray-50 dark:hover:bg-slate-700/30',
-                      event.action === 'drop' &&
-                        'bg-red-50/30 dark:bg-red-900/10'
+                      event.action === 'drop' && 'bg-red-50/30 dark:bg-red-900/10',
                     )}
                   >
                     <td className="px-4 py-2.5 text-xs font-mono text-gray-500 dark:text-slate-400 whitespace-nowrap">
@@ -234,7 +218,7 @@ export default function FirewallEventsPage() {
                       <span
                         className={clsx(
                           'inline-flex px-2 py-0.5 rounded-full text-xs font-medium uppercase',
-                          actionClass(event.action)
+                          actionClass(event.action),
                         )}
                       >
                         {event.action}

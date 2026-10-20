@@ -42,14 +42,21 @@ export const isLegacyClient = (client: Record<string, string>): boolean => 'prim
 
 /** RouterOS 6's client servers as one list, the way the page shows them. */
 export function legacyServerList(client: Record<string, string>): string {
-  return [client['primary-ntp'], client['secondary-ntp'], ...(client['server-dns-names'] || '').split(',')]
+  return [
+    client['primary-ntp'],
+    client['secondary-ntp'],
+    ...(client['server-dns-names'] || '').split(','),
+  ]
     .map((s) => (s || '').trim())
     .filter((s) => s && s !== NONE)
     .join(',');
 }
 
 function splitServers(list: string): string[] {
-  return list.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+  return list
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 export function planNtpWrites(form: NtpForm, state: NtpState): NtpWrites {
@@ -66,12 +73,15 @@ export function planNtpWrites(form: NtpForm, state: NtpState): NtpWrites {
   if (Object.keys(server).length && !hasServerMenu) {
     throw new Error(
       'This device has no NTP server to configure. On RouterOS 6 it comes with the optional ntp package; ' +
-      'the NTP client works without it.'
+        'the NTP client works without it.',
     );
   }
 
   const client: Record<string, string> = {};
-  if (form.client_enabled !== undefined && (state.client['enabled'] === 'yes') !== form.client_enabled) {
+  if (
+    form.client_enabled !== undefined &&
+    (state.client['enabled'] === 'yes') !== form.client_enabled
+  ) {
     client['enabled'] = form.client_enabled ? 'yes' : 'no';
   }
   const legacy = isLegacyClient(state.client);
@@ -80,7 +90,9 @@ export function planNtpWrites(form: NtpForm, state: NtpState): NtpWrites {
       // RouterOS 6 reports the mode but won't take it: it is unicast when
       // servers are set and broadcast when they aren't.
       if (form.client_mode !== 'unicast' && form.client_mode !== 'broadcast') {
-        throw new Error(`RouterOS 6's NTP client supports unicast and broadcast, not ${form.client_mode}.`);
+        throw new Error(
+          `RouterOS 6's NTP client supports unicast and broadcast, not ${form.client_mode}.`,
+        );
       }
     } else {
       client['mode'] = form.client_mode;

@@ -13,7 +13,9 @@ const cache = new Map<number, { at: number; sites: number[] }>();
 export async function groupSites(groupId: number): Promise<number[]> {
   const hit = cache.get(groupId);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.sites;
-  const rows = await query<{ id: number }>(`SELECT id FROM sites WHERE group_id = $1 ORDER BY id`, [groupId]);
+  const rows = await query<{ id: number }>(`SELECT id FROM sites WHERE group_id = $1 ORDER BY id`, [
+    groupId,
+  ]);
   const sites = rows.map((r) => r.id);
   cache.set(groupId, { at: Date.now(), sites });
   return sites;

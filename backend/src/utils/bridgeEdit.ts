@@ -10,7 +10,9 @@ type Result = { fields: Record<string, string> } | { error: string };
 
 /** STP priority: 0–61440 in steps of 4096, as decimal or RouterOS's hex (0x8000). */
 export function parsePriority(v: unknown): string | null {
-  const s = String(v ?? '').trim().toLowerCase();
+  const s = String(v ?? '')
+    .trim()
+    .toLowerCase();
   const n = /^0x[0-9a-f]{1,4}$/.test(s) ? parseInt(s, 16) : /^\d{1,5}$/.test(s) ? Number(s) : NaN;
   if (!Number.isInteger(n) || n < 0 || n > 61440 || n % 4096 !== 0) return null;
   return `0x${n.toString(16).padStart(4, '0')}`;
@@ -19,7 +21,8 @@ export function parsePriority(v: unknown): string | null {
 function common(body: Record<string, unknown>, fields: Record<string, string>): string | null {
   if (body.protocol_mode !== undefined) {
     const m = String(body.protocol_mode);
-    if (!(PROTOCOL_MODES as readonly string[]).includes(m)) return `protocol_mode must be one of ${PROTOCOL_MODES.join(', ')}`;
+    if (!(PROTOCOL_MODES as readonly string[]).includes(m))
+      return `protocol_mode must be one of ${PROTOCOL_MODES.join(', ')}`;
     fields['protocol-mode'] = m;
   }
   if (body.priority !== undefined && body.priority !== '') {
@@ -37,12 +40,16 @@ function common(body: Record<string, unknown>, fields: Record<string, string>): 
 
 export function parseBridgeCreate(body: Record<string, unknown>): Result {
   const name = String(body.name ?? '').trim();
-  if (!NAME.test(name)) return { error: 'Name is required: letters, digits, dot, dash or underscore, up to 63 characters' };
+  if (!NAME.test(name))
+    return {
+      error: 'Name is required: letters, digits, dot, dash or underscore, up to 63 characters',
+    };
   const fields: Record<string, string> = { name, 'protocol-mode': 'rstp' };
   const err = common(body, fields);
   if (err) return { error: err };
   if (body.vlan_filtering !== undefined) {
-    if (typeof body.vlan_filtering !== 'boolean') return { error: 'vlan_filtering must be true or false' };
+    if (typeof body.vlan_filtering !== 'boolean')
+      return { error: 'vlan_filtering must be true or false' };
     fields['vlan-filtering'] = body.vlan_filtering ? 'yes' : 'no';
   }
   if (fields.comment === '') delete fields.comment;
@@ -53,7 +60,8 @@ export function parseBridgeUpdate(body: Record<string, unknown>): Result {
   const fields: Record<string, string> = {};
   if (body.name !== undefined) {
     const name = String(body.name).trim();
-    if (!NAME.test(name)) return { error: 'Name: letters, digits, dot, dash or underscore, up to 63 characters' };
+    if (!NAME.test(name))
+      return { error: 'Name: letters, digits, dot, dash or underscore, up to 63 characters' };
     fields.name = name;
   }
   const err = common(body, fields);

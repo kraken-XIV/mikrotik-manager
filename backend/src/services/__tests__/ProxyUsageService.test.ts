@@ -1,15 +1,25 @@
+import { pool, query } from '../../config/database';
 import {
-  reconcileProxyUsage, aggregateSql, usageUpsertCtes, rebuildProxyUsage, backfillProxyUsage, useProxyUsageRollup,
-  resetProxyUsageSettingsCache, useProxySourcesTable, USAGE_KIND,
+  aggregateSql,
+  backfillProxyUsage,
+  rebuildProxyUsage,
+  reconcileProxyUsage,
+  resetProxyUsageSettingsCache,
+  USAGE_KIND,
+  usageUpsertCtes,
+  useProxySourcesTable,
+  useProxyUsageRollup,
 } from '../ProxyUsageService';
-import { query, pool } from '../../config/database';
 
 jest.mock('../../config/database', () => ({ query: jest.fn(), pool: { connect: jest.fn() } }));
 
 const mockedQuery = query as unknown as jest.Mock;
 
 type Call = [string, unknown[]?];
-function fakeClient(handler: (text: string) => { rowCount?: number; rows?: unknown[] } | Error | void = () => undefined) {
+function fakeClient(
+  handler: (text: string) => { rowCount?: number; rows?: unknown[] } | Error | void = () =>
+    undefined,
+) {
   const calls: Call[] = [];
   return {
     calls,
@@ -26,8 +36,12 @@ describe('aggregateSql', () => {
   it('uses the same tab definitions as the raw ranking', () => {
     expect(aggregateSql('client', 'proxy_connections')).toContain("WHERE status = 'ok'");
     expect(aggregateSql('user', 'proxy_connections')).toContain('auth_user IS NOT NULL');
-    expect(aggregateSql('destination', 'proxy_connections')).toContain('COALESCE(hostname, server_ip)');
-    expect(aggregateSql('denied', 'proxy_connections')).toContain("status <> 'ok' AND auth_user IS NULL");
+    expect(aggregateSql('destination', 'proxy_connections')).toContain(
+      'COALESCE(hostname, server_ip)',
+    );
+    expect(aggregateSql('denied', 'proxy_connections')).toContain(
+      "status <> 'ok' AND auth_user IS NULL",
+    );
   });
 
   it('buckets by the UTC hour and stores missing ports and peers as 0 and empty', () => {
@@ -45,7 +59,8 @@ describe('aggregateSql', () => {
 describe('usageUpsertCtes', () => {
   it('adds one additive upsert per tab, reading the inserted rows', () => {
     const sql = usageUpsertCtes('inserted');
-    for (const by of Object.keys(USAGE_KIND)) expect(sql).toContain(`rollup_${by} AS (INSERT INTO proxy_usage_hourly`);
+    for (const by of Object.keys(USAGE_KIND))
+      expect(sql).toContain(`rollup_${by} AS (INSERT INTO proxy_usage_hourly`);
     expect(sql.match(/FROM inserted/g)).toHaveLength(4);
     expect(sql.match(/proxy_usage_hourly\.requests \+ EXCLUDED\.requests/g)).toHaveLength(4);
   });
@@ -67,7 +82,11 @@ describe('rebuildProxyUsage', () => {
   });
 
   it('rolls back and rethrows when a step fails', async () => {
-    const c = fakeClient((t) => (t.startsWith('INSERT INTO proxy_usage_hourly') ? new Error('serialization failure') : undefined));
+    const c = fakeClient((t) =>
+      t.startsWith('INSERT INTO proxy_usage_hourly')
+        ? new Error('serialization failure')
+        : undefined,
+    );
     await expect(rebuildProxyUsage(c as any, from, to)).rejects.toThrow('serialization failure');
     expect(c.calls[c.calls.length - 1][0]).toBe('ROLLBACK');
     expect(c.calls.some(([t]) => t === 'COMMIT')).toBe(false);
@@ -82,7 +101,9 @@ describe('backfillProxyUsage', () => {
   });
 
   it('marks an empty install ready without rebuilding anything', async () => {
-    const c = fakeClient((t) => (t.includes('MIN(event_time)') ? { rows: [{ lo: null }] } : undefined));
+    const c = fakeClient((t) =>
+      t.includes('MIN(event_time)') ? { rows: [{ lo: null }] } : undefined,
+    );
     expect(await backfillProxyUsage(c as any)).toBe(0);
     expect(c.calls.some(([t]) => t.includes('INSERT INTO app_settings'))).toBe(true);
     expect(c.calls.some(([t]) => t.startsWith('BEGIN'))).toBe(false);
@@ -102,7 +123,9 @@ describe('backfillProxyUsage', () => {
     const lo = new Date(Date.now() - 2 * 86_400_000);
     const c = fakeClient((t) => (t.includes('MIN(event_time)') ? { rows: [{ lo }] } : undefined));
     await backfillProxyUsage(c as any);
-    const ranges = c.calls.filter(([t]) => t.startsWith('DELETE FROM proxy_usage_hourly')).map(([, p]) => p as string[]);
+    const ranges = c.calls
+      .filter(([t]) => t.startsWith('DELETE FROM proxy_usage_hourly'))
+      .map(([, p]) => p as string[]);
     const last = ranges[ranges.length - 1];
     expect(new Date(last[1]).getTime() - new Date(last[0]).getTime()).toBe(3_600_000);
     // earlier chunks end where the final hour begins
@@ -114,7 +137,10 @@ describe('backfillProxyUsage', () => {
     let failed = false;
     const c = fakeClient((t) => {
       if (t.includes('MIN(event_time)')) return { rows: [{ lo }] };
-      if (t.startsWith('DELETE FROM proxy_usage_hourly') && !failed) { failed = true; return new Error('could not serialize access'); }
+      if (t.startsWith('DELETE FROM proxy_usage_hourly') && !failed) {
+        failed = true;
+        return new Error('could not serialize access');
+      }
     });
     await expect(backfillProxyUsage(c as any)).resolves.toBeGreaterThan(0);
     expect(c.calls.some(([t]) => t.includes('INSERT INTO app_settings'))).toBe(true);
@@ -132,7 +158,10 @@ describe('backfillProxyUsage', () => {
 });
 
 describe('useProxyUsageRollup', () => {
-  beforeEach(() => { resetProxyUsageSettingsCache(); mockedQuery.mockReset(); });
+  beforeEach(() => {
+    resetProxyUsageSettingsCache();
+    mockedQuery.mockReset();
+  });
 
   it('is off until the backfill has marked the rollup ready', async () => {
     mockedQuery.mockResolvedValue([]);
@@ -145,7 +174,10 @@ describe('useProxyUsageRollup', () => {
   });
 
   it('can be switched off without a deploy', async () => {
-    mockedQuery.mockResolvedValue([{ key: 'proxy_usage_ready', value: true }, { key: 'proxy_usage_rollup', value: false }]);
+    mockedQuery.mockResolvedValue([
+      { key: 'proxy_usage_ready', value: true },
+      { key: 'proxy_usage_rollup', value: false },
+    ]);
     expect(await useProxyUsageRollup()).toBe(false);
   });
 
@@ -166,7 +198,11 @@ describe('useProxyUsageRollup', () => {
 describe('reconcileProxyUsage', () => {
   const connect = pool.connect as unknown as jest.Mock;
   const ready = () => mockedQuery.mockResolvedValue([{ key: 'proxy_usage_ready', value: true }]);
-  beforeEach(() => { resetProxyUsageSettingsCache(); mockedQuery.mockReset(); connect.mockReset(); });
+  beforeEach(() => {
+    resetProxyUsageSettingsCache();
+    mockedQuery.mockReset();
+    connect.mockReset();
+  });
 
   it('does nothing before the rollup is ready', async () => {
     mockedQuery.mockResolvedValue([]);
@@ -186,7 +222,10 @@ describe('reconcileProxyUsage', () => {
     ready();
     let first = true;
     const c = fakeClient((t) => {
-      if (t.startsWith('DELETE FROM proxy_usage_hourly') && first) { first = false; return new Error('could not serialize access'); }
+      if (t.startsWith('DELETE FROM proxy_usage_hourly') && first) {
+        first = false;
+        return new Error('could not serialize access');
+      }
     });
     connect.mockResolvedValue({ ...c, release: jest.fn() });
     await expect(reconcileProxyUsage(12)).resolves.toBeUndefined();
@@ -196,7 +235,11 @@ describe('reconcileProxyUsage', () => {
 
   it('reports the chunks it could not repair', async () => {
     ready();
-    const c = fakeClient((t) => (t.startsWith('DELETE FROM proxy_usage_hourly') ? new Error('could not serialize access') : undefined));
+    const c = fakeClient((t) =>
+      t.startsWith('DELETE FROM proxy_usage_hourly')
+        ? new Error('could not serialize access')
+        : undefined,
+    );
     const release = jest.fn();
     connect.mockResolvedValue({ ...c, release });
     await expect(reconcileProxyUsage(6)).rejects.toThrow(/gave up on 1 chunk/);

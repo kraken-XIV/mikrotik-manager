@@ -60,10 +60,7 @@ const norm = (id: string | null | undefined): string => (id || '').trim().toLowe
  *
  * `componentDeviceIds` are the managed devices in this component, as strings.
  */
-export function resolveStpRoot(
-  componentDeviceIds: string[],
-  bridges: BridgeInfo[],
-): RootVerdict {
+export function resolveStpRoot(componentDeviceIds: string[], bridges: BridgeInfo[]): RootVerdict {
   const inComponent = new Set(componentDeviceIds);
   const local = bridges.filter((b) => inComponent.has(String(b.device_id)));
   if (local.length === 0) return { deviceId: null, confidence: 'unknown', rootBridgeId: null };
@@ -71,7 +68,11 @@ export function resolveStpRoot(
   // A device that says it is the root, is the root.
   const claims = local.filter((b) => b.root_bridge === true);
   if (claims.length === 1) {
-    return { deviceId: String(claims[0].device_id), confidence: 'reported', rootBridgeId: claims[0].bridge_id };
+    return {
+      deviceId: String(claims[0].device_id),
+      confidence: 'reported',
+      rootBridgeId: claims[0].bridge_id,
+    };
   }
 
   // Several claims inside one component means several bridge domains share it —
@@ -82,18 +83,27 @@ export function resolveStpRoot(
     // Every claimant points at itself, so only other bridges' votes count: an
     // AP running its own bridge claims the crown too, and must not win just by
     // coming first in the list.
-    const votes = (c: BridgeInfo) => local.filter((b) => b !== c && norm(b.root_bridge_id) === norm(c.bridge_id)).length;
+    const votes = (c: BridgeInfo) =>
+      local.filter((b) => b !== c && norm(b.root_bridge_id) === norm(c.bridge_id)).length;
     const ranked = [...claims].sort((a, b) => votes(b) - votes(a));
     const chosen = ranked[0];
     const agreed = votes(chosen) > 0;
-    return { deviceId: String(chosen.device_id), confidence: agreed ? 'reported' : 'matched', rootBridgeId: chosen.bridge_id };
+    return {
+      deviceId: String(chosen.device_id),
+      confidence: agreed ? 'reported' : 'matched',
+      rootBridgeId: chosen.bridge_id,
+    };
   }
 
   // Nobody claims it. Does anyone own the bridge id the others are pointing at?
   for (const target of pointedAt) {
     const owner = local.find((b) => norm(b.bridge_id) === target);
     if (owner) {
-      return { deviceId: String(owner.device_id), confidence: 'matched', rootBridgeId: owner.bridge_id };
+      return {
+        deviceId: String(owner.device_id),
+        confidence: 'matched',
+        rootBridgeId: owner.bridge_id,
+      };
     }
   }
 

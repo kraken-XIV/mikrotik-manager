@@ -1,9 +1,4 @@
-export type FirewallAction =
-  | 'accept'
-  | 'drop'
-  | 'reject'
-  | 'fasttrack'
-  | 'unknown';
+export type FirewallAction = 'accept' | 'drop' | 'reject' | 'fasttrack' | 'unknown';
 
 export interface FirewallLogEvent {
   action: FirewallAction;
@@ -43,9 +38,7 @@ function inferAction(prefix: string): FirewallAction {
 function parseEndpoint(value: string): ParsedEndpoint | null {
   // RouterOS wraps IPv6 addresses in [] when a port follows:
   // [2001:db8::10]:54321
-  const bracketed = value.match(
-    /^\[([0-9A-Fa-f:.]+)\](?::(\d+))?$/
-  );
+  const bracketed = value.match(/^\[([0-9A-Fa-f:.]+)\](?::(\d+))?$/);
 
   if (bracketed) {
     return {
@@ -54,9 +47,7 @@ function parseEndpoint(value: string): ParsedEndpoint | null {
     };
   }
 
-  const ipv4 = value.match(
-    /^(\d{1,3}(?:\.\d{1,3}){3})(?::(\d+))?$/
-  );
+  const ipv4 = value.match(/^(\d{1,3}(?:\.\d{1,3}){3})(?::(\d+))?$/);
 
   if (ipv4) {
     return {
@@ -74,27 +65,21 @@ function parseEndpoint(value: string): ParsedEndpoint | null {
 }
 
 export function parseFirewallLog(message: string): FirewallLogEvent | null {
-  const header = message.match(
-    /^(.*?)\s*\b(input|forward|output):\s*(.+)$/i
-  );
+  const header = message.match(/^(.*?)\s*\b(input|forward|output):\s*(.+)$/i);
   if (!header) return null;
 
   const prefix = header[1].trim();
   const chain = header[2].toLowerCase() as FirewallLogEvent['chain'];
   const body = header[3];
 
-  const protocolMatch = body.match(
-    /\bproto\s+([A-Za-z0-9_-]+)(?:\s+\(([^)]+)\))?/i
-  );
+  const protocolMatch = body.match(/\bproto\s+([A-Za-z0-9_-]+)(?:\s+\(([^)]+)\))?/i);
   if (!protocolMatch) return null;
 
   // Packet endpoints are the token immediately before "len".
   // This covers both:
   //   192.0.2.10:1234->198.51.100.20:443
   //   [2001:db8::10]:1234->[2001:db8::20]:443
-  const endpointsMatch = body.match(
-    /,\s*([^\s,]+)->([^\s,]+)(?=,\s*len\b|$)/i
-  );
+  const endpointsMatch = body.match(/,\s*([^\s,]+)->([^\s,]+)(?=,\s*len\b|$)/i);
   if (!endpointsMatch) return null;
 
   const src = parseEndpoint(endpointsMatch[1]);
@@ -103,12 +88,8 @@ export function parseFirewallLog(message: string): FirewallLogEvent | null {
 
   const inInterface = body.match(/\bin:([^\s,]+)/i)?.[1];
   const outInterface = body.match(/\bout:([^\s,]+)/i)?.[1];
-  const connectionState = body.match(
-    /\bconnection-state:([^\s,]+)/i
-  )?.[1];
-  const srcMac = body.match(
-    /\bsrc-mac\s+([0-9A-Fa-f:]+)/i
-  )?.[1];
+  const connectionState = body.match(/\bconnection-state:([^\s,]+)/i)?.[1];
+  const srcMac = body.match(/\bsrc-mac\s+([0-9A-Fa-f:]+)/i)?.[1];
   const length = body.match(/\blen\s+(\d+)/i)?.[1];
 
   return {

@@ -16,7 +16,8 @@ function vlanId(v: unknown): number | null {
 function portList(v: unknown): string | { error: string } {
   if (!Array.isArray(v)) return { error: 'ports must be a list of port names' };
   const names = [...new Set(v.map((p) => String(p).trim()).filter(Boolean))];
-  if (names.some((n) => !NAME.test(n))) return { error: 'ports contains a name that is not a valid port name' };
+  if (names.some((n) => !NAME.test(n)))
+    return { error: 'ports contains a name that is not a valid port name' };
   return names.join(',');
 }
 
@@ -40,7 +41,8 @@ export function switchVlanEntry(body: Record<string, unknown>, creating: boolean
     fields.ports = ports;
   }
   if (body.independent_learning !== undefined) {
-    if (typeof body.independent_learning !== 'boolean') return { error: 'independent_learning must be true or false' };
+    if (typeof body.independent_learning !== 'boolean')
+      return { error: 'independent_learning must be true or false' };
     fields['independent-learning'] = body.independent_learning ? 'yes' : 'no';
   }
   if (body.disabled !== undefined) {
@@ -55,11 +57,13 @@ export function switchVlanEntry(body: Record<string, unknown>, creating: boolean
 export function switchPortVlan(body: Record<string, unknown>): Result {
   const fields: Record<string, string> = {};
   if (body.vlan_mode !== undefined) {
-    if (!(VLAN_MODES as readonly string[]).includes(String(body.vlan_mode))) return { error: `vlan_mode must be one of ${VLAN_MODES.join(', ')}` };
+    if (!(VLAN_MODES as readonly string[]).includes(String(body.vlan_mode)))
+      return { error: `vlan_mode must be one of ${VLAN_MODES.join(', ')}` };
     fields['vlan-mode'] = String(body.vlan_mode);
   }
   if (body.vlan_header !== undefined) {
-    if (!(VLAN_HEADERS as readonly string[]).includes(String(body.vlan_header))) return { error: `vlan_header must be one of ${VLAN_HEADERS.join(', ')}` };
+    if (!(VLAN_HEADERS as readonly string[]).includes(String(body.vlan_header)))
+      return { error: `vlan_header must be one of ${VLAN_HEADERS.join(', ')}` };
     fields['vlan-header'] = String(body.vlan_header);
   }
   if (body.default_vlan_id !== undefined) {
@@ -67,7 +71,8 @@ export function switchPortVlan(body: Record<string, unknown>): Result {
     if (raw === 'auto') fields['default-vlan-id'] = 'auto';
     else {
       const id = vlanId(raw);
-      if (id === null) return { error: 'default_vlan_id must be auto or a whole number from 0 to 4095' };
+      if (id === null)
+        return { error: 'default_vlan_id must be auto or a whole number from 0 to 4095' };
       fields['default-vlan-id'] = String(id);
     }
   }

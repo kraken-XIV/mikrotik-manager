@@ -98,11 +98,16 @@ export function describeUpdateStatus(s: UpdateStatus): string {
       return s.percent != null
         ? `downloading ${s.percent}%${s.mib != null ? ` (${s.mib} MiB)` : ''}`
         : `downloading — ${s.message}`;
-    case 'downloaded': return 'downloaded, awaiting reboot';
-    case 'available': return 'update available, not yet downloaded';
-    case 'up-to-date': return 'already up to date';
-    case 'error': return `device reported: ${s.message}`;
-    default: return s.message ? `unrecognised status: ${s.message}` : 'no status reported';
+    case 'downloaded':
+      return 'downloaded, awaiting reboot';
+    case 'available':
+      return 'update available, not yet downloaded';
+    case 'up-to-date':
+      return 'already up to date';
+    case 'error':
+      return `device reported: ${s.message}`;
+    default:
+      return s.message ? `unrecognised status: ${s.message}` : 'no status reported';
   }
 }
 

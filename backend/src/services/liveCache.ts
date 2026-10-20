@@ -14,9 +14,9 @@
  * gets the cached view at once and the rest fills in as the page polls.
  */
 import { query } from '../config/database';
-import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 import { FLEET_ACTION_CONCURRENCY } from '../utils/concurrency';
 import { logSafe } from '../utils/logSafe';
+import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 
 export interface LiveEntry<T> {
   data: T | null;
@@ -29,7 +29,12 @@ export interface LiveEntry<T> {
 
 type Fetcher<T> = (c: DeviceCollector, device: DeviceRow) => Promise<T>;
 
-interface Job { kind: string; device: DeviceRow; fetch: Fetcher<unknown>; done: Array<() => void> }
+interface Job {
+  kind: string;
+  device: DeviceRow;
+  fetch: Fetcher<unknown>;
+  done: Array<() => void>;
+}
 
 const inFlight = new Map<string, Job>();
 const queue: Job[] = [];
@@ -58,14 +63,16 @@ async function run(job: Job): Promise<void> {
     await query(
       `INSERT INTO device_live_cache (device_id, kind, data, fetched_at, error) VALUES ($1, $2, $3, NOW(), NULL)
        ON CONFLICT (device_id, kind) DO UPDATE SET data = EXCLUDED.data, fetched_at = NOW(), error = NULL`,
-      [job.device.id, job.kind, JSON.stringify(data)]);
+      [job.device.id, job.kind, JSON.stringify(data)],
+    );
   } catch (e) {
     const msg = (e as Error).message;
     // Keep the last good data; note why it couldn't be refreshed.
     await query(
       `INSERT INTO device_live_cache (device_id, kind, data, fetched_at, error) VALUES ($1, $2, NULL, NULL, $3)
        ON CONFLICT (device_id, kind) DO UPDATE SET error = EXCLUDED.error`,
-      [job.device.id, job.kind, msg]).catch(() => {});
+      [job.device.id, job.kind, msg],
+    ).catch(() => {});
     console.warn(`[live-cache] ${job.kind} for ${logSafe(job.device.name)}: ${logSafe(msg)}`);
   } finally {
     c.disconnect();
@@ -76,7 +83,10 @@ async function run(job: Job): Promise<void> {
 function refresh<T>(kind: string, device: DeviceRow, fetch: Fetcher<T>): Promise<void> {
   return new Promise((resolve) => {
     const existing = inFlight.get(key(kind, device.id));
-    if (existing) { existing.done.push(resolve); return; }
+    if (existing) {
+      existing.done.push(resolve);
+      return;
+    }
     const job: Job = { kind, device, fetch: fetch as Fetcher<unknown>, done: [resolve] };
     inFlight.set(key(kind, device.id), job);
     queue.push(job);
@@ -90,13 +100,27 @@ function refresh<T>(kind: string, device: DeviceRow, fetch: Fetcher<T>): Promise
  * Refresh button), still a few at a time. Waits up to `waitMs` for the
  * refreshes it started before answering.
  */
-export async function liveForDevices<T>(kind: string, devices: DeviceRow[], fetch: Fetcher<T>, opts: {
-  maxAgeMs: number; refresh?: boolean; waitMs?: number;
-}): Promise<Map<number, LiveEntry<T>>> {
+export async function liveForDevices<T>(
+  kind: string,
+  devices: DeviceRow[],
+  fetch: Fetcher<T>,
+  opts: {
+    maxAgeMs: number;
+    refresh?: boolean;
+    waitMs?: number;
+  },
+): Promise<Map<number, LiveEntry<T>>> {
   const ids = devices.map((d) => d.id);
   const rows = ids.length
-    ? await query<{ device_id: number; data: T | null; fetched_at: string | null; error: string | null }>(
-      `SELECT device_id, data, fetched_at, error FROM device_live_cache WHERE kind = $1 AND device_id = ANY($2::int[])`, [kind, ids])
+    ? await query<{
+        device_id: number;
+        data: T | null;
+        fetched_at: string | null;
+        error: string | null;
+      }>(
+        `SELECT device_id, data, fetched_at, error FROM device_live_cache WHERE kind = $1 AND device_id = ANY($2::int[])`,
+        [kind, ids],
+      )
     : [];
   const byId = new Map(rows.map((r) => [r.device_id, r]));
   const now = Date.now();
@@ -110,16 +134,29 @@ export async function liveForDevices<T>(kind: string, devices: DeviceRow[], fetc
     await Promise.race([Promise.all(started), new Promise((r) => setTimeout(r, opts.waitMs))]);
   }
   // Re-read what the refreshes that finished in time wrote.
-  const fresh = started.length && ids.length
-    ? new Map((await query<{ device_id: number; data: T | null; fetched_at: string | null; error: string | null }>(
-      `SELECT device_id, data, fetched_at, error FROM device_live_cache WHERE kind = $1 AND device_id = ANY($2::int[])`, [kind, ids]))
-      .map((r) => [r.device_id, r]))
-    : byId;
+  const fresh =
+    started.length && ids.length
+      ? new Map(
+          (
+            await query<{
+              device_id: number;
+              data: T | null;
+              fetched_at: string | null;
+              error: string | null;
+            }>(
+              `SELECT device_id, data, fetched_at, error FROM device_live_cache WHERE kind = $1 AND device_id = ANY($2::int[])`,
+              [kind, ids],
+            )
+          ).map((r) => [r.device_id, r]),
+        )
+      : byId;
   const out = new Map<number, LiveEntry<T>>();
   for (const d of devices) {
     const r = fresh.get(d.id);
     out.set(d.id, {
-      data: r?.data ?? null, fetchedAt: r?.fetched_at ?? null, error: r?.error ?? null,
+      data: r?.data ?? null,
+      fetchedAt: r?.fetched_at ?? null,
+      error: r?.error ?? null,
       refreshing: inFlight.has(key(kind, d.id)),
     });
   }
@@ -127,4 +164,6 @@ export async function liveForDevices<T>(kind: string, devices: DeviceRow[], fetc
 }
 
 /** For tests and diagnostics: how many refreshes are queued or running. */
-export function liveCacheBusy(): number { return inFlight.size; }
+export function liveCacheBusy(): number {
+  return inFlight.size;
+}

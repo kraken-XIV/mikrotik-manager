@@ -13,7 +13,7 @@
 export async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
-  worker: (item: T, index: number) => Promise<R>
+  worker: (item: T, index: number) => Promise<R>,
 ): Promise<R[]> {
   const max = Math.max(1, Math.floor(limit) || 1);
   const results = new Array<R>(items.length);
@@ -28,9 +28,7 @@ export async function mapWithConcurrency<T, R>(
   }
 
   // Never start more runners than there is work for them to do.
-  await Promise.all(
-    Array.from({ length: Math.min(max, items.length) }, () => runner())
-  );
+  await Promise.all(Array.from({ length: Math.min(max, items.length) }, () => runner()));
   return results;
 }
 
@@ -57,9 +55,16 @@ export function clampConcurrency(raw: unknown): number {
 export const FLEET_ACTION_CONCURRENCY = 8;
 
 /** Promise.allSettled, but at most `limit` at a time, results in input order. */
-export async function settleWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<PromiseSettledResult<R>[]> {
+export async function settleWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
   return mapWithConcurrency(items, limit, async (item) => {
-    try { return { status: 'fulfilled', value: await fn(item) } as const; }
-    catch (reason) { return { status: 'rejected', reason } as const; }
+    try {
+      return { status: 'fulfilled', value: await fn(item) } as const;
+    } catch (reason) {
+      return { status: 'rejected', reason } as const;
+    }
   });
 }

@@ -1,14 +1,15 @@
-import { Router, Request, Response } from 'express';
-import { decodedPath } from '../utils/requestPath';
-import { resourceSiteAccess } from '../utils/siteAccess';
+import { Request, Response, Router } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { query, queryOne } from '../config/database';
 import { requireAuth, requireWrite } from '../middleware/auth';
-import { siteScopeByDevice } from '../utils/siteScope';
 import { activeSite, writableScope } from '../middleware/site';
 import { BackupService, describeRestore } from '../services/BackupService';
 import { decrypt } from '../utils/crypto';
+import { decodedPath } from '../utils/requestPath';
+import { resourceSiteAccess } from '../utils/siteAccess';
+import { siteScopeByDevice } from '../utils/siteScope';
 
 /**
  * Backups holding passwords and keys (#172) are admin-only to read. Restoring
@@ -32,22 +33,31 @@ const MAX_BULK_DELETE = 200;
 // GET /api/backups — filter by device, type, date range and free text (#134)
 // A site-scoped account reaches only backups of devices in its sites (P1-7):
 // by backup id for /:id and /:fromId/diff/:toId, by deviceId when creating one.
-router.use(resourceSiteAccess(async (req) => {
-  // Decoded, as the handlers' params are (GHSA-6xq3-q9m5-7hxp); undecodable is refused.
-  const path = decodedPath(req);
-  if (path === null) return [];
-  const ids = path.match(/^\/(\d+)(?:\/diff\/(\d+))?(?:\/|$)/);
-  if (ids) {
-    const backupIds = [ids[1], ids[2]].filter(Boolean).map(Number);
-    const rows = await query<{ device_id: number }>(`SELECT device_id FROM backups WHERE id = ANY($1::int[])`, [backupIds]);
-    return rows.length === backupIds.length ? rows.map((r) => r.device_id) : [];
-  }
-  if (req.method === 'POST' && path === '/' && req.body?.deviceId != null) return [Number(req.body.deviceId)];
-  return null;
-}, 'Backup not found'));
+router.use(
+  resourceSiteAccess(async (req) => {
+    // Decoded, as the handlers' params are (GHSA-6xq3-q9m5-7hxp); undecodable is refused.
+    const path = decodedPath(req);
+    if (path === null) return [];
+    const ids = path.match(/^\/(\d+)(?:\/diff\/(\d+))?(?:\/|$)/);
+    if (ids) {
+      const backupIds = [ids[1], ids[2]].filter(Boolean).map(Number);
+      const rows = await query<{ device_id: number }>(
+        `SELECT device_id FROM backups WHERE id = ANY($1::int[])`,
+        [backupIds],
+      );
+      return rows.length === backupIds.length ? rows.map((r) => r.device_id) : [];
+    }
+    if (req.method === 'POST' && path === '/' && req.body?.deviceId != null)
+      return [Number(req.body.deviceId)];
+    return null;
+  }, 'Backup not found'),
+);
 
 router.get('/', async (req: Request, res: Response) => {
-  const { deviceId, type, from, to, search, limit, offset } = req.query as Record<string, string | undefined>;
+  const { deviceId, type, from, to, search, limit, offset } = req.query as Record<
+    string,
+    string | undefined
+  >;
 
   const filters: string[] = [];
   const params: unknown[] = [];
@@ -58,14 +68,17 @@ router.get('/', async (req: Request, res: Response) => {
    * the last filter's increment is dead and whoever adds the next one inherits a
    * stale index. This cannot get out of step.
    */
-  const bind = (v: unknown): string => { params.push(v); return `$${params.length}`; };
+  const bind = (v: unknown): string => {
+    params.push(v);
+    return `$${params.length}`;
+  };
 
   if (deviceId) filters.push(`b.device_id = ${bind(deviceId)}`);
-  if (type)     filters.push(`b.backup_type = ${bind(type)}`);
+  if (type) filters.push(`b.backup_type = ${bind(type)}`);
   // Dates are inclusive at both ends: a picker showing "to: 3 Sep" should include
   // everything that happened on the 3rd, not stop at its first instant.
-  if (from)     filters.push(`b.created_at >= ${bind(from)}`);
-  if (to)       filters.push(`b.created_at < (${bind(to)}::date + INTERVAL '1 day')`);
+  if (from) filters.push(`b.created_at >= ${bind(from)}`);
+  if (to) filters.push(`b.created_at < (${bind(to)}::date + INTERVAL '1 day')`);
   if (search) {
     const p = bind(`%${search}%`);
     filters.push(`(b.filename ILIKE ${p} OR b.notes ILIKE ${p} OR d.name ILIKE ${p})`);
@@ -93,10 +106,13 @@ router.get('/', async (req: Request, res: Response) => {
          FROM backups b JOIN devices d ON d.id = b.device_id
          ${where}
         ORDER BY b.created_at DESC, b.id DESC${pageSql}`,
-      params
+      params,
     ),
     paged
-      ? queryOne<{ n: number }>(`SELECT COUNT(*)::int AS n FROM backups b JOIN devices d ON d.id = b.device_id ${where}`, filterParams)
+      ? queryOne<{ n: number }>(
+          `SELECT COUNT(*)::int AS n FROM backups b JOIN devices d ON d.id = b.device_id ${where}`,
+          filterParams,
+        )
       : Promise.resolve(null),
   ]);
   if (paged) res.setHeader('X-Total-Count', String(total?.n ?? 0));
@@ -110,7 +126,7 @@ router.get('/types', async (req: Request, res: Response) => {
     `SELECT b.backup_type, COUNT(*)::text AS n
        FROM backups b
        ${siteFilter ? `WHERE ${siteFilter}` : ''}
-      GROUP BY b.backup_type ORDER BY b.backup_type`
+      GROUP BY b.backup_type ORDER BY b.backup_type`,
   );
   res.json(rows.map((r) => ({ type: r.backup_type, count: parseInt(r.n, 10) })));
 });
@@ -131,7 +147,9 @@ router.post('/bulk-delete', requireWrite, async (req: Request, res: Response) =>
   const clean = ids.map((v) => parseInt(String(v), 10)).filter(Number.isInteger);
   if (clean.length === 0) return res.status(400).json({ error: 'ids array is required' });
   if (clean.length > MAX_BULK_DELETE) {
-    return res.status(400).json({ error: `Cannot delete more than ${MAX_BULK_DELETE} backups at once` });
+    return res
+      .status(400)
+      .json({ error: `Cannot delete more than ${MAX_BULK_DELETE} backups at once` });
   }
 
   // Only ever touch backups in the active site, so a bulk action cannot reach
@@ -139,7 +157,7 @@ router.post('/bulk-delete', requireWrite, async (req: Request, res: Response) =>
   const siteFilter = siteScopeByDevice(writableScope(req), 'device_id');
   const allowed = await query<{ id: number }>(
     `SELECT id FROM backups WHERE id = ANY($1::int[]) ${siteFilter ? `AND ${siteFilter}` : ''}`,
-    [clean]
+    [clean],
   );
   const allowedIds = allowed.map((r) => r.id);
   if (allowedIds.length === 0) return res.status(404).json({ error: 'No matching backups' });
@@ -147,8 +165,12 @@ router.post('/bulk-delete', requireWrite, async (req: Request, res: Response) =>
   let deleted = 0;
   const failures: { id: number; error: string }[] = [];
   for (const id of allowedIds) {
-    try { await backupService.deleteBackup(id); deleted++; }
-    catch (e) { failures.push({ id, error: (e as Error).message }); }
+    try {
+      await backupService.deleteBackup(id);
+      deleted++;
+    } catch (e) {
+      failures.push({ id, error: (e as Error).message });
+    }
   }
   return res.json({ deleted, requested: clean.length, failures });
 });
@@ -156,7 +178,9 @@ router.post('/bulk-delete', requireWrite, async (req: Request, res: Response) =>
 // GET /api/backups/bulk-delete/preview?ids=1,2,3 — what a bulk delete would remove
 router.get('/bulk-delete/preview', async (req: Request, res: Response) => {
   const ids = String(req.query.ids || '')
-    .split(',').map((v) => parseInt(v, 10)).filter(Number.isInteger);
+    .split(',')
+    .map((v) => parseInt(v, 10))
+    .filter(Number.isInteger);
   if (ids.length === 0) return res.json({ backups: 0, snapshots: 0, devices: [] });
 
   const siteFilter = siteScopeByDevice(activeSite(req), 'b.device_id');
@@ -166,14 +190,14 @@ router.get('/bulk-delete/preview', async (req: Request, res: Response) => {
        FROM backups b
        LEFT JOIN device_configs dc ON dc.backup_id = b.id
       WHERE b.id = ANY($1::int[]) ${siteFilter ? `AND ${siteFilter}` : ''}`,
-    [ids]
+    [ids],
   );
   const devices = await query<{ name: string; n: string }>(
     `SELECT d.name, COUNT(*)::text AS n
        FROM backups b JOIN devices d ON d.id = b.device_id
       WHERE b.id = ANY($1::int[]) ${siteFilter ? `AND ${siteFilter}` : ''}
       GROUP BY d.name ORDER BY d.name`,
-    [ids]
+    [ids],
   );
   return res.json({
     backups: parseInt(rows[0]?.n || '0', 10),
@@ -191,7 +215,7 @@ router.post('/', requireWrite, async (req: Request, res: Response) => {
     `SELECT id, name, ip_address, ssh_port, ssh_username, ssh_password_encrypted,
             api_username, api_password_encrypted
      FROM devices WHERE id = $1`,
-    [deviceId]
+    [deviceId],
   );
   if (!device) return res.status(404).json({ error: 'Device not found' });
 
@@ -206,12 +230,17 @@ router.post('/', requireWrite, async (req: Request, res: Response) => {
 
 // GET /api/backups/:id/download
 router.get('/:id/download', async (req: Request, res: Response) => {
-  const backup = await queryOne<{ file_path: string; filename: string; contains_secrets: boolean; encrypted: boolean }>(
-    `SELECT file_path, filename, contains_secrets, encrypted FROM backups WHERE id = $1`,
-    [req.params.id]
-  );
+  const backup = await queryOne<{
+    file_path: string;
+    filename: string;
+    contains_secrets: boolean;
+    encrypted: boolean;
+  }>(`SELECT file_path, filename, contains_secrets, encrypted FROM backups WHERE id = $1`, [
+    req.params.id,
+  ]);
   if (!backup) return res.status(404).json({ error: 'Backup not found' });
-  if (backup.contains_secrets && !isAdmin(req)) return res.status(403).json({ error: SECRETS_ADMIN_ONLY });
+  if (backup.contains_secrets && !isAdmin(req))
+    return res.status(403).json({ error: SECRETS_ADMIN_ONLY });
   if (!fs.existsSync(backup.file_path)) {
     return res.status(404).json({ error: 'Backup file not found on disk' });
   }
@@ -224,7 +253,9 @@ router.get('/:id/download', async (req: Request, res: Response) => {
     try {
       return res.send(BackupService.readContent(backup));
     } catch (e) {
-      return res.status(500).json({ error: `Could not decrypt the backup: ${(e as Error).message}` });
+      return res
+        .status(500)
+        .json({ error: `Could not decrypt the backup: ${(e as Error).message}` });
     }
   }
   return res.sendFile(path.resolve(backup.file_path));
@@ -236,12 +267,16 @@ router.post('/:id/restore', requireWrite, async (req: Request, res: Response) =>
   if (!backup) return res.status(404).json({ error: 'Backup not found' });
 
   try {
-    const outcome = await backupService.restoreBackup(parseInt(req.params.id), { userId: req.user?.userId ?? null });
+    const outcome = await backupService.restoreBackup(parseInt(req.params.id), {
+      userId: req.user?.userId ?? null,
+    });
     const message = describeRestore(outcome);
     // Only a complete (or self-reverting) restore is a success; the UI shows the
     // message either way, and a partial one says exactly where it stopped.
     const ok = outcome.status === 'applied' || outcome.status === 'reverting';
-    return res.status(ok ? 200 : 422).json({ ...outcome, message, ...(ok ? {} : { error: message }) });
+    return res
+      .status(ok ? 200 : 422)
+      .json({ ...outcome, message, ...(ok ? {} : { error: message }) });
   } catch (err) {
     return res.status(500).json({ error: `Restore failed: ${(err as Error).message}` });
   }
@@ -263,15 +298,16 @@ router.delete('/:id', requireWrite, async (req: Request, res: Response) => {
  * binary `.backup` blob — so they can be read in place instead of downloaded
  * and opened elsewhere (#134).
  */
-async function readBackupText(id: string | number, admin: boolean): Promise<
-  { meta: BackupMeta; text: string } | { error: string; status: number }
-> {
+async function readBackupText(
+  id: string | number,
+  admin: boolean,
+): Promise<{ meta: BackupMeta; text: string } | { error: string; status: number }> {
   const meta = await queryOne<BackupMeta>(
     `SELECT b.id, b.filename, b.size_bytes, b.backup_type, b.notes, b.created_at,
             b.file_path, b.device_id, b.contains_secrets, b.encrypted, d.name AS device_name
        FROM backups b JOIN devices d ON d.id = b.device_id
       WHERE b.id = $1`,
-    [id]
+    [id],
   );
   if (!meta) return { error: 'Backup not found', status: 404 };
   if (meta.contains_secrets && !admin) return { error: SECRETS_ADMIN_ONLY, status: 403 };
@@ -343,10 +379,20 @@ router.get('/:fromId/diff/:toId', async (req: Request, res: Response) => {
   const f = from as { meta: BackupMeta; text: string };
   const t = to as { meta: BackupMeta; text: string };
   return res.json({
-    from: { id: f.meta.id, filename: f.meta.filename, device_name: f.meta.device_name,
-            created_at: f.meta.created_at, text: f.text },
-    to:   { id: t.meta.id, filename: t.meta.filename, device_name: t.meta.device_name,
-            created_at: t.meta.created_at, text: t.text },
+    from: {
+      id: f.meta.id,
+      filename: f.meta.filename,
+      device_name: f.meta.device_name,
+      created_at: f.meta.created_at,
+      text: f.text,
+    },
+    to: {
+      id: t.meta.id,
+      filename: t.meta.filename,
+      device_name: t.meta.device_name,
+      created_at: t.meta.created_at,
+      text: t.text,
+    },
   });
 });
 

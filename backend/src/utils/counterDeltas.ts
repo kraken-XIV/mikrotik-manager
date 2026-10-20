@@ -2,7 +2,9 @@
  * Non-negative deltas of per-device cumulative counters, summed per time. A
  * negative step (counter reset, reconnect) is skipped.
  */
-export function counterDeltas(points: { time: string; device: string; value: number }[]): Map<string, number> {
+export function counterDeltas(
+  points: { time: string; device: string; value: number }[],
+): Map<string, number> {
   const byDevice = new Map<string, { time: string; value: number }[]>();
   for (const p of points) {
     const list = byDevice.get(p.device) ?? [];

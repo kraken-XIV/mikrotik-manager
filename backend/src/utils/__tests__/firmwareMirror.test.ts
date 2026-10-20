@@ -1,6 +1,16 @@
 import {
-  packageFileName, parseNewest, parseSha256File, planFiles, versionsToPrune, supportsLocalUpdate,
-  matchLocalUpdate, clampKeepVersions, isMirrorFolder, downloadUrl, newestCompleteFrom, type FleetDevice,
+  clampKeepVersions,
+  downloadUrl,
+  type FleetDevice,
+  isMirrorFolder,
+  matchLocalUpdate,
+  newestCompleteFrom,
+  packageFileName,
+  parseNewest,
+  parseSha256File,
+  planFiles,
+  supportsLocalUpdate,
+  versionsToPrune,
 } from '../firmwareMirror';
 
 describe('packageFileName (#193)', () => {
@@ -19,8 +29,9 @@ describe('packageFileName (#193)', () => {
     expect(packageFileName('routeros', '7.24.5', 'arm/../x')).toBeNull();
   });
   it('points at MikroTik', () => {
-    expect(downloadUrl('7.24.5', 'routeros-7.24.5-arm.npk'))
-      .toBe('https://download.mikrotik.com/routeros/7.24.5/routeros-7.24.5-arm.npk');
+    expect(downloadUrl('7.24.5', 'routeros-7.24.5-arm.npk')).toBe(
+      'https://download.mikrotik.com/routeros/7.24.5/routeros-7.24.5-arm.npk',
+    );
   });
 });
 
@@ -31,8 +42,11 @@ describe('MikroTik answers', () => {
     expect(parseNewest('<html>')).toBeNull();
   });
   it('reads a .sha256 file', () => {
-    expect(parseSha256File('62f02a07d8262ffe4e7dde57566a8c30b82a8ff05383e7bd8bc75c4c297c8d4e  routeros-7.24.5-arm.npk'))
-      .toBe('62f02a07d8262ffe4e7dde57566a8c30b82a8ff05383e7bd8bc75c4c297c8d4e');
+    expect(
+      parseSha256File(
+        '62f02a07d8262ffe4e7dde57566a8c30b82a8ff05383e7bd8bc75c4c297c8d4e  routeros-7.24.5-arm.npk',
+      ),
+    ).toBe('62f02a07d8262ffe4e7dde57566a8c30b82a8ff05383e7bd8bc75c4c297c8d4e');
     expect(parseSha256File('not a hash')).toBeNull();
   });
 });
@@ -48,16 +62,29 @@ describe('supportsLocalUpdate', () => {
 });
 
 describe('planFiles', () => {
-  const d = (id: number, arch: string | null, pkgs: string[] | null, ver = '7.24.4'): FleetDevice =>
-    ({ id, name: `d${id}`, architecture: arch, installed_packages: pkgs, ros_version: ver });
+  const d = (
+    id: number,
+    arch: string | null,
+    pkgs: string[] | null,
+    ver = '7.24.4',
+  ): FleetDevice => ({
+    id,
+    name: `d${id}`,
+    architecture: arch,
+    installed_packages: pkgs,
+    ros_version: ver,
+  });
 
   it('needs every installed package for every architecture, once', () => {
-    const plan = planFiles([
-      d(1, 'arm', ['routeros', 'wifi-qcom']),
-      d(2, 'arm', ['routeros', 'wifi-qcom']),
-      d(3, 'arm64', ['routeros']),
-      d(4, 'x86_64', ['routeros', 'container']),
-    ], '7.24.5');
+    const plan = planFiles(
+      [
+        d(1, 'arm', ['routeros', 'wifi-qcom']),
+        d(2, 'arm', ['routeros', 'wifi-qcom']),
+        d(3, 'arm64', ['routeros']),
+        d(4, 'x86_64', ['routeros', 'container']),
+      ],
+      '7.24.5',
+    );
     expect(plan.files.map((f) => f.filename)).toEqual([
       'container-7.24.5.npk',
       'routeros-7.24.5-arm.npk',
@@ -68,7 +95,14 @@ describe('planFiles', () => {
     expect(plan.skipped).toEqual([]);
   });
   it('says which devices it cannot serve', () => {
-    const plan = planFiles([d(1, 'arm', ['routeros'], '7.16.2'), d(2, null, null), d(3, 'mipsbe', ['routeros'], '6.49.22')], '7.24.5');
+    const plan = planFiles(
+      [
+        d(1, 'arm', ['routeros'], '7.16.2'),
+        d(2, null, null),
+        d(3, 'mipsbe', ['routeros'], '6.49.22'),
+      ],
+      '7.24.5',
+    );
     expect(plan.files).toEqual([]);
     expect(plan.skipped.map((s) => s.id)).toEqual([1, 2, 3]);
     expect(plan.skipped[0].reason).toMatch(/older than 7\.17/);
@@ -96,11 +130,19 @@ describe('matchLocalUpdate', () => {
     { '.id': '*3', name: 'routeros', version: '7.24.4', status: 'installed' },
   ];
   it('finds one entry per installed package at the target version', () => {
-    expect(matchLocalUpdate(rows, ['routeros', 'wifi-qcom'], '7.24.5'))
-      .toEqual({ ok: true, ids: [{ name: 'routeros', id: '*2' }, { name: 'wifi-qcom', id: '*1' }] });
+    expect(matchLocalUpdate(rows, ['routeros', 'wifi-qcom'], '7.24.5')).toEqual({
+      ok: true,
+      ids: [
+        { name: 'routeros', id: '*2' },
+        { name: 'wifi-qcom', id: '*1' },
+      ],
+    });
   });
   it('refuses when any installed package is missing', () => {
-    expect(matchLocalUpdate(rows, ['routeros', 'container'], '7.24.5')).toEqual({ ok: false, missing: ['container'] });
+    expect(matchLocalUpdate(rows, ['routeros', 'container'], '7.24.5')).toEqual({
+      ok: false,
+      missing: ['container'],
+    });
   });
 });
 
@@ -131,17 +173,42 @@ describe('newestCompleteFrom', () => {
   });
 });
 
-
 // ── Disks (Discussion #85) ─────────────────────────────────────────────────
 
-import { mirrorPath, mirrorDisks, suggestDisk, isDiskName } from '../firmwareMirror';
+import { isDiskName, mirrorDisks, mirrorPath, suggestDisk } from '../firmwareMirror';
 
 describe('mirror disks', () => {
   // A 64 MB RAM disk on a CRS309 (7.24.5), as /disk/print detail returns it.
-  const tmpfs = { '.id': '*1', type: 'tmpfs', slot: 'mtmtest', fs: 'tmpfs', model: 'tmpfs', size: '64000000', free: '64000000',
-    'mount-point': 'mtmtest', 'mount-filesystem': 'true', 'mount-read-only': 'false', interface: 'ram', mounted: 'true', disabled: 'false' };
-  const sd = { '.id': '*2', type: 'hardware', slot: 'sd1', fs: 'ext4', model: 'SD card', size: '7948206080', free: '7700000000',
-    'mount-point': 'sd1', 'mount-filesystem': 'true', 'mount-read-only': 'false', interface: 'sd', mounted: 'true', disabled: 'false' };
+  const tmpfs = {
+    '.id': '*1',
+    type: 'tmpfs',
+    slot: 'mtmtest',
+    fs: 'tmpfs',
+    model: 'tmpfs',
+    size: '64000000',
+    free: '64000000',
+    'mount-point': 'mtmtest',
+    'mount-filesystem': 'true',
+    'mount-read-only': 'false',
+    interface: 'ram',
+    mounted: 'true',
+    disabled: 'false',
+  };
+  const sd = {
+    '.id': '*2',
+    type: 'hardware',
+    slot: 'sd1',
+    fs: 'ext4',
+    model: 'SD card',
+    size: '7948206080',
+    free: '7700000000',
+    'mount-point': 'sd1',
+    'mount-filesystem': 'true',
+    'mount-read-only': 'false',
+    interface: 'sd',
+    mounted: 'true',
+    disabled: 'false',
+  };
   const resource = { 'free-hdd-space': '2981888', 'total-hdd-space': '16777216' };
 
   it('puts the folder under the disk', () => {
@@ -152,7 +219,9 @@ describe('mirror disks', () => {
   it('lists internal storage first, then usable disks, marking RAM disks', () => {
     const disks = mirrorDisks([tmpfs, sd], resource);
     expect(disks.map((d) => [d.mount_point, d.free_bytes, d.ram])).toEqual([
-      [null, 2981888, false], ['mtmtest', 64000000, true], ['sd1', 7700000000, false],
+      [null, 2981888, false],
+      ['mtmtest', 64000000, true],
+      ['sd1', 7700000000, false],
     ]);
     expect(disks[1].label).toBe('mtmtest (RAM disk)');
     expect(disks[2].label).toBe('sd1 (SD card, sd)');
@@ -160,8 +229,11 @@ describe('mirror disks', () => {
 
   it('leaves out read-only, unmounted, disabled and oddly named disks', () => {
     const bad = [
-      { ...sd, 'mount-read-only': 'true' }, { ...sd, mounted: 'false' }, { ...sd, disabled: 'true' },
-      { ...sd, 'mount-point': '' }, { ...sd, 'mount-point': '../etc' },
+      { ...sd, 'mount-read-only': 'true' },
+      { ...sd, mounted: 'false' },
+      { ...sd, disabled: 'true' },
+      { ...sd, 'mount-point': '' },
+      { ...sd, 'mount-point': '../etc' },
     ];
     expect(mirrorDisks(bad, resource)).toHaveLength(1);
   });

@@ -1,8 +1,9 @@
-import { useIsFleetAdmin } from '../../hooks/useCanWrite';
-import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Radio, Loader2 } from 'lucide-react';
-import { firmwareApi, settingsApi, type FirmwareDeviceRow } from '../../services/api';
+import { Loader2, Radio } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+import { useIsFleetAdmin } from '../../hooks/useCanWrite';
+import { firmwareApi, type FirmwareDeviceRow, settingsApi } from '../../services/api';
 import DevicePicker from '../common/DevicePicker';
 
 /**
@@ -36,16 +37,19 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
     queryFn: () => settingsApi.get().then((r) => r.data),
     staleTime: 300_000,
   });
-  const fleet = typeof settings?.['firmware_update_channel'] === 'string'
-    ? (settings['firmware_update_channel'] as string) : '';
+  const fleet =
+    typeof settings?.['firmware_update_channel'] === 'string'
+      ? (settings['firmware_update_channel'] as string)
+      : '';
 
   const tags = useMemo(() => {
     const m = new Map<number, { id: number; name: string; ids: number[] }>();
-    for (const d of devices) for (const t of d.tags ?? []) {
-      const e = m.get(t.id) ?? { id: t.id, name: t.name, ids: [] };
-      e.ids.push(d.id);
-      m.set(t.id, e);
-    }
+    for (const d of devices)
+      for (const t of d.tags ?? []) {
+        const e = m.get(t.id) ?? { id: t.id, name: t.name, ids: [] };
+        e.ids.push(d.id);
+        m.set(t.id, e);
+      }
     return [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [devices]);
 
@@ -60,8 +64,11 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
   // Listed, not just counted: "2 with an override" gave no way to see which
   // devices, or to clear them short of picking each one again (#162).
   const overridden = useMemo(
-    () => devices.filter((d) => d.update_channel).sort((a, b) => a.name.trim().localeCompare(b.name.trim())),
-    [devices]
+    () =>
+      devices
+        .filter((d) => d.update_channel)
+        .sort((a, b) => a.name.trim().localeCompare(b.name.trim())),
+    [devices],
   );
 
   const saveFleet = useMutation({
@@ -81,7 +88,9 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
   const applyOverride = useMutation({
     mutationFn: () => firmwareApi.setChannel(targetIds(), channel === 'fleet' ? null : channel),
     onSuccess: (r) => {
-      setMessage(`${r.data.updated} device${r.data.updated === 1 ? '' : 's'} updated. Applies at the next update check.`);
+      setMessage(
+        `${r.data.updated} device${r.data.updated === 1 ? '' : 's'} updated. Applies at the next update check.`,
+      );
       qc.invalidateQueries({ queryKey: ['fw-overview'] });
     },
     onError: () => setMessage('Could not save the override.'),
@@ -92,7 +101,9 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
     onSuccess: (r) => {
       setMessage(
         `Override cleared on ${r.data.updated} device${r.data.updated === 1 ? '' : 's'}. ` +
-        (fleet ? 'They follow the fleet default again.' : 'With no fleet default set, they stay on the channel they are on now.')
+          (fleet
+            ? 'They follow the fleet default again.'
+            : 'With no fleet default set, they stay on the channel they are on now.'),
       );
       qc.invalidateQueries({ queryKey: ['fw-overview'] });
     },
@@ -117,7 +128,11 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
             onChange={(e) => saveFleet.mutate(e.target.value)}
           >
             <option value="">Leave each device on its own channel</option>
-            {CHANNELS.map((c) => <option key={c} value={c}>{c}</option>)}
+            {CHANNELS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
           <span className="block text-[11px] text-gray-400 mt-1">
             Devices are moved at their next update check. A device already running something newer
@@ -130,26 +145,59 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
             <span className="text-gray-700 dark:text-slate-300">Override for a tag or device</span>
             <div className="flex gap-2 mt-1">
               {tags.length > 0 && (
-                <select className="input w-auto" value={targetKind} aria-label="Override for"
-                  onChange={(e) => { setTargetKind(e.target.value as 'tag' | 'dev'); setTarget(''); setMessage(''); }}>
+                <select
+                  className="input w-auto"
+                  value={targetKind}
+                  aria-label="Override for"
+                  onChange={(e) => {
+                    setTargetKind(e.target.value as 'tag' | 'dev');
+                    setTarget('');
+                    setMessage('');
+                  }}
+                >
                   <option value="dev">Device</option>
                   <option value="tag">Tag</option>
                 </select>
               )}
               {targetKind === 'tag' && tags.length > 0 ? (
-                <select className="input flex-1 min-w-0" value={target} onChange={(e) => { setTarget(e.target.value); setMessage(''); }}>
+                <select
+                  className="input flex-1 min-w-0"
+                  value={target}
+                  onChange={(e) => {
+                    setTarget(e.target.value);
+                    setMessage('');
+                  }}
+                >
                   <option value="">Choose a tag…</option>
-                  {tags.map((t) => <option key={t.id} value={`tag:${t.id}`}>{t.name} ({t.ids.length})</option>)}
+                  {tags.map((t) => (
+                    <option key={t.id} value={`tag:${t.id}`}>
+                      {t.name} ({t.ids.length})
+                    </option>
+                  ))}
                 </select>
               ) : (
                 <DevicePicker
-                  className="flex-1 min-w-0" devices={devices} placeholder="Choose a device…" aria-label="Device"
+                  className="flex-1 min-w-0"
+                  devices={devices}
+                  placeholder="Choose a device…"
+                  aria-label="Device"
                   value={target.startsWith('dev:') ? Number(target.slice(4)) : null}
-                  onChange={(id) => { setTarget(id == null ? '' : `dev:${id}`); setMessage(''); }}
+                  onChange={(id) => {
+                    setTarget(id == null ? '' : `dev:${id}`);
+                    setMessage('');
+                  }}
                 />
               )}
-              <select className="input w-auto" value={channel} onChange={(e) => setChannel(e.target.value)}>
-                {CHANNELS.map((c) => <option key={c} value={c}>{c}</option>)}
+              <select
+                className="input w-auto"
+                value={channel}
+                onChange={(e) => setChannel(e.target.value)}
+              >
+                {CHANNELS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
                 <option value="fleet">follow fleet default</option>
               </select>
               <button
@@ -168,7 +216,11 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-gray-500 dark:text-slate-400">
         <span>Devices report:</span>
-        {reported.map(([ch, n]) => <span key={ch}><span className="mono">{ch}</span> {n}</span>)}
+        {reported.map(([ch, n]) => (
+          <span key={ch}>
+            <span className="mono">{ch}</span> {n}
+          </span>
+        ))}
         {overridden.length > 0 && <span>· {overridden.length} with an override</span>}
       </div>
 
@@ -181,7 +233,11 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
                 className="text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
                 disabled={clearOverrides.isPending}
                 onClick={() => {
-                  if (confirm(`Clear the override on all ${overridden.length} devices? They will follow the fleet default.`)) {
+                  if (
+                    confirm(
+                      `Clear the override on all ${overridden.length} devices? They will follow the fleet default.`,
+                    )
+                  ) {
                     clearOverrides.mutate(overridden.map((d) => d.id));
                   }
                 }}
@@ -195,13 +251,22 @@ export default function UpdateChannelCard({ devices, canWrite }: Props) {
               {overridden.map((d) => (
                 <tr key={d.id}>
                   <td className="px-3 py-1.5 text-gray-900 dark:text-white">{d.name.trim()}</td>
-                  <td className="px-3 py-1.5"><span className="mono">{d.update_channel}</span></td>
+                  <td className="px-3 py-1.5">
+                    <span className="mono">{d.update_channel}</span>
+                  </td>
                   <td className="px-3 py-1.5 text-gray-500 dark:text-slate-400">
-                    {d.reported_update_channel
-                      ? d.reported_update_channel === d.update_channel
-                        ? 'on it now'
-                        : <>reports <span className="mono">{d.reported_update_channel}</span>, moves at the next check</>
-                      : 'not checked yet'}
+                    {d.reported_update_channel ? (
+                      d.reported_update_channel === d.update_channel ? (
+                        'on it now'
+                      ) : (
+                        <>
+                          reports <span className="mono">{d.reported_update_channel}</span>, moves
+                          at the next check
+                        </>
+                      )
+                    ) : (
+                      'not checked yet'
+                    )}
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     {canWrite && (

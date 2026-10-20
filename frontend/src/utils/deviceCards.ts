@@ -18,7 +18,9 @@ function rank(d: CardDevice): number {
 
 /** Offline first, then other trouble, then pending updates; by name within each. */
 export function byAttention<T extends CardDevice>(devices: T[]): T[] {
-  return [...devices].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+  return [...devices].sort(
+    (a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, undefined, { numeric: true }),
+  );
 }
 
 /** Rows a dashboard card shows before "View all". */

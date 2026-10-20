@@ -1,10 +1,10 @@
 import {
-  resolveSiteId,
-  siteScopeDevices,
-  siteScopeByDevice,
-  siteScopeByNullableDevice,
   andSite,
   clientSeriesTag,
+  resolveSiteId,
+  siteScopeByDevice,
+  siteScopeByNullableDevice,
+  siteScopeDevices,
 } from '../siteScope';
 
 describe('resolveSiteId', () => {
@@ -83,8 +83,9 @@ describe('siteScopeByDevice', () => {
 
   it('scopes any device_id column through the devices table', () => {
     expect(siteScopeByDevice(4)).toBe('device_id IN (SELECT id FROM devices WHERE site_id = 4)');
-    expect(siteScopeByDevice(4, 'c.device_id'))
-      .toBe('c.device_id IN (SELECT id FROM devices WHERE site_id = 4)');
+    expect(siteScopeByDevice(4, 'c.device_id')).toBe(
+      'c.device_id IN (SELECT id FROM devices WHERE site_id = 4)',
+    );
   });
 });
 

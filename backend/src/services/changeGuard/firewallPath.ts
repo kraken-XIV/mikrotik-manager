@@ -38,14 +38,34 @@ export interface ChainVerdict {
 
 /** Fields that describe a rule rather than restrict what it matches. */
 const NEUTRAL_KEYS = new Set([
-  '.id', '.nextid', 'chain', 'action', 'comment', 'disabled', 'dynamic', 'invalid',
-  'log', 'log-prefix', 'bytes', 'packets', 'jump-target', 'reject-with',
-  'address-list', 'address-list-timeout', 'place-before', 'passthrough', 'place-after',
+  '.id',
+  '.nextid',
+  'chain',
+  'action',
+  'comment',
+  'disabled',
+  'dynamic',
+  'invalid',
+  'log',
+  'log-prefix',
+  'bytes',
+  'packets',
+  'jump-target',
+  'reject-with',
+  'address-list',
+  'address-list-timeout',
+  'place-before',
+  'passthrough',
+  'place-after',
 ]);
 
 const DROP_ACTIONS = new Set(['drop', 'reject', 'tarpit']);
 const CONTINUE_ACTIONS = new Set([
-  'passthrough', 'log', 'add-src-to-address-list', 'add-dst-to-address-list', 'fasttrack-connection',
+  'passthrough',
+  'log',
+  'add-src-to-address-list',
+  'add-dst-to-address-list',
+  'fasttrack-connection',
 ]);
 const MAX_JUMP_DEPTH = 8;
 
@@ -89,13 +109,16 @@ export function addressMatches(spec: string, ip: string | null): Tri {
   const bits = bitsStr === undefined ? 32 : parseInt(bitsStr, 10);
   if (!Number.isFinite(bits) || bits < 0 || bits > 32) return 'maybe';
   const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
-  return ((target & mask) >>> 0) === ((baseInt & mask) >>> 0) ? 'yes' : 'no';
+  return (target & mask) >>> 0 === (baseInt & mask) >>> 0 ? 'yes' : 'no';
 }
 
 /** Does a RouterOS port spec ("22", "80,443", "8000-8100") include `port`? */
 export function portMatches(spec: string, port: number): Tri {
   let sawNumber = false;
-  for (const part of spec.split(',').map((p) => p.trim()).filter(Boolean)) {
+  for (const part of spec
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)) {
     if (part.includes('-')) {
       const [lo, hi] = part.split('-').map((n) => parseInt(n, 10));
       if (!Number.isFinite(lo) || !Number.isFinite(hi)) return 'maybe';
@@ -116,7 +139,9 @@ function inAddressList(snap: DeviceSnapshot, list: string, ip: string | null): T
   // Only lists the snapshot actually read can say "no". A list that was too
   // big to read, or that a simulated change introduces, stays "maybe".
   if (!(snap.addressListsRead ?? []).includes(list)) return 'maybe';
-  const entries = (snap.addressLists ?? []).filter((e) => e['list'] === list && !isTrue(e['disabled']));
+  const entries = (snap.addressLists ?? []).filter(
+    (e) => e['list'] === list && !isTrue(e['disabled']),
+  );
   let result: Tri = 'no';
   for (const e of entries) {
     const m = addressMatches(e['address'] || '', ip);
@@ -136,7 +161,9 @@ function inInterfaceList(snap: DeviceSnapshot, list: string, iface: string | nul
   if (list === 'dynamic' || list === 'static') return 'maybe';
   const def = (snap.interfaceLists ?? []).find((l) => l['name'] === list);
   if (!def || (def['include'] || '').trim() || (def['exclude'] || '').trim()) return 'maybe';
-  const members = (snap.interfaceListMembers ?? []).filter((m) => m['list'] === list && !isTrue(m['disabled']));
+  const members = (snap.interfaceListMembers ?? []).filter(
+    (m) => m['list'] === list && !isTrue(m['disabled']),
+  );
   return members.some((m) => m['interface'] === iface) ? 'yes' : 'no';
 }
 
@@ -158,15 +185,29 @@ export function ruleMatches(rule: RosRow, conn: MgmtConnection, snap: DeviceSnap
         results.push(flip(p === 'tcp' || p === '6' ? 'yes' : 'no', neg));
         break;
       }
-      case 'dst-port': results.push(flip(portMatches(value, conn.dstPort), neg)); break;
-      case 'src-address': results.push(flip(addressMatches(value, conn.srcIp), neg)); break;
-      case 'dst-address': results.push(flip(addressMatches(value, conn.dstIp), neg)); break;
-      case 'src-address-list': results.push(flip(inAddressList(snap, value, conn.srcIp), neg)); break;
-      case 'dst-address-list': results.push(flip(inAddressList(snap, value, conn.dstIp), neg)); break;
-      case 'in-interface':
-        results.push(conn.inInterface ? flip(value === conn.inInterface ? 'yes' : 'no', neg) : 'maybe');
+      case 'dst-port':
+        results.push(flip(portMatches(value, conn.dstPort), neg));
         break;
-      case 'in-interface-list': results.push(flip(inInterfaceList(snap, value, conn.inInterface), neg)); break;
+      case 'src-address':
+        results.push(flip(addressMatches(value, conn.srcIp), neg));
+        break;
+      case 'dst-address':
+        results.push(flip(addressMatches(value, conn.dstIp), neg));
+        break;
+      case 'src-address-list':
+        results.push(flip(inAddressList(snap, value, conn.srcIp), neg));
+        break;
+      case 'dst-address-list':
+        results.push(flip(inAddressList(snap, value, conn.dstIp), neg));
+        break;
+      case 'in-interface':
+        results.push(
+          conn.inInterface ? flip(value === conn.inInterface ? 'yes' : 'no', neg) : 'maybe',
+        );
+        break;
+      case 'in-interface-list':
+        results.push(flip(inInterfaceList(snap, value, conn.inInterface), neg));
+        break;
       case 'connection-state': {
         // The manager opens a fresh connection for every poll and for Change
         // Guard's own verification, so what matters is a new connection.
@@ -189,7 +230,10 @@ type ChainResult =
   | { kind: 'continue'; maybeAccept: boolean; maybeDrop: boolean; ruleIndex?: number };
 
 function walkChain(
-  snap: DeviceSnapshot, conn: MgmtConnection, chain: string, depth: number,
+  snap: DeviceSnapshot,
+  conn: MgmtConnection,
+  chain: string,
+  depth: number,
 ): ChainResult {
   let maybeAccept = false;
   let maybeDrop = false;
@@ -211,12 +255,19 @@ function walkChain(
       else {
         const sub = walkChain(snap, conn, target, depth + 1);
         if (sub.kind === 'continue') {
-          if (sub.maybeAccept) { maybeAccept = true; maybeRule ??= sub.ruleIndex; }
-          if (sub.maybeDrop) { maybeDrop = true; maybeRule ??= sub.ruleIndex; }
+          if (sub.maybeAccept) {
+            maybeAccept = true;
+            maybeRule ??= sub.ruleIndex;
+          }
+          if (sub.maybeDrop) {
+            maybeDrop = true;
+            maybeRule ??= sub.ruleIndex;
+          }
           continue;
         }
         if (sub.maybe || match === 'maybe') {
-          if (sub.kind === 'accept') maybeAccept = true; else maybeDrop = true;
+          if (sub.kind === 'accept') maybeAccept = true;
+          else maybeDrop = true;
           maybeRule ??= sub.ruleIndex;
           continue;
         }
@@ -230,14 +281,20 @@ function walkChain(
     if (match === 'maybe') {
       if (effect === 'accept' || effect === 'return') maybeAccept = true;
       else if (effect === 'drop') maybeDrop = true;
-      else { maybeAccept = true; maybeDrop = true; }
+      else {
+        maybeAccept = true;
+        maybeDrop = true;
+      }
       maybeRule ??= i;
       continue;
     }
     // A definite match.
-    if (effect === 'return') return { kind: 'continue', maybeAccept, maybeDrop, ruleIndex: maybeRule };
+    if (effect === 'return')
+      return { kind: 'continue', maybeAccept, maybeDrop, ruleIndex: maybeRule };
     if (effect === 'accept' || effect === 'drop') return maybeFor(effect, i);
-    maybeAccept = true; maybeDrop = true; maybeRule ??= i;
+    maybeAccept = true;
+    maybeDrop = true;
+    maybeRule ??= i;
   }
   return { kind: 'continue', maybeAccept, maybeDrop, ruleIndex: maybeRule };
 
@@ -245,7 +302,11 @@ function walkChain(
     // A definite decision is only definite if nothing earlier might have
     // decided the other way.
     const conflicted = kind === 'accept' ? maybeDrop : maybeAccept;
-    return { kind, ruleIndex: conflicted ? (maybeRule ?? ruleIndex) : ruleIndex, maybe: conflicted };
+    return {
+      kind,
+      ruleIndex: conflicted ? (maybeRule ?? ruleIndex) : ruleIndex,
+      maybe: conflicted,
+    };
   }
 }
 
@@ -260,12 +321,19 @@ function describe(snap: DeviceSnapshot, index: number | undefined): string {
 export function evaluateInputChain(snap: DeviceSnapshot, conn: MgmtConnection): ChainVerdict {
   // The IPv4 filter does not see a manager that connects over IPv6.
   if (conn.dstIp.includes(':')) {
-    return { outcome: 'accepted', reason: 'The manager connects over IPv6, which the IPv4 firewall does not filter.' };
+    return {
+      outcome: 'accepted',
+      reason: 'The manager connects over IPv6, which the IPv4 firewall does not filter.',
+    };
   }
   const r = walkChain(snap, conn, 'input', 0);
   const port = conn.dstPort;
   if (r.kind === 'accept' && !r.maybe) {
-    return { outcome: 'accepted', ruleIndex: r.ruleIndex, reason: `${describe(snap, r.ruleIndex)} accepts the manager on port ${port}.` };
+    return {
+      outcome: 'accepted',
+      ruleIndex: r.ruleIndex,
+      reason: `${describe(snap, r.ruleIndex)} accepts the manager on port ${port}.`,
+    };
   }
   if (r.kind === 'drop' && !r.maybe) {
     const action = (snap.firewallFilter.at(r.ruleIndex)?.['action'] || 'drop').toLowerCase();
@@ -276,16 +344,20 @@ export function evaluateInputChain(snap: DeviceSnapshot, conn: MgmtConnection): 
     };
   }
   if (r.kind === 'continue' && !r.maybeDrop) {
-    return { outcome: 'accepted', reason: `No input-chain rule blocks the manager on port ${port}.` };
+    return {
+      outcome: 'accepted',
+      reason: `No input-chain rule blocks the manager on port ${port}.`,
+    };
   }
   const decider = r.ruleIndex === undefined ? undefined : snap.firewallFilter.at(r.ruleIndex);
   const bySource = !!decider && !!(decider['src-address'] || decider['src-address-list']);
-  const why = bySource && !conn.srcIp
-    // Connection tracking is off (RouterOS turns it on only once firewall rules
-    // exist), so the device doesn't tell us the manager's address.
-    ? `which matches on the source address, and the manager's address as this device sees it isn't known ` +
-      `(connection tracking is off)`
-    : `which matches on something this check can't evaluate`;
+  const why =
+    bySource && !conn.srcIp
+      ? // Connection tracking is off (RouterOS turns it on only once firewall rules
+        // exist), so the device doesn't tell us the manager's address.
+        `which matches on the source address, and the manager's address as this device sees it isn't known ` +
+        `(connection tracking is off)`
+      : `which matches on something this check can't evaluate`;
   return {
     outcome: 'unknown',
     ruleIndex: r.ruleIndex,

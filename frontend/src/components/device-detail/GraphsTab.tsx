@@ -1,18 +1,19 @@
-import { useState } from 'react';
-import { useRememberedRange } from '../../hooks/useRememberedRange';
 import { useQuery } from '@tanstack/react-query';
-import { metricsApi, devicesApi } from '../../services/api';
-import type { Interface, TrafficPoint, ResourcePoint } from '../../types';
+import { useState } from 'react';
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from 'recharts';
+
+import { useRememberedRange } from '../../hooks/useRememberedRange';
+import { devicesApi, metricsApi } from '../../services/api';
+import type { Interface, ResourcePoint, TrafficPoint } from '../../types';
 import { chartTooltip } from '../common/chartTooltip';
 
 interface Props {
@@ -32,8 +33,10 @@ function formatTime(iso: string, compact: boolean): string {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
   return d.toLocaleString([], {
-    month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -94,7 +97,8 @@ export default function GraphsTab({ deviceId }: Props) {
   });
 
   const compact = trafficRange === '1h' || trafficRange === '3h';
-  const resourceCompact = resourceRange === '6h' || resourceRange === '12h' || resourceRange === '24h';
+  const resourceCompact =
+    resourceRange === '6h' || resourceRange === '12h' || resourceRange === '24h';
 
   const trafficData = (rawTraffic as TrafficPoint[]).map((p) => ({
     time: formatTime(p.time, compact),
@@ -151,13 +155,32 @@ export default function GraphsTab({ deviceId }: Props) {
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={trafficData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-slate-600" opacity={0.5} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="currentColor"
+                className="text-gray-200 dark:text-slate-600"
+                opacity={0.5}
+              />
               <XAxis dataKey="time" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
               <YAxis tickFormatter={formatBps} tick={{ fontSize: 10 }} width={72} />
               <Tooltip {...chartTooltip} formatter={(v) => formatBps(v as number)} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Line type="monotone" dataKey="rx" stroke="#3b82f6" name="RX (download)" dot={false} strokeWidth={2} />
-              <Line type="monotone" dataKey="tx" stroke="#10b981" name="TX (upload)" dot={false} strokeWidth={2} />
+              <Line
+                type="monotone"
+                dataKey="rx"
+                stroke="#3b82f6"
+                name="RX (download)"
+                dot={false}
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="tx"
+                stroke="#10b981"
+                name="TX (upload)"
+                dot={false}
+                strokeWidth={2}
+              />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -167,7 +190,11 @@ export default function GraphsTab({ deviceId }: Props) {
       <div className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="font-semibold text-gray-900 dark:text-white">CPU & Memory Usage</h3>
-          <RangeButtons ranges={RESOURCE_RANGES} value={resourceRange} onChange={setResourceRange} />
+          <RangeButtons
+            ranges={RESOURCE_RANGES}
+            value={resourceRange}
+            onChange={setResourceRange}
+          />
         </div>
 
         {resourceData.length === 0 ? (
@@ -177,13 +204,32 @@ export default function GraphsTab({ deviceId }: Props) {
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={resourceData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-slate-600" opacity={0.5} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="currentColor"
+                className="text-gray-200 dark:text-slate-600"
+                opacity={0.5}
+              />
               <XAxis dataKey="time" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
               <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10 }} />
               <Tooltip {...chartTooltip} formatter={(v) => `${v}%`} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Line type="monotone" dataKey="cpu" stroke="#f59e0b" name="CPU Load" dot={false} strokeWidth={2} />
-              <Line type="monotone" dataKey="mem" stroke="#8b5cf6" name="Memory Used" dot={false} strokeWidth={2} />
+              <Line
+                type="monotone"
+                dataKey="cpu"
+                stroke="#f59e0b"
+                name="CPU Load"
+                dot={false}
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="mem"
+                stroke="#8b5cf6"
+                name="Memory Used"
+                dot={false}
+                strokeWidth={2}
+              />
             </LineChart>
           </ResponsiveContainer>
         )}

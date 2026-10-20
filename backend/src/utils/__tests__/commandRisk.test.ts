@@ -14,6 +14,10 @@ describe('assessCommand', () => {
     '/certificate remove [find name=api]',
   ])('flags %s', (cmd) => expect(assessCommand(cmd).risky).toBe(true));
 
-  it.each(['/system identity print', '/ip address print', ':put [/system resource get uptime]', '/interface print stats'])(
-    'leaves %s alone', (cmd) => expect(assessCommand(cmd).risky).toBe(false));
+  it.each([
+    '/system identity print',
+    '/ip address print',
+    ':put [/system resource get uptime]',
+    '/interface print stats',
+  ])('leaves %s alone', (cmd) => expect(assessCommand(cmd).risky).toBe(false));
 });

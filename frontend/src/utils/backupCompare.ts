@@ -20,7 +20,7 @@ export interface ComparableBackup {
  */
 export function orderForDiff(
   selectedIds: number[],
-  backups: ComparableBackup[]
+  backups: ComparableBackup[],
 ): [number, number] | null {
   if (selectedIds.length !== 2) return null;
 

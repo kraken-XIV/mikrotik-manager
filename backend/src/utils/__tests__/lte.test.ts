@@ -1,9 +1,25 @@
 import {
-  parseSignalValue, parseIntField, parseDurationSeconds, parseBandList, formatBandList,
-  parseBandSpec, parseBandSpecs, parseLteMonitor, isConnected,
-  classifyRsrp, classifyRsrq, classifySinr, overallQuality, describeQuality,
-  detectChanges, observedBands, unprovenBands, totalBandwidthMhz, uplinkAnchor,
-  REPEATED_KEY, LteStatus,
+  classifyRsrp,
+  classifyRsrq,
+  classifySinr,
+  describeQuality,
+  detectChanges,
+  formatBandList,
+  isConnected,
+  LteStatus,
+  observedBands,
+  overallQuality,
+  parseBandList,
+  parseBandSpec,
+  parseBandSpecs,
+  parseDurationSeconds,
+  parseIntField,
+  parseLteMonitor,
+  parseSignalValue,
+  REPEATED_KEY,
+  totalBandwidthMhz,
+  unprovenBands,
+  uplinkAnchor,
 } from '../lte';
 
 /**
@@ -11,9 +27,9 @@ import {
  * RouterOS 7.24 — see fixtures/lte-atl18.md. Identifiers redacted at source.
  */
 const ATL18: Record<string, string> = {
-  'status': 'running',
-  'model': 'EG18-EA',
-  'revision': 'EG18EAPAR01A14M4G',
+  status: 'running',
+  model: 'EG18-EA',
+  revision: 'EG18EAPAR01A14M4G',
   'current-operator': 'VIVACOM',
   'current-cellid': '123456',
   'enb-id': '1234',
@@ -24,13 +40,13 @@ const ATL18: Record<string, string> = {
   'primary-band': 'B1@20Mhz earfcn: 500 phy-cellid: 190',
   'ca-band': 'B3@20Mhz earfcn: 1800 phy-cellid: 190',
   'dl-modulation': '256qam',
-  'cqi': '15',
-  'ri': '2',
-  'mcs': '20',
-  'rssi': '-69dBm',
-  'rsrp': '-97dBm',
-  'rsrq': '-9dB',
-  'sinr': '17dB',
+  cqi: '15',
+  ri: '2',
+  mcs: '20',
+  rssi: '-69dBm',
+  rsrp: '-97dBm',
+  rsrq: '-9dB',
+  sinr: '17dB',
 };
 
 /**
@@ -39,7 +55,7 @@ const ATL18: Record<string, string> = {
  * attributes must survive parsing, since the *last* of them is the narrowest.
  */
 const FOUR_CARRIER: Record<string, string> = {
-  'status': 'running',
+  status: 'running',
   'data-class': 'LTE',
   'current-operator': 'VIVACOM',
   'primary-band': 'B3@20Mhz earfcn: 1800 phy-cellid: 36',
@@ -51,8 +67,13 @@ const FOUR_CARRIER: Record<string, string> = {
       'B20@10Mhz earfcn: 6300 phy-cellid: 36',
     ],
   }),
-  'rssi': '-40dBm', 'rsrp': '-70dBm', 'rsrq': '-9.0dB', 'sinr': '13dB',
-  'cqi': '14', 'ri': '2', 'mcs': '0',
+  rssi: '-40dBm',
+  rsrp: '-70dBm',
+  rsrq: '-9.0dB',
+  sinr: '13dB',
+  cqi: '14',
+  ri: '2',
+  mcs: '0',
   'session-uptime': '00:02:51',
 };
 
@@ -132,7 +153,10 @@ describe('parseBandList / formatBandList', () => {
 describe('parseBandSpec', () => {
   it('parses the captured primary band', () => {
     expect(parseBandSpec('B1@20Mhz earfcn: 500 phy-cellid: 190')).toEqual({
-      band: 1, bandwidthMhz: 20, earfcn: 500, phyCellId: 190,
+      band: 1,
+      bandwidthMhz: 20,
+      earfcn: 500,
+      phyCellId: 190,
       raw: 'B1@20Mhz earfcn: 500 phy-cellid: 190',
     });
   });
@@ -171,13 +195,13 @@ describe('parseBandSpecs — carrier aggregation', () => {
         ],
       }),
     };
-    expect(parseBandSpecs(row, 'ca-band').map(b => b.band)).toEqual([3, 7]);
+    expect(parseBandSpecs(row, 'ca-band').map((b) => b.band)).toEqual([3, 7]);
   });
 
   it('recovers carriers concatenated into one value', () => {
     const row = { 'ca-band': 'B3@20Mhz earfcn: 1800 B7@10Mhz earfcn: 3350' };
     const ca = parseBandSpecs(row, 'ca-band');
-    expect(ca.map(b => b.band)).toEqual([3, 7]);
+    expect(ca.map((b) => b.band)).toEqual([3, 7]);
     expect(ca[1].bandwidthMhz).toBe(10);
   });
 
@@ -191,7 +215,7 @@ describe('parseBandSpecs — carrier aggregation', () => {
 
   it('falls back to the plain value when the side-channel is malformed', () => {
     const row: Record<string, string> = { 'ca-band': 'B3@20Mhz', [REPEATED_KEY]: '{not json' };
-    expect(parseBandSpecs(row, 'ca-band').map(b => b.band)).toEqual([3]);
+    expect(parseBandSpecs(row, 'ca-band').map((b) => b.band)).toEqual([3]);
   });
 
   it('is empty when the modem reports no aggregation', () => {
@@ -217,7 +241,7 @@ describe('parseLteMonitor', () => {
     expect(s.mcs).toBe(20);
     expect(s.dlModulation).toBe('256qam');
     expect(s.primaryBand!.band).toBe(1);
-    expect(s.caBands.map(b => b.band)).toEqual([3]);
+    expect(s.caBands.map((b) => b.band)).toEqual([3]);
     expect(s.sessionUptimeSeconds).toBe(285479);
   });
 
@@ -239,8 +263,12 @@ describe('parseLteMonitor', () => {
 
   it('survives a modem that is registering — keys present, values blank', () => {
     const registering = parseLteMonitor({
-      'status': 'searching', 'rsrp': '', 'rsrq': '', 'sinr': '',
-      'primary-band': '', 'session-uptime': '',
+      status: 'searching',
+      rsrp: '',
+      rsrq: '',
+      sinr: '',
+      'primary-band': '',
+      'session-uptime': '',
     });
     expect(registering.status).toBe('searching');
     expect(registering.rsrp).toBeNull();
@@ -332,12 +360,12 @@ describe('detectChanges', () => {
 
   it('sees a re-registration when uptime runs backwards', () => {
     const changes = detectChanges(at({}), at({ 'session-uptime': '45s' }));
-    expect(changes.map(c => c.kind)).toContain('session-reset');
+    expect(changes.map((c) => c.kind)).toContain('session-reset');
   });
 
   it('sees a handover when the cell id changes', () => {
     const changes = detectChanges(at({}), at({ 'current-cellid': '999999' }));
-    expect(changes.map(c => c.kind)).toContain('handover');
+    expect(changes.map((c) => c.kind)).toContain('handover');
   });
 
   it('sees a band change, including one that only drops a CA carrier', () => {
@@ -345,13 +373,15 @@ describe('detectChanges', () => {
       Object.fromEntries(Object.entries(ATL18).filter(([k]) => k !== 'ca-band')),
     );
     const changes = detectChanges(at({}), dropped);
-    expect(changes.map(c => c.kind)).toEqual(['band-change']);
+    expect(changes.map((c) => c.kind)).toEqual(['band-change']);
     expect(changes[0].detail).toContain('from 1,3 to 1');
   });
 
   it('reports a reset and a handover together when the modem moves tower', () => {
-    const kinds = detectChanges(at({}), at({ 'session-uptime': '10s', 'current-cellid': '888888' }))
-      .map(c => c.kind);
+    const kinds = detectChanges(
+      at({}),
+      at({ 'session-uptime': '10s', 'current-cellid': '888888' }),
+    ).map((c) => c.kind);
     expect(kinds).toEqual(['session-reset', 'handover']);
   });
 });
@@ -374,7 +404,6 @@ describe('observedBands / unprovenBands', () => {
   });
 });
 
-
 // ── four-carrier aggregation ──────────────────────────────────────────────────
 
 describe('four-carrier capture', () => {
@@ -382,7 +411,7 @@ describe('four-carrier capture', () => {
 
   it('recovers every aggregated carrier, not just the last reported', () => {
     expect(s.primaryBand!.band).toBe(3);
-    expect(s.caBands.map(b => b.band)).toEqual([1, 7, 20]);
+    expect(s.caBands.map((b) => b.band)).toEqual([1, 7, 20]);
   });
 
   it('reports the true aggregate bandwidth', () => {
@@ -428,7 +457,10 @@ describe('uplinkAnchor', () => {
       }),
     });
     expect(uplinkAnchor(anchored)).toEqual({
-      primaryMhz: 10, primaryBand: 20, widestMhz: 20, widestBand: 1,
+      primaryMhz: 10,
+      primaryBand: 20,
+      widestMhz: 20,
+      widestBand: 1,
     });
   });
 

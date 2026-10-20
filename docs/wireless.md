@@ -45,12 +45,12 @@ over that wireless link the manager may lose contact (#294). Enabling one doesn'
 
 Bands are **−70 / −55 / −45 dBm**:
 
-| Band | Range |
-|---|---|
-| Poor | below −70 |
-| Fair | −70 to −55 |
-| Good | −55 to −45 |
-| Excellent | above −45 |
+| Band      | Range      |
+| --------- | ---------- |
+| Poor      | below −70  |
+| Fair      | −70 to −55 |
+| Good      | −55 to −45 |
+| Excellent | above −45  |
 
 An average phone drops off a network around −75 dBm and −85 is effectively the noise floor, so
 the Poor band is genuinely poor rather than merely unimpressive.

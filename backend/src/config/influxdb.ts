@@ -1,4 +1,4 @@
-import { InfluxDB, WriteApi, QueryApi } from '@influxdata/influxdb-client';
+import { InfluxDB, QueryApi, WriteApi } from '@influxdata/influxdb-client';
 
 const url = process.env.INFLUXDB_URL || 'http://influxdb:8086';
 const token = process.env.INFLUXDB_TOKEN || '';

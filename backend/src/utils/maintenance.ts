@@ -25,7 +25,10 @@ export interface MaintenanceWindowRow {
 const MAX_OCCURRENCE_MIN = 7 * 24 * 60;
 
 export function windowCovers(
-  w: MaintenanceWindowRow, deviceId: number, now: Date = new Date(), timeZone = 'UTC'
+  w: MaintenanceWindowRow,
+  deviceId: number,
+  now: Date = new Date(),
+  timeZone = 'UTC',
 ): boolean {
   if (!w.active) return false;
   const ids = w.device_ids ?? [];

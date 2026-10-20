@@ -1,13 +1,19 @@
-import { Router, Request, Response } from 'express';
-import { encryptionStatus, reencryptAll } from '../services/encryptedData';
-import { encryptionKeyInfo, encryptionKeyMissing, rotateEncryptionKey, retireOldEncryptionKeys } from '../utils/secrets';
-import { endAllSessions, forgetSessionAccount } from '../utils/sessionState';
 import bcrypt from 'bcryptjs';
+import { Request, Response, Router } from 'express';
+
 import { query, queryOne, transaction } from '../config/database';
-import { requireAuth, requireAdmin } from '../middleware/auth';
+import { requireAdmin, requireAuth } from '../middleware/auth';
+import { encryptionStatus, reencryptAll } from '../services/encryptedData';
 import { netflowCollector } from '../services/netflow/NetflowCollector';
-import { validatePassword } from '../utils/passwordPolicy';
 import { OIDC_SETTINGS_KEY } from '../services/oidc/oidcConfig';
+import { validatePassword } from '../utils/passwordPolicy';
+import {
+  encryptionKeyInfo,
+  encryptionKeyMissing,
+  retireOldEncryptionKeys,
+  rotateEncryptionKey,
+} from '../utils/secrets';
+import { endAllSessions, forgetSessionAccount } from '../utils/sessionState';
 
 const router = Router();
 router.use(requireAuth);
@@ -32,13 +38,18 @@ router.get('/', async (_req: Request, res: Response) => {
 router.put('/', requireAdmin, async (req: Request, res: Response) => {
   const updates = req.body as Record<string, unknown>;
   // Change Guard is read on every protected change; refuse values it would misread.
-  if ('change_guard_mode' in updates && !['binary', 'script'].includes(String(updates['change_guard_mode']))) {
+  if (
+    'change_guard_mode' in updates &&
+    !['binary', 'script'].includes(String(updates['change_guard_mode']))
+  ) {
     return res.status(400).json({ error: 'change_guard_mode must be binary or script.' });
   }
   if ('change_guard_timeout_sec' in updates) {
     const t = Number(updates['change_guard_timeout_sec']);
     if (!Number.isInteger(t) || t < 60 || t > 900) {
-      return res.status(400).json({ error: 'change_guard_timeout_sec must be a whole number from 60 to 900.' });
+      return res
+        .status(400)
+        .json({ error: 'change_guard_timeout_sec must be a whole number from 60 to 900.' });
     }
   }
   if ('change_guard_enabled' in updates && typeof updates['change_guard_enabled'] !== 'boolean') {
@@ -49,7 +60,7 @@ router.put('/', requireAdmin, async (req: Request, res: Response) => {
     await query(
       `INSERT INTO app_settings (key, value, updated_at) VALUES ($1, $2, NOW())
        ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
-      [key, JSON.stringify(value)]
+      [key, JSON.stringify(value)],
     );
   }
   // Apply NetFlow listener changes immediately instead of waiting for the
@@ -70,24 +81,32 @@ type SiteRoleInput = { site_id: number; role: string };
  * list means fleet-wide access, otherwise each entry names an existing site
  * and one of the three roles.
  */
-async function parseSiteRoles(raw: unknown): Promise<{ ok: true; value: SiteRoleInput[] | undefined } | { ok: false; error: string }> {
+async function parseSiteRoles(
+  raw: unknown,
+): Promise<{ ok: true; value: SiteRoleInput[] | undefined } | { ok: false; error: string }> {
   if (raw === undefined) return { ok: true, value: undefined };
   if (raw === null) return { ok: true, value: [] };
-  if (!Array.isArray(raw)) return { ok: false, error: 'site_roles must be a list of { site_id, role }' };
+  if (!Array.isArray(raw))
+    return { ok: false, error: 'site_roles must be a list of { site_id, role }' };
   const out: SiteRoleInput[] = [];
   const seen = new Set<number>();
   for (const e of raw as Array<Record<string, unknown>>) {
     const siteId = Number(e?.['site_id']);
     const role = String(e?.['role'] ?? '');
-    if (!Number.isSafeInteger(siteId) || siteId <= 0) return { ok: false, error: 'site_roles: invalid site_id' };
-    if (!['admin', 'operator', 'viewer'].includes(role)) return { ok: false, error: 'site_roles: role must be admin, operator or viewer' };
+    if (!Number.isSafeInteger(siteId) || siteId <= 0)
+      return { ok: false, error: 'site_roles: invalid site_id' };
+    if (!['admin', 'operator', 'viewer'].includes(role))
+      return { ok: false, error: 'site_roles: role must be admin, operator or viewer' };
     if (seen.has(siteId)) return { ok: false, error: 'site_roles: a site is listed twice' };
     seen.add(siteId);
     out.push({ site_id: siteId, role });
   }
   if (out.length > 0) {
-    const found = await query<{ id: number }>(`SELECT id FROM sites WHERE id = ANY($1::int[])`, [out.map((e) => e.site_id)]);
-    if (found.length !== out.length) return { ok: false, error: 'site_roles: a site does not exist' };
+    const found = await query<{ id: number }>(`SELECT id FROM sites WHERE id = ANY($1::int[])`, [
+      out.map((e) => e.site_id),
+    ]);
+    if (found.length !== out.length)
+      return { ok: false, error: 'site_roles: a site does not exist' };
   }
   return { ok: true, value: out };
 }
@@ -97,7 +116,10 @@ async function saveSiteRoles(userId: number, roles: SiteRoleInput[]): Promise<vo
   await transaction(async (client) => {
     await client.query(`DELETE FROM user_site_roles WHERE user_id = $1`, [userId]);
     for (const r of roles) {
-      await client.query(`INSERT INTO user_site_roles (user_id, site_id, role) VALUES ($1, $2, $3)`, [userId, r.site_id, r.role]);
+      await client.query(
+        `INSERT INTO user_site_roles (user_id, site_id, role) VALUES ($1, $2, $3)`,
+        [userId, r.site_id, r.role],
+      );
     }
   });
   // Applies from the user's next request, not after the session cache expires.
@@ -107,24 +129,33 @@ async function saveSiteRoles(userId: number, roles: SiteRoleInput[]): Promise<vo
 type GroupRoleInput = { group_id: number; role: string };
 
 /** Validate `group_roles` (#306) the same way as site_roles. */
-async function parseGroupRoles(raw: unknown): Promise<{ ok: true; value: GroupRoleInput[] | undefined } | { ok: false; error: string }> {
+async function parseGroupRoles(
+  raw: unknown,
+): Promise<{ ok: true; value: GroupRoleInput[] | undefined } | { ok: false; error: string }> {
   if (raw === undefined) return { ok: true, value: undefined };
   if (raw === null) return { ok: true, value: [] };
-  if (!Array.isArray(raw)) return { ok: false, error: 'group_roles must be a list of { group_id, role }' };
+  if (!Array.isArray(raw))
+    return { ok: false, error: 'group_roles must be a list of { group_id, role }' };
   const out: GroupRoleInput[] = [];
   const seen = new Set<number>();
   for (const e of raw as Array<Record<string, unknown>>) {
     const groupId = Number(e?.['group_id']);
     const role = String(e?.['role'] ?? '');
-    if (!Number.isSafeInteger(groupId) || groupId <= 0) return { ok: false, error: 'group_roles: invalid group_id' };
-    if (!['admin', 'operator', 'viewer'].includes(role)) return { ok: false, error: 'group_roles: role must be admin, operator or viewer' };
+    if (!Number.isSafeInteger(groupId) || groupId <= 0)
+      return { ok: false, error: 'group_roles: invalid group_id' };
+    if (!['admin', 'operator', 'viewer'].includes(role))
+      return { ok: false, error: 'group_roles: role must be admin, operator or viewer' };
     if (seen.has(groupId)) return { ok: false, error: 'group_roles: a group is listed twice' };
     seen.add(groupId);
     out.push({ group_id: groupId, role });
   }
   if (out.length > 0) {
-    const found = await query<{ id: number }>(`SELECT id FROM site_groups WHERE id = ANY($1::int[])`, [out.map((e) => e.group_id)]);
-    if (found.length !== out.length) return { ok: false, error: 'group_roles: a group does not exist' };
+    const found = await query<{ id: number }>(
+      `SELECT id FROM site_groups WHERE id = ANY($1::int[])`,
+      [out.map((e) => e.group_id)],
+    );
+    if (found.length !== out.length)
+      return { ok: false, error: 'group_roles: a group does not exist' };
   }
   return { ok: true, value: out };
 }
@@ -134,7 +165,10 @@ async function saveGroupRoles(userId: number, roles: GroupRoleInput[]): Promise<
   await transaction(async (client) => {
     await client.query(`DELETE FROM user_group_roles WHERE user_id = $1`, [userId]);
     for (const r of roles) {
-      await client.query(`INSERT INTO user_group_roles (user_id, group_id, role) VALUES ($1, $2, $3)`, [userId, r.group_id, r.role]);
+      await client.query(
+        `INSERT INTO user_group_roles (user_id, group_id, role) VALUES ($1, $2, $3)`,
+        [userId, r.group_id, r.role],
+      );
     }
   });
   forgetSessionAccount(userId);
@@ -181,11 +215,15 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
   const hash = await bcrypt.hash(password, 12);
   const rows = await query<{ id: number }>(
     `INSERT INTO users (username, password_hash, role) VALUES ($1,$2,$3) RETURNING id`,
-    [username, hash, role]
+    [username, hash, role],
   );
-  if (siteRoles.value && siteRoles.value.length > 0) await saveSiteRoles(rows[0].id, siteRoles.value);
-  if (groupRoles.value && groupRoles.value.length > 0) await saveGroupRoles(rows[0].id, groupRoles.value);
-  const created = await queryOne(`SELECT ${USER_COLUMNS} FROM users u WHERE u.id = $1`, [rows[0].id]);
+  if (siteRoles.value && siteRoles.value.length > 0)
+    await saveSiteRoles(rows[0].id, siteRoles.value);
+  if (groupRoles.value && groupRoles.value.length > 0)
+    await saveGroupRoles(rows[0].id, groupRoles.value);
+  const created = await queryOne(`SELECT ${USER_COLUMNS} FROM users u WHERE u.id = $1`, [
+    rows[0].id,
+  ]);
   return res.status(201).json(created);
 });
 
@@ -196,7 +234,7 @@ router.put('/users/:id', requireAdmin, async (req: Request, res: Response) => {
 
   const existing = await queryOne<{ id: number; role: string }>(
     `SELECT id, role FROM users WHERE id = $1`,
-    [userId]
+    [userId],
   );
   if (!existing) return res.status(404).json({ error: 'User not found' });
 
@@ -209,7 +247,10 @@ router.put('/users/:id', requireAdmin, async (req: Request, res: Response) => {
   const groupRoles = await parseGroupRoles(req.body.group_roles);
   if (!groupRoles.ok) return res.status(400).json({ error: groupRoles.error });
   // Nor limit yourself to particular sites or groups, which would end your fleet administration.
-  if (userId === req.user!.userId && ((siteRoles.value?.length ?? 0) > 0 || (groupRoles.value?.length ?? 0) > 0)) {
+  if (
+    userId === req.user!.userId &&
+    ((siteRoles.value?.length ?? 0) > 0 || (groupRoles.value?.length ?? 0) > 0)
+  ) {
     return res.status(400).json({ error: 'Cannot limit your own account to particular sites' });
   }
 
@@ -251,8 +292,13 @@ router.put('/users/:id', requireAdmin, async (req: Request, res: Response) => {
 async function encryptionOverview() {
   const locations = await encryptionStatus(true);
   const totals = locations.reduce(
-    (t, l) => ({ current: t.current + l.current, old: t.old + l.old, unreadable: t.unreadable + l.unreadable }),
-    { current: 0, old: 0, unreadable: 0 });
+    (t, l) => ({
+      current: t.current + l.current,
+      old: t.old + l.old,
+      unreadable: t.unreadable + l.unreadable,
+    }),
+    { current: 0, old: 0, unreadable: 0 },
+  );
   const info = encryptionKeyInfo();
   const missing = encryptionKeyMissing();
   return {
@@ -280,11 +326,18 @@ router.post('/encryption/rotate', requireAdmin, async (_req: Request, res: Respo
   try {
     const before = await encryptionStatus(true);
     if (before.some((l) => l.unreadable > 0)) {
-      return res.status(409).json({ error: 'Some stored values cannot be decrypted with any known key. Resolve that before rotating.' });
+      return res.status(409).json({
+        error:
+          'Some stored values cannot be decrypted with any known key. Resolve that before rotating.',
+      });
     }
     const { keyId: newKeyId } = rotateEncryptionKey();
     const result = await reencryptAll();
-    return res.json({ message: `Switched to key ${newKeyId} and re-encrypted ${result.rewritten} stored value(s).`, ...result, ...(await encryptionOverview()) });
+    return res.json({
+      message: `Switched to key ${newKeyId} and re-encrypted ${result.rewritten} stored value(s).`,
+      ...result,
+      ...(await encryptionOverview()),
+    });
   } catch (err) {
     return res.status(400).json({ error: (err as Error).message });
   }
@@ -293,14 +346,20 @@ router.post('/encryption/rotate', requireAdmin, async (_req: Request, res: Respo
 // POST /api/settings/encryption/reencrypt — move anything still under an older key forward.
 router.post('/encryption/reencrypt', requireAdmin, async (_req: Request, res: Response) => {
   const result = await reencryptAll();
-  res.json({ message: `Re-encrypted ${result.rewritten} stored value(s).`, ...result, ...(await encryptionOverview()) });
+  res.json({
+    message: `Re-encrypted ${result.rewritten} stored value(s).`,
+    ...result,
+    ...(await encryptionOverview()),
+  });
 });
 
 // POST /api/settings/encryption/retire — forget older keys once nothing needs them.
 router.post('/encryption/retire', requireAdmin, async (_req: Request, res: Response) => {
   const overview = await encryptionOverview();
   if (!overview.can_retire) {
-    return res.status(409).json({ error: 'Older keys are still needed, or there are none to retire.' });
+    return res
+      .status(409)
+      .json({ error: 'Older keys are still needed, or there are none to retire.' });
   }
   const dropped = retireOldEncryptionKeys();
   return res.json({ message: `Retired ${dropped} older key(s).`, ...(await encryptionOverview()) });

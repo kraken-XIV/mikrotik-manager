@@ -1,6 +1,12 @@
 import {
-  generateDeviceKeyPair, fingerprintPublicKey, isUsablePrivateKey,
-  keyComment, keyFileName, preferredAuth, keyTypeForVersion, importRejection,
+  fingerprintPublicKey,
+  generateDeviceKeyPair,
+  importRejection,
+  isUsablePrivateKey,
+  keyComment,
+  keyFileName,
+  keyTypeForVersion,
+  preferredAuth,
 } from '../sshKeys';
 
 describe('generateDeviceKeyPair', () => {
@@ -42,7 +48,8 @@ describe('generateDeviceKeyPair', () => {
   });
 
   it('never repeats a key across devices', () => {
-    const a = generateDeviceKeyPair(1), b = generateDeviceKeyPair(2);
+    const a = generateDeviceKeyPair(1),
+      b = generateDeviceKeyPair(2);
     expect(a.publicKey).not.toBe(b.publicKey);
     expect(a.fingerprint).not.toBe(b.fingerprint);
   });
@@ -93,7 +100,8 @@ describe('key comments', () => {
   it('are unique per key, not per device', () => {
     // Sharing one comment across a device's keys meant removing "the old key"
     // during a rotation removed the new one too, taking SSH with it.
-    const a = generateDeviceKeyPair(5), b = generateDeviceKeyPair(5);
+    const a = generateDeviceKeyPair(5),
+      b = generateDeviceKeyPair(5);
     expect(a.comment).not.toBe(b.comment);
     expect(a.comment.startsWith(keyComment(5))).toBe(true);
     expect(a.publicKey.trim().split(/\s+/).pop()).toBe(a.comment);
@@ -134,7 +142,9 @@ describe('importRejection', () => {
   });
 
   it('catches the CLI parse error RouterOS 6 gives for v7 menu paths', () => {
-    expect(importRejection('expected command name (line 1 column 6)')).toMatch(/expected command name/);
+    expect(importRejection('expected command name (line 1 column 6)')).toMatch(
+      /expected command name/,
+    );
     expect(importRejection('syntax error (line 1 column 20)')).toMatch(/syntax error/);
     expect(importRejection('bad command name import (line 1 column 15)')).toMatch(/bad command/);
   });

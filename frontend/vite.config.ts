@@ -35,7 +35,8 @@ export default defineConfig({
           if (!id.includes('node_modules')) return;
           if (id.includes('@xyflow/react')) return 'flow';
           if (id.includes('recharts')) return 'charts';
-          if (/[\\/]node_modules[\\/]react(-dom|-router|-router-dom)?[\\/]/.test(id)) return 'vendor';
+          if (/[\\/]node_modules[\\/]react(-dom|-router|-router-dom)?[\\/]/.test(id))
+            return 'vendor';
         },
       },
     },

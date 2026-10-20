@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { isCapsmanCertificate, isQuietCapsmanCertificate } from './capsmanCerts';
 
-const cert = (common_name: string | null, state = 'valid', name = 'cert1') => ({ name, common_name, state });
+const cert = (common_name: string | null, state = 'valid', name = 'cert1') => ({
+  name,
+  common_name,
+  state,
+});
 
 describe('CAPsMAN certificates (#197)', () => {
   it('recognises the names CAPsMAN generates', () => {
@@ -10,7 +15,7 @@ describe('CAPsMAN certificates (#197)', () => {
     expect(isCapsmanCertificate(cert('CAP-04F41CA2C45A'))).toBe(true);
     expect(isCapsmanCertificate(cert(null, 'valid', 'CAP-04F41CA2C45A'))).toBe(true);
   });
-  it('recognises the wifi package\'s names, with a WiFi- prefix', () => {
+  it("recognises the wifi package's names, with a WiFi- prefix", () => {
     // Verbatim from #197.
     expect(isCapsmanCertificate(cert('WiFi-CAPsMAN-05A36C9ACE6F'))).toBe(true);
     expect(isCapsmanCertificate(cert('WiFi-CAPsMAN-CA-DDEAFF261184'))).toBe(true);

@@ -7,13 +7,21 @@
  * RouterOS yet, NVD's entry is looked up by id for a description and score.
  */
 import { query } from '../config/database';
-import { logSafe } from '../utils/logSafe';
-import { compareRosVersions, parseRosVersion } from '../utils/rosVersion';
-import { parseReleaseNoteCves, releasePlan, releaseName, type NoteCve, type ReleaseNote } from '../utils/releaseNoteCves';
 import { parseNvdCveDetail } from '../utils/cveMatch';
+import { logSafe } from '../utils/logSafe';
+import {
+  type NoteCve,
+  parseReleaseNoteCves,
+  releaseName,
+  type ReleaseNote,
+  releasePlan,
+} from '../utils/releaseNoteCves';
+import { compareRosVersions, parseRosVersion } from '../utils/rosVersion';
 
-const NOTES_URL = (version: string) => `https://download.mikrotik.com/routeros/${version}/CHANGELOG`;
-const NVD_CVE_URL = (id: string) => `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${encodeURIComponent(id)}`;
+const NOTES_URL = (version: string) =>
+  `https://download.mikrotik.com/routeros/${version}/CHANGELOG`;
+const NVD_CVE_URL = (id: string) =>
+  `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${encodeURIComponent(id)}`;
 /** Per refresh: release notes are tiny, but a long gap shouldn't mean hundreds of requests. */
 const MAX_NOTE_FETCHES = 100;
 /** Per refresh: NVD allows 5 requests in 30 seconds without an API key. */
@@ -26,7 +34,7 @@ const plain = (v: string | null | undefined) => (v ?? '').trim().replace(/\s*\(.
 /** Is reading release notes allowed? Dark Site Mode turns it off with the changelog switch. */
 async function notesAllowed(): Promise<boolean> {
   const row = await query<{ value: unknown }>(
-    `SELECT value FROM app_settings WHERE key = 'firmware_changelog_enabled'`
+    `SELECT value FROM app_settings WHERE key = 'firmware_changelog_enabled'`,
   ).catch(() => []);
   return row[0]?.value !== false;
 }
@@ -36,7 +44,7 @@ export async function refreshReleaseNotes(): Promise<{ fetched: number; withCves
   if (!(await notesAllowed())) return { fetched: 0, withCves: 0 };
 
   const devices = await query<{ ros_version: string | null; latest_ros_version: string | null }>(
-    `SELECT ros_version, latest_ros_version FROM devices WHERE ros_version IS NOT NULL AND ros_version <> ''`
+    `SELECT ros_version, latest_ros_version FROM devices WHERE ros_version IS NOT NULL AND ros_version <> ''`,
   );
   // The newest release known per major version, from the update checks.
   const latest = new Map<number, string>();
@@ -47,9 +55,13 @@ export async function refreshReleaseNotes(): Promise<{ fetched: number; withCves
     if (!cur || compareRosVersions(v, cur) > 0) latest.set(p.parts[0], v);
   }
 
-  const known = new Map((await query<{ version: string; found: boolean; stale: boolean }>(
-    `SELECT version, found, fetched_at < NOW() - INTERVAL '20 hours' AS stale FROM ros_release_notes`
-  )).map((r) => [r.version, r]));
+  const known = new Map(
+    (
+      await query<{ version: string; found: boolean; stale: boolean }>(
+        `SELECT version, found, fetched_at < NOW() - INTERVAL '20 hours' AS stale FROM ros_release_notes`,
+      )
+    ).map((r) => [r.version, r]),
+  );
   const seen = new Map<string, 'found' | 'missing'>();
   let fetched = 0;
 
@@ -58,12 +70,21 @@ export async function refreshReleaseNotes(): Promise<{ fetched: number; withCves
     const cached = seen.get(version);
     if (cached) return cached;
     const row = known.get(version);
-    if (row?.found) { seen.set(version, 'found'); return 'found'; }
-    if (row && !row.stale) { seen.set(version, 'missing'); return 'missing'; }
+    if (row?.found) {
+      seen.set(version, 'found');
+      return 'found';
+    }
+    if (row && !row.stale) {
+      seen.set(version, 'missing');
+      return 'missing';
+    }
     if (fetched >= MAX_NOTE_FETCHES) return null;
     fetched++;
     try {
-      const res = await fetch(NOTES_URL(version), { headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(10_000) });
+      const res = await fetch(NOTES_URL(version), {
+        headers: { 'User-Agent': USER_AGENT },
+        signal: AbortSignal.timeout(10_000),
+      });
       if (res.status === 404) {
         await upsertNote(version, false, []);
         seen.set(version, 'missing');
@@ -100,19 +121,21 @@ async function upsertNote(version: string, found: boolean, cves: NoteCve[]): Pro
   await query(
     `INSERT INTO ros_release_notes (version, found, cves, fetched_at) VALUES ($1, $2, $3, NOW())
      ON CONFLICT (version) DO UPDATE SET found = EXCLUDED.found, cves = EXCLUDED.cves, fetched_at = NOW()`,
-    [version, found, JSON.stringify(cves)]
+    [version, found, JSON.stringify(cves)],
   );
 }
 
 async function countWithCves(): Promise<number> {
-  const r = await query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM ros_release_notes WHERE found AND cves <> '[]'::jsonb`);
+  const r = await query<{ n: number }>(
+    `SELECT COUNT(*)::int AS n FROM ros_release_notes WHERE found AND cves <> '[]'::jsonb`,
+  );
   return r[0]?.n ?? 0;
 }
 
 /** Release notes that name at least one CVE. */
 export async function storedReleaseNotes(): Promise<ReleaseNote[]> {
   const rows = await query<{ version: string; cves: NoteCve[] }>(
-    `SELECT version, cves FROM ros_release_notes WHERE found AND cves <> '[]'::jsonb`
+    `SELECT version, cves FROM ros_release_notes WHERE found AND cves <> '[]'::jsonb`,
   );
   return rows.map((r) => ({ version: r.version, cves: Array.isArray(r.cves) ? r.cves : [] }));
 }
@@ -131,7 +154,7 @@ export async function refreshCveDetails(): Promise<number> {
         AND NOT EXISTS (SELECT 1 FROM ros_cve_details d WHERE d.cve_id = c->>'id'
                          AND (d.score IS NOT NULL OR d.fetched_at > NOW() - INTERVAL '20 hours'))
       LIMIT $1`,
-    [MAX_DETAIL_LOOKUPS]
+    [MAX_DETAIL_LOOKUPS],
   );
   let done = 0;
   for (const [i, { id }] of due.entries()) {
@@ -148,23 +171,42 @@ export async function refreshCveDetails(): Promise<number> {
          VALUES ($1, $2, $3, $4, $5, $6, NOW())
          ON CONFLICT (cve_id) DO UPDATE SET found = EXCLUDED.found, summary = EXCLUDED.summary, score = EXCLUDED.score,
            severity = EXCLUDED.severity, published = EXCLUDED.published, fetched_at = NOW()`,
-        [id, !!d, d?.summary || null, d?.score ?? null, d?.severity ?? null, d?.published ?? null]
+        [id, !!d, d?.summary || null, d?.score ?? null, d?.severity ?? null, d?.published ?? null],
       );
       done++;
     } catch (e) {
-      console.warn(`[releaseNotes] NVD lookup of ${logSafe(id)} failed: ${logSafe((e as Error).message)}`);
+      console.warn(
+        `[releaseNotes] NVD lookup of ${logSafe(id)} failed: ${logSafe((e as Error).message)}`,
+      );
     }
   }
   return done;
 }
 
-export interface CveDetail { summary: string | null; score: number | null; severity: string | null; published: string | null }
+export interface CveDetail {
+  summary: string | null;
+  score: number | null;
+  severity: string | null;
+  published: string | null;
+}
 
 export async function storedCveDetails(): Promise<Map<string, CveDetail>> {
-  const rows = await query<{ cve_id: string; summary: string | null; score: string | null; severity: string | null; published: string | null }>(
-    `SELECT cve_id, summary, score, severity, published FROM ros_cve_details WHERE found`
+  const rows = await query<{
+    cve_id: string;
+    summary: string | null;
+    score: string | null;
+    severity: string | null;
+    published: string | null;
+  }>(`SELECT cve_id, summary, score, severity, published FROM ros_cve_details WHERE found`);
+  return new Map(
+    rows.map((r) => [
+      r.cve_id,
+      {
+        summary: r.summary,
+        score: r.score === null ? null : Number(r.score),
+        severity: r.severity,
+        published: r.published,
+      },
+    ]),
   );
-  return new Map(rows.map((r) => [r.cve_id, {
-    summary: r.summary, score: r.score === null ? null : Number(r.score), severity: r.severity, published: r.published,
-  }]));
 }

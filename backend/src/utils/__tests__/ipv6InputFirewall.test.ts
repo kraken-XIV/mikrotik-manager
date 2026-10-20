@@ -5,14 +5,18 @@ const linkLocal = { address: 'fe80::1/64', interface: 'ether1' };
 
 describe('IPv6 input firewall check (#312)', () => {
   it('flags routable IPv6 with no input drop', () => {
-    expect(missingIpv6InputFirewall([global6, linkLocal], [{ chain: 'forward', action: 'drop' }])).toBe(true);
+    expect(
+      missingIpv6InputFirewall([global6, linkLocal], [{ chain: 'forward', action: 'drop' }]),
+    ).toBe(true);
   });
   it('is satisfied by an enabled input drop or reject', () => {
     expect(missingIpv6InputFirewall([global6], [{ chain: 'input', action: 'drop' }])).toBe(false);
     expect(missingIpv6InputFirewall([global6], [{ chain: 'input', action: 'reject' }])).toBe(false);
   });
   it('a disabled rule does not count', () => {
-    expect(missingIpv6InputFirewall([global6], [{ chain: 'input', action: 'drop', disabled: 'true' }])).toBe(true);
+    expect(
+      missingIpv6InputFirewall([global6], [{ chain: 'input', action: 'drop', disabled: 'true' }]),
+    ).toBe(true);
   });
   it('link-local only, or disabled addresses, are not flagged', () => {
     expect(missingIpv6InputFirewall([linkLocal], [])).toBe(false);

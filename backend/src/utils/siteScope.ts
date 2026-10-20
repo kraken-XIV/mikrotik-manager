@@ -48,7 +48,9 @@ export type SiteScope = number | number[] | null;
  * nothing rather than everything.
  */
 function siteMatch(scope: number | number[]): string {
-  const ids = (Array.isArray(scope) ? scope : [scope]).filter((n) => Number.isSafeInteger(n) && n > 0);
+  const ids = (Array.isArray(scope) ? scope : [scope]).filter(
+    (n) => Number.isSafeInteger(n) && n > 0,
+  );
   if (ids.length === 0) return 'IN (NULL)';
   return ids.length === 1 ? `= ${ids[0]}` : `IN (${ids.join(', ')})`;
 }
@@ -114,7 +116,7 @@ export function andSite(base: string, predicate: string | null): string {
 export function clientSeriesTag(
   siteId: number | null,
   devicesInSite: number,
-  devicesTotal: number
+  devicesTotal: number,
 ): string {
   if (siteId === null) return '_global';
   if (devicesTotal > 0 && devicesInSite === devicesTotal) return '_global';

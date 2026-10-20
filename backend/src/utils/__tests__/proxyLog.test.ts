@@ -9,9 +9,17 @@ describe('parseProxyLog', () => {
   it('parses a successful request', () => {
     const r = parseProxyLog(T, ok)!;
     expect(r).toMatchObject({
-      source: '3proxy', proxyType: 'PROXY', proxyPort: 3128, clientIp: '104.28.237.72',
-      serverIp: '163.181.201.192', serverPort: 443, authUser: 'stylebnm@123',
-      hostname: 'mall-i10.xhscdn.com', method: 'CONNECT', bytesSent: 1630, bytesReceived: 4511,
+      source: '3proxy',
+      proxyType: 'PROXY',
+      proxyPort: 3128,
+      clientIp: '104.28.237.72',
+      serverIp: '163.181.201.192',
+      serverPort: 443,
+      authUser: 'stylebnm@123',
+      hostname: 'mall-i10.xhscdn.com',
+      method: 'CONNECT',
+      bytesSent: 1630,
+      bytesReceived: 4511,
       status: 'ok',
     });
     expect(r.eventTime.getTime()).toBe(1790665930 * 1000);
@@ -26,7 +34,12 @@ describe('parseProxyLog', () => {
 
   it('parses SOCKS and drops the placeholder hostname', () => {
     const r = parseProxyLog(T, socks)!;
-    expect(r).toMatchObject({ proxyType: 'SOCKS', proxyPort: 1080, status: 'denied', hostname: null });
+    expect(r).toMatchObject({
+      proxyType: 'SOCKS',
+      proxyPort: 1080,
+      status: 'denied',
+      hostname: null,
+    });
   });
 
   it('does not depend on the container name', () => {
@@ -41,7 +54,9 @@ describe('parseProxyLog', () => {
   it('accepts bare JSON and a JSON shape without proxy.type', () => {
     const bare = ok.slice(ok.indexOf('{'));
     expect(parseProxyLog(T, bare)!.source).toBe('proxy');
-    expect(parseProxyLog(T, 'x: {"time_unix":1790665930,"client":{"ip":"1.2.3.4"}}')!.proxyType).toBe('UNKNOWN');
+    expect(
+      parseProxyLog(T, 'x: {"time_unix":1790665930,"client":{"ip":"1.2.3.4"}}')!.proxyType,
+    ).toBe('UNKNOWN');
   });
 
   it('requires the container,info,debug topics in any order', () => {

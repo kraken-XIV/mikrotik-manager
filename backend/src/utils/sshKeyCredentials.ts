@@ -41,10 +41,12 @@ export function resolveKeyCredentials(d: KeyCredentialInput): KeyCredentials {
   const apiUser = t(d.api_username);
   const apiPass = d.api_password_encrypted || '';
 
-  if (sshUser && sshPass) return { ok: true, username: sshUser, passwordEncrypted: sshPass, source: 'ssh' };
+  if (sshUser && sshPass)
+    return { ok: true, username: sshUser, passwordEncrypted: sshPass, source: 'ssh' };
 
   if (!sshUser && !sshPass) {
-    if (apiUser && apiPass) return { ok: true, username: apiUser, passwordEncrypted: apiPass, source: 'api' };
+    if (apiUser && apiPass)
+      return { ok: true, username: apiUser, passwordEncrypted: apiPass, source: 'api' };
     return { ok: false, reason: 'No SSH or API login stored for this device.' };
   }
 
@@ -54,12 +56,16 @@ export function resolveKeyCredentials(d: KeyCredentialInput): KeyCredentials {
     }
     return {
       ok: false,
-      reason: `SSH username "${sshUser}" has no SSH password, and it is not the API user. ` +
-              'Add the SSH password, or clear the SSH username to use the API login.',
+      reason:
+        `SSH username "${sshUser}" has no SSH password, and it is not the API user. ` +
+        'Add the SSH password, or clear the SSH username to use the API login.',
     };
   }
 
-  return { ok: false, reason: 'An SSH password is stored without an SSH username. Add the username.' };
+  return {
+    ok: false,
+    reason: 'An SSH password is stored without an SSH username. Add the username.',
+  };
 }
 
 export interface KeyTargetRow extends KeyCredentialInput {

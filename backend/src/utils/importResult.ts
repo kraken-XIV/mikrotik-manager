@@ -36,7 +36,8 @@ export function parseImportOutput(output: string, script: string): ImportResult 
 
   // The first "(<command>; line N)" is the failing line of the backup; a later
   // "(:import; line 1)" is the position of the /import command itself.
-  const m = text.match(/\((?!:import;)[^;()]*;\s*line (\d+)\)/) ?? text.match(/line (\d+)(?: column \d+)?/);
+  const m =
+    text.match(/\((?!:import;)[^;()]*;\s*line (\d+)\)/) ?? text.match(/line (\d+)(?: column \d+)?/);
   const failedLine = m ? parseInt(m[1], 10) : undefined;
   const error = cleanError(text);
 
@@ -52,7 +53,11 @@ export function parseImportOutput(output: string, script: string): ImportResult 
 
 /** The error message without the position suffixes RouterOS appends. */
 function cleanError(text: string): string {
-  const line = text.split('\n').map((l) => l.trim()).find((l) => l) ?? text;
+  const line =
+    text
+      .split('\n')
+      .map((l) => l.trim())
+      .find((l) => l) ?? text;
   return line
     .replace(/^Script Error:\s*/i, '')
     .replace(/\s*\([^()]*;\s*line \d+\)/g, '')
@@ -76,7 +81,12 @@ export function countCommandsBefore(script: string, line: number): number {
     if (isContinuation || !l || l.startsWith('#')) continue;
     // A bare path like `/ip address` only selects a menu. A whole-word verb or
     // an `=` makes it a command (`/system identity set name=x`).
-    if (l.startsWith('/') && !l.includes('=') && !/\s(add|set|remove|unset|enable|disable|move)(\s|$)/.test(l)) continue;
+    if (
+      l.startsWith('/') &&
+      !l.includes('=') &&
+      !/\s(add|set|remove|unset|enable|disable|move)(\s|$)/.test(l)
+    )
+      continue;
     count++;
   }
   return count;

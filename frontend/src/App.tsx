@@ -1,44 +1,45 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
-import { useAuthStore } from './store/authStore';
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
+
 import AppLayout from './components/layout/AppLayout';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import SitesPage from './pages/SitesPage';
 import SiteLanding from './components/SiteLanding';
-import DevicesPage from './pages/DevicesPage';
-import DeviceDetailPage from './pages/DeviceDetailPage';
+import BackupsPage from './pages/BackupsPage';
+import CertificatesPage from './pages/CertificatesPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import ClientDetailPage from './pages/ClientDetailPage';
 import ClientsPage from './pages/ClientsPage';
+import CommandsPage from './pages/CommandsPage';
+import CredentialsPage from './pages/CredentialsPage';
+import DashboardPage from './pages/DashboardPage';
+import DeviceDetailPage from './pages/DeviceDetailPage';
+import DevicesPage from './pages/DevicesPage';
 import EventsPage from './pages/EventsPage';
 import FirewallEventsPage from './pages/FirewallEventsPage';
-import TopologyPage from './pages/TopologyPage';
-import BackupsPage from './pages/BackupsPage';
-import FirmwarePage from './pages/FirmwarePage';
 import FirmwareHistoryPage from './pages/FirmwareHistoryPage';
 import FirmwareMirrorPage from './pages/FirmwareMirrorPage';
-import UserManagerPage from './pages/UserManagerPage';
-import CredentialsPage from './pages/CredentialsPage';
-import CertificatesPage from './pages/CertificatesPage';
-import CommandsPage from './pages/CommandsPage';
-import TemplatesPage from './pages/TemplatesPage';
-import SettingsPage from './pages/SettingsPage';
-import OidcCallbackPage from './pages/OidcCallbackPage';
-import WirelessPage from './pages/WirelessPage';
-import WirelessSettingsPage from './pages/WirelessSettingsPage';
+import FirmwarePage from './pages/FirmwarePage';
 import GuestWifiPage from './pages/GuestWifiPage';
-import ClientDetailPage from './pages/ClientDetailPage';
-import NetworkServicesOverviewPage from './pages/NetworkServicesOverviewPage';
+import LoginPage from './pages/LoginPage';
 import NetworkServicesDHCPPage from './pages/NetworkServicesDHCPPage';
+import NetworkServicesDiscoveryPage from './pages/NetworkServicesDiscoveryPage';
 import NetworkServicesDNSPage from './pages/NetworkServicesDNSPage';
+import NetworkServicesNetflowPage from './pages/NetworkServicesNetflowPage';
 import NetworkServicesNTPPage from './pages/NetworkServicesNTPPage';
-import NetworkServicesWireGuardPage from './pages/NetworkServicesWireGuardPage';
+import NetworkServicesOverviewPage from './pages/NetworkServicesOverviewPage';
 import NetworkServicesRoutingPage from './pages/NetworkServicesRoutingPage';
 import NetworkServicesSyslogPage from './pages/NetworkServicesSyslogPage';
-import NetworkServicesNetflowPage from './pages/NetworkServicesNetflowPage';
-import NetworkServicesDiscoveryPage from './pages/NetworkServicesDiscoveryPage';
-import TrafficAnalyticsPage from './pages/TrafficAnalyticsPage';
+import NetworkServicesWireGuardPage from './pages/NetworkServicesWireGuardPage';
+import OidcCallbackPage from './pages/OidcCallbackPage';
 import SecurityPage from './pages/SecurityPage';
-import ChangePasswordPage from './pages/ChangePasswordPage';
+import SettingsPage from './pages/SettingsPage';
+import SitesPage from './pages/SitesPage';
+import TemplatesPage from './pages/TemplatesPage';
+import TopologyPage from './pages/TopologyPage';
+import TrafficAnalyticsPage from './pages/TrafficAnalyticsPage';
+import UserManagerPage from './pages/UserManagerPage';
+import WirelessPage from './pages/WirelessPage';
+import WirelessSettingsPage from './pages/WirelessSettingsPage';
+import { useAuthStore } from './store/authStore';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -56,7 +57,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
  */
 function KeyedByParam({ param, children }: { param: string; children: React.ReactElement }) {
   const params = useParams();
-  return <React.Fragment key={new Map(Object.entries(params)).get(param) ?? ''}>{children}</React.Fragment>;
+  return (
+    <React.Fragment key={new Map(Object.entries(params)).get(param) ?? ''}>
+      {children}
+    </React.Fragment>
+  );
 }
 
 export default function App() {
@@ -77,9 +82,23 @@ export default function App() {
           <Route index element={<SiteLanding />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="devices" element={<DevicesPage />} />
-          <Route path="devices/:id" element={<KeyedByParam param="id"><DeviceDetailPage /></KeyedByParam>} />
+          <Route
+            path="devices/:id"
+            element={
+              <KeyedByParam param="id">
+                <DeviceDetailPage />
+              </KeyedByParam>
+            }
+          />
           <Route path="clients" element={<ClientsPage />} />
-          <Route path="clients/:mac" element={<KeyedByParam param="mac"><ClientDetailPage /></KeyedByParam>} />
+          <Route
+            path="clients/:mac"
+            element={
+              <KeyedByParam param="mac">
+                <ClientDetailPage />
+              </KeyedByParam>
+            }
+          />
           <Route path="events" element={<EventsPage />} />
           <Route path="firewall-events" element={<FirewallEventsPage />} />
           <Route path="topology" element={<TopologyPage />} />
@@ -95,10 +114,19 @@ export default function App() {
           <Route path="settings" element={<SettingsPage />} />
           {/* Legacy routes — consolidated in the v0.16.4 UI reorganization */}
           <Route path="switches" element={<Navigate to="/devices?type=SW" replace />} />
-          <Route path="switches/settings" element={<Navigate to="/network-services/discovery" replace />} />
+          <Route
+            path="switches/settings"
+            element={<Navigate to="/network-services/discovery" replace />}
+          />
           <Route path="routers" element={<Navigate to="/devices?type=RTR" replace />} />
-          <Route path="routers/settings" element={<Navigate to="/network-services/discovery" replace />} />
-          <Route path="wireless/clients" element={<Navigate to="/clients?type=wireless" replace />} />
+          <Route
+            path="routers/settings"
+            element={<Navigate to="/network-services/discovery" replace />}
+          />
+          <Route
+            path="wireless/clients"
+            element={<Navigate to="/clients?type=wireless" replace />}
+          />
           <Route path="wireless" element={<WirelessPage />} />
           <Route path="wireless/settings" element={<WirelessSettingsPage />} />
           <Route path="wireless/guest" element={<GuestWifiPage />} />

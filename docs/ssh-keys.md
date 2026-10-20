@@ -48,7 +48,7 @@ leaving a device demanding a credential nobody holds.
 
 ## Rotation
 
-Rotation authenticates with the *existing* key, because the password is no longer an
+Rotation authenticates with the _existing_ key, because the password is no longer an
 option once a key is installed. The replacement is deployed and proved before the old key
 is removed — removing first would leave a window in which neither works.
 
@@ -59,7 +59,7 @@ Each key carries a unique comment, so retiring one cannot remove another.
 **The binary API is the recovery path**, not the password. It is unaffected by SSH key
 state and can remove a key at any time.
 
-Revoking clears *every* key this manager has installed for a device, not only the one on
+Revoking clears _every_ key this manager has installed for a device, not only the one on
 record. Orphans left by a half-failed rotation would otherwise keep password SSH disabled
 with no way back through the product.
 
@@ -95,12 +95,12 @@ written to the audit log.
 
 API, all admin-only:
 
-| Method | Path | |
-|---|---|---|
-| `GET` | `/api/ssh-keys/fleet/preview?tag_ids=1,2` | What a run would do |
-| `POST` | `/api/ssh-keys/fleet/jobs` | `{"device_ids": [...], "confirm": true}` |
-| `GET` | `/api/ssh-keys/fleet/jobs/:id` | Progress and per-device results |
-| `POST` | `/api/ssh-keys/fleet/jobs/:id/cancel` | Stops before the next device |
+| Method | Path                                      |                                          |
+| ------ | ----------------------------------------- | ---------------------------------------- |
+| `GET`  | `/api/ssh-keys/fleet/preview?tag_ids=1,2` | What a run would do                      |
+| `POST` | `/api/ssh-keys/fleet/jobs`                | `{"device_ids": [...], "confirm": true}` |
+| `GET`  | `/api/ssh-keys/fleet/jobs/:id`            | Progress and per-device results          |
+| `POST` | `/api/ssh-keys/fleet/jobs/:id/cancel`     | Stops before the next device             |
 
 The older `POST /api/devices/ssh-keys/deploy-all` still works, with the same rules, but it
 runs inside one request and times out on large fleets.
@@ -110,5 +110,5 @@ runs inside one request and times out on large fleets.
 Backups and config export prefer a verified key where one exists and fall back to a
 password otherwise. [Bulk commands](commands.md) use the same resolution.
 
-Only a *verified* key is used. One that was generated or pushed but never authenticated is
+Only a _verified_ key is used. One that was generated or pushed but never authenticated is
 not evidence the device will accept it.

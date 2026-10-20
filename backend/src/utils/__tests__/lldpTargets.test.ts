@@ -1,4 +1,4 @@
-import { parseDeviceTypes, LLDP_DEVICE_TYPES } from '../lldpTargets';
+import { LLDP_DEVICE_TYPES, parseDeviceTypes } from '../lldpTargets';
 
 describe('parseDeviceTypes', () => {
   it('means every type, access points included, when omitted', () => {

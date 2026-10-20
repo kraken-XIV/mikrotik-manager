@@ -65,7 +65,7 @@ export function selectNewLogLines(
     lastStoredId: number;
     latestStoredTime: Date;
     parseTime: (raw: string) => Date;
-  }
+  },
 ): RawLogLine[] {
   const ids = logs.map((l) => parseRosId(l['.id'])).filter((n) => n > 0);
   const currentMax = ids.length ? Math.max(...ids) : 0;
@@ -109,7 +109,7 @@ export function surrogateLogId(time: string, topics: string, message: string): s
     .update(`${time}\u0000${topics}\u0000${message}`)
     .digest('hex')
     .slice(0, 16);
-  return `#${hash}`;           // 17 chars, inside the column's VARCHAR(20)
+  return `#${hash}`; // 17 chars, inside the column's VARCHAR(20)
 }
 
 /**
@@ -122,7 +122,10 @@ export function surrogateLogId(time: string, topics: string, message: string): s
  * the column's VARCHAR(20).
  */
 export function storedLogId(rosId: string, time: string, topics: string, message: string): string {
-  const hash = createHash('sha256').update(`${time}\u0000${topics}\u0000${message}`).digest('hex').slice(0, 8);
+  const hash = createHash('sha256')
+    .update(`${time}\u0000${topics}\u0000${message}`)
+    .digest('hex')
+    .slice(0, 8);
   return `${rosId.slice(0, 9)}~${hash}`;
 }
 

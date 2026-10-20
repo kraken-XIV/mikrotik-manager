@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import ReviewChangesButton from '../common/ReviewChangesButton';
-import { LockoutVerdictDialog, lockoutVerdictOf, type LockoutVerdict } from '../ChangeGuardDialog';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, AlertCircle, RefreshCw } from 'lucide-react';
-import { devicesApi } from '../../services/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
+import { AlertCircle, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { devicesApi } from '../../services/api';
+import { type LockoutVerdict, LockoutVerdictDialog, lockoutVerdictOf } from '../ChangeGuardDialog';
+import ReviewChangesButton from '../common/ReviewChangesButton';
 
 // ─── Extended devicesApi type (routing protocol methods added at runtime) ──────
 const dApi = devicesApi as typeof devicesApi & {
@@ -31,27 +32,35 @@ type SubTab = (typeof SUB_TABS)[number];
 
 // ─── Reusable helpers ─────────────────────────────────────────────────────────
 function errMsg(err: unknown) {
-  return (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Operation failed';
+  return (
+    (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+    'Operation failed'
+  );
 }
 
 function KVTable({ rows }: { rows: Record<string, string>[] }) {
   if (!rows.length) return <Empty text="No entries." />;
-  const keys = Object.keys(rows[0]).filter(k => k !== '.id');
+  const keys = Object.keys(rows[0]).filter((k) => k !== '.id');
   return (
     <div className="card overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-            {keys.map(k => (
-              <th key={k} className="table-header px-4 py-2.5 text-left">{k}</th>
+            {keys.map((k) => (
+              <th key={k} className="table-header px-4 py-2.5 text-left">
+                {k}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
           {rows.map((r, i) => (
             <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-              {keys.map(k => (
-                <td key={k} className="px-4 py-2.5 font-mono text-xs text-gray-700 dark:text-slate-300">
+              {keys.map((k) => (
+                <td
+                  key={k}
+                  className="px-4 py-2.5 font-mono text-xs text-gray-700 dark:text-slate-300"
+                >
                   {String(r[k] ?? '')}
                 </td>
               ))}
@@ -67,11 +76,23 @@ function Empty({ text }: { text: string }) {
   return <p className="text-center py-8 text-gray-400 dark:text-slate-500">{text}</p>;
 }
 
-function SectionHeader({ title, onRefresh, isFetching }: { title: string; onRefresh: () => void; isFetching: boolean }) {
+function SectionHeader({
+  title,
+  onRefresh,
+  isFetching,
+}: {
+  title: string;
+  onRefresh: () => void;
+  isFetching: boolean;
+}) {
   return (
     <div className="flex items-center justify-between mb-4">
       <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
-      <button onClick={onRefresh} disabled={isFetching} className="btn-secondary flex items-center gap-1.5 text-xs py-1.5">
+      <button
+        onClick={onRefresh}
+        disabled={isFetching}
+        className="btn-secondary flex items-center gap-1.5 text-xs py-1.5"
+      >
         <RefreshCw className={clsx('w-3.5 h-3.5', isFetching && 'animate-spin')} /> Refresh
       </button>
     </div>
@@ -83,32 +104,46 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
   const queryClient = useQueryClient();
   const canWrite = useCanWrite();
 
-  const { data: routes = [], isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: routes = [],
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ['routing', deviceId],
-    queryFn: () => devicesApi.getRouting(deviceId).then(r => r.data),
+    queryFn: () => devicesApi.getRouting(deviceId).then((r) => r.data),
   });
 
   const { data: tableRows = [] } = useQuery({
     queryKey: ['routing-tables', deviceId],
-    queryFn: () => dApi.getRoutingTables(deviceId).then(r => r.data),
+    queryFn: () => dApi.getRoutingTables(deviceId).then((r) => r.data),
   });
   const [tableFilter, setTableFilter] = useState('all');
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ dst_address: '', gateway: '', distance: '1', comment: '', routing_table: '' });
+  const [form, setForm] = useState({
+    dst_address: '',
+    gateway: '',
+    distance: '1',
+    comment: '',
+    routing_table: '',
+  });
   const [addError, setAddError] = useState('');
   const [deleteError, setDeleteError] = useState('');
   // 409 + verdict from the lockout predictor, with the retry that confirms it.
-  const [lockout, setLockout] = useState<{ verdict: LockoutVerdict; retry: () => void } | null>(null);
+  const [lockout, setLockout] = useState<{ verdict: LockoutVerdict; retry: () => void } | null>(
+    null,
+  );
 
-  const addRequest = (confirm: boolean) => devicesApi.addRoute(deviceId, {
-    dst_address: form.dst_address,
-    gateway: form.gateway,
-    distance: form.distance ? parseInt(form.distance, 10) : undefined,
-    comment: form.comment || undefined,
-    // Blank = the device default (main); sent only when a table was picked.
-    ...(form.routing_table ? { routing_table: form.routing_table } : {}),
-    ...(confirm ? { confirm_lockout: true } : {}),
-  });
+  const addRequest = (confirm: boolean) =>
+    devicesApi.addRoute(deviceId, {
+      dst_address: form.dst_address,
+      gateway: form.gateway,
+      distance: form.distance ? parseInt(form.distance, 10) : undefined,
+      comment: form.comment || undefined,
+      // Blank = the device default (main); sent only when a table was picked.
+      ...(form.routing_table ? { routing_table: form.routing_table } : {}),
+      ...(confirm ? { confirm_lockout: true } : {}),
+    });
   const addMutation = useMutation({
     mutationFn: addRequest,
     onSuccess: () => {
@@ -120,7 +155,10 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
     },
     onError: (err: unknown) => {
       const verdict = lockoutVerdictOf(err);
-      if (verdict) { setLockout({ verdict, retry: () => addMutation.mutate(true) }); return; }
+      if (verdict) {
+        setLockout({ verdict, retry: () => addMutation.mutate(true) });
+        return;
+      }
       setAddError(errMsg(err));
     },
   });
@@ -136,7 +174,10 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
     onError: (err: unknown, vars) => {
       const verdict = lockoutVerdictOf(err);
       if (verdict) {
-        setLockout({ verdict, retry: () => deleteMutation.mutate({ routeId: vars.routeId, confirm: true }) });
+        setLockout({
+          verdict,
+          retry: () => deleteMutation.mutate({ routeId: vars.routeId, confirm: true }),
+        });
         return;
       }
       setDeleteError(errMsg(err));
@@ -148,14 +189,18 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
 
   const tableOf = (r: Record<string, string>) => r['routing-table'] || 'main';
   const typeOf = (r: Record<string, string>) =>
-    r['blackhole'] === 'true' ? 'blackhole' : (r['type'] && r['type'] !== 'unicast' ? r['type'] : '');
+    r['blackhole'] === 'true' ? 'blackhole' : r['type'] && r['type'] !== 'unicast' ? r['type'] : '';
   // Tables the device defines, plus any a route names that the table list doesn't.
-  const tableNames = Array.from(new Set([
-    'main',
-    ...tableRows.map(t => t['name']).filter(Boolean),
-    ...(routes as Record<string, string>[]).map(tableOf),
-  ])).sort((a, b) => (a === 'main' ? -1 : b === 'main' ? 1 : a.localeCompare(b)));
-  const shownRoutes = (routes as Record<string, string>[]).filter(r => tableFilter === 'all' || tableOf(r) === tableFilter);
+  const tableNames = Array.from(
+    new Set([
+      'main',
+      ...tableRows.map((t) => t['name']).filter(Boolean),
+      ...(routes as Record<string, string>[]).map(tableOf),
+    ]),
+  ).sort((a, b) => (a === 'main' ? -1 : b === 'main' ? 1 : a.localeCompare(b)));
+  const shownRoutes = (routes as Record<string, string>[]).filter(
+    (r) => tableFilter === 'all' || tableOf(r) === tableFilter,
+  );
 
   if (isLoading) return <div className="text-center py-8 text-gray-400">Loading...</div>;
 
@@ -163,22 +208,42 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <select className="input text-sm py-1" value={tableFilter} onChange={e => setTableFilter(e.target.value)} aria-label="Filter by routing table">
+          <select
+            className="input text-sm py-1"
+            value={tableFilter}
+            onChange={(e) => setTableFilter(e.target.value)}
+            aria-label="Filter by routing table"
+          >
             <option value="all">All tables</option>
-            {tableNames.map(t => <option key={t} value={t}>{t}</option>)}
+            {tableNames.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
           {deleteError && (
             <span className="text-sm text-red-500 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />{deleteError}
+              <AlertCircle className="w-4 h-4" />
+              {deleteError}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => refetch()} disabled={isFetching} className="btn-secondary flex items-center gap-2 text-sm">
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="btn-secondary flex items-center gap-2 text-sm"
+          >
             <RefreshCw className={clsx('w-3.5 h-3.5', isFetching && 'animate-spin')} /> Refresh
           </button>
           {canWrite && (
-            <button onClick={() => { setShowAdd(!showAdd); setAddError(''); }} className="btn-primary flex items-center gap-2 text-sm">
+            <button
+              onClick={() => {
+                setShowAdd(!showAdd);
+                setAddError('');
+              }}
+              className="btn-primary flex items-center gap-2 text-sm"
+            >
               <Plus className="w-4 h-4" /> Add Route
             </button>
           )}
@@ -189,28 +254,87 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
         <div className="card p-4 space-y-3">
           <h4 className="text-sm font-semibold text-gray-900 dark:text-white">New Static Route</h4>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <div><label className="label">Routing table</label>
-              <select className="input" value={form.routing_table} onChange={e => setForm(f => ({ ...f, routing_table: e.target.value }))}>
+            <div>
+              <label className="label">Routing table</label>
+              <select
+                className="input"
+                value={form.routing_table}
+                onChange={(e) => setForm((f) => ({ ...f, routing_table: e.target.value }))}
+              >
                 <option value="">main (default)</option>
-                {tableNames.filter(t => t !== 'main').map(t => <option key={t} value={t}>{t}</option>)}
-              </select></div>
-            <div><label className="label">Destination (CIDR)</label>
-              <input className="input font-mono" value={form.dst_address} onChange={e => setForm(f => ({ ...f, dst_address: e.target.value }))} placeholder="0.0.0.0/0" /></div>
-            <div><label className="label">Gateway</label>
-              <input className="input font-mono" value={form.gateway} onChange={e => setForm(f => ({ ...f, gateway: e.target.value }))} placeholder="192.168.1.1" /></div>
-            <div><label className="label">Distance</label>
-              <input type="number" className="input" value={form.distance} onChange={e => setForm(f => ({ ...f, distance: e.target.value }))} min={1} max={255} /></div>
-            <div><label className="label">Comment</label>
-              <input className="input" value={form.comment} onChange={e => setForm(f => ({ ...f, comment: e.target.value }))} placeholder="Optional" /></div>
+                {tableNames
+                  .filter((t) => t !== 'main')
+                  .map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Destination (CIDR)</label>
+              <input
+                className="input font-mono"
+                value={form.dst_address}
+                onChange={(e) => setForm((f) => ({ ...f, dst_address: e.target.value }))}
+                placeholder="0.0.0.0/0"
+              />
+            </div>
+            <div>
+              <label className="label">Gateway</label>
+              <input
+                className="input font-mono"
+                value={form.gateway}
+                onChange={(e) => setForm((f) => ({ ...f, gateway: e.target.value }))}
+                placeholder="192.168.1.1"
+              />
+            </div>
+            <div>
+              <label className="label">Distance</label>
+              <input
+                type="number"
+                className="input"
+                value={form.distance}
+                onChange={(e) => setForm((f) => ({ ...f, distance: e.target.value }))}
+                min={1}
+                max={255}
+              />
+            </div>
+            <div>
+              <label className="label">Comment</label>
+              <input
+                className="input"
+                value={form.comment}
+                onChange={(e) => setForm((f) => ({ ...f, comment: e.target.value }))}
+                placeholder="Optional"
+              />
+            </div>
           </div>
-          {addError && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{addError}</div>}
+          {addError && (
+            <div className="flex items-center gap-2 text-sm text-red-500">
+              <AlertCircle className="w-4 h-4" />
+              {addError}
+            </div>
+          )}
           <div className="flex gap-2">
-            <button onClick={() => addMutation.mutate(false)} disabled={!form.dst_address || !form.gateway || addMutation.isPending} className="btn-primary flex items-center gap-2 text-sm">
-              {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add Route
+            <button
+              onClick={() => addMutation.mutate(false)}
+              disabled={!form.dst_address || !form.gateway || addMutation.isPending}
+              className="btn-primary flex items-center gap-2 text-sm"
+            >
+              {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add
+              Route
             </button>
-            <ReviewChangesButton request={() => addRequest(false)} onApply={() => addMutation.mutate(false)} applyLabel="Add Route"
-              deviceName={deviceName} disabled={!form.dst_address || !form.gateway || addMutation.isPending} />
-            <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">Cancel</button>
+            <ReviewChangesButton
+              request={() => addRequest(false)}
+              onApply={() => addMutation.mutate(false)}
+              applyLabel="Add Route"
+              deviceName={deviceName}
+              disabled={!form.dst_address || !form.gateway || addMutation.isPending}
+            />
+            <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -240,29 +364,59 @@ function RoutesSubTab({ deviceId, deviceName }: { deviceId: number; deviceName?:
                 const routeId = r['.id'] || '';
                 return (
                   <tr key={routeId || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-mono text-gray-900 dark:text-white">{r['dst-address'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{r['gateway'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{r['interface'] || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono text-gray-900 dark:text-white">
+                      {r['dst-address'] || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">
+                      {r['gateway'] || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">
+                      {r['interface'] || '—'}
+                    </td>
                     <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">
                       {tableOf(r)}
-                      {r['vrf-interface'] && <span className="ml-1 text-xs text-gray-400 dark:text-slate-500">({r['vrf-interface']})</span>}
+                      {r['vrf-interface'] && (
+                        <span className="ml-1 text-xs text-gray-400 dark:text-slate-500">
+                          ({r['vrf-interface']})
+                        </span>
+                      )}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{r['distance'] || '—'}</td>
+                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
+                      {r['distance'] || '—'}
+                    </td>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-1.5">
-                        <span className={clsx('text-xs font-medium', active ? 'text-green-600 dark:text-green-400' : 'text-gray-400')}>
+                        <span
+                          className={clsx(
+                            'text-xs font-medium',
+                            active ? 'text-green-600 dark:text-green-400' : 'text-gray-400',
+                          )}
+                        >
                           {active ? 'Active' : 'Inactive'}
                         </span>
-                        {dynamic && <span className="text-xs text-gray-400 dark:text-slate-500">(dynamic)</span>}
-                        {rtype && <span className="text-xs font-medium text-amber-600 dark:text-amber-400">{rtype}</span>}
+                        {dynamic && (
+                          <span className="text-xs text-gray-400 dark:text-slate-500">
+                            (dynamic)
+                          </span>
+                        )}
+                        {rtype && (
+                          <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                            {rtype}
+                          </span>
+                        )}
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-gray-400 dark:text-slate-500 text-xs">{r['comment'] || ''}</td>
+                    <td className="px-4 py-2.5 text-gray-400 dark:text-slate-500 text-xs">
+                      {r['comment'] || ''}
+                    </td>
                     {canWrite && (
                       <td className="px-4 py-2.5">
                         {!dynamic && routeId && (
                           <button
-                            onClick={() => { if (confirm(`Remove route to ${r['dst-address']}?`)) deleteMutation.mutate({ routeId }); }}
+                            onClick={() => {
+                              if (confirm(`Remove route to ${r['dst-address']}?`))
+                                deleteMutation.mutate({ routeId });
+                            }}
                             disabled={deleteMutation.isPending}
                             className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
                           >
@@ -300,7 +454,7 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['routing-ospf', deviceId],
-    queryFn: () => dApi.getOspf(deviceId).then(r => r.data),
+    queryFn: () => dApi.getOspf(deviceId).then((r) => r.data),
   });
 
   const [showAddInstance, setShowAddInstance] = useState(false);
@@ -312,7 +466,12 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
   const addInstanceRequest = () => dApi.addOspfInstance(deviceId, instanceForm);
   const addInstanceMutation = useMutation({
     mutationFn: addInstanceRequest,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['routing-ospf', deviceId] }); setShowAddInstance(false); setInstanceForm({ name: '', 'router-id': '' }); setError(''); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['routing-ospf', deviceId] });
+      setShowAddInstance(false);
+      setInstanceForm({ name: '', 'router-id': '' });
+      setError('');
+    },
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
@@ -322,11 +481,21 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
-  const addAreaRequest = () => dApi.addOspfArea(deviceId, { name: areaForm.name, 'area-id': areaForm.area, ...(areaForm.instance ? { instance: areaForm.instance } : {}) });
+  const addAreaRequest = () =>
+    dApi.addOspfArea(deviceId, {
+      name: areaForm.name,
+      'area-id': areaForm.area,
+      ...(areaForm.instance ? { instance: areaForm.instance } : {}),
+    });
   const addAreaMutation = useMutation({
     // RouterOS names the property area-id (outside review C7).
     mutationFn: addAreaRequest,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['routing-ospf', deviceId] }); setShowAddArea(false); setAreaForm({ name: '', area: '0.0.0.0', instance: '' }); setError(''); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['routing-ospf', deviceId] });
+      setShowAddArea(false);
+      setAreaForm({ name: '', area: '0.0.0.0', instance: '' });
+      setError('');
+    },
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
@@ -339,13 +508,18 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
   if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
 
   const instances = (data?.instances as Record<string, string>[]) || [];
-  const areas     = (data?.areas     as Record<string, string>[]) || [];
-  const interfaces= (data?.interfaces as Record<string, string>[]) || [];
-  const neighbors = (data?.neighbors  as Record<string, string>[]) || [];
+  const areas = (data?.areas as Record<string, string>[]) || [];
+  const interfaces = (data?.interfaces as Record<string, string>[]) || [];
+  const neighbors = (data?.neighbors as Record<string, string>[]) || [];
 
   return (
     <div className="space-y-6">
-      {error && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{error}</div>}
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-red-500">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
 
       {/* Instances */}
       <div>
@@ -355,40 +529,105 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
             {showAddInstance ? (
               <div className="card p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="label">Name</label><input className="input" value={instanceForm.name} onChange={e => setInstanceForm(f => ({ ...f, name: e.target.value }))} placeholder="default" /></div>
-                  <div><label className="label">Router ID</label><input className="input font-mono" value={instanceForm['router-id']} onChange={e => setInstanceForm(f => ({ ...f, 'router-id': e.target.value }))} placeholder="1.2.3.4" /></div>
+                  <div>
+                    <label className="label">Name</label>
+                    <input
+                      className="input"
+                      value={instanceForm.name}
+                      onChange={(e) => setInstanceForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="default"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Router ID</label>
+                    <input
+                      className="input font-mono"
+                      value={instanceForm['router-id']}
+                      onChange={(e) =>
+                        setInstanceForm((f) => ({ ...f, 'router-id': e.target.value }))
+                      }
+                      placeholder="1.2.3.4"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => addInstanceMutation.mutate()} disabled={!instanceForm.name || addInstanceMutation.isPending} className="btn-primary text-sm flex items-center gap-1.5">
-                    {addInstanceMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add
+                  <button
+                    onClick={() => addInstanceMutation.mutate()}
+                    disabled={!instanceForm.name || addInstanceMutation.isPending}
+                    className="btn-primary text-sm flex items-center gap-1.5"
+                  >
+                    {addInstanceMutation.isPending && (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    )}{' '}
+                    Add
                   </button>
-                  <ReviewChangesButton request={addInstanceRequest} onApply={() => addInstanceMutation.mutate()} applyLabel="Add" disabled={!instanceForm.name || addInstanceMutation.isPending} />
-                  <button onClick={() => setShowAddInstance(false)} className="btn-secondary text-sm">Cancel</button>
+                  <ReviewChangesButton
+                    request={addInstanceRequest}
+                    onApply={() => addInstanceMutation.mutate()}
+                    applyLabel="Add"
+                    disabled={!instanceForm.name || addInstanceMutation.isPending}
+                  />
+                  <button
+                    onClick={() => setShowAddInstance(false)}
+                    className="btn-secondary text-sm"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             ) : (
-              <button onClick={() => setShowAddInstance(true)} className="btn-secondary flex items-center gap-1.5 text-sm"><Plus className="w-3.5 h-3.5" /> Add Instance</button>
+              <button
+                onClick={() => setShowAddInstance(true)}
+                className="btn-secondary flex items-center gap-1.5 text-sm"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Instance
+              </button>
             )}
           </div>
         )}
-        {instances.length === 0 ? <Empty text="No OSPF instances." /> : (
+        {instances.length === 0 ? (
+          <Empty text="No OSPF instances." />
+        ) : (
           <div className="card overflow-hidden">
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-                <th className="table-header px-4 py-2.5 text-left">Name</th>
-                <th className="table-header px-4 py-2.5 text-left">Router ID</th>
-                <th className="table-header px-4 py-2.5 text-left">State</th>
-                {canWrite && <th className="w-10" />}
-              </tr></thead>
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+                  <th className="table-header px-4 py-2.5 text-left">Name</th>
+                  <th className="table-header px-4 py-2.5 text-left">Router ID</th>
+                  <th className="table-header px-4 py-2.5 text-left">State</th>
+                  {canWrite && <th className="w-10" />}
+                </tr>
+              </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
                 {instances.map((inst, i) => (
-                  <tr key={inst['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{inst['name'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{inst['router-id'] || '—'}</td>
-                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{inst['state'] || inst['status'] || '—'}</td>
-                    {canWrite && <td className="px-4 py-2.5">
-                      {inst['.id'] && <button onClick={() => { if (confirm('Remove instance?')) removeInstanceMutation.mutate(inst['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
-                    </td>}
+                  <tr
+                    key={inst['.id'] || i}
+                    className="hover:bg-gray-50 dark:hover:bg-slate-700/30"
+                  >
+                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
+                      {inst['name'] || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">
+                      {inst['router-id'] || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
+                      {inst['state'] || inst['status'] || '—'}
+                    </td>
+                    {canWrite && (
+                      <td className="px-4 py-2.5">
+                        {inst['.id'] && (
+                          <button
+                            onClick={() => {
+                              if (confirm('Remove instance?'))
+                                removeInstanceMutation.mutate(inst['.id']);
+                            }}
+                            className="p-1 text-gray-400 hover:text-red-500"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -405,41 +644,105 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
             {showAddArea ? (
               <div className="card p-4 space-y-3">
                 <div className="grid grid-cols-3 gap-3">
-                  <div><label className="label">Name</label><input className="input" value={areaForm.name} onChange={e => setAreaForm(f => ({ ...f, name: e.target.value }))} placeholder="backbone" /></div>
-                  <div><label className="label">Area ID</label><input className="input font-mono" value={areaForm.area} onChange={e => setAreaForm(f => ({ ...f, area: e.target.value }))} placeholder="0.0.0.0" /></div>
-                  <div><label className="label">Instance</label><input className="input" value={areaForm.instance} onChange={e => setAreaForm(f => ({ ...f, instance: e.target.value }))} placeholder="default" /></div>
+                  <div>
+                    <label className="label">Name</label>
+                    <input
+                      className="input"
+                      value={areaForm.name}
+                      onChange={(e) => setAreaForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="backbone"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Area ID</label>
+                    <input
+                      className="input font-mono"
+                      value={areaForm.area}
+                      onChange={(e) => setAreaForm((f) => ({ ...f, area: e.target.value }))}
+                      placeholder="0.0.0.0"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Instance</label>
+                    <input
+                      className="input"
+                      value={areaForm.instance}
+                      onChange={(e) => setAreaForm((f) => ({ ...f, instance: e.target.value }))}
+                      placeholder="default"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => addAreaMutation.mutate()} disabled={!areaForm.name || addAreaMutation.isPending} className="btn-primary text-sm flex items-center gap-1.5">
-                    {addAreaMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add
+                  <button
+                    onClick={() => addAreaMutation.mutate()}
+                    disabled={!areaForm.name || addAreaMutation.isPending}
+                    className="btn-primary text-sm flex items-center gap-1.5"
+                  >
+                    {addAreaMutation.isPending && (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    )}{' '}
+                    Add
                   </button>
-                  <ReviewChangesButton request={addAreaRequest} onApply={() => addAreaMutation.mutate()} applyLabel="Add" disabled={!areaForm.name || addAreaMutation.isPending} />
-                  <button onClick={() => setShowAddArea(false)} className="btn-secondary text-sm">Cancel</button>
+                  <ReviewChangesButton
+                    request={addAreaRequest}
+                    onApply={() => addAreaMutation.mutate()}
+                    applyLabel="Add"
+                    disabled={!areaForm.name || addAreaMutation.isPending}
+                  />
+                  <button onClick={() => setShowAddArea(false)} className="btn-secondary text-sm">
+                    Cancel
+                  </button>
                 </div>
               </div>
             ) : (
-              <button onClick={() => setShowAddArea(true)} className="btn-secondary flex items-center gap-1.5 text-sm"><Plus className="w-3.5 h-3.5" /> Add Area</button>
+              <button
+                onClick={() => setShowAddArea(true)}
+                className="btn-secondary flex items-center gap-1.5 text-sm"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Area
+              </button>
             )}
           </div>
         )}
-        {areas.length === 0 ? <Empty text="No OSPF areas." /> : (
+        {areas.length === 0 ? (
+          <Empty text="No OSPF areas." />
+        ) : (
           <div className="card overflow-hidden">
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-                <th className="table-header px-4 py-2.5 text-left">Name</th>
-                <th className="table-header px-4 py-2.5 text-left">Area</th>
-                <th className="table-header px-4 py-2.5 text-left">Instance</th>
-                {canWrite && <th className="w-10" />}
-              </tr></thead>
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+                  <th className="table-header px-4 py-2.5 text-left">Name</th>
+                  <th className="table-header px-4 py-2.5 text-left">Area</th>
+                  <th className="table-header px-4 py-2.5 text-left">Instance</th>
+                  {canWrite && <th className="w-10" />}
+                </tr>
+              </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
                 {areas.map((a, i) => (
                   <tr key={a['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{a['name'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{a['area'] || a['area-id'] || '—'}</td>
-                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{a['instance'] || '—'}</td>
-                    {canWrite && <td className="px-4 py-2.5">
-                      {a['.id'] && <button onClick={() => { if (confirm('Remove area?')) removeAreaMutation.mutate(a['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
-                    </td>}
+                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
+                      {a['name'] || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">
+                      {a['area'] || a['area-id'] || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
+                      {a['instance'] || '—'}
+                    </td>
+                    {canWrite && (
+                      <td className="px-4 py-2.5">
+                        {a['.id'] && (
+                          <button
+                            onClick={() => {
+                              if (confirm('Remove area?')) removeAreaMutation.mutate(a['.id']);
+                            }}
+                            className="p-1 text-gray-400 hover:text-red-500"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -459,7 +762,11 @@ function OspfSubTab({ deviceId }: { deviceId: number }) {
       {/* Neighbors (read-only) */}
       <div>
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Neighbors</h3>
-        {neighbors.length === 0 ? <Empty text="No OSPF neighbors." /> : <KVTable rows={neighbors} />}
+        {neighbors.length === 0 ? (
+          <Empty text="No OSPF neighbors." />
+        ) : (
+          <KVTable rows={neighbors} />
+        )}
       </div>
     </div>
   );
@@ -472,18 +779,30 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['routing-bgp', deviceId],
-    queryFn: () => dApi.getBgp(deviceId).then(r => r.data),
+    queryFn: () => dApi.getBgp(deviceId).then((r) => r.data),
   });
 
   const [showAdd, setShowAdd] = useState(false);
-  const EMPTY_BGP = { name: '', 'remote.address': '', 'remote.as': '', 'local.role': 'ebgp', local_as: '', instance: '' };
+  const EMPTY_BGP = {
+    name: '',
+    'remote.address': '',
+    'remote.as': '',
+    'local.role': 'ebgp',
+    local_as: '',
+    instance: '',
+  };
   const [form, setForm] = useState(EMPTY_BGP);
   const [error, setError] = useState('');
 
   const addRequest = () => dApi.addBgpConnection(deviceId, form);
   const addMutation = useMutation({
     mutationFn: addRequest,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['routing-bgp', deviceId] }); setShowAdd(false); setForm(EMPTY_BGP); setError(''); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['routing-bgp', deviceId] });
+      setShowAdd(false);
+      setForm(EMPTY_BGP);
+      setError('');
+    },
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
@@ -496,15 +815,20 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
   if (isLoading) return <div className="text-center py-8 text-gray-400">Loading…</div>;
 
   const connections = (data?.connections as Record<string, string>[]) || [];
-  const sessions    = (data?.sessions    as Record<string, string>[]) || [];
+  const sessions = (data?.sessions as Record<string, string>[]) || [];
   // RouterOS 7.20+ puts the local AS on an instance: use the device's own, or
   // create one from the local AS entered here when it has none.
-  const instances   = (data?.instances   as Record<string, string>[]) || [];
+  const instances = (data?.instances as Record<string, string>[]) || [];
   const oneInstance = instances.length === 1 ? instances[0] : null;
 
   return (
     <div className="space-y-6">
-      {error && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{error}</div>}
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-red-500">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
 
       {/* Connections */}
       <div>
@@ -514,27 +838,76 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
             {showAdd ? (
               <div className="card p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div><label className="label">Name</label><input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="peer-name" /></div>
-                  <div><label className="label">Remote Address</label><input className="input font-mono" value={form['remote.address']} onChange={e => setForm(f => ({ ...f, 'remote.address': e.target.value }))} placeholder="10.0.0.1" /></div>
-                  <div><label className="label">Remote AS</label><input className="input font-mono" value={form['remote.as']} onChange={e => setForm(f => ({ ...f, 'remote.as': e.target.value }))} placeholder="65000" /></div>
-                  <div><label className="label">Role</label>
-                    <select className="input" value={form['local.role']} onChange={e => setForm(f => ({ ...f, 'local.role': e.target.value }))}>
+                  <div>
+                    <label className="label">Name</label>
+                    <input
+                      className="input"
+                      value={form.name}
+                      onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="peer-name"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Remote Address</label>
+                    <input
+                      className="input font-mono"
+                      value={form['remote.address']}
+                      onChange={(e) => setForm((f) => ({ ...f, 'remote.address': e.target.value }))}
+                      placeholder="10.0.0.1"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Remote AS</label>
+                    <input
+                      className="input font-mono"
+                      value={form['remote.as']}
+                      onChange={(e) => setForm((f) => ({ ...f, 'remote.as': e.target.value }))}
+                      placeholder="65000"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Role</label>
+                    <select
+                      className="input"
+                      value={form['local.role']}
+                      onChange={(e) => setForm((f) => ({ ...f, 'local.role': e.target.value }))}
+                    >
                       <option value="ebgp">eBGP</option>
                       <option value="ibgp">iBGP</option>
                     </select>
                   </div>
                   {instances.length > 1 ? (
-                    <div><label className="label">Instance</label>
-                      <select className="input" value={form.instance} onChange={e => setForm(f => ({ ...f, instance: e.target.value }))}>
+                    <div>
+                      <label className="label">Instance</label>
+                      <select
+                        className="input"
+                        value={form.instance}
+                        onChange={(e) => setForm((f) => ({ ...f, instance: e.target.value }))}
+                      >
                         <option value="">Choose…</option>
-                        {instances.map(i => <option key={i['.id'] || i['name']} value={i['name']}>{i['name']}{i['as'] ? ` (AS ${i['as']})` : ''}</option>)}
+                        {instances.map((i) => (
+                          <option key={i['.id'] || i['name']} value={i['name']}>
+                            {i['name']}
+                            {i['as'] ? ` (AS ${i['as']})` : ''}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   ) : (
-                    <div><label className="label">Local AS</label>
-                      <input className="input font-mono" value={oneInstance ? (oneInstance['as'] || '') : form.local_as} disabled={!!oneInstance}
-                        onChange={e => setForm(f => ({ ...f, local_as: e.target.value }))} placeholder="65001"
-                        title={oneInstance ? `Set by the device's BGP instance ${oneInstance['name']}` : 'Your AS number'} />
+                    <div>
+                      <label className="label">Local AS</label>
+                      <input
+                        className="input font-mono"
+                        value={oneInstance ? oneInstance['as'] || '' : form.local_as}
+                        disabled={!!oneInstance}
+                        onChange={(e) => setForm((f) => ({ ...f, local_as: e.target.value }))}
+                        placeholder="65001"
+                        title={
+                          oneInstance
+                            ? `Set by the device's BGP instance ${oneInstance['name']}`
+                            : 'Your AS number'
+                        }
+                      />
                     </div>
                   )}
                 </div>
@@ -546,38 +919,91 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
                       : 'With no BGP instance on the device yet, one called default is created with this local AS (RouterOS 7.20 and later need one).'}
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={() => addMutation.mutate()} disabled={!form.name || !form['remote.address'] || !form['remote.as'] || (instances.length > 1 && !form.instance) || addMutation.isPending} className="btn-primary text-sm flex items-center gap-1.5">
-                    {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add
+                  <button
+                    onClick={() => addMutation.mutate()}
+                    disabled={
+                      !form.name ||
+                      !form['remote.address'] ||
+                      !form['remote.as'] ||
+                      (instances.length > 1 && !form.instance) ||
+                      addMutation.isPending
+                    }
+                    className="btn-primary text-sm flex items-center gap-1.5"
+                  >
+                    {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}{' '}
+                    Add
                   </button>
-                  <ReviewChangesButton request={addRequest} onApply={() => addMutation.mutate()} applyLabel="Add" disabled={!form.name || !form['remote.address'] || !form['remote.as'] || (instances.length > 1 && !form.instance) || addMutation.isPending} />
-                  <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">Cancel</button>
+                  <ReviewChangesButton
+                    request={addRequest}
+                    onApply={() => addMutation.mutate()}
+                    applyLabel="Add"
+                    disabled={
+                      !form.name ||
+                      !form['remote.address'] ||
+                      !form['remote.as'] ||
+                      (instances.length > 1 && !form.instance) ||
+                      addMutation.isPending
+                    }
+                  />
+                  <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">
+                    Cancel
+                  </button>
                 </div>
               </div>
             ) : (
-              <button onClick={() => setShowAdd(true)} className="btn-secondary flex items-center gap-1.5 text-sm"><Plus className="w-3.5 h-3.5" /> Add Connection</button>
+              <button
+                onClick={() => setShowAdd(true)}
+                className="btn-secondary flex items-center gap-1.5 text-sm"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Connection
+              </button>
             )}
           </div>
         )}
-        {connections.length === 0 ? <Empty text="No BGP connections configured." /> : (
+        {connections.length === 0 ? (
+          <Empty text="No BGP connections configured." />
+        ) : (
           <div className="card overflow-hidden">
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-                <th className="table-header px-4 py-2.5 text-left">Name</th>
-                <th className="table-header px-4 py-2.5 text-left">Remote Address</th>
-                <th className="table-header px-4 py-2.5 text-left">Remote AS</th>
-                <th className="table-header px-4 py-2.5 text-left">Role</th>
-                {canWrite && <th className="w-10" />}
-              </tr></thead>
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+                  <th className="table-header px-4 py-2.5 text-left">Name</th>
+                  <th className="table-header px-4 py-2.5 text-left">Remote Address</th>
+                  <th className="table-header px-4 py-2.5 text-left">Remote AS</th>
+                  <th className="table-header px-4 py-2.5 text-left">Role</th>
+                  {canWrite && <th className="w-10" />}
+                </tr>
+              </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
                 {connections.map((c, i) => (
                   <tr key={c['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{c['name'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{c['remote.address'] || c['remote-address'] || '—'}</td>
-                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">{c['remote.as'] || c['remote-as'] || '—'}</td>
-                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{c['local.role'] || c['local-role'] || '—'}</td>
-                    {canWrite && <td className="px-4 py-2.5">
-                      {c['.id'] && <button onClick={() => { if (confirm('Remove BGP connection?')) removeMutation.mutate(c['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
-                    </td>}
+                    <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
+                      {c['name'] || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">
+                      {c['remote.address'] || c['remote-address'] || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-gray-500 dark:text-slate-400">
+                      {c['remote.as'] || c['remote-as'] || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
+                      {c['local.role'] || c['local-role'] || '—'}
+                    </td>
+                    {canWrite && (
+                      <td className="px-4 py-2.5">
+                        {c['.id'] && (
+                          <button
+                            onClick={() => {
+                              if (confirm('Remove BGP connection?'))
+                                removeMutation.mutate(c['.id']);
+                            }}
+                            className="p-1 text-gray-400 hover:text-red-500"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -589,7 +1015,9 @@ function BgpSubTab({ deviceId }: { deviceId: number }) {
       {/* Sessions (read-only) */}
       {sessions.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Active Sessions</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+            Active Sessions
+          </h3>
           <KVTable rows={sessions} />
         </div>
       )}
@@ -604,17 +1032,23 @@ function RouteFiltersSubTab({ deviceId }: { deviceId: number }) {
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['routing-filters', deviceId],
-    queryFn: () => dApi.getRouteFilters(deviceId).then(r => r.data),
+    queryFn: () => dApi.getRouteFilters(deviceId).then((r) => r.data),
   });
 
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ chain: '', action: 'accept', prefix: '', comment: '' });
   const [error, setError] = useState('');
 
-  const addRequest = () => dApi.addFilterRule(deviceId, { ...form, prefix: form.prefix || undefined });
+  const addRequest = () =>
+    dApi.addFilterRule(deviceId, { ...form, prefix: form.prefix || undefined });
   const addMutation = useMutation({
     mutationFn: addRequest,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['routing-filters', deviceId] }); setShowAdd(false); setForm({ chain: '', action: 'accept', prefix: '', comment: '' }); setError(''); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['routing-filters', deviceId] });
+      setShowAdd(false);
+      setForm({ chain: '', action: 'accept', prefix: '', comment: '' });
+      setError('');
+    },
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
@@ -630,7 +1064,12 @@ function RouteFiltersSubTab({ deviceId }: { deviceId: number }) {
 
   return (
     <div className="space-y-4">
-      {error && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{error}</div>}
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-red-500">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
       <SectionHeader title="Route Filter Rules" onRefresh={refetch} isFetching={isFetching} />
 
       {canWrite && (
@@ -638,58 +1077,132 @@ function RouteFiltersSubTab({ deviceId }: { deviceId: number }) {
           {showAdd ? (
             <div className="card p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div><label className="label">Chain</label><input className="input" value={form.chain} onChange={e => setForm(f => ({ ...f, chain: e.target.value }))} placeholder="my-filter" /></div>
-                <div><label className="label">Action</label>
-                  <select className="input" value={form.action} onChange={e => setForm(f => ({ ...f, action: e.target.value }))}>
+                <div>
+                  <label className="label">Chain</label>
+                  <input
+                    className="input"
+                    value={form.chain}
+                    onChange={(e) => setForm((f) => ({ ...f, chain: e.target.value }))}
+                    placeholder="my-filter"
+                  />
+                </div>
+                <div>
+                  <label className="label">Action</label>
+                  <select
+                    className="input"
+                    value={form.action}
+                    onChange={(e) => setForm((f) => ({ ...f, action: e.target.value }))}
+                  >
                     <option value="accept">accept</option>
                     <option value="reject">reject</option>
                     <option value="discard">discard</option>
                     <option value="return">return</option>
                   </select>
                 </div>
-                <div><label className="label">Prefix (optional)</label><input className="input font-mono" value={form.prefix} onChange={e => setForm(f => ({ ...f, prefix: e.target.value }))} placeholder="10.0.0.0/8" /></div>
-                <div><label className="label">Comment</label><input className="input" value={form.comment} onChange={e => setForm(f => ({ ...f, comment: e.target.value }))} placeholder="Optional" /></div>
+                <div>
+                  <label className="label">Prefix (optional)</label>
+                  <input
+                    className="input font-mono"
+                    value={form.prefix}
+                    onChange={(e) => setForm((f) => ({ ...f, prefix: e.target.value }))}
+                    placeholder="10.0.0.0/8"
+                  />
+                </div>
+                <div>
+                  <label className="label">Comment</label>
+                  <input
+                    className="input"
+                    value={form.comment}
+                    onChange={(e) => setForm((f) => ({ ...f, comment: e.target.value }))}
+                    placeholder="Optional"
+                  />
+                </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => addMutation.mutate()} disabled={!form.chain || addMutation.isPending} className="btn-primary text-sm flex items-center gap-1.5">
-                  {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add Rule
+                <button
+                  onClick={() => addMutation.mutate()}
+                  disabled={!form.chain || addMutation.isPending}
+                  className="btn-primary text-sm flex items-center gap-1.5"
+                >
+                  {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add
+                  Rule
                 </button>
-                <ReviewChangesButton request={addRequest} onApply={() => addMutation.mutate()} applyLabel="Add Rule" disabled={!form.chain || addMutation.isPending} />
-                <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">Cancel</button>
+                <ReviewChangesButton
+                  request={addRequest}
+                  onApply={() => addMutation.mutate()}
+                  applyLabel="Add Rule"
+                  disabled={!form.chain || addMutation.isPending}
+                />
+                <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">
+                  Cancel
+                </button>
               </div>
             </div>
           ) : (
-            <button onClick={() => setShowAdd(true)} className="btn-secondary flex items-center gap-1.5 text-sm"><Plus className="w-3.5 h-3.5" /> Add Rule</button>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="btn-secondary flex items-center gap-1.5 text-sm"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Rule
+            </button>
           )}
         </div>
       )}
 
-      {rules.length === 0 ? <Empty text="No route filter rules." /> : (
+      {rules.length === 0 ? (
+        <Empty text="No route filter rules." />
+      ) : (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-              <th className="table-header px-4 py-2.5 text-left">#</th>
-              <th className="table-header px-4 py-2.5 text-left">Chain</th>
-              <th className="table-header px-4 py-2.5 text-left">Action</th>
-              <th className="table-header px-4 py-2.5 text-left">Prefix / rule</th>
-              <th className="table-header px-4 py-2.5 text-left">Comment</th>
-              {canWrite && <th className="w-10" />}
-            </tr></thead>
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+                <th className="table-header px-4 py-2.5 text-left">#</th>
+                <th className="table-header px-4 py-2.5 text-left">Chain</th>
+                <th className="table-header px-4 py-2.5 text-left">Action</th>
+                <th className="table-header px-4 py-2.5 text-left">Prefix / rule</th>
+                <th className="table-header px-4 py-2.5 text-left">Comment</th>
+                {canWrite && <th className="w-10" />}
+              </tr>
+            </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
               {rules.map((r, i) => (
                 <tr key={r['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
                   <td className="px-4 py-2.5 text-gray-400 dark:text-slate-500 text-xs">{i + 1}</td>
-                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{r['chain'] || '—'}</td>
+                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
+                    {r['chain'] || '—'}
+                  </td>
                   <td className="px-4 py-2.5">
-                    <span className={clsx('text-xs font-medium', r['action'] === 'accept' ? 'text-green-600 dark:text-green-400' : 'text-red-500')}>
+                    <span
+                      className={clsx(
+                        'text-xs font-medium',
+                        r['action'] === 'accept'
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-500',
+                      )}
+                    >
                       {r['action'] || '—'}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">{r['rule'] || r['prefix'] || r['dst-address'] || '—'}</td>
-                  <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">{r['comment'] || ''}</td>
-                  {canWrite && <td className="px-4 py-2.5">
-                    {r['.id'] && <button onClick={() => { if (confirm('Remove filter rule?')) removeMutation.mutate(r['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
-                  </td>}
+                  <td className="px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-slate-400">
+                    {r['rule'] || r['prefix'] || r['dst-address'] || '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-slate-500">
+                    {r['comment'] || ''}
+                  </td>
+                  {canWrite && (
+                    <td className="px-4 py-2.5">
+                      {r['.id'] && (
+                        <button
+                          onClick={() => {
+                            if (confirm('Remove filter rule?')) removeMutation.mutate(r['.id']);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-500"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -705,9 +1218,14 @@ function TablesSubTab({ deviceId }: { deviceId: number }) {
   const queryClient = useQueryClient();
   const canWrite = useCanWrite();
 
-  const { data: tables = [], isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: tables = [],
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ['routing-tables', deviceId],
-    queryFn: () => dApi.getRoutingTables(deviceId).then(r => r.data),
+    queryFn: () => dApi.getRoutingTables(deviceId).then((r) => r.data),
   });
 
   const [showAdd, setShowAdd] = useState(false);
@@ -717,7 +1235,12 @@ function TablesSubTab({ deviceId }: { deviceId: number }) {
   const addRequest = () => dApi.addRoutingTable(deviceId, form);
   const addMutation = useMutation({
     mutationFn: addRequest,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['routing-tables', deviceId] }); setShowAdd(false); setForm({ name: '', fib: false }); setError(''); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['routing-tables', deviceId] });
+      setShowAdd(false);
+      setForm({ name: '', fib: false });
+      setError('');
+    },
     onError: (err: unknown) => setError(errMsg(err)),
   });
 
@@ -731,7 +1254,12 @@ function TablesSubTab({ deviceId }: { deviceId: number }) {
 
   return (
     <div className="space-y-4">
-      {error && <div className="flex items-center gap-2 text-sm text-red-500"><AlertCircle className="w-4 h-4" />{error}</div>}
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-red-500">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
       <SectionHeader title="Routing Tables" onRefresh={refetch} isFetching={isFetching} />
 
       {canWrite && (
@@ -739,42 +1267,92 @@ function TablesSubTab({ deviceId }: { deviceId: number }) {
           {showAdd ? (
             <div className="card p-4 space-y-3">
               <div className="flex items-end gap-3">
-                <div className="flex-1"><label className="label">Table Name</label><input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="my-table" /></div>
+                <div className="flex-1">
+                  <label className="label">Table Name</label>
+                  <input
+                    className="input"
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="my-table"
+                  />
+                </div>
                 <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 mb-1 cursor-pointer">
-                  <input type="checkbox" checked={form.fib} onChange={e => setForm(f => ({ ...f, fib: e.target.checked }))} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={form.fib}
+                    onChange={(e) => setForm((f) => ({ ...f, fib: e.target.checked }))}
+                    className="rounded"
+                  />
                   FIB
                 </label>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => addMutation.mutate()} disabled={!form.name || addMutation.isPending} className="btn-primary text-sm flex items-center gap-1.5">
-                  {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add Table
+                <button
+                  onClick={() => addMutation.mutate()}
+                  disabled={!form.name || addMutation.isPending}
+                  className="btn-primary text-sm flex items-center gap-1.5"
+                >
+                  {addMutation.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />} Add
+                  Table
                 </button>
-                <ReviewChangesButton request={addRequest} onApply={() => addMutation.mutate()} applyLabel="Add Table" disabled={!form.name || addMutation.isPending} />
-                <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">Cancel</button>
+                <ReviewChangesButton
+                  request={addRequest}
+                  onApply={() => addMutation.mutate()}
+                  applyLabel="Add Table"
+                  disabled={!form.name || addMutation.isPending}
+                />
+                <button onClick={() => setShowAdd(false)} className="btn-secondary text-sm">
+                  Cancel
+                </button>
               </div>
             </div>
           ) : (
-            <button onClick={() => setShowAdd(true)} className="btn-secondary flex items-center gap-1.5 text-sm"><Plus className="w-3.5 h-3.5" /> Add Table</button>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="btn-secondary flex items-center gap-1.5 text-sm"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Table
+            </button>
           )}
         </div>
       )}
 
-      {tables.length === 0 ? <Empty text="No custom routing tables." /> : (
+      {tables.length === 0 ? (
+        <Empty text="No custom routing tables." />
+      ) : (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
-              <th className="table-header px-4 py-2.5 text-left">Name</th>
-              <th className="table-header px-4 py-2.5 text-left">FIB</th>
-              {canWrite && <th className="w-10" />}
-            </tr></thead>
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50">
+                <th className="table-header px-4 py-2.5 text-left">Name</th>
+                <th className="table-header px-4 py-2.5 text-left">FIB</th>
+                {canWrite && <th className="w-10" />}
+              </tr>
+            </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700 table-zebra">
               {tables.map((t, i) => (
                 <tr key={t['.id'] || i} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{t['name'] || '—'}</td>
-                  <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">{t['fib'] === 'true' ? 'Yes' : 'No'}</td>
-                  {canWrite && <td className="px-4 py-2.5">
-                    {t['.id'] && <button onClick={() => { if (confirm(`Remove table "${t['name']}"?`)) removeMutation.mutate(t['.id']); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>}
-                  </td>}
+                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">
+                    {t['name'] || '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-gray-500 dark:text-slate-400">
+                    {t['fib'] === 'true' ? 'Yes' : 'No'}
+                  </td>
+                  {canWrite && (
+                    <td className="px-4 py-2.5">
+                      {t['.id'] && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Remove table "${t['name']}"?`))
+                              removeMutation.mutate(t['.id']);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-500"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -786,14 +1364,20 @@ function TablesSubTab({ deviceId }: { deviceId: number }) {
 }
 
 // ─── Main RoutingTab with sub-tabs ────────────────────────────────────────────
-export default function RoutingTab({ deviceId, deviceName }: { deviceId: number; deviceName?: string }) {
+export default function RoutingTab({
+  deviceId,
+  deviceName,
+}: {
+  deviceId: number;
+  deviceName?: string;
+}) {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('Routes');
 
   return (
     <div className="space-y-4">
       {/* Sub-tab bar */}
       <div className="flex gap-1 border-b border-gray-200 dark:border-slate-700">
-        {SUB_TABS.map(tab => (
+        {SUB_TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveSubTab(tab)}
@@ -801,7 +1385,7 @@ export default function RoutingTab({ deviceId, deviceName }: { deviceId: number;
               'px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px',
               activeSubTab === tab
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+                : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300',
             )}
           >
             {tab}
@@ -810,11 +1394,11 @@ export default function RoutingTab({ deviceId, deviceName }: { deviceId: number;
       </div>
 
       {/* Sub-tab content */}
-      {activeSubTab === 'Routes'        && <RoutesSubTab deviceId={deviceId} deviceName={deviceName} />}
-      {activeSubTab === 'OSPF'          && <OspfSubTab deviceId={deviceId} />}
-      {activeSubTab === 'BGP'           && <BgpSubTab deviceId={deviceId} />}
+      {activeSubTab === 'Routes' && <RoutesSubTab deviceId={deviceId} deviceName={deviceName} />}
+      {activeSubTab === 'OSPF' && <OspfSubTab deviceId={deviceId} />}
+      {activeSubTab === 'BGP' && <BgpSubTab deviceId={deviceId} />}
       {activeSubTab === 'Route Filters' && <RouteFiltersSubTab deviceId={deviceId} />}
-      {activeSubTab === 'Tables'        && <TablesSubTab deviceId={deviceId} />}
+      {activeSubTab === 'Tables' && <TablesSubTab deviceId={deviceId} />}
     </div>
   );
 }

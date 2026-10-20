@@ -18,10 +18,10 @@ opens every rollout, newest first, 25 to a page; click one to see its devices an
 
 Two settings, both in minutes, changed without a restart:
 
-| Setting | Default | Covers |
-|---|---|---|
-| `firmware_download_timeout_min` | 10 | Waiting for the image to land on the device |
-| `firmware_reboot_timeout_min` | 12 | Waiting for the device to come back after the flash |
+| Setting                         | Default | Covers                                              |
+| ------------------------------- | ------- | --------------------------------------------------- |
+| `firmware_download_timeout_min` | 10      | Waiting for the image to land on the device         |
+| `firmware_reboot_timeout_min`   | 12      | Waiting for the device to come back after the flash |
 
 Both are clamped to 1–120 minutes.
 
@@ -36,13 +36,13 @@ delay rather than a risk.
 Each device goes through the same sequence:
 
 1. **Pre-upgrade backup** (optional, on by default)
-2. **Check for updates** — a device already on the target version is *skipped*, not failed.
+2. **Check for updates** — a device already on the target version is _skipped_, not failed.
    So is one whose channel offers an **older** version (a stable device pointed at long-term,
    say): nothing is downgraded automatically, even though RouterOS calls that release "New
    version is available". The device's **Install** button follows the same rule
 3. **Download the image, and confirm it landed**
 4. **Reboot**
-5. **Prove the reboot happened** — uptime must have gone *backwards*
+5. **Prove the reboot happened** — uptime must have gone _backwards_
 6. **Verify the version** — the device must report exactly the version that was installed
 7. **RouterBOOT** (optional) — a second flash and a second reboot. It waits for the device
    to settle after the first reboot and retries its first connection, then proves the second
@@ -73,14 +73,14 @@ CCR2216 was seen to accept it, do neither, and report nothing. That surfaced as
 "rebooted but still reports 7.24.1", because nothing could tell a device that never
 restarted from one that restarted unchanged.
 
-Downloading first makes success verifiable *before* anything reboots, so a device is
+Downloading first makes success verifiable _before_ anything reboots, so a device is
 never restarted for an image it does not have.
 
 !!! note "Downloads are slow, and that is normal"
-    `/system/package/update/download` blocks until the image has landed — a minute or
-    more on an ordinary link. It is given a ten-minute budget. If the command does not
-    return cleanly the device is asked again on a fresh connection what actually
-    happened, rather than being declared failed: a slow download is not a broken one.
+`/system/package/update/download` blocks until the image has landed — a minute or
+more on an ordinary link. It is given a ten-minute budget. If the command does not
+return cleanly the device is asked again on a fresh connection what actually
+happened, rather than being declared failed: a slow download is not a broken one.
 
 ## Local package mirror
 
@@ -214,10 +214,10 @@ typical rollout is one canary device in wave 1, then `lab`, then `branch`, then 
 RouterOS checks for updates on a channel: `stable`, `long-term`, `testing` or `development`.
 The **Update channel** card sets it.
 
-- **Fleet default** applies to every device. *Leave each device on its own channel* means the manager never changes a
+- **Fleet default** applies to every device. _Leave each device on its own channel_ means the manager never changes a
   device's channel.
 - **Overrides** pick a tag or a single device and give it a different channel, or set it back
-  to *follow fleet default*. A device override wins over the fleet default.
+  to _follow fleet default_. A device override wins over the fleet default.
 - Devices with an override are **listed** under the card, with the channel each one reports now.
   **Clear** removes one override, **Clear all** removes them all. With no fleet default set, a
   cleared device stays on whatever channel it is on.
@@ -227,7 +227,7 @@ the manager checks it for updates, and only if it differs. The card also shows t
 each device last reported.
 
 !!! note "RouterOS v6 to v7"
-    Moving a v6 device to v7 is not the same as changing channel and is not supported yet.
+Moving a v6 device to v7 is not the same as changing channel and is not supported yet.
 
 ## Upgrading several devices at once
 
@@ -241,32 +241,32 @@ everything after it.
 
 There are two costs, and both are worth understanding before you raise it.
 
-**Halting becomes less precise.** A failure stops any further device from *starting*,
+**Halting becomes less precise.** A failure stops any further device from _starting_,
 immediately — but devices already running finish, because interrupting one mid-write is
 how you brick it. So with **At once** set to five, up to five devices can carry a bad
 build before anything stops. At the default of 1 nothing else has started, so a failure
 stops the rollout exactly as it always has.
 
 **Devices reboot together.** That is fine for independent routers. It is not fine for
-a switch that the others are reached *through*: rebooting it alongside them cuts the
+a switch that the others are reached _through_: rebooting it alongside them cuts the
 path to devices that are mid-upgrade. Change Guard does not cover this — it protects
 configuration, and a device that is unreachable because its uplink rebooted has no
 configuration change to revert.
 
 The rollout builder warns when it can see that one selected device carries another's
 traffic. That warning is deliberately conservative: it fires only when a link is the
-device's spanning-tree root port *and* that port resolves to exactly one neighbour.
+device's spanning-tree root port _and_ that port resolves to exactly one neighbour.
 Discovered topology is often ambiguous — a trunk port can resolve to several
 neighbours at once — and naming the wrong switch would be worse than saying nothing.
 **Absence of a warning is not proof that it is safe to reboot everything together.**
 
 A reasonable pattern for a large fleet on a well-known patch release:
 
-| Wave | Devices | At once |
-|---|---|---|
-| 1 | one representative device | 1 |
-| 2 | the access layer | 5–10 |
-| 3 | anything upstream of wave 2 | 1 |
+| Wave | Devices                     | At once |
+| ---- | --------------------------- | ------- |
+| 1    | one representative device   | 1       |
+| 2    | the access layer            | 5–10    |
+| 3    | anything upstream of wave 2 | 1       |
 
 ## Scheduling and cancelling
 
@@ -282,7 +282,7 @@ manager got to it, which could mean rebooting devices in the middle of the day.
 Devices already belonging to an unfinished rollout are refused by name when you try
 to create another for them, before anything is written.
 
-**Cancelling never interrupts an in-flight flash.** It stops before the *next* device,
+**Cancelling never interrupts an in-flight flash.** It stops before the _next_ device,
 because interrupting a device mid-write is how you brick it. The UI says so when you
 press the button — the currently upgrading device will finish first.
 

@@ -33,27 +33,58 @@ export interface L3HwView {
 }
 
 export function l3hwView(
-  switches: Row[], ports: Row[], settings: Row | undefined, monitor: Row | undefined,
-  vlanInterfaces: Row[], addresses: Row[], filter: Row[], nat: Row[], bridges: Row[] = [],
+  switches: Row[],
+  ports: Row[],
+  settings: Row | undefined,
+  monitor: Row | undefined,
+  vlanInterfaces: Row[],
+  addresses: Row[],
+  filter: Row[],
+  nat: Row[],
+  bridges: Row[] = [],
 ): L3HwView {
   const chip = switches.find((s) => isL3HwChip(s['type'])) ?? null;
-  const vlanNames = new Set(vlanInterfaces.filter((v) => !isTrue(v['disabled'])).map((v) => v['name']));
+  const vlanNames = new Set(
+    vlanInterfaces.filter((v) => !isTrue(v['disabled'])).map((v) => v['name']),
+  );
   const num = (v: string | undefined) => (v === undefined || v === '' ? null : Number(v));
   return {
     supported: !!chip,
     switch: chip ? { id: chip['.id'], name: chip['name'] || 'switch1', type: chip['type'] } : null,
     enabled: !!chip && isTrue(chip['l3-hw-offloading']),
-    portsOff: chip ? ports.filter((p) => p['switch'] === chip['name'] && p['l3-hw-offloading'] === 'false').map((p) => p['name']) : [],
+    portsOff: chip
+      ? ports
+          .filter((p) => p['switch'] === chip['name'] && p['l3-hw-offloading'] === 'false')
+          .map((p) => p['name'])
+      : [],
     ipv6: isTrue(settings?.['ipv6-hw']),
-    fasttrackHw: settings?.['hw-supports-fasttrack'] === undefined ? null : isTrue(settings['fasttrack-hw']) && isTrue(settings['hw-supports-fasttrack']),
+    fasttrackHw:
+      settings?.['hw-supports-fasttrack'] === undefined
+        ? null
+        : isTrue(settings['fasttrack-hw']) && isTrue(settings['hw-supports-fasttrack']),
     routesHw: num(monitor?.['ipv4-routes-hw']),
     routesCpu: num(monitor?.['ipv4-routes-cpu']),
     hostsHw: num(monitor?.['ipv4-hosts']),
-    routedVlans: [...new Set(addresses.filter((a) => !isTrue(a['disabled']) && vlanNames.has(a['interface'])).map((a) => a['interface']))].sort(),
+    routedVlans: [
+      ...new Set(
+        addresses
+          .filter((a) => !isTrue(a['disabled']) && vlanNames.has(a['interface']))
+          .map((a) => a['interface']),
+      ),
+    ].sort(),
     forwardRules: filter.filter((r) => r['chain'] === 'forward' && !isTrue(r['disabled'])).length,
     natRules: nat.filter((r) => !isTrue(r['disabled'])).length,
-    notOffloadable: [...new Set(addresses.filter((a) => !isTrue(a['disabled']) && vlanNames.has(a['interface'])).map((a) => a['interface']))]
-      .map((vlan) => ({ vlan, bridge: vlanInterfaces.find((v) => v['name'] === vlan)?.['interface'] ?? '' }))
+    notOffloadable: [
+      ...new Set(
+        addresses
+          .filter((a) => !isTrue(a['disabled']) && vlanNames.has(a['interface']))
+          .map((a) => a['interface']),
+      ),
+    ]
+      .map((vlan) => ({
+        vlan,
+        bridge: vlanInterfaces.find((v) => v['name'] === vlan)?.['interface'] ?? '',
+      }))
       .filter(({ bridge }) => {
         const b = bridges.find((x) => x['name'] === bridge);
         return !b || !isTrue(b['vlan-filtering']);

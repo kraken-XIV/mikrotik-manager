@@ -26,13 +26,17 @@ export async function runProxyBackfills(): Promise<boolean> {
   running = true;
   const client = await pool.connect();
   try {
-    const got = await client.query<{ ok: boolean }>('SELECT pg_try_advisory_lock($1) AS ok', [BACKFILL_LOCK_KEY]);
+    const got = await client.query<{ ok: boolean }>('SELECT pg_try_advisory_lock($1) AS ok', [
+      BACKFILL_LOCK_KEY,
+    ]);
     if (!got.rows[0]?.ok) return true;
     try {
       const sources = await backfillProxySources(client);
-      if (sources > 0) console.log(`[proxy] recorded ${sources} proxy instance(s) from existing connections`);
+      if (sources > 0)
+        console.log(`[proxy] recorded ${sources} proxy instance(s) from existing connections`);
       const days = await backfillProxyUsage(client);
-      if (days > 0) console.log(`[proxy] built the usage rollup from ${days} chunk(s) of connections`);
+      if (days > 0)
+        console.log(`[proxy] built the usage rollup from ${days} chunk(s) of connections`);
       return true;
     } finally {
       await client.query('SELECT pg_advisory_unlock($1)', [BACKFILL_LOCK_KEY]).catch(() => {});
@@ -47,7 +51,9 @@ export async function runProxyBackfills(): Promise<boolean> {
 export const BACKFILL_RETRY_DELAYS_MS = [0, 60_000, 300_000, 900_000, 3_600_000];
 
 /** Start the backfills without waiting for them; failures are logged and retried later. */
-export function startProxyBackfillsInBackground(delaysMs: number[] = BACKFILL_RETRY_DELAYS_MS): Promise<void> {
+export function startProxyBackfillsInBackground(
+  delaysMs: number[] = BACKFILL_RETRY_DELAYS_MS,
+): Promise<void> {
   return (async () => {
     for (const delay of delaysMs) {
       if (delay > 0) {

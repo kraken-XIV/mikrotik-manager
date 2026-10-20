@@ -28,12 +28,19 @@ export function lineDiff(oldText: string, newText: string): DiffRow[] {
   while (start < a.length && start < b.length && a[start] === b[start]) start++;
   let endA = a.length;
   let endB = b.length;
-  while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) { endA--; endB--; }
+  while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) {
+    endA--;
+    endB--;
+  }
 
   const rows: DiffRow[] = a.slice(0, start).map((text) => ({ type: 'ctx' as const, text }));
   const midA = a.slice(start, endA);
   const midB = b.slice(start, endB);
-  rows.push(...((midA.length + 1) * (midB.length + 1) <= CELL_BUDGET ? exactDiff(midA, midB) : windowedDiff(midA, midB)));
+  rows.push(
+    ...((midA.length + 1) * (midB.length + 1) <= CELL_BUDGET
+      ? exactDiff(midA, midB)
+      : windowedDiff(midA, midB)),
+  );
   for (const text of a.slice(endA)) rows.push({ type: 'ctx', text });
   return rows;
 }
@@ -47,16 +54,27 @@ function exactDiff(a: string[], b: string[]): DiffRow[] {
   const dp = new Uint32Array((n + 1) * w);
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
-      dp[i * w + j] = a[i] === b[j] ? dp[(i + 1) * w + j + 1] + 1 : Math.max(dp[(i + 1) * w + j], dp[i * w + j + 1]);
+      dp[i * w + j] =
+        a[i] === b[j]
+          ? dp[(i + 1) * w + j + 1] + 1
+          : Math.max(dp[(i + 1) * w + j], dp[i * w + j + 1]);
     }
   }
   const rows: DiffRow[] = [];
   let i = 0;
   let j = 0;
   while (i < n && j < m) {
-    if (a[i] === b[j]) { rows.push({ type: 'ctx', text: a[i] }); i++; j++; }
-    else if (dp[(i + 1) * w + j] >= dp[i * w + j + 1]) { rows.push({ type: 'del', text: a[i] }); i++; }
-    else { rows.push({ type: 'add', text: b[j] }); j++; }
+    if (a[i] === b[j]) {
+      rows.push({ type: 'ctx', text: a[i] });
+      i++;
+      j++;
+    } else if (dp[(i + 1) * w + j] >= dp[i * w + j + 1]) {
+      rows.push({ type: 'del', text: a[i] });
+      i++;
+    } else {
+      rows.push({ type: 'add', text: b[j] });
+      j++;
+    }
   }
   while (i < n) rows.push({ type: 'del', text: a[i++] });
   while (j < m) rows.push({ type: 'add', text: b[j++] });
@@ -69,11 +87,24 @@ function windowedDiff(a: string[], b: string[]): DiffRow[] {
   let i = 0;
   let j = 0;
   while (i < a.length && j < b.length) {
-    if (a[i] === b[j]) { rows.push({ type: 'ctx', text: a[i] }); i++; j++; continue; }
+    if (a[i] === b[j]) {
+      rows.push({ type: 'ctx', text: a[i] });
+      i++;
+      j++;
+      continue;
+    }
     let inB = -1;
-    for (let k = j + 1; k < Math.min(b.length, j + WINDOW); k++) if (b[k] === a[i]) { inB = k; break; }
+    for (let k = j + 1; k < Math.min(b.length, j + WINDOW); k++)
+      if (b[k] === a[i]) {
+        inB = k;
+        break;
+      }
     let inA = -1;
-    for (let k = i + 1; k < Math.min(a.length, i + WINDOW); k++) if (a[k] === b[j]) { inA = k; break; }
+    for (let k = i + 1; k < Math.min(a.length, i + WINDOW); k++)
+      if (a[k] === b[j]) {
+        inA = k;
+        break;
+      }
     if (inB !== -1 && (inA === -1 || inB - j <= inA - i)) {
       while (j < inB) rows.push({ type: 'add', text: b[j++] }); // lines inserted before a[i]
     } else if (inA !== -1) {

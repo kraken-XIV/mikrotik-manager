@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { useRememberedRange } from '../../hooks/useRememberedRange';
 import { useQuery } from '@tanstack/react-query';
-import LoadError from '../common/LoadError';
-import { Route, AlertTriangle, ArrowRight, Wifi } from 'lucide-react';
 import clsx from 'clsx';
+import { AlertTriangle, ArrowRight, Route, Wifi } from 'lucide-react';
+import { useState } from 'react';
+
+import { useRememberedRange } from '../../hooks/useRememberedRange';
 import { clientsApi, type RoamSession } from '../../services/api';
 import { rssiColor } from '../../utils/wifiChannels';
+import LoadError from '../common/LoadError';
 
 const RANGES = ['1h', '24h', '7d', '30d'] as const;
 
@@ -24,7 +25,11 @@ const day = (iso: string) =>
 
 function Signal({ dbm }: { dbm: number | null }) {
   if (dbm == null) return <span className="text-gray-400">—</span>;
-  return <span className="mono num-tab" style={{ color: rssiColor(dbm) }}>{dbm} dBm</span>;
+  return (
+    <span className="mono num-tab" style={{ color: rssiColor(dbm) }}>
+      {dbm} dBm
+    </span>
+  );
 }
 
 function Session({ s }: { s: RoamSession }) {
@@ -33,12 +38,15 @@ function Session({ s }: { s: RoamSession }) {
   const flapping = (s.roamsPerHour ?? 0) >= 6;
 
   return (
-    <div className={clsx(
-      'rounded-lg border p-3',
-      flapping ? 'border-amber-300 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/10'
-               : 'border-gray-200 dark:border-slate-700'
-    )}>
-      <button onClick={() => setOpen(o => !o)} className="w-full text-left">
+    <div
+      className={clsx(
+        'rounded-lg border p-3',
+        flapping
+          ? 'border-amber-300 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-900/10'
+          : 'border-gray-200 dark:border-slate-700',
+      )}
+    >
+      <button onClick={() => setOpen((o) => !o)} className="w-full text-left">
         <div className="flex items-center gap-2 flex-wrap text-xs">
           <span className="text-gray-400">{day(s.startedAt)}</span>
           <span className="mono text-gray-700 dark:text-slate-200">{time(s.startedAt)}</span>
@@ -89,11 +97,18 @@ function Session({ s }: { s: RoamSession }) {
           {s.events.map((e, i) => (
             <div key={i} className="flex items-center gap-2 text-[11px]">
               <span className="mono text-gray-400 w-16 flex-shrink-0">{time(e.at)}</span>
-              <span className={clsx('w-20 flex-shrink-0 font-medium',
-                e.kind === 'disconnected' ? 'text-red-600 dark:text-red-400'
-                  : e.kind === 'roamed' ? 'text-blue-600 dark:text-blue-400'
-                    : e.kind === 'connected' ? 'text-green-600 dark:text-green-400'
-                      : 'text-gray-500')}>
+              <span
+                className={clsx(
+                  'w-20 flex-shrink-0 font-medium',
+                  e.kind === 'disconnected'
+                    ? 'text-red-600 dark:text-red-400'
+                    : e.kind === 'roamed'
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : e.kind === 'connected'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-gray-500',
+                )}
+              >
                 {e.kind}
               </span>
               <span className="text-gray-600 dark:text-slate-300 flex-1 min-w-0 truncate">
@@ -101,7 +116,7 @@ function Session({ s }: { s: RoamSession }) {
                   ? `${e.interfaceName} → ${e.toInterface}`
                   : e.kind.startsWith('dhcp')
                     ? `${e.ip ?? ''}${e.hostname ? ` (${e.hostname})` : ''}`
-                    : e.interfaceName ?? ''}
+                    : (e.interfaceName ?? '')}
                 {e.reason ? ` — ${e.reason}` : ''}
               </span>
               <Signal dbm={e.signal} />
@@ -124,7 +139,7 @@ export default function RoamingTimeline({ mac }: { mac: string }) {
   const [range, setRange] = useRememberedRange<(typeof RANGES)[number]>('roaming', '24h', RANGES);
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['roaming', mac, range],
-    queryFn: () => clientsApi.getRoaming(mac, range).then(r => r.data),
+    queryFn: () => clientsApi.getRoaming(mac, range).then((r) => r.data),
   });
 
   const sessions = data?.sessions ?? [];
@@ -133,13 +148,21 @@ export default function RoamingTimeline({ mac }: { mac: string }) {
     <div className="card p-4 space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
         <Route className="w-4 h-4 text-blue-500" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Roaming &amp; sessions</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          Roaming &amp; sessions
+        </h3>
         <div className="ml-auto flex rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
-          {RANGES.map(r => (
-            <button key={r} onClick={() => setRange(r)}
-              className={clsx('px-2 py-1 text-[11px] font-medium transition-colors',
-                range === r ? 'bg-blue-600 text-white'
-                            : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700')}>
+          {RANGES.map((r) => (
+            <button
+              key={r}
+              onClick={() => setRange(r)}
+              className={clsx(
+                'px-2 py-1 text-[11px] font-medium transition-colors',
+                range === r
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700',
+              )}
+            >
               {r}
             </button>
           ))}
@@ -152,18 +175,25 @@ export default function RoamingTimeline({ mac }: { mac: string }) {
         <div className="py-6 text-center text-xs text-gray-400">Reading access point logs…</div>
       ) : sessions.length === 0 ? (
         <div className="py-6 text-center text-xs text-gray-400">
-          No wireless sessions logged in this window. Association logging must be enabled
-          on the access point for this to populate.
+          No wireless sessions logged in this window. Association logging must be enabled on the
+          access point for this to populate.
         </div>
       ) : (
         <>
           <div className="flex items-center gap-4 flex-wrap text-[11px] text-gray-500 dark:text-slate-400">
-            <span>{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
-            <span>{data!.totalRoams} roam{data!.totalRoams !== 1 ? 's' : ''}</span>
+            <span>
+              {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+            </span>
+            <span>
+              {data!.totalRoams} roam{data!.totalRoams !== 1 ? 's' : ''}
+            </span>
             {data!.radios.length > 0 && (
               <span className="flex items-center gap-1">
                 <Wifi className="w-3 h-3" />
-                {data!.radios.slice(0, 4).map(r => r.name).join(', ')}
+                {data!.radios
+                  .slice(0, 4)
+                  .map((r) => r.name)
+                  .join(', ')}
               </span>
             )}
           </div>
@@ -181,7 +211,9 @@ export default function RoamingTimeline({ mac }: { mac: string }) {
           )}
 
           <div className="space-y-2 max-h-[28rem] overflow-y-auto">
-            {sessions.slice(0, 60).map((s, i) => <Session key={`${s.startedAt}-${i}`} s={s} />)}
+            {sessions.slice(0, 60).map((s, i) => (
+              <Session key={`${s.startedAt}-${i}`} s={s} />
+            ))}
           </div>
           {sessions.length > 60 && (
             <p className="text-[11px] text-gray-400">

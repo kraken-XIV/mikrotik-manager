@@ -13,7 +13,13 @@ export interface BackupSchedule {
 }
 
 export const WEEKDAY_NAMES = [
-  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
 ];
 
 const DEFAULT_SCHEDULE: BackupSchedule = {
@@ -39,10 +45,22 @@ export function parseBackupCron(cron: string | undefined | null): BackupSchedule
   const hour = intOr(h, DEFAULT_SCHEDULE.hour);
 
   if (dow !== '*' && /^\d+$/.test(dow)) {
-    return { ...DEFAULT_SCHEDULE, frequency: 'weekly', hour, minute, weekday: parseInt(dow, 10) % 7 };
+    return {
+      ...DEFAULT_SCHEDULE,
+      frequency: 'weekly',
+      hour,
+      minute,
+      weekday: parseInt(dow, 10) % 7,
+    };
   }
   if (dom !== '*' && /^\d+$/.test(dom)) {
-    return { ...DEFAULT_SCHEDULE, frequency: 'monthly', hour, minute, dayOfMonth: parseInt(dom, 10) };
+    return {
+      ...DEFAULT_SCHEDULE,
+      frequency: 'monthly',
+      hour,
+      minute,
+      dayOfMonth: parseInt(dom, 10),
+    };
   }
   return { ...DEFAULT_SCHEDULE, frequency: 'daily', hour, minute };
 }

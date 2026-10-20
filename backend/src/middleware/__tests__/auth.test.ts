@@ -1,13 +1,27 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { signToken, signRawToken, verifyToken, requireAuth, requireAdmin, requireWrite, AuthPayload } from '../auth';
+
 import { validateSession } from '../../utils/sessionState';
+import {
+  AuthPayload,
+  requireAdmin,
+  requireAuth,
+  requireWrite,
+  signRawToken,
+  signToken,
+  verifyToken,
+} from '../auth';
 
 // The account check hits the database; each test says what the account looks like.
 jest.mock('../../utils/sessionState', () => ({ validateSession: jest.fn() }));
 const mockValidate = validateSession as jest.MockedFunction<typeof validateSession>;
 
-const TEST_PAYLOAD: AuthPayload & { sv: number } = { userId: 1, username: 'alice', role: 'admin', sv: 0 };
+const TEST_PAYLOAD: AuthPayload & { sv: number } = {
+  userId: 1,
+  username: 'alice',
+  role: 'admin',
+  sv: 0,
+};
 
 /** Let requireAuth's account check settle. */
 const settle = () => new Promise((r) => setImmediate(r));
@@ -137,7 +151,11 @@ describe('requireAdmin', () => {
 
   it('returns 403 for a non-admin role', () => {
     const req = mockReq();
-    (req as Request & { user: AuthPayload }).user = { userId: 2, username: 'bob', role: 'operator' };
+    (req as Request & { user: AuthPayload }).user = {
+      userId: 2,
+      username: 'bob',
+      role: 'operator',
+    };
     const res = mockRes();
     const next = jest.fn() as unknown as NextFunction;
     requireAdmin(req, res, next);
@@ -159,7 +177,11 @@ describe('requireAdmin', () => {
 describe('requireWrite', () => {
   it('returns 403 for viewer role', () => {
     const req = mockReq();
-    (req as Request & { user: AuthPayload }).user = { userId: 3, username: 'carol', role: 'viewer' };
+    (req as Request & { user: AuthPayload }).user = {
+      userId: 3,
+      username: 'carol',
+      role: 'viewer',
+    };
     const res = mockRes();
     const next = jest.fn() as unknown as NextFunction;
     requireWrite(req, res, next);
@@ -178,7 +200,11 @@ describe('requireWrite', () => {
 
   it('calls next for operator role', () => {
     const req = mockReq();
-    (req as Request & { user: AuthPayload }).user = { userId: 4, username: 'dave', role: 'operator' };
+    (req as Request & { user: AuthPayload }).user = {
+      userId: 4,
+      username: 'dave',
+      role: 'operator',
+    };
     const res = mockRes();
     const next = jest.fn() as unknown as NextFunction;
     requireWrite(req, res, next);
@@ -204,8 +230,12 @@ describe('non-session tokens', () => {
   });
 
   it('rejects a signed token with no role or an unknown role', () => {
-    expect(() => verifyToken(signRawToken({ userId: 1, username: 'x' }, { expiresIn: '5m' }))).toThrow();
-    expect(() => verifyToken(signRawToken({ userId: 1, username: 'x', role: 'root' }, { expiresIn: '5m' }))).toThrow();
+    expect(() =>
+      verifyToken(signRawToken({ userId: 1, username: 'x' }, { expiresIn: '5m' })),
+    ).toThrow();
+    expect(() =>
+      verifyToken(signRawToken({ userId: 1, username: 'x', role: 'root' }, { expiresIn: '5m' })),
+    ).toThrow();
   });
 
   it('requireWrite refuses a user with no recognised role', () => {
@@ -232,10 +262,15 @@ describe('non-session tokens', () => {
 
 describe('must-change-password sessions', () => {
   // The flag comes from the account now; the account still has the default password.
-  beforeEach(() => mockValidate.mockImplementation(async (p) => ({ ...p, mustChangePassword: true })));
+  beforeEach(() =>
+    mockValidate.mockImplementation(async (p) => ({ ...p, mustChangePassword: true })),
+  );
   const restricted = () => signToken({ userId: 1, username: 'admin', role: 'admin', sv: 0 });
   const reqFor = (path: string) =>
-    ({ headers: { authorization: `Bearer ${restricted()}` }, originalUrl: path } as unknown as Request);
+    ({
+      headers: { authorization: `Bearer ${restricted()}` },
+      originalUrl: path,
+    }) as unknown as Request;
 
   it('can reach the password change endpoint', async () => {
     const next = jest.fn() as unknown as NextFunction;
@@ -264,7 +299,11 @@ describe('site-scoped sessions', () => {
 
   async function run(url: string, siteId: number | number[] | undefined) {
     mockValidate.mockResolvedValueOnce({ ...scoped, siteRoles: { ...scoped.siteRoles } });
-    const req = { headers: { authorization: `Bearer ${signToken(scoped)}` }, originalUrl: url, siteId } as unknown as Request;
+    const req = {
+      headers: { authorization: `Bearer ${signToken(scoped)}` },
+      originalUrl: url,
+      siteId,
+    } as unknown as Request;
     const res = mockRes();
     const next = jest.fn() as unknown as NextFunction;
     requireAuth(req, res, next);
@@ -287,12 +326,15 @@ describe('site-scoped sessions', () => {
 
   // A site left selected in the browser by another account must not lock this
   // one out of /auth/me, which the interface uses to notice and drop it.
-  it.each(['/api/auth/me', '/api/auth/logout', '/api/auth/password'])('ignores a stale site on %s', async (url) => {
-    const { req, res, next } = await run(url, 1);
-    expect(res.status).not.toHaveBeenCalled();
-    expect(next).toHaveBeenCalled();
-    expect(req.siteId).toEqual([3]);
-  });
+  it.each(['/api/auth/me', '/api/auth/logout', '/api/auth/password'])(
+    'ignores a stale site on %s',
+    async (url) => {
+      const { req, res, next } = await run(url, 1);
+      expect(res.status).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalled();
+      expect(req.siteId).toEqual([3]);
+    },
+  );
 });
 
 // ── groups chosen in the site switcher (#306) ───────────────────────────────
@@ -300,11 +342,16 @@ describe('site-scoped sessions', () => {
 describe('a group as the site scope', () => {
   const scoped = { ...TEST_PAYLOAD, userId: 12, siteRoles: { 3: 'viewer', 4: 'operator' } };
 
-  async function run(groupSites: number[], roles: Record<number, string> | null = scoped.siteRoles) {
+  async function run(
+    groupSites: number[],
+    roles: Record<number, string> | null = scoped.siteRoles,
+  ) {
     mockValidate.mockResolvedValueOnce({ ...scoped, siteRoles: roles ? { ...roles } : undefined });
     const req = {
-      headers: { authorization: `Bearer ${signToken(scoped)}` }, originalUrl: '/api/devices',
-      siteId: groupSites, siteGroupId: 9,
+      headers: { authorization: `Bearer ${signToken(scoped)}` },
+      originalUrl: '/api/devices',
+      siteId: groupSites,
+      siteGroupId: 9,
     } as unknown as Request;
     const res = mockRes();
     const next = jest.fn() as unknown as NextFunction;
@@ -339,7 +386,11 @@ describe('a group as the site scope', () => {
 
   it('an account limited to an empty group sees nothing, not the whole fleet', async () => {
     mockValidate.mockResolvedValueOnce({ ...scoped, siteRoles: {} });
-    const req = { headers: { authorization: `Bearer ${signToken(scoped)}` }, originalUrl: '/api/devices', siteId: null } as unknown as Request;
+    const req = {
+      headers: { authorization: `Bearer ${signToken(scoped)}` },
+      originalUrl: '/api/devices',
+      siteId: null,
+    } as unknown as Request;
     const next = jest.fn() as unknown as NextFunction;
     requireAuth(req, mockRes(), next);
     await settle();

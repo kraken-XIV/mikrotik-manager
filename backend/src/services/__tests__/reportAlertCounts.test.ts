@@ -1,5 +1,5 @@
-import { reportService } from '../ReportService';
 import { query } from '../../config/database';
+import { reportService } from '../ReportService';
 
 jest.mock('../../config/database', () => ({ query: jest.fn(), queryOne: jest.fn() }));
 
@@ -18,8 +18,12 @@ describe('scheduled report alert counts', () => {
   });
 
   it('reads only the error and warning events of the period', async () => {
-    const html = await (reportService as unknown as { buildHtml(f: string): Promise<string> }).buildHtml('weekly');
-    const sql = String(mockedQuery.mock.calls.map(([s]) => s).find((s) => String(s).includes("severity='error'")));
+    const html = await (
+      reportService as unknown as { buildHtml(f: string): Promise<string> }
+    ).buildHtml('weekly');
+    const sql = String(
+      mockedQuery.mock.calls.map(([s]) => s).find((s) => String(s).includes("severity='error'")),
+    );
     // Without it the query visits every (mostly info) event of the period.
     expect(sql).toContain("WHERE severity IN ('error','warning')");
     expect(html).toContain('1512');

@@ -1,21 +1,13 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertTriangle,
-  RefreshCw,
-  ShieldCheck,
-  X,
-} from 'lucide-react';
 import clsx from 'clsx';
+import { AlertTriangle, RefreshCw, ShieldCheck, X } from 'lucide-react';
+import { useState } from 'react';
 
 import { devicesApi } from '../../services/api';
 import type { Device } from '../../types';
-import DevicePicker from '../common/DevicePicker';
 import { ruleSummary } from '../../utils/firewallSummary';
-import {
-  GuardedWriteUi,
-  useGuardedWrite,
-} from '../ChangeGuardDialog';
+import { GuardedWriteUi, useGuardedWrite } from '../ChangeGuardDialog';
+import DevicePicker from '../common/DevicePicker';
 
 type Rule = Record<string, string> & { '.id': string };
 
@@ -50,10 +42,7 @@ function isManaged(rule: Rule): boolean {
 function hasCustomLogging(rule: Rule): boolean {
   const prefix = rule['log-prefix'] ?? '';
 
-  return (
-    (yes(rule.log) || prefix.length > 0) &&
-    !prefix.startsWith('MTM-FW-')
-  );
+  return (yes(rule.log) || prefix.length > 0) && !prefix.startsWith('MTM-FW-');
 }
 
 function connectionStates(rule: Rule): string[] {
@@ -110,14 +99,16 @@ function blockedReason(rule: Rule): string | null {
 
 function errMsg(error: unknown): string {
   return (
-    error as {
-      response?: {
-        data?: {
-          error?: string;
+    (
+      error as {
+        response?: {
+          data?: {
+            error?: string;
+          };
         };
-      };
-    }
-  )?.response?.data?.error ?? 'Failed to update firewall monitoring';
+      }
+    )?.response?.data?.error ?? 'Failed to update firewall monitoring'
+  );
 }
 
 export default function FirewallMonitoringModal({
@@ -129,9 +120,7 @@ export default function FirewallMonitoringModal({
   const queryClient = useQueryClient();
   const guard = useGuardedWrite();
 
-  const [deviceId, setDeviceId] = useState<number | null>(
-    initialDeviceId ?? null
-  );
+  const [deviceId, setDeviceId] = useState<number | null>(initialDeviceId ?? null);
   const [allowRisky, setAllowRisky] = useState(false);
   const [error, setError] = useState('');
 
@@ -144,8 +133,7 @@ export default function FirewallMonitoringModal({
     refetch,
   } = useQuery({
     queryKey: ['firewall-monitor-rules', deviceId],
-    queryFn: () =>
-      devicesApi.getFirewall(deviceId!).then((r) => r.data as Rule[]),
+    queryFn: () => devicesApi.getFirewall(deviceId!).then((r) => r.data as Rule[]),
     enabled: open && deviceId != null,
     staleTime: 10_000,
   });
@@ -203,9 +191,9 @@ export default function FirewallMonitoringModal({
               ...request,
               confirm: true,
             },
-            { onError: failed }
+            { onError: failed },
           ),
-        failed
+        failed,
       ),
     });
   };
@@ -224,8 +212,7 @@ export default function FirewallMonitoringModal({
               Configure Firewall Monitoring
             </h3>
             <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-              Enable RouterOS logging for firewall rules you want to see in
-              Firewall Logs.
+              Enable RouterOS logging for firewall rules you want to see in Firewall Logs.
             </p>
           </div>
 
@@ -259,12 +246,7 @@ export default function FirewallMonitoringModal({
                   disabled={isFetching}
                   className="btn-secondary flex items-center gap-2"
                 >
-                  <RefreshCw
-                    className={clsx(
-                      'w-4 h-4',
-                      isFetching && 'animate-spin'
-                    )}
-                  />
+                  <RefreshCw className={clsx('w-4 h-4', isFetching && 'animate-spin')} />
                   Refresh
                 </button>
 
@@ -280,9 +262,8 @@ export default function FirewallMonitoringModal({
             <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
             <div className="text-xs text-blue-800 dark:text-blue-300">
               Manager only changes <span className="font-mono">log</span> and{' '}
-              <span className="font-mono">log-prefix</span>. Rule action,
-              matching conditions and order remain unchanged. Existing custom
-              logging is never overwritten.
+              <span className="font-mono">log-prefix</span>. Rule action, matching conditions and
+              order remain unchanged. Existing custom logging is never overwritten.
             </div>
           </div>
 
@@ -299,9 +280,8 @@ export default function FirewallMonitoringModal({
                 Allow high-volume rules
               </div>
               <div className="text-xs text-gray-500 dark:text-slate-400">
-                Allows monitoring ACCEPT rules without a new-connection filter
-                and rules matching established/related traffic. This can create
-                large amounts of log data.
+                Allows monitoring ACCEPT rules without a new-connection filter and rules matching
+                established/related traffic. This can create large amounts of log data.
               </div>
             </div>
           </label>
@@ -319,9 +299,7 @@ export default function FirewallMonitoringModal({
               Select a device to view its firewall rules.
             </div>
           ) : isLoading ? (
-            <div className="p-12 text-center text-gray-400">
-              Loading firewall rules...
-            </div>
+            <div className="p-12 text-center text-gray-400">Loading firewall rules...</div>
           ) : rules.length === 0 ? (
             <div className="p-12 text-center text-gray-500 dark:text-slate-400">
               No firewall filter rules found.
@@ -330,21 +308,11 @@ export default function FirewallMonitoringModal({
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-white dark:bg-slate-800 z-10">
                 <tr className="border-b border-gray-200 dark:border-slate-700">
-                  <th className="table-header px-4 py-2.5 text-left w-20">
-                    Chain
-                  </th>
-                  <th className="table-header px-4 py-2.5 text-left w-24">
-                    Action
-                  </th>
-                  <th className="table-header px-4 py-2.5 text-left">
-                    Rule
-                  </th>
-                  <th className="table-header px-4 py-2.5 text-left w-44">
-                    Logging
-                  </th>
-                  <th className="table-header px-4 py-2.5 text-right w-28">
-                    Monitor
-                  </th>
+                  <th className="table-header px-4 py-2.5 text-left w-20">Chain</th>
+                  <th className="table-header px-4 py-2.5 text-left w-24">Action</th>
+                  <th className="table-header px-4 py-2.5 text-left">Rule</th>
+                  <th className="table-header px-4 py-2.5 text-left w-44">Logging</th>
+                  <th className="table-header px-4 py-2.5 text-right w-28">Monitor</th>
                 </tr>
               </thead>
 
@@ -354,21 +322,15 @@ export default function FirewallMonitoringModal({
                   const blocked = blockedReason(rule);
                   const risk = riskReason(rule);
 
-                  const canToggle =
-                    managed ||
-                    (!blocked && (!risk || allowRisky));
+                  const canToggle = managed || (!blocked && (!risk || allowRisky));
 
                   const pending =
-                    updateRule.isPending &&
-                    updateRule.variables?.ruleId === rule['.id'];
+                    updateRule.isPending && updateRule.variables?.ruleId === rule['.id'];
 
                   const action = (rule.action ?? 'unknown').toLowerCase();
 
                   return (
-                    <tr
-                      key={rule['.id']}
-                      className="hover:bg-gray-50 dark:hover:bg-slate-700/30"
-                    >
+                    <tr key={rule['.id']} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
                       <td className="px-4 py-3 text-xs font-mono text-gray-500 dark:text-slate-400">
                         {rule.chain || '—'}
                       </td>
@@ -377,13 +339,11 @@ export default function FirewallMonitoringModal({
                         <span
                           className={clsx(
                             'text-xs font-semibold uppercase',
-                            action === 'accept' &&
-                              'text-green-600 dark:text-green-400',
-                            (action === 'drop' ||
-                              action === 'reject') &&
+                            action === 'accept' && 'text-green-600 dark:text-green-400',
+                            (action === 'drop' || action === 'reject') &&
                               'text-red-600 dark:text-red-400',
                             action === 'fasttrack-connection' &&
-                              'text-indigo-600 dark:text-indigo-400'
+                              'text-indigo-600 dark:text-indigo-400',
                           )}
                         >
                           {action}
@@ -431,9 +391,7 @@ export default function FirewallMonitoringModal({
                             Existing logging
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-400 dark:text-slate-500">
-                            Off
-                          </span>
+                          <span className="text-xs text-gray-400 dark:text-slate-500">Off</span>
                         )}
                       </td>
 
@@ -441,9 +399,7 @@ export default function FirewallMonitoringModal({
                         <button
                           type="button"
                           aria-label={
-                            managed
-                              ? 'Disable firewall monitoring'
-                              : 'Enable firewall monitoring'
+                            managed ? 'Disable firewall monitoring' : 'Enable firewall monitoring'
                           }
                           aria-pressed={managed}
                           title={
@@ -457,19 +413,14 @@ export default function FirewallMonitoringModal({
                           onClick={() => setMonitoring(rule, !managed)}
                           className={clsx(
                             'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                            managed
-                              ? 'bg-blue-600'
-                              : 'bg-gray-300 dark:bg-slate-600',
-                            (!canToggle || pending) &&
-                              'opacity-40 cursor-not-allowed'
+                            managed ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600',
+                            (!canToggle || pending) && 'opacity-40 cursor-not-allowed',
                           )}
                         >
                           <span
                             className={clsx(
                               'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                              managed
-                                ? 'translate-x-6'
-                                : 'translate-x-1'
+                              managed ? 'translate-x-6' : 'translate-x-1',
                             )}
                           />
                         </button>

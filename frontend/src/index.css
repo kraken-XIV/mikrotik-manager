@@ -6,120 +6,127 @@
 @layer base {
   :root {
     /* ── surfaces (warm-neutral light) ── */
-    --bg:          #f8f7f4;
-    --surface:     #ffffff;
-    --surface-2:   #f2f1ec;
-    --surface-3:   #e8e6e0;
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --surface-2: #f2f1ec;
+    --surface-3: #e8e6e0;
 
     /* ── lines ── */
-    --line:        #d4d1c8;
-    --line-soft:   #dedad3;
+    --line: #d4d1c8;
+    --line-soft: #dedad3;
 
     /* ── text ── */
-    --ink:         #1a1a16;
-    --ink-2:       #3d3c35;
-    --ink-3:       #6b6960;
-    --ink-4:       #9e9b92;
+    --ink: #1a1a16;
+    --ink-2: #3d3c35;
+    --ink-3: #6b6960;
+    --ink-4: #9e9b92;
 
     /* ── accent (blue) ── */
-    --accent:      #2563eb;
-    --accent-2:    #1d4ed8;
+    --accent: #2563eb;
+    --accent-2: #1d4ed8;
     --accent-soft: #eff6ff;
-    --accent-fg:   #ffffff;
+    --accent-fg: #ffffff;
 
     /* ── port faceplate ── */
-    --faceplate-from:    #eae8e3;
-    --faceplate-to:      #d8d6d0;
-    --faceplate-border:  #c4c1b8;
-    --faceplate-inset:   #b8b5ad;
-    --port-up-bg:        #dcf5e0;
-    --port-up-border:    #6abf72;
-    --port-down-bg:      #fde8e8;
-    --port-down-border:  #e07070;
+    --faceplate-from: #eae8e3;
+    --faceplate-to: #d8d6d0;
+    --faceplate-border: #c4c1b8;
+    --faceplate-inset: #b8b5ad;
+    --port-up-bg: #dcf5e0;
+    --port-up-border: #6abf72;
+    --port-down-bg: #fde8e8;
+    --port-down-border: #e07070;
 
     /* ── status ── */
-    --good:        #2d7a2a;
-    --good-bg:     #dcf5dc;
-    --warn:        #8a6200;
-    --warn-bg:     #fef3c7;
-    --bad:         #b83333;
-    --bad-bg:      #fee2e2;
-    --info:        #1a5ea8;
-    --info-bg:     #dbeafe;
-    --violet:      #6b3db8;
-    --violet-bg:   #ede9fe;
+    --good: #2d7a2a;
+    --good-bg: #dcf5dc;
+    --warn: #8a6200;
+    --warn-bg: #fef3c7;
+    --bad: #b83333;
+    --bad-bg: #fee2e2;
+    --info: #1a5ea8;
+    --info-bg: #dbeafe;
+    --violet: #6b3db8;
+    --violet-bg: #ede9fe;
 
     /* ── legacy aliases (used by older components) ── */
-    --color-bg:             var(--bg);
-    --color-surface:        var(--surface);
-    --color-border:         var(--line);
-    --color-text:           var(--ink);
-    --color-text-muted:     var(--ink-3);
-    --color-sidebar-bg:     var(--surface);
-    --color-sidebar-text:   var(--ink-2);
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-border: var(--line);
+    --color-text: var(--ink);
+    --color-text-muted: var(--ink-3);
+    --color-sidebar-bg: var(--surface);
+    --color-sidebar-text: var(--ink-2);
     --color-sidebar-active: var(--accent);
   }
 
   .dark {
     /* ── surfaces (warm-neutral dark) ── */
-    --bg:          #0e0f12;
-    --surface:     #15171b;
-    --surface-2:   #1c1f24;
-    --surface-3:   #23262c;
+    --bg: #0e0f12;
+    --surface: #15171b;
+    --surface-2: #1c1f24;
+    --surface-3: #23262c;
 
     /* ── lines ── */
-    --line:        #2a2e35;
-    --line-soft:   #20232a;
+    --line: #2a2e35;
+    --line-soft: #20232a;
 
     /* ── text ── */
-    --ink:         #f1efe9;
-    --ink-2:       #c2bfb6;
-    --ink-3:       #8a877e;
-    --ink-4:       #5d5b54;
+    --ink: #f1efe9;
+    --ink-2: #c2bfb6;
+    --ink-3: #8a877e;
+    --ink-4: #5d5b54;
 
     /* ── accent (blue) ── */
-    --accent:      #60a5fa;
-    --accent-2:    #3b82f6;
+    --accent: #60a5fa;
+    --accent-2: #3b82f6;
     --accent-soft: rgba(96, 165, 250, 0.1);
-    --accent-fg:   #0e0f12;
+    --accent-fg: #0e0f12;
 
     /* ── port faceplate ── */
-    --faceplate-from:    #0a0c0e;
-    --faceplate-to:      #13171a;
-    --faceplate-border:  #2a2e35;
-    --faceplate-inset:   #1f2329;
-    --port-up-bg:        #1c2918;
-    --port-up-border:    #3b6f3a;
-    --port-down-bg:      #291417;
-    --port-down-border:  #5b2024;
+    --faceplate-from: #0a0c0e;
+    --faceplate-to: #13171a;
+    --faceplate-border: #2a2e35;
+    --faceplate-inset: #1f2329;
+    --port-up-bg: #1c2918;
+    --port-up-border: #3b6f3a;
+    --port-down-bg: #291417;
+    --port-down-border: #5b2024;
 
     /* ── status ── */
-    --good:        #8de08a;
-    --good-bg:     rgba(141, 224, 138, 0.12);
-    --warn:        #f0c87a;
-    --warn-bg:     rgba(240, 200, 122, 0.12);
-    --bad:         #f08a8a;
-    --bad-bg:      rgba(240, 138, 138, 0.12);
-    --info:        #9ec5ff;
-    --info-bg:     rgba(158, 197, 255, 0.12);
-    --violet:      #c0a8f5;
-    --violet-bg:   rgba(192, 168, 245, 0.12);
+    --good: #8de08a;
+    --good-bg: rgba(141, 224, 138, 0.12);
+    --warn: #f0c87a;
+    --warn-bg: rgba(240, 200, 122, 0.12);
+    --bad: #f08a8a;
+    --bad-bg: rgba(240, 138, 138, 0.12);
+    --info: #9ec5ff;
+    --info-bg: rgba(158, 197, 255, 0.12);
+    --violet: #c0a8f5;
+    --violet-bg: rgba(192, 168, 245, 0.12);
 
     /* ── legacy aliases ── */
-    --color-bg:             var(--bg);
-    --color-surface:        var(--surface);
-    --color-border:         var(--line);
-    --color-text:           var(--ink);
-    --color-text-muted:     var(--ink-3);
-    --color-sidebar-bg:     var(--bg);
-    --color-sidebar-text:   var(--ink-2);
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-border: var(--line);
+    --color-text: var(--ink);
+    --color-text-muted: var(--ink-3);
+    --color-sidebar-bg: var(--bg);
+    --color-sidebar-text: var(--ink-2);
     --color-sidebar-active: var(--accent);
   }
 
   body {
     background-color: var(--bg);
     color: var(--ink);
-    font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family:
+      'Geist',
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
     font-feature-settings: 'ss01';
   }
 

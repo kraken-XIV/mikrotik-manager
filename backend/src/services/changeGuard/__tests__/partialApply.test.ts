@@ -1,5 +1,5 @@
-import { stepFailure, isPartialApply } from '../partialApply';
 import { RouterOSError, RouterOSTrapError } from '../../mikrotik/RouterOSClient';
+import { isPartialApply, stepFailure } from '../partialApply';
 
 describe('stepFailure', () => {
   it('treats a !trap before any write as a plain rejection', () => {

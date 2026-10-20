@@ -8,14 +8,24 @@
  * itself, so the warning names the actual mechanism instead of being generic.
  */
 import { planVlanWrite } from '../../utils/bridgeVlanPlan';
-import { evaluate, INVARIANTS, type InvariantStatus } from './invariants';
-import { resolveManagementPath, expandVlanIds, type DeviceSnapshot, type ManagementPath, type RosRow } from './pathModel';
 import type { GuardDevice } from './ChangeGuard';
+import { evaluate, INVARIANTS, type InvariantStatus } from './invariants';
+import {
+  type DeviceSnapshot,
+  expandVlanIds,
+  type ManagementPath,
+  resolveManagementPath,
+  type RosRow,
+} from './pathModel';
 
 export type PlannedChange =
   | { kind: 'bridge.vlan-filtering'; bridge: string; enabled: boolean }
   | {
-      kind: 'port.vlan'; port: string; pvid: number; tagged: number[]; untagged: number[];
+      kind: 'port.vlan';
+      port: string;
+      pvid: number;
+      tagged: number[];
+      untagged: number[];
       /** Tagged list is the complete set: unlisted static tagged rows lose the port (#165). */
       replaceTagged?: boolean;
       /**
@@ -85,7 +95,10 @@ const clone = (snap: DeviceSnapshot): DeviceSnapshot =>
   JSON.parse(JSON.stringify(snap)) as DeviceSnapshot;
 
 const csv = (v: string | undefined): string[] =>
-  (v || '').split(',').map((s) => s.trim()).filter(Boolean);
+  (v || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
 const join = (list: string[]): string => [...new Set(list)].filter(Boolean).join(',');
 
@@ -121,9 +134,10 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
       // untagged management traffic cuts it off even though every VLAN row
       // still lists the port (#151).
       if (port && change.mode) {
-        port['frame-types'] = change.mode === 'access'
-          ? 'admit-only-untagged-and-priority-tagged'
-          : 'admit-only-vlan-tagged';
+        port['frame-types'] =
+          change.mode === 'access'
+            ? 'admit-only-untagged-and-priority-tagged'
+            : 'admit-only-vlan-tagged';
         port['ingress-filtering'] = 'true';
       }
       const bridge = port?.['bridge'];
@@ -136,10 +150,19 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
       // the writer makes); with none, or only a dynamic one, a new static row
       // is added. VLANs not mentioned are left alone.
       const applyVlan = (vid: number, role: 'tagged' | 'untagged'): void => {
-        const row = s.bridgeVlans.find((r) => r['bridge'] === bridge && (r['vlan-ids'] || '').trim() === String(vid));
-        const plan = planVlanWrite(row ? { ...row, '.id': row['.id'] || 'sim' } : undefined, change.port, role);
+        const row = s.bridgeVlans.find(
+          (r) => r['bridge'] === bridge && (r['vlan-ids'] || '').trim() === String(vid),
+        );
+        const plan = planVlanWrite(
+          row ? { ...row, '.id': row['.id'] || 'sim' } : undefined,
+          change.port,
+          role,
+        );
         if (plan.action === 'noop') return;
-        if (plan.action === 'set' && row) { setMembership(row, csv(plan.tagged), csv(plan.untagged)); return; }
+        if (plan.action === 'set' && row) {
+          setMembership(row, csv(plan.tagged), csv(plan.untagged));
+          return;
+        }
         const added: RosRow = { bridge, 'vlan-ids': String(vid), dynamic: 'false' };
         setMembership(added, csv(plan.tagged), csv(plan.untagged));
         s.bridgeVlans.push(added);
@@ -158,7 +181,11 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
           if (!tagged.includes(change.port)) continue;
           const vids = expandVlanIds(row['vlan-ids']);
           if (vids.some((v) => keep.has(v))) continue;
-          setMembership(row, tagged.filter((p) => p !== change.port), csv(row['current-untagged'] ?? row['untagged']));
+          setMembership(
+            row,
+            tagged.filter((p) => p !== change.port),
+            csv(row['current-untagged'] ?? row['untagged']),
+          );
         }
       }
       break;
@@ -170,11 +197,18 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
     case 'vlan.add':
     case 'vlan.update': {
       s.bridgeVlans = s.bridgeVlans.filter(
-        (r) => !(r['bridge'] === change.bridge
-          && expandVlanIds(r['vlan-ids']).includes(change.vlanId)
-          && !isDynamic(r))
+        (r) =>
+          !(
+            r['bridge'] === change.bridge &&
+            expandVlanIds(r['vlan-ids']).includes(change.vlanId) &&
+            !isDynamic(r)
+          ),
       );
-      const row: RosRow = { bridge: change.bridge, 'vlan-ids': String(change.vlanId), dynamic: 'false' };
+      const row: RosRow = {
+        bridge: change.bridge,
+        'vlan-ids': String(change.vlanId),
+        dynamic: 'false',
+      };
       setMembership(row, change.tagged, change.untagged);
       s.bridgeVlans.push(row);
       break;
@@ -182,9 +216,12 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
 
     case 'vlan.delete': {
       s.bridgeVlans = s.bridgeVlans.filter(
-        (r) => !(r['bridge'] === change.bridge
-          && expandVlanIds(r['vlan-ids']).includes(change.vlanId)
-          && !isDynamic(r))
+        (r) =>
+          !(
+            r['bridge'] === change.bridge &&
+            expandVlanIds(r['vlan-ids']).includes(change.vlanId) &&
+            !isDynamic(r)
+          ),
       );
       break;
     }
@@ -201,7 +238,9 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
         // As RouterOS does: an address on a bridge port is held by the bridge.
         const to = change.fields['interface'];
         if (to) {
-          const port = s.bridgePorts.find((p) => p['interface'] === to && p['disabled'] !== 'true' && p['disabled'] !== 'yes');
+          const port = s.bridgePorts.find(
+            (p) => p['interface'] === to && p['disabled'] !== 'true' && p['disabled'] !== 'yes',
+          );
           row['actual-interface'] = port?.['bridge'] || to;
         }
         return row;
@@ -230,7 +269,11 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
             const tagged = csv(v['current-tagged'] ?? v['tagged']);
             const untagged = csv(v['current-untagged'] ?? v['untagged']);
             if (!tagged.includes(port) && !untagged.includes(port)) continue;
-            setMembership(v, tagged.filter((m) => m !== port), untagged.filter((m) => m !== port));
+            setMembership(
+              v,
+              tagged.filter((m) => m !== port),
+              untagged.filter((m) => m !== port),
+            );
           }
         }
         if (!change.bridge) {
@@ -240,7 +283,13 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
           row['pvid'] = '1';
           row['frame-types'] = 'admit-all';
         } else {
-          s.bridgePorts.push({ interface: port, bridge: change.bridge, pvid: '1', 'frame-types': 'admit-all', disabled: 'false' });
+          s.bridgePorts.push({
+            interface: port,
+            bridge: change.bridge,
+            pvid: '1',
+            'frame-types': 'admit-all',
+            disabled: 'false',
+          });
         }
       }
       break;
@@ -279,7 +328,9 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
     }
 
     case 'service.toggle': {
-      const svc = s.services.find((x) => x['.id'] === change.serviceId || x['name'] === change.serviceId);
+      const svc = s.services.find(
+        (x) => x['.id'] === change.serviceId || x['name'] === change.serviceId,
+      );
       if (svc) svc['disabled'] = change.disabled ? 'true' : 'false';
       break;
     }
@@ -287,13 +338,18 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
     // RouterOS appends a new rule to the end of the table unless told where.
     case 'firewall.add': {
       const row: RosRow = { '.id': '*simulated', ...change.fields };
-      const at = change.placeBefore ? s.firewallFilter.findIndex((r) => r['.id'] === change.placeBefore) : -1;
-      if (at >= 0) s.firewallFilter.splice(at, 0, row); else s.firewallFilter.push(row);
+      const at = change.placeBefore
+        ? s.firewallFilter.findIndex((r) => r['.id'] === change.placeBefore)
+        : -1;
+      if (at >= 0) s.firewallFilter.splice(at, 0, row);
+      else s.firewallFilter.push(row);
       break;
     }
 
     case 'firewall.set': {
-      s.firewallFilter = s.firewallFilter.map((r) => (r['.id'] === change.ruleId ? mergeFields(r, change.fields) : r));
+      s.firewallFilter = s.firewallFilter.map((r) =>
+        r['.id'] === change.ruleId ? mergeFields(r, change.fields) : r,
+      );
       break;
     }
 
@@ -302,8 +358,11 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
       const from = s.firewallFilter.findIndex((r) => r['.id'] === change.ruleId);
       if (from < 0) break;
       const [rule] = s.firewallFilter.splice(from, 1);
-      const to = change.destination ? s.firewallFilter.findIndex((r) => r['.id'] === change.destination) : -1;
-      if (to >= 0) s.firewallFilter.splice(to, 0, rule); else s.firewallFilter.push(rule);
+      const to = change.destination
+        ? s.firewallFilter.findIndex((r) => r['.id'] === change.destination)
+        : -1;
+      if (to >= 0) s.firewallFilter.splice(to, 0, rule);
+      else s.firewallFilter.push(rule);
       break;
     }
 
@@ -320,7 +379,9 @@ export function simulate(snap: DeviceSnapshot, change: PlannedChange): DeviceSna
     case 'address-list.set': {
       const entry = (s.addressLists ?? []).find((e) => e['.id'] === change.entryId);
       if (entry) {
-        s.addressLists = (s.addressLists ?? []).map((e) => (e === entry ? mergeFields(e, change.fields) : e));
+        s.addressLists = (s.addressLists ?? []).map((e) =>
+          e === entry ? mergeFields(e, change.fields) : e,
+        );
       } else if (change.fields['list']) {
         // An entry we didn't read is moving into a list; that list can no
         // longer be vouched for.
@@ -365,23 +426,32 @@ function mergeFields(row: RosRow, fields: Record<string, string>): RosRow {
 /** Ports, bonds and the bridge itself, among those of `bridge`, that a change touches. */
 function touchedPorts(snap: DeviceSnapshot, change: PlannedChange, bridge: string): string[] {
   const inScope = (n: string): boolean =>
-    n === bridge
-    || snap.bridgePorts.some((p) => p['interface'] === n && p['bridge'] === bridge)
-    || snap.bonds.some((b) => b['name'] === n);
+    n === bridge ||
+    snap.bridgePorts.some((p) => p['interface'] === n && p['bridge'] === bridge) ||
+    snap.bonds.some((b) => b['name'] === n);
   const names = (c: PlannedChange): string[] => {
     switch (c.kind) {
-      case 'batch': return c.changes.flatMap(names);
-      case 'port.vlan': return [c.port];
-      case 'bridge-port.move': return c.ports;
-      case 'interface.disable': return [c.name];
-      case 'bond.delete': return [c.name];
-      case 'path-object.change': return [c.name];
+      case 'batch':
+        return c.changes.flatMap(names);
+      case 'port.vlan':
+        return [c.port];
+      case 'bridge-port.move':
+        return c.ports;
+      case 'interface.disable':
+        return [c.name];
+      case 'bond.delete':
+        return [c.name];
+      case 'path-object.change':
+        return [c.name];
       case 'vlan.add':
-      case 'vlan.update': return [...c.tagged, ...c.untagged];
+      case 'vlan.update':
+        return [...c.tagged, ...c.untagged];
       case 'vlan.delete':
       case 'bridge.delete':
-      case 'bridge.vlan-filtering': return [c.bridge];
-      default: return [];
+      case 'bridge.vlan-filtering':
+        return [c.bridge];
+      default:
+        return [];
     }
   };
   return [...new Set(names(change).filter(inScope))];
@@ -404,8 +474,9 @@ function pathObjectChanges(change: PlannedChange): { name: string; what: string 
 }
 
 const touchesFirewall = (change: PlannedChange): boolean =>
-  change.kind.startsWith('firewall.') || change.kind.startsWith('address-list.')
-  || (change.kind === 'batch' && change.changes.some(touchesFirewall));
+  change.kind.startsWith('firewall.') ||
+  change.kind.startsWith('address-list.') ||
+  (change.kind === 'batch' && change.changes.some(touchesFirewall));
 
 /**
  * Compare invariants before and after. The management path is resolved once, on the
@@ -415,7 +486,7 @@ const touchesFirewall = (change: PlannedChange): boolean =>
 export function analyzeChange(
   snap: DeviceSnapshot,
   device: GuardDevice,
-  change: PlannedChange
+  change: PlannedChange,
 ): ChangeVerdict {
   const path = resolveManagementPath(snap, device);
   const before = evaluate(snap, path, device);
@@ -428,12 +499,21 @@ export function analyzeChange(
     const a = after.get(inv.id);
     // A violation already present is not this change's doing, but one that gets
     // WORSE is: a pre-existing warning must not hide a new critical break.
-    const worse = !!b && !b.ok && !!a && !a.ok
-      && (a.severity ?? 'critical') === 'critical' && (b.severity ?? 'critical') === 'warning';
+    const worse =
+      !!b &&
+      !b.ok &&
+      !!a &&
+      !a.ok &&
+      (a.severity ?? 'critical') === 'critical' &&
+      (b.severity ?? 'critical') === 'warning';
     if (worse && a) {
       violations.push({
-        id: inv.id, title: inv.title, before: false, after: false,
-        detail: a.detail, severity: 'critical',
+        id: inv.id,
+        title: inv.title,
+        before: false,
+        after: false,
+        detail: a.detail,
+        severity: 'critical',
       });
     }
     if (b && !b.ok) {
@@ -479,7 +559,8 @@ export function analyzeChange(
       title: 'An object the management path uses is being changed',
       before: true,
       after: true,
-      detail: `${p.what} on ${p.name}, which the manager's connection runs through. ` +
+      detail:
+        `${p.what} on ${p.name}, which the manager's connection runs through. ` +
         `This can't be simulated, so it runs only with auto-revert.`,
       severity: 'warning',
     });
@@ -497,7 +578,8 @@ export function analyzeChange(
         title: 'Where management enters the device is not certain',
         before: true,
         after: true,
-        detail: `Which port management arrives on could not be determined, and this change touches ${touched.join(', ')} on ${path.bridge}. ` +
+        detail:
+          `Which port management arrives on could not be determined, and this change touches ${touched.join(', ')} on ${path.bridge}. ` +
           `It can't be checked, so it runs only with auto-revert.`,
         severity: 'warning',
       });
@@ -511,7 +593,9 @@ export function analyzeChange(
   // Say so plainly when the analysis itself is running blind, rather than implying
   // a clean bill of health.
   if (path.ingressPortSource === 'unknown' && path.bridge) {
-    warnings.push('The ingress port could not be determined, so port-level checks were skipped — treat a "safe" result here with caution.');
+    warnings.push(
+      'The ingress port could not be determined, so port-level checks were skipped — treat a "safe" result here with caution.',
+    );
   }
 
   const hasCritical = violations.some((v) => v.severity === 'critical');

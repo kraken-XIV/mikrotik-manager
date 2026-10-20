@@ -1,14 +1,28 @@
-import { useEffect, useMemo, useState, FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, CheckCircle, AlertCircle, AlertTriangle, Loader2, Network, RotateCcw } from 'lucide-react';
-import { devicesApi, credentialPresetsApi } from '../../services/api';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  Loader2,
+  Network,
+  RotateCcw,
+  X,
+} from 'lucide-react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+
 import { presetsForSite } from '../../hooks/useSitePresets';
-import PollOverridesCard from '../common/PollOverridesCard';
+import { credentialPresetsApi, devicesApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { parsePort } from '../../utils/parsePort';
-import { API_SSL_PORT, portFieldError } from '../../utils/apiTls';
-import { isValidDeviceAddress, classifyAddress, addressFieldValue, sameAddress } from '../../utils/deviceAddress';
 import type { Device, DeviceType, IpAddress } from '../../types';
+import { API_SSL_PORT, portFieldError } from '../../utils/apiTls';
+import {
+  addressFieldValue,
+  classifyAddress,
+  isValidDeviceAddress,
+  sameAddress,
+} from '../../utils/deviceAddress';
+import { parsePort } from '../../utils/parsePort';
+import PollOverridesCard from '../common/PollOverridesCard';
 
 interface Props {
   device: Device;
@@ -60,12 +74,16 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
     queryFn: () => credentialPresetsApi.list().then((r) => r.data),
     staleTime: 30_000,
   });
-  const presets = useMemo(() => presetsForSite(allPresets, device.site_id ?? null), [allPresets, device.site_id]);
-  const selectedPreset = presetId != null ? presets.find((p) => p.id === presetId) ?? null : null;
+  const presets = useMemo(
+    () => presetsForSite(allPresets, device.site_id ?? null),
+    [allPresets, device.site_id],
+  );
+  const selectedPreset = presetId != null ? (presets.find((p) => p.id === presetId) ?? null) : null;
   // api-ssl on this port (#257). Null follows the port (TLS on 8729) until
   // the user ticks or unticks it, and is then sent with the save.
   const [apiSslChoice, setApiSslChoice] = useState<boolean | null>(
-    typeof device.api_tls === 'boolean' ? device.api_tls : null);
+    typeof device.api_tls === 'boolean' ? device.api_tls : null,
+  );
   const apiSsl = apiSslChoice ?? parsePort(form.api_port, 8728) === API_SSL_PORT;
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -99,16 +117,22 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
   // The server only sends the saved password to the address it was saved for;
   // anyone but an admin moving a device has to type it again.
   const isAdmin = useAuthStore((st) => st.user?.role === 'admin');
-  const passwordNeededForMove = !isAdmin && addressTrimmed !== '' && addressTrimmed !== device.ip_address && !form.api_password;
+  const passwordNeededForMove =
+    !isAdmin && addressTrimmed !== '' && addressTrimmed !== device.ip_address && !form.api_password;
   const addressInvalid = addressTrimmed.length > 0 && !isValidDeviceAddress(addressTrimmed);
   const showPlaintextWarning =
-    addressTrimmed.length > 0 && !addressInvalid &&
+    addressTrimmed.length > 0 &&
+    !addressInvalid &&
     classifyAddress(addressTrimmed) !== 'private' &&
     !apiSsl;
 
   // Live IPs from the router itself — useful so you can change the
   // management IP to something the device actually owns instead of guessing.
-  const { data: ipRows, isLoading: ipsLoading, error: ipsError } = useQuery({
+  const {
+    data: ipRows,
+    isLoading: ipsLoading,
+    error: ipsError,
+  } = useQuery({
     queryKey: ['device-ips', device.id],
     // IPv6 too, so an IPv6 management address is recognised (#178).
     queryFn: () => devicesApi.getIpAddresses(device.id, { includeIpv6: true }).then((r) => r.data),
@@ -135,7 +159,9 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
 
   const ipWasDetected = candidateIps.some((c) => sameAddress(c.address, form.ip_address));
 
-  useEffect(() => { setError(''); }, [form.ip_address, form.api_port, form.api_username, form.api_password]);
+  useEffect(() => {
+    setError('');
+  }, [form.ip_address, form.api_port, form.api_username, form.api_password]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -147,7 +173,8 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
       setError(`"${addressTrimmed}" is not a valid IP address or hostname`);
       return;
     }
-    const portError = portFieldError(form.api_port, 'API port') ?? portFieldError(form.ssh_port, 'SSH port');
+    const portError =
+      portFieldError(form.api_port, 'API port') ?? portFieldError(form.ssh_port, 'SSH port');
     if (portError) {
       setError(portError);
       return;
@@ -189,9 +216,7 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="card w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Edit Device
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Device</h2>
           <button
             onClick={onClose}
             className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
@@ -215,7 +240,11 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                     className="flex items-center gap-1 text-[11px] font-normal normal-case tracking-normal text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
                     title="Stop keeping this name and follow the router's own identity again"
                   >
-                    {unlocking ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                    {unlocking ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-3 h-3" />
+                    )}
                     Use the router&apos;s identity
                   </button>
                 )}
@@ -227,7 +256,8 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
               />
               {device.name_locked && (
                 <p className="text-[11px] text-gray-400 mt-1">
-                  Set manually — the router&apos;s own identity won&apos;t override this until unlocked.
+                  Set manually — the router&apos;s own identity won&apos;t override this until
+                  unlocked.
                 </p>
               )}
             </div>
@@ -248,14 +278,15 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                 placeholder="192.168.88.1 or router.example.com"
               />
               {addressInvalid && (
-                <p className="text-[11px] text-red-500 mt-1">
-                  Not a valid IP address or hostname.
-                </p>
+                <p className="text-[11px] text-red-500 mt-1">Not a valid IP address or hostname.</p>
               )}
               {showPlaintextWarning && (
                 <p className="flex items-start gap-1 text-[11px] text-amber-600 dark:text-amber-400 mt-1">
                   <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                  <span>Credentials travel unencrypted to this address. Prefer api-ssl on port 8729, or a VPN.</span>
+                  <span>
+                    Credentials travel unencrypted to this address. Prefer api-ssl on port 8729, or
+                    a VPN.
+                  </span>
                 </p>
               )}
               {device.status === 'online' && (
@@ -302,7 +333,8 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                   )}
                   {!ipsLoading && !ipsError && !ipWasDetected && form.ip_address && (
                     <div className="px-3 py-2 text-[11px] text-amber-600 dark:text-amber-400 border-t border-gray-100 dark:border-slate-700">
-                      Entered IP isn&apos;t in the router&apos;s address list — double-check before saving.
+                      Entered IP isn&apos;t in the router&apos;s address list — double-check before
+                      saving.
                     </div>
                   )}
                 </div>
@@ -331,8 +363,9 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
             </h3>
             {device.ssh_only && (
               <p className="text-xs text-amber-700 dark:text-amber-400 -mt-1 mb-3">
-                This device was added over SSH only. This is the login tried on the API once it&apos;s enabled; the manager
-                connects over SSH until then, and checks a new address or SSH login over SSH when you save.
+                This device was added over SSH only. This is the login tried on the API once
+                it&apos;s enabled; the manager connects over SSH until then, and checks a new
+                address or SSH login over SSH when you save.
               </p>
             )}
             {presets.length > 0 && (
@@ -341,34 +374,40 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                 <select
                   className="input"
                   value={presetId ?? ''}
-                  onChange={(e) => setPresetId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                  onChange={(e) =>
+                    setPresetId(e.target.value ? parseInt(e.target.value, 10) : null)
+                  }
                 >
                   <option value="">— Keep or type the login below —</option>
                   {presets.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.api_username}{p.ssh_username ? ` · SSH ${p.ssh_username}` : ''})
+                      {p.name} ({p.api_username}
+                      {p.ssh_username ? ` · SSH ${p.ssh_username}` : ''})
                     </option>
                   ))}
                 </select>
                 {selectedPreset && (
                   <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
-                    Saving replaces this device&apos;s login with preset <strong>{selectedPreset.name}</strong>
-                    {selectedPreset.has_ssh_password && selectedPreset.ssh_username ? ', SSH login included' : ''}.
-                    The manager logs in with it first, and nothing is saved if that fails.
+                    Saving replaces this device&apos;s login with preset{' '}
+                    <strong>{selectedPreset.name}</strong>
+                    {selectedPreset.has_ssh_password && selectedPreset.ssh_username
+                      ? ', SSH login included'
+                      : ''}
+                    . The manager logs in with it first, and nothing is saved if that fails.
                   </p>
                 )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
               {!selectedPreset && (
-              <div>
-                <label className="label">Username *</label>
-                <input
-                  className="input"
-                  value={form.api_username}
-                  onChange={(e) => set('api_username', e.target.value)}
-                />
-              </div>
+                <div>
+                  <label className="label">Username *</label>
+                  <input
+                    className="input"
+                    value={form.api_username}
+                    onChange={(e) => set('api_username', e.target.value)}
+                  />
+                </div>
               )}
               <div>
                 <label className="label">API Port</label>
@@ -380,70 +419,77 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
                   value={form.api_port}
                   onChange={(e) => set('api_port', e.target.value)}
                 />
-                <label className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-200 mt-1.5 cursor-pointer"
-                  title="Tick when this port runs api-ssl, for example a forwarded port behind NAT">
-                  <input type="checkbox" className="w-3.5 h-3.5 rounded" checked={apiSsl} onChange={(e) => setApiSslChoice(e.target.checked)} />
+                <label
+                  className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-200 mt-1.5 cursor-pointer"
+                  title="Tick when this port runs api-ssl, for example a forwarded port behind NAT"
+                >
+                  <input
+                    type="checkbox"
+                    className="w-3.5 h-3.5 rounded"
+                    checked={apiSsl}
+                    onChange={(e) => setApiSslChoice(e.target.checked)}
+                  />
                   API-SSL (encrypted)
                 </label>
               </div>
               {!selectedPreset && (
-              <div className="col-span-2">
-                <label className="label">
-                  {passwordNeededForMove
-                    ? 'Password (needed to change the address)'
-                    : 'New Password (leave blank to keep existing)'}
-                </label>
-                <input
-                  className="input"
-                  type="password"
-                  value={form.api_password}
-                  onChange={(e) => set('api_password', e.target.value)}
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                />
-              </div>
+                <div className="col-span-2">
+                  <label className="label">
+                    {passwordNeededForMove
+                      ? 'Password (needed to change the address)'
+                      : 'New Password (leave blank to keep existing)'}
+                  </label>
+                  <input
+                    className="input"
+                    type="password"
+                    value={form.api_password}
+                    onChange={(e) => set('api_password', e.target.value)}
+                    autoComplete="new-password"
+                    placeholder="••••••••"
+                  />
+                </div>
               )}
             </div>
           </div>
 
           {/* SSH credentials (optional; what an SSH-only device is reached with, #174) */}
           {!selectedPreset && (
-          <details className="group" open={device.ssh_only || undefined}>
-            <summary className="cursor-pointer text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider select-none">
-              SSH Credentials (optional, for backup/restore)
-            </summary>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div>
-                <label className="label">SSH Username</label>
-                <input
-                  className="input"
-                  value={form.ssh_username}
-                  onChange={(e) => set('ssh_username', e.target.value)}
-                />
+            <details className="group" open={device.ssh_only || undefined}>
+              <summary className="cursor-pointer text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider select-none">
+                SSH Credentials (optional, for backup/restore)
+              </summary>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">SSH Username</label>
+                  <input
+                    className="input"
+                    value={form.ssh_username}
+                    onChange={(e) => set('ssh_username', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="label">SSH Port</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min={1}
+                    max={65535}
+                    value={form.ssh_port}
+                    onChange={(e) => set('ssh_port', e.target.value)}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="label">New SSH Password (leave blank to keep existing)</label>
+                  <input
+                    className="input"
+                    type="password"
+                    value={form.ssh_password}
+                    onChange={(e) => set('ssh_password', e.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="label">SSH Port</label>
-                <input
-                  className="input"
-                  type="number"
-                  min={1}
-                  max={65535}
-                  value={form.ssh_port}
-                  onChange={(e) => set('ssh_port', e.target.value)}
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="label">New SSH Password (leave blank to keep existing)</label>
-                <input
-                  className="input"
-                  type="password"
-                  value={form.ssh_password}
-                  onChange={(e) => set('ssh_password', e.target.value)}
-                  autoComplete="new-password"
-                />
-              </div>
-            </div>
-          </details>
+            </details>
           )}
 
           {/* Per-device polling and backup overrides (#261): rarely needed, so
@@ -453,7 +499,12 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
               Advanced: polling and backups
             </summary>
             <div className="mt-3">
-              <PollOverridesCard scope="device" id={device.id} siteId={device.site_id ?? null} compact />
+              <PollOverridesCard
+                scope="device"
+                id={device.id}
+                siteId={device.site_id ?? null}
+                compact
+              />
             </div>
           </details>
 
@@ -487,7 +538,11 @@ export default function EditDeviceModal({ device, onClose, onSuccess }: Props) {
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary flex items-center gap-2"
+            >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (

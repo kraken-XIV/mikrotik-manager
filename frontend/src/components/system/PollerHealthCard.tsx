@@ -1,9 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Activity, AlertTriangle, CheckCircle2, Clock, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { useIsFleetAdmin } from '../../hooks/useCanWrite';
-import { Activity, AlertTriangle, CheckCircle2, Clock, RefreshCw, Trash2 } from 'lucide-react';
-import { pollerApi, settingsApi, type PollerHealth, type PollerPhases } from '../../services/api';
+import { pollerApi, type PollerHealth, type PollerPhases, settingsApi } from '../../services/api';
 
 /**
  * The poller's own health, in the UI rather than buried in an API response.
@@ -14,21 +15,29 @@ import { pollerApi, settingsApi, type PollerHealth, type PollerPhases } from '..
  * arithmetic question (#114).
  */
 
-const STATUS: Record<PollerHealth['status'], { label: string; tone: string; icon: typeof Activity; blurb: string }> = {
+const STATUS: Record<
+  PollerHealth['status'],
+  { label: string; tone: string; icon: typeof Activity; blurb: string }
+> = {
   ok: {
-    label: 'Keeping up', tone: 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40',
+    label: 'Keeping up',
+    tone: 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40',
     icon: CheckCircle2,
     blurb: 'Workers are clearing polls faster than the schedule creates them.',
   },
   draining: {
-    label: 'Working through a backlog', tone: 'text-amber-800 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/40',
+    label: 'Working through a backlog',
+    tone: 'text-amber-800 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/40',
     icon: Clock,
-    blurb: 'Capacity is sufficient, but queued work from earlier is still clearing. Devices poll late until it does.',
+    blurb:
+      'Capacity is sufficient, but queued work from earlier is still clearing. Devices poll late until it does.',
   },
   saturated: {
-    label: 'Cannot keep up', tone: 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/40',
+    label: 'Cannot keep up',
+    tone: 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/40',
     icon: AlertTriangle,
-    blurb: 'Polls are being created faster than they can run, so the backlog grows every cycle and devices will go stale.',
+    blurb:
+      'Polls are being created faster than they can run, so the backlog grows every cycle and devices will go stale.',
   },
 };
 
@@ -39,14 +48,27 @@ const fmtDuration = (sec: number | null): string => {
   return `${(sec / 3600).toFixed(1)} h`;
 };
 
-function Stat({ label, value, hint, alarm }: {
-  label: string; value: string; hint?: string; alarm?: boolean;
+function Stat({
+  label,
+  value,
+  hint,
+  alarm,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  alarm?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3">
       <div className="text-xs text-gray-500 dark:text-slate-400">{label}</div>
-      <div className={`text-lg font-semibold tabular-nums ${
-        alarm ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>{value}</div>
+      <div
+        className={`text-lg font-semibold tabular-nums ${
+          alarm ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'
+        }`}
+      >
+        {value}
+      </div>
       {hint && <div className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">{hint}</div>}
     </div>
   );
@@ -54,9 +76,14 @@ function Stat({ label, value, hint, alarm }: {
 
 /** Fallback capacity, so a partial or unexpected payload cannot blank the page. */
 const EMPTY_CAPACITY: PollerHealth['capacity'] = {
-  devices: 0, avg_fast_poll_ms: null, p90_fast_poll_ms: null,
-  arrival_per_sec: 0, service_per_sec: null, headroom: null,
-  backlog: 0, drain_eta_sec: 0,
+  devices: 0,
+  avg_fast_poll_ms: null,
+  p90_fast_poll_ms: null,
+  arrival_per_sec: 0,
+  service_per_sec: null,
+  headroom: null,
+  backlog: 0,
+  drain_eta_sec: 0,
 };
 
 export default function PollerHealthCard() {
@@ -66,7 +93,7 @@ export default function PollerHealthCard() {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['poller-health'],
-    queryFn: () => pollerApi.health().then(r => r.data),
+    queryFn: () => pollerApi.health().then((r) => r.data),
     refetchInterval: 15_000,
   });
 
@@ -92,21 +119,25 @@ export default function PollerHealthCard() {
    * Whatever comes back, say something useful about it.
    */
   if (isError || !data || typeof data !== 'object') {
-    const msg = (error as { response?: { data?: { error?: string } }; message?: string } | null);
+    const msg = error as { response?: { data?: { error?: string } }; message?: string } | null;
     return (
       <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm dark:border-red-700/60 dark:bg-red-900/20">
         <div className="flex items-center gap-2 font-medium text-red-800 dark:text-red-300">
           <AlertTriangle className="h-4 w-4" /> Could not read poller health
         </div>
         <p className="mt-1 text-red-700 dark:text-red-300">
-          {msg?.response?.data?.error || msg?.message || 'The server returned an unexpected response.'}
+          {msg?.response?.data?.error ||
+            msg?.message ||
+            'The server returned an unexpected response.'}
         </p>
         <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-          Polling itself may still be running — this panel only reports on it. Check the backend logs
-          if this persists.
+          Polling itself may still be running — this panel only reports on it. Check the backend
+          logs if this persists.
         </p>
-        <button onClick={() => queryClient.invalidateQueries({ queryKey: ['poller-health'] })}
-                className="btn-secondary mt-3 flex items-center gap-2 text-xs">
+        <button
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['poller-health'] })}
+          className="btn-secondary mt-3 flex items-center gap-2 text-xs"
+        >
           <RefreshCw className="h-3.5 w-3.5" /> Retry
         </button>
       </div>
@@ -160,26 +191,42 @@ export default function PollerHealthCard() {
           hint={backlog > 0 ? `clears in ${fmtDuration(cap.drain_eta_sec)}` : 'nothing waiting'}
           alarm={backlog > cap.devices * 3}
         />
-        <Stat label="Avg poll" value={cap.avg_fast_poll_ms == null ? '—' : `${cap.avg_fast_poll_ms} ms`} />
-        <Stat label="Slowest (p90)" value={cap.p90_fast_poll_ms == null ? '—' : `${cap.p90_fast_poll_ms} ms`} />
+        <Stat
+          label="Avg poll"
+          value={cap.avg_fast_poll_ms == null ? '—' : `${cap.avg_fast_poll_ms} ms`}
+        />
+        <Stat
+          label="Slowest (p90)"
+          value={cap.p90_fast_poll_ms == null ? '—' : `${cap.p90_fast_poll_ms} ms`}
+        />
         <Stat
           label="Workers"
           value={String(workers.concurrency)}
-          hint={(workers.processes?.length ?? 0) > 1
-            ? `in ${workers.processes!.length} processes · fast poll every ${workers.fast_interval_sec ?? '?'}s`
-            : workers.fast_interval_sec ? `fast poll every ${workers.fast_interval_sec}s` : `${(workers.poll_interval_ms || 0) / 1000}s interval`}
+          hint={
+            (workers.processes?.length ?? 0) > 1
+              ? `in ${workers.processes!.length} processes · fast poll every ${workers.fast_interval_sec ?? '?'}s`
+              : workers.fast_interval_sec
+                ? `fast poll every ${workers.fast_interval_sec}s`
+                : `${(workers.poll_interval_ms || 0) / 1000}s interval`
+          }
         />
       </div>
 
-      {data.phases && <PhasesPanel phases={data.phases} onSaved={() => queryClient.invalidateQueries({ queryKey: ['poller-health'] })} />}
+      {data.phases && (
+        <PhasesPanel
+          phases={data.phases}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ['poller-health'] })}
+        />
+      )}
 
       {cap.headroom != null && cap.headroom < 1.5 && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs dark:border-amber-700/60 dark:bg-amber-900/20">
           <div className="font-medium text-amber-900 dark:text-amber-200">Little margin left</div>
           <p className="mt-0.5 text-amber-800 dark:text-amber-300">
-            Demand is {cap.arrival_per_sec}/s against {cap.service_per_sec ?? '—'}/s of capacity. Slow
-            devices push individual polls well past the average, so bursts will fall behind even while
-            the average looks fine. Raise <code>POLLER_CONCURRENCY</code> or lengthen the interval.
+            Demand is {cap.arrival_per_sec}/s against {cap.service_per_sec ?? '—'}/s of capacity.
+            Slow devices push individual polls well past the average, so bursts will fall behind
+            even while the average looks fine. Raise <code>POLLER_CONCURRENCY</code> or lengthen the
+            interval.
           </p>
         </div>
       )}
@@ -196,16 +243,29 @@ export default function PollerHealthCard() {
             </tr>
           </thead>
           <tbody>
-            {queues.map(q => (
-              <tr key={q.name} className="border-b border-gray-100 dark:border-slate-800 last:border-0">
-                <td className="py-2 pr-4 font-mono text-xs text-gray-900 dark:text-white">{q.name}</td>
-                <td className={`py-2 pr-4 text-right tabular-nums ${
-                  (q.waiting || 0) > 0 ? 'text-amber-700 dark:text-amber-400 font-medium'
-                                       : 'text-gray-600 dark:text-slate-300'}`}>
+            {queues.map((q) => (
+              <tr
+                key={q.name}
+                className="border-b border-gray-100 dark:border-slate-800 last:border-0"
+              >
+                <td className="py-2 pr-4 font-mono text-xs text-gray-900 dark:text-white">
+                  {q.name}
+                </td>
+                <td
+                  className={`py-2 pr-4 text-right tabular-nums ${
+                    (q.waiting || 0) > 0
+                      ? 'text-amber-700 dark:text-amber-400 font-medium'
+                      : 'text-gray-600 dark:text-slate-300'
+                  }`}
+                >
                   {(q.waiting ?? 0).toLocaleString()}
                 </td>
-                <td className="py-2 pr-4 text-right tabular-nums text-gray-600 dark:text-slate-300">{q.active ?? 0}</td>
-                <td className="py-2 pr-4 text-right tabular-nums text-gray-600 dark:text-slate-300">{q.failed ?? 0}</td>
+                <td className="py-2 pr-4 text-right tabular-nums text-gray-600 dark:text-slate-300">
+                  {q.active ?? 0}
+                </td>
+                <td className="py-2 pr-4 text-right tabular-nums text-gray-600 dark:text-slate-300">
+                  {q.failed ?? 0}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -217,27 +277,43 @@ export default function PollerHealthCard() {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="text-xs text-gray-600 dark:text-slate-300 max-w-2xl">
             <span className="font-medium text-gray-900 dark:text-white">Clear the queue.</span>{' '}
-            Discards everything currently queued. Nothing is lost — the scheduler re-enqueues whatever
-            is still due on its next cycle, so the cost is at most one interval of freshness. Stale
-            polls are also dropped automatically once they are older than their own cadence.
+            Discards everything currently queued. Nothing is lost — the scheduler re-enqueues
+            whatever is still due on its next cycle, so the cost is at most one interval of
+            freshness. Stale polls are also dropped automatically once they are older than their own
+            cadence.
           </div>
           {confirmDrain ? (
             <div className="flex items-center gap-2">
-              <button onClick={() => drain.mutate()} disabled={drain.isPending}
-                      className="btn-danger text-xs flex items-center gap-1.5">
-                {drain.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              <button
+                onClick={() => drain.mutate()}
+                disabled={drain.isPending}
+                className="btn-danger text-xs flex items-center gap-1.5"
+              >
+                {drain.isPending ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
                 Confirm clear
               </button>
-              <button onClick={() => setConfirmDrain(false)} className="btn-secondary text-xs">Cancel</button>
+              <button onClick={() => setConfirmDrain(false)} className="btn-secondary text-xs">
+                Cancel
+              </button>
             </div>
           ) : (
-            <button onClick={() => setConfirmDrain(true)} disabled={backlog === 0}
-                    className="btn-secondary text-xs flex items-center gap-1.5 disabled:opacity-50">
-              <Trash2 className="w-3.5 h-3.5" /> Clear {backlog > 0 ? backlog.toLocaleString() : ''} queued
+            <button
+              onClick={() => setConfirmDrain(true)}
+              disabled={backlog === 0}
+              className="btn-secondary text-xs flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Clear {backlog > 0 ? backlog.toLocaleString() : ''}{' '}
+              queued
             </button>
           )}
         </div>
-        {drainResult && <p className="mt-2 text-xs text-green-700 dark:text-green-400">{drainResult}</p>}
+        {drainResult && (
+          <p className="mt-2 text-xs text-green-700 dark:text-green-400">{drainResult}</p>
+        )}
       </div>
 
       {/* Which devices are actually being missed */}
@@ -251,7 +327,7 @@ export default function PollerHealthCard() {
           </p>
         ) : (
           <ul className="space-y-1.5 max-h-64 overflow-y-auto">
-            {staleDevices.map(d => (
+            {staleDevices.map((d) => (
               <li key={`${d.id}-${d.kind}`} className="text-xs flex flex-wrap gap-x-2 gap-y-0.5">
                 <span className="font-medium text-gray-900 dark:text-white">{d.name}</span>
                 <span className="text-gray-500 dark:text-slate-400">
@@ -261,9 +337,13 @@ export default function PollerHealthCard() {
                 </span>
                 {/* Attempt vs success is the distinction that says whether we
                     missed it or it did not answer. */}
-                {d.last_error
-                  ? <span className="text-red-600 dark:text-red-400">responded with: {d.last_error}</span>
-                  : <span className="text-amber-700 dark:text-amber-400">not attempted recently</span>}
+                {d.last_error ? (
+                  <span className="text-red-600 dark:text-red-400">
+                    responded with: {d.last_error}
+                  </span>
+                ) : (
+                  <span className="text-amber-700 dark:text-amber-400">not attempted recently</span>
+                )}
               </li>
             ))}
           </ul>
@@ -281,56 +361,109 @@ export default function PollerHealthCard() {
 function PhasesPanel({ phases, onSaved }: { phases: PollerPhases; onSaved: () => void }) {
   const isFleetAdmin = useIsFleetAdmin();
   const save = useMutation({
-    mutationFn: (v: { key: 'poller_persistent_sessions' | 'poller_pipelined_reads'; on: boolean }) => settingsApi.update({ [v.key]: v.on }),
+    mutationFn: (v: {
+      key: 'poller_persistent_sessions' | 'poller_pipelined_reads';
+      on: boolean;
+    }) => settingsApi.update({ [v.key]: v.on }),
     onSuccess: onSaved,
   });
   const ms = (v: number | null | undefined) => (v == null ? '—' : `${v} ms`);
-  const other = phases.avg_collect_ms != null && phases.avg_device_ms != null ? Math.max(0, phases.avg_collect_ms - phases.avg_device_ms) : null;
+  const other =
+    phases.avg_collect_ms != null && phases.avg_device_ms != null
+      ? Math.max(0, phases.avg_collect_ms - phases.avg_device_ms)
+      : null;
   const slowest = phases.slowest ?? [];
   const widest = Math.max(1, ...slowest.map((r) => r.total_ms));
   return (
     <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="text-xs font-medium text-gray-700 dark:text-slate-200">Where a fast poll’s time goes</div>
+        <div className="text-xs font-medium text-gray-700 dark:text-slate-200">
+          Where a fast poll’s time goes
+        </div>
         <div className="flex items-center gap-4 flex-wrap">
-          <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300" title="Off by default: each poll opens its own connection. On: one API session per device is kept open and reused, which saves the handshake and login on every poll">
-            <input type="checkbox" checked={phases.persistent_sessions} disabled={!isFleetAdmin || save.isPending}
-              onChange={(e) => save.mutate({ key: 'poller_persistent_sessions', on: e.target.checked })} />
+          <label
+            className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300"
+            title="Off by default: each poll opens its own connection. On: one API session per device is kept open and reused, which saves the handshake and login on every poll"
+          >
+            <input
+              type="checkbox"
+              checked={phases.persistent_sessions}
+              disabled={!isFleetAdmin || save.isPending}
+              onChange={(e) =>
+                save.mutate({ key: 'poller_persistent_sessions', on: e.target.checked })
+              }
+            />
             Keep sessions open between polls
           </label>
-          <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300" title="Send a fast poll’s reads together, in one round trip, instead of one after another">
-            <input type="checkbox" checked={phases.pipelined_reads} disabled={!isFleetAdmin || save.isPending}
-              onChange={(e) => save.mutate({ key: 'poller_pipelined_reads', on: e.target.checked })} />
+          <label
+            className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300"
+            title="Send a fast poll’s reads together, in one round trip, instead of one after another"
+          >
+            <input
+              type="checkbox"
+              checked={phases.pipelined_reads}
+              disabled={!isFleetAdmin || save.isPending}
+              onChange={(e) => save.mutate({ key: 'poller_pipelined_reads', on: e.target.checked })}
+            />
             Send reads together
           </label>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-        <div><div className="text-gray-500">Connecting</div><div className="font-medium tabular-nums">{ms(phases.avg_connect_new_ms)}</div></div>
-        <div><div className="text-gray-500">Waiting on the device</div><div className="font-medium tabular-nums">{ms(phases.avg_device_ms)}</div></div>
-        <div><div className="text-gray-500">Database and processing</div><div className="font-medium tabular-nums">{ms(other)}</div></div>
+        <div>
+          <div className="text-gray-500">Connecting</div>
+          <div className="font-medium tabular-nums">{ms(phases.avg_connect_new_ms)}</div>
+        </div>
+        <div>
+          <div className="text-gray-500">Waiting on the device</div>
+          <div className="font-medium tabular-nums">{ms(phases.avg_device_ms)}</div>
+        </div>
+        <div>
+          <div className="text-gray-500">Database and processing</div>
+          <div className="font-medium tabular-nums">{ms(other)}</div>
+        </div>
         <div>
           <div className="text-gray-500">Sessions kept open</div>
           <div className="font-medium tabular-nums">
-            {phases.persistent_sessions
-              ? <>{phases.reused_pct == null ? '—' : `${phases.reused_pct}% reused`} · {phases.open_sessions} open{phases.avg_connect_reused_ms != null ? ` · ${phases.avg_connect_reused_ms} ms` : ''}</>
-              : 'Off'}
+            {phases.persistent_sessions ? (
+              <>
+                {phases.reused_pct == null ? '—' : `${phases.reused_pct}% reused`} ·{' '}
+                {phases.open_sessions} open
+                {phases.avg_connect_reused_ms != null
+                  ? ` · ${phases.avg_connect_reused_ms} ms`
+                  : ''}
+              </>
+            ) : (
+              'Off'
+            )}
           </div>
         </div>
       </div>
       <p className="text-[11px] text-gray-400">
-        Connecting is a TCP and TLS handshake and a login: a few round trips, plus work on the router’s CPU. Waiting on the
-        device is the round trips and the router answering; the rest is this server. Averages over the last fast poll of{' '}
+        Connecting is a TCP and TLS handshake and a login: a few round trips, plus work on the
+        router’s CPU. Waiting on the device is the round trips and the router answering; the rest is
+        this server. Averages over the last fast poll of{' '}
         {phases.devices_measured === 1 ? 'one device' : `${phases.devices_measured} devices`}.
       </p>
 
       {slowest.length > 0 && (
         <div>
           <div className="flex items-center gap-3 text-[11px] text-gray-500 mb-1.5 flex-wrap">
-            <span className="font-medium text-gray-700 dark:text-slate-200">Slowest fast polls</span>
-            <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-amber-400" />connecting</span>
-            <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-blue-500" />waiting on the device</span>
-            <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-gray-400" />database and processing</span>
+            <span className="font-medium text-gray-700 dark:text-slate-200">
+              Slowest fast polls
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-amber-400" />
+              connecting
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-blue-500" />
+              waiting on the device
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-gray-400" />
+              database and processing
+            </span>
           </div>
           <div className="max-h-72 overflow-y-auto">
             <table className="w-full text-xs">
@@ -348,9 +481,18 @@ function PhasesPanel({ phases, onSaved }: { phases: PollerPhases; onSaved: () =>
                 {slowest.map((r) => {
                   const w = (v: number | null) => `${((v ?? 0) / widest) * 100}%`;
                   return (
-                    <tr key={r.id} className="border-t border-gray-100 dark:border-slate-700/50" title={r.error ?? undefined}>
+                    <tr
+                      key={r.id}
+                      className="border-t border-gray-100 dark:border-slate-700/50"
+                      title={r.error ?? undefined}
+                    >
                       <td className="py-1 pr-2 min-w-0">
-                        <Link to={`/devices/${r.id}`} className="hover:underline text-gray-900 dark:text-white">{r.name}</Link>
+                        <Link
+                          to={`/devices/${r.id}`}
+                          className="hover:underline text-gray-900 dark:text-white"
+                        >
+                          {r.name}
+                        </Link>
                         {r.site && <span className="text-gray-400"> · {r.site}</span>}
                         {r.reused && <span className="text-gray-400"> · reused session</span>}
                         {r.error && <span className="text-red-500"> · failed</span>}
@@ -360,14 +502,29 @@ function PhasesPanel({ phases, onSaved }: { phases: PollerPhases; onSaved: () =>
                       <td className="text-right px-2 tabular-nums">{ms(r.device_ms)}</td>
                       <td className="text-right px-2 tabular-nums">{ms(r.other_ms)}</td>
                       <td className="pl-2">
-                        <div className="flex h-2 rounded-sm overflow-hidden bg-gray-100 dark:bg-slate-700" style={{ width: w(r.total_ms) }}>
+                        <div
+                          className="flex h-2 rounded-sm overflow-hidden bg-gray-100 dark:bg-slate-700"
+                          style={{ width: w(r.total_ms) }}
+                        >
                           {r.connect_ms != null && r.device_ms != null ? (
                             <>
-                              <div className="bg-amber-400" style={{ width: `${(r.connect_ms / Math.max(1, r.total_ms)) * 100}%` }} />
-                              <div className="bg-blue-500" style={{ width: `${(r.device_ms / Math.max(1, r.total_ms)) * 100}%` }} />
+                              <div
+                                className="bg-amber-400"
+                                style={{
+                                  width: `${(r.connect_ms / Math.max(1, r.total_ms)) * 100}%`,
+                                }}
+                              />
+                              <div
+                                className="bg-blue-500"
+                                style={{
+                                  width: `${(r.device_ms / Math.max(1, r.total_ms)) * 100}%`,
+                                }}
+                              />
                               <div className="bg-gray-400 flex-1" />
                             </>
-                          ) : <div className="bg-gray-300 flex-1" />}
+                          ) : (
+                            <div className="bg-gray-300 flex-1" />
+                          )}
                         </div>
                       </td>
                     </tr>

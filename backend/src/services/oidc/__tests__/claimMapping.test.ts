@@ -1,7 +1,12 @@
 import {
-  extractGroups, mapGroupsToRole, deriveUsername, getEmail, isEmailVerified, emailDomainAllowed,
+  deriveUsername,
+  emailDomainAllowed,
+  extractGroups,
+  getEmail,
+  isEmailVerified,
+  mapGroupsToRole,
 } from '../claimMapping';
-import { DEFAULT_OIDC_CONFIG, type AppRole } from '../oidcConfig';
+import { type AppRole, DEFAULT_OIDC_CONFIG } from '../oidcConfig';
 
 const cfg = (over = {}) => ({ ...DEFAULT_OIDC_CONFIG, ...over });
 
@@ -10,7 +15,11 @@ describe('extractGroups', () => {
     expect(extractGroups({ groups: ['a', 'b'] }, 'groups')).toEqual(['a', 'b']);
   });
   it('splits a space/comma-delimited string claim', () => {
-    expect(extractGroups({ roles: 'admin, netops ops' }, 'roles')).toEqual(['admin', 'netops', 'ops']);
+    expect(extractGroups({ roles: 'admin, netops ops' }, 'roles')).toEqual([
+      'admin',
+      'netops',
+      'ops',
+    ]);
   });
   it('returns [] when the claim is missing', () => {
     expect(extractGroups({}, 'groups')).toEqual([]);
@@ -31,7 +40,9 @@ describe('mapGroupsToRole', () => {
 
 describe('deriveUsername', () => {
   it('prefers the configured username claim', () => {
-    expect(deriveUsername({ preferred_username: 'jdoe', email: 'j@x.io', sub: 'abc' }, cfg())).toBe('jdoe');
+    expect(deriveUsername({ preferred_username: 'jdoe', email: 'j@x.io', sub: 'abc' }, cfg())).toBe(
+      'jdoe',
+    );
   });
   it('falls back to the email local-part', () => {
     expect(deriveUsername({ email: 'jane.doe@x.io', sub: 'abc' }, cfg())).toBe('jane.doe');

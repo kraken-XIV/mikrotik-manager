@@ -49,7 +49,7 @@ function coords(lat: number | string | null | undefined, lng: number | string | 
 
 export function effectiveLocation(
   device: LocationFields,
-  site: SiteLocationFields | null | undefined
+  site: SiteLocationFields | null | undefined,
 ): EffectiveLocation | null {
   const own = coords(device.location_lat, device.location_lng);
   const ownAddress = text(device.location_address);

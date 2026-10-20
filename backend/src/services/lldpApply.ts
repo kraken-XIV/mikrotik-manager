@@ -1,7 +1,7 @@
 import { query } from '../config/database';
-import { siteScopeDevices, type SiteScope } from '../utils/siteScope';
-import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 import { type LldpDeviceType } from '../utils/lldpTargets';
+import { type SiteScope, siteScopeDevices } from '../utils/siteScope';
+import { DeviceCollector, type DeviceRow } from './mikrotik/DeviceCollector';
 
 export { LLDP_DEVICE_TYPES, parseDeviceTypes } from '../utils/lldpTargets';
 
@@ -17,12 +17,15 @@ export { LLDP_DEVICE_TYPES, parseDeviceTypes } from '../utils/lldpTargets';
  * to every site. Both directions are site-scoped now.
  */
 
-async function onlineDevices(types: LldpDeviceType[], siteId: SiteScope | undefined): Promise<DeviceRow[]> {
+async function onlineDevices(
+  types: LldpDeviceType[],
+  siteId: SiteScope | undefined,
+): Promise<DeviceRow[]> {
   const siteFilter = siteScopeDevices(siteId ?? null);
   return query<DeviceRow>(
     `SELECT * FROM devices WHERE device_type::text = ANY($1::text[]) AND status = 'online' AND NOT ssh_only
        ${siteFilter ? `AND ${siteFilter}` : ''} ORDER BY name`,
-    [types]
+    [types],
   );
 }
 
@@ -34,11 +37,17 @@ export async function getLldpStatuses(types: LldpDeviceType[], siteId: SiteScope
       try {
         await collector.connect();
         const lldp = await collector.getLldpEnabled();
-        return { id: d.id, name: d.name, ip_address: d.ip_address, device_type: d.device_type, ...lldp };
+        return {
+          id: d.id,
+          name: d.name,
+          ip_address: d.ip_address,
+          device_type: d.device_type,
+          ...lldp,
+        };
       } finally {
         collector.disconnect();
       }
-    })
+    }),
   );
   return results.map((r, i) =>
     r.status === 'fulfilled'
@@ -51,14 +60,14 @@ export async function getLldpStatuses(types: LldpDeviceType[], siteId: SiteScope
           enabled: null as boolean | null,
           protocol: null as string | null,
           error: (r.reason as Error).message,
-        }
+        },
   );
 }
 
 export async function setLldpForTypes(
   types: LldpDeviceType[],
   enabled: boolean,
-  siteId: SiteScope | undefined
+  siteId: SiteScope | undefined,
 ) {
   const devices = await onlineDevices(types, siteId);
   const results = await Promise.allSettled(
@@ -71,12 +80,21 @@ export async function setLldpForTypes(
       } finally {
         collector.disconnect();
       }
-    })
+    }),
   );
   const statuses = results.map((r, i) =>
     r.status === 'fulfilled'
       ? r.value
-      : { id: devices[i].id, name: devices[i].name, success: false, error: (r.reason as Error).message }
+      : {
+          id: devices[i].id,
+          name: devices[i].name,
+          success: false,
+          error: (r.reason as Error).message,
+        },
   );
-  return { applied: statuses.filter((s) => s.success).length, total: devices.length, results: statuses };
+  return {
+    applied: statuses.filter((s) => s.success).length,
+    total: devices.length,
+    results: statuses,
+  };
 }

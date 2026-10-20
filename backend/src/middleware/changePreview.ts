@@ -1,6 +1,7 @@
-import type { Request, Response, NextFunction } from 'express';
-import { runInPreview, type PreviewContext } from '../utils/previewContext';
+import type { NextFunction, Request, Response } from 'express';
+
 import { isPreviewableRoute } from '../utils/changePreview';
+import { type PreviewContext, runInPreview } from '../utils/previewContext';
 
 /** Header the "Review changes" button sends (#255). */
 export const PREVIEW_HEADER = 'x-preview-changes';
@@ -19,9 +20,12 @@ export function isPreviewRequest(req: Request): boolean {
  * input, device unreachable) passes through unchanged.
  */
 export function changePreview(req: Request, res: Response, next: NextFunction): void {
-  if (!isPreviewRequest(req)) { next(); return; }
+  if (!isPreviewRequest(req)) {
+    next();
+    return;
+  }
   if (!isPreviewableRoute(req.method, req.originalUrl)) {
-    res.status(400).json({ error: 'This action can\'t be previewed', code: 'preview_unsupported' });
+    res.status(400).json({ error: "This action can't be previewed", code: 'preview_unsupported' });
     return;
   }
   const ctx: PreviewContext = { steps: [], skippedDbWrites: 0 };

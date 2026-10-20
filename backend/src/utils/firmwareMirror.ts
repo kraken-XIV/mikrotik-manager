@@ -22,7 +22,8 @@ export const DEFAULT_MIRROR_FOLDER = 'mtm-packages';
  * since ftp lets the login read every file on the router.
  */
 export const MIRROR_GROUP = 'mtm-mirror';
-export const MIRROR_GROUP_POLICY = 'local,telnet,ssh,reboot,read,test,winbox,password,web,sniff,sensitive,api,romon,rest-api,ftp';
+export const MIRROR_GROUP_POLICY =
+  'local,telnet,ssh,reboot,read,test,winbox,password,web,sniff,sensitive,api,romon,rest-api,ftp';
 export const MIN_KEEP_VERSIONS = 1;
 export const MAX_KEEP_VERSIONS = 5;
 export const DEFAULT_KEEP_VERSIONS = 3;
@@ -34,8 +35,11 @@ const FOLDER_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$/;
 /** A RouterOS 7 release: 7.x or 7.x.y, no pre-releases. */
 export function isMirrorVersion(v: string): boolean {
   const parts = String(v ?? '').split('.');
-  return parts[0] === '7' && (parts.length === 2 || parts.length === 3)
-    && parts.slice(1).every((p) => /^\d{1,3}$/.test(p));
+  return (
+    parts[0] === '7' &&
+    (parts.length === 2 || parts.length === 3) &&
+    parts.slice(1).every((p) => /^\d{1,3}$/.test(p))
+  );
 }
 
 export function isMirrorFolder(f: string): boolean {
@@ -110,11 +114,19 @@ export function planFiles(devices: FleetDevice[], version: string): FleetPlan {
   const skipped: FleetPlan['skipped'] = [];
   for (const d of devices) {
     if (!supportsLocalUpdate(d.ros_version)) {
-      skipped.push({ id: d.id, name: d.name, reason: `RouterOS ${d.ros_version || 'unknown'} is older than ${LOCAL_UPDATE_MIN_VERSION}` });
+      skipped.push({
+        id: d.id,
+        name: d.name,
+        reason: `RouterOS ${d.ros_version || 'unknown'} is older than ${LOCAL_UPDATE_MIN_VERSION}`,
+      });
       continue;
     }
     if (!d.architecture || !d.installed_packages?.length) {
-      skipped.push({ id: d.id, name: d.name, reason: 'Its architecture and packages haven’t been read yet' });
+      skipped.push({
+        id: d.id,
+        name: d.name,
+        reason: 'Its architecture and packages haven’t been read yet',
+      });
       continue;
     }
     const arch = d.architecture.toLowerCase();
@@ -187,12 +199,16 @@ export function newestCompleteFrom(
   }
   const a = arch.toLowerCase();
   const complete = [...byVersion.entries()]
-    .filter(([v, names]) => packages.every((p) => { const n = packageFileName(p, v, a); return !!n && names.has(n); }))
+    .filter(([v, names]) =>
+      packages.every((p) => {
+        const n = packageFileName(p, v, a);
+        return !!n && names.has(n);
+      }),
+    )
     .map(([v]) => v)
     .sort((x, y) => compareRosVersions(y, x));
   return complete[0] ?? null;
 }
-
 
 // ─── Where the packages go (Discussion #85) ─────────────────────────────────
 //
@@ -233,23 +249,41 @@ const bytes = (v: string | undefined): number => {
  * mount point that is a plain name. Internal storage comes first, from
  * `/system/resource` (free-hdd-space).
  */
-export function mirrorDisks(disks: Record<string, string>[], resource: Record<string, string> | undefined): MirrorDisk[] {
-  const out: MirrorDisk[] = [{
-    mount_point: null,
-    label: 'Internal storage',
-    free_bytes: bytes(resource?.['free-hdd-space']),
-    size_bytes: bytes(resource?.['total-hdd-space']),
-    ram: false,
-  }];
+export function mirrorDisks(
+  disks: Record<string, string>[],
+  resource: Record<string, string> | undefined,
+): MirrorDisk[] {
+  const out: MirrorDisk[] = [
+    {
+      mount_point: null,
+      label: 'Internal storage',
+      free_bytes: bytes(resource?.['free-hdd-space']),
+      size_bytes: bytes(resource?.['total-hdd-space']),
+      ram: false,
+    },
+  ];
   for (const d of disks) {
     const mp = (d['mount-point'] || '').trim();
-    const mounted = d['mount-filesystem'] !== 'false' && d['mount-filesystem'] !== 'no'
-      && d['mounted'] !== 'false' && d['disabled'] !== 'true';
+    const mounted =
+      d['mount-filesystem'] !== 'false' &&
+      d['mount-filesystem'] !== 'no' &&
+      d['mounted'] !== 'false' &&
+      d['disabled'] !== 'true';
     const readOnly = d['mount-read-only'] === 'true' || d['mount-read-only'] === 'yes';
     if (!mp || !mounted || readOnly || !isDiskName(mp)) continue;
     const ram = d['type'] === 'tmpfs' || d['fs'] === 'tmpfs';
-    const kind = ram ? 'RAM disk' : [d['model'], d['interface']].filter((x) => x && x !== 'tmpfs').join(', ') || d['type'] || 'disk';
-    out.push({ mount_point: mp, label: `${mp} (${kind})`, free_bytes: bytes(d['free']), size_bytes: bytes(d['size']), ram });
+    const kind = ram
+      ? 'RAM disk'
+      : [d['model'], d['interface']].filter((x) => x && x !== 'tmpfs').join(', ') ||
+        d['type'] ||
+        'disk';
+    out.push({
+      mount_point: mp,
+      label: `${mp} (${kind})`,
+      free_bytes: bytes(d['free']),
+      size_bytes: bytes(d['size']),
+      ram,
+    });
   }
   return out;
 }

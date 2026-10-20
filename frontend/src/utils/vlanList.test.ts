@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { parseVlanList, formatVlanList, toggleVlan } from './vlanList';
+import { describe, expect, it } from 'vitest';
+
+import { formatVlanList, parseVlanList, toggleVlan } from './vlanList';
 
 describe('parseVlanList', () => {
   it('reads commas, spaces and ranges', () => {

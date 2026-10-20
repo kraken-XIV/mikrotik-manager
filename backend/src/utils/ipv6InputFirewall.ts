@@ -21,11 +21,19 @@ export function hasRoutableIpv6(addresses: Row[]): boolean {
 }
 
 export function hasInputDrop(rules: Row[]): boolean {
-  return rules.some((r) => r['chain'] === 'input' && ['drop', 'reject'].includes(r['action'] ?? '') && !isTrue(r['disabled']));
+  return rules.some(
+    (r) =>
+      r['chain'] === 'input' &&
+      ['drop', 'reject'].includes(r['action'] ?? '') &&
+      !isTrue(r['disabled']),
+  );
 }
 
 /** True when the device needs flagging: routable IPv6, and no IPv6 input drop or reject. */
-export function missingIpv6InputFirewall(addresses: Row[] | null, rules: Row[] | null): boolean | null {
+export function missingIpv6InputFirewall(
+  addresses: Row[] | null,
+  rules: Row[] | null,
+): boolean | null {
   if (addresses === null || rules === null) return null;
   return hasRoutableIpv6(addresses) && !hasInputDrop(rules);
 }

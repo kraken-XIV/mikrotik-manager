@@ -1,16 +1,26 @@
-import { useState, useEffect, useRef } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  MapPin, Building2, Hash, FileText, Pencil, Check, X, RefreshCw, AlertCircle,
-} from 'lucide-react';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import L from 'leaflet';
+import {
+  AlertCircle,
+  Building2,
+  Check,
+  FileText,
+  Hash,
+  MapPin,
+  Pencil,
+  RefreshCw,
+  X,
+} from 'lucide-react';
+import { Network } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { useCanWrite } from '../../hooks/useCanWrite';
 import { devicesApi, settingsApi, sitesApi } from '../../services/api';
 import type { Device } from '../../types';
-import { useCanWrite } from '../../hooks/useCanWrite';
-import { geocodeAddress, OSM_TILE_URL, OSM_ATTRIBUTION } from '../../utils/geocode';
 import { escapeHtml } from '../../utils/escapeHtml';
-import { Network } from 'lucide-react';
+import { geocodeAddress, OSM_ATTRIBUTION, OSM_TILE_URL } from '../../utils/geocode';
 
 interface Props {
   device: Device;
@@ -23,7 +33,15 @@ interface LocationForm {
   notes: string;
 }
 
-function MapEmbed({ lat, lng, address }: { lat: number | string; lng: number | string; address: string }) {
+function MapEmbed({
+  lat,
+  lng,
+  address,
+}: {
+  lat: number | string;
+  lng: number | string;
+  address: string;
+}) {
   const latN = Number(lat);
   const lngN = Number(lng);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,10 +51,18 @@ function MapEmbed({ lat, lng, address }: { lat: number | string; lng: number | s
     const map = L.map(containerRef.current, { scrollWheelZoom: false });
     L.tileLayer(OSM_TILE_URL, { attribution: OSM_ATTRIBUTION }).addTo(map);
     L.circleMarker([latN, lngN], {
-      radius: 9, color: '#fff', weight: 2, fillColor: '#3b82f6', fillOpacity: 0.9,
-    }).bindPopup(`<b>${escapeHtml(address)}</b>`).addTo(map);
+      radius: 9,
+      color: '#fff',
+      weight: 2,
+      fillColor: '#3b82f6',
+      fillOpacity: 0.9,
+    })
+      .bindPopup(`<b>${escapeHtml(address)}</b>`)
+      .addTo(map);
     map.setView([latN, lngN], 15);
-    return () => { map.remove(); };
+    return () => {
+      map.remove();
+    };
   }, [latN, lngN, address]);
 
   return (
@@ -68,7 +94,7 @@ export default function DeviceLocationSection({ device }: Props) {
   // (issue #106); coordinates already stored are still shown as plain text.
   const { data: settings } = useQuery({
     queryKey: ['app-settings'],
-    queryFn: () => settingsApi.get().then(r => r.data),
+    queryFn: () => settingsApi.get().then((r) => r.data),
     staleTime: 300_000,
   });
   // Off until settings have loaded (outside review U6): unknown used to count as on,
@@ -131,15 +157,18 @@ export default function DeviceLocationSection({ device }: Props) {
         }
       }
       // Clear coords if address was cleared
-      if (!f.location_address) { lat = null; lng = null; }
+      if (!f.location_address) {
+        lat = null;
+        lng = null;
+      }
 
       return devicesApi.patchLocation(device.id, {
         location_address: f.location_address || null,
-        location_lat:     lat,
-        location_lng:     lng,
-        rack_name:        f.rack_name || null,
-        rack_slot:        f.rack_slot || null,
-        notes:            f.notes    || null,
+        location_lat: lat,
+        location_lng: lng,
+        rack_name: f.rack_name || null,
+        rack_slot: f.rack_slot || null,
+        notes: f.notes || null,
       });
     },
     onSuccess: () => {
@@ -164,18 +193,26 @@ export default function DeviceLocationSection({ device }: Props) {
     setEditing(true);
   };
 
-  const cancelEdit = () => { setEditing(false); setSaveError(''); };
+  const cancelEdit = () => {
+    setEditing(false);
+    setSaveError('');
+  };
 
   const isPending = mutation.isPending || geocoding;
 
   return (
-    <div className={`grid gap-4 ${hasMap && !editing ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+    <div
+      className={`grid gap-4 ${hasMap && !editing ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}
+    >
       {/* Info / edit card */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Physical Details</h3>
           {canWrite && !editing && (
-            <button onClick={openEdit} className="btn-secondary flex items-center gap-1.5 text-xs py-1.5">
+            <button
+              onClick={openEdit}
+              className="btn-secondary flex items-center gap-1.5 text-xs py-1.5"
+            >
               <Pencil className="w-3.5 h-3.5" /> Edit
             </button>
           )}
@@ -198,10 +235,15 @@ export default function DeviceLocationSection({ device }: Props) {
                   }}
                 >
                   {device.site_id == null && <option value="">Unassigned</option>}
-                  {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {sites.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
                 <p className="text-xs text-gray-400 mt-1">
-                  Moving a device takes its clients, events and history with it. Applies immediately.
+                  Moving a device takes its clients, events and history with it. Applies
+                  immediately.
                 </p>
               </div>
             )}
@@ -213,12 +255,17 @@ export default function DeviceLocationSection({ device }: Props) {
                 className="input"
                 value={form.location_address}
                 onChange={(e) => setForm((f) => ({ ...f, location_address: e.target.value }))}
-                placeholder={siteAddress ? `From site: ${siteAddress}` : '123 Main St, City, State 00000'}
+                placeholder={
+                  siteAddress ? `From site: ${siteAddress}` : '123 Main St, City, State 00000'
+                }
               />
               <p className="text-xs text-gray-400 mt-1">
-                {siteAddress
-                  ? <>Leave blank to use the site&apos;s address. Only set this if the device is somewhere else.{' '}</>
-                  : null}
+                {siteAddress ? (
+                  <>
+                    Leave blank to use the site&apos;s address. Only set this if the device is
+                    somewhere else.{' '}
+                  </>
+                ) : null}
                 {mapsEnabled ? 'An address entered here is geocoded and shown on the map.' : ''}
               </p>
               {siteAddress && form.location_address && (
@@ -281,42 +328,67 @@ export default function DeviceLocationSection({ device }: Props) {
                 disabled={isPending}
                 className="btn-primary flex items-center gap-2 text-sm"
               >
-                {isPending
-                  ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" />{geocoding ? 'Geocoding…' : 'Saving…'}</>
-                  : <><Check className="w-3.5 h-3.5" />Save</>
-                }
+                {isPending ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    {geocoding ? 'Geocoding…' : 'Saving…'}
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    Save
+                  </>
+                )}
               </button>
               <button onClick={cancelEdit} disabled={isPending} className="btn-secondary text-sm">
-                <X className="w-3.5 h-3.5 inline mr-1" />Cancel
+                <X className="w-3.5 h-3.5 inline mr-1" />
+                Cancel
               </button>
             </div>
           </div>
         ) : (
           <div className="space-y-3 text-sm">
             {showSitePicker && (
-              <InfoRow icon={<Network className="w-3.5 h-3.5 text-blue-500" />} label="Site"
+              <InfoRow
+                icon={<Network className="w-3.5 h-3.5 text-blue-500" />}
+                label="Site"
                 value={currentSite?.name}
-                emptyText="Unassigned" />
+                emptyText="Unassigned"
+              />
             )}
-            <InfoRow icon={<MapPin className="w-3.5 h-3.5 text-blue-500" />} label="Location"
+            <InfoRow
+              icon={<MapPin className="w-3.5 h-3.5 text-blue-500" />}
+              label="Location"
               value={effective?.address ?? undefined}
               hint={inherited ? 'From site' : undefined}
-              emptyText="No location set" />
-            <InfoRow icon={<Building2 className="w-3.5 h-3.5 text-blue-500" />} label="Rack"
+              emptyText="No location set"
+            />
+            <InfoRow
+              icon={<Building2 className="w-3.5 h-3.5 text-blue-500" />}
+              label="Rack"
               value={device.rack_name}
-              emptyText="No rack assigned" />
-            <InfoRow icon={<Hash className="w-3.5 h-3.5 text-blue-500" />} label="Rack Slot"
+              emptyText="No rack assigned"
+            />
+            <InfoRow
+              icon={<Hash className="w-3.5 h-3.5 text-blue-500" />}
+              label="Rack Slot"
               value={device.rack_slot}
-              emptyText="—" />
+              emptyText="—"
+            />
             <div className="pt-1 border-t border-gray-100 dark:border-slate-700">
               <div className="flex items-start gap-2 mt-2">
                 <FileText className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <span className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide block mb-1">Notes</span>
-                  {device.notes
-                    ? <p className="text-gray-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{device.notes}</p>
-                    : <p className="text-gray-400 dark:text-slate-500 italic">No notes</p>
-                  }
+                  <span className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide block mb-1">
+                    Notes
+                  </span>
+                  {device.notes ? (
+                    <p className="text-gray-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                      {device.notes}
+                    </p>
+                  ) : (
+                    <p className="text-gray-400 dark:text-slate-500 italic">No notes</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -327,18 +399,18 @@ export default function DeviceLocationSection({ device }: Props) {
       {/* Map card — only when we have coordinates, are not editing, and outbound
           map requests are permitted. */}
       {hasMap && !editing && mapsEnabled && (
-        <MapEmbed
-          lat={effective!.lat!}
-          lng={effective!.lng!}
-          address={effective!.address ?? ''}
-        />
+        <MapEmbed lat={effective!.lat!} lng={effective!.lng!} address={effective!.address ?? ''} />
       )}
     </div>
   );
 }
 
 function InfoRow({
-  icon, label, value, emptyText, hint,
+  icon,
+  label,
+  value,
+  emptyText,
+  hint,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -354,10 +426,11 @@ function InfoRow({
         <span className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide block mb-0.5">
           {label}
         </span>
-        {value
-          ? <span className="text-gray-900 dark:text-white">{value}</span>
-          : <span className="text-gray-400 dark:text-slate-500 italic">{emptyText}</span>
-        }
+        {value ? (
+          <span className="text-gray-900 dark:text-white">{value}</span>
+        ) : (
+          <span className="text-gray-400 dark:text-slate-500 italic">{emptyText}</span>
+        )}
         {value && hint && (
           <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
             {hint}

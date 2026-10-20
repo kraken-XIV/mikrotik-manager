@@ -14,5 +14,8 @@ export function isIpOrPrefix(entry: string): boolean {
 
 /** Split a pasted or stored list ("a, b c\nd") into entries. */
 export function splitList(text: string): string[] {
-  return text.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean);
+  return text
+    .split(/[\s,;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }

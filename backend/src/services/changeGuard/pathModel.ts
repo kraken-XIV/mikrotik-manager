@@ -19,14 +19,15 @@
  * Capture and resolution are deliberately separate so resolution stays a pure
  * function over a snapshot and can be unit-tested against fixtures.
  */
-import { readApiConnections, readCoveringRoutes } from './targetedReads';
 import { isIP } from 'net';
-import { RouterOSClient } from '../mikrotik/RouterOSClient';
+
 import { usesApiTls } from '../../utils/apiTls';
 import { decrypt } from '../../utils/crypto';
 import { expandVlanIds } from '../../utils/vlan';
+import { RouterOSClient } from '../mikrotik/RouterOSClient';
 import type { GuardDevice } from './ChangeGuard';
 import { referencedAddressLists } from './firewallPath';
+import { readApiConnections, readCoveringRoutes } from './targetedReads';
 
 // Re-exported so the analysis modules keep importing VLAN handling from the path
 // model they reason about, while the collector shares the same implementation.
@@ -164,9 +165,21 @@ export async function captureSnapshot(device: GuardDevice): Promise<DeviceSnapsh
       client.execute(cmd, params).catch(empty);
 
     const [
-      addresses, interfaces, vlanInterfaces, bridges, bridgePorts,
-      bridgeVlans, bonds, arp, bridgeHosts, services, firewallFilter,
-      interfaceLists, interfaceListMembers, deviceModeRows, switches,
+      addresses,
+      interfaces,
+      vlanInterfaces,
+      bridges,
+      bridgePorts,
+      bridgeVlans,
+      bonds,
+      arp,
+      bridgeHosts,
+      services,
+      firewallFilter,
+      interfaceLists,
+      interfaceListMembers,
+      deviceModeRows,
+      switches,
     ] = await Promise.all([
       run('/ip/address/print', { detail: '' }),
       run('/interface/print', { detail: '' }),
@@ -188,18 +201,30 @@ export async function captureSnapshot(device: GuardDevice): Promise<DeviceSnapsh
     // service bound to a VRF is then reported as unconfirmed rather than assumed.
     let vrfs: RosRow[] = [];
     let vrfsRead = true;
-    try { vrfs = await client.execute('/ip/vrf/print', { detail: '' }); } catch { vrfsRead = false; }
+    try {
+      vrfs = await client.execute('/ip/vrf/print', { detail: '' });
+    } catch {
+      vrfsRead = false;
+    }
 
     // Only the manager's connection, and only the routes that could carry
     // traffic back to it, never the whole tables: a BGP router has hundreds of
     // thousands of routes, and reading them all timed out (#313). Connection
     // tracking may be off; the model copes without it. A failed route read
     // throws, like any other read here.
-    const mgmtConnections = await readApiConnections(client, client.remoteAddress || device.ip_address, device.api_port)
-      .catch(() => [] as RosRow[]);
+    const mgmtConnections = await readApiConnections(
+      client,
+      client.remoteAddress || device.ip_address,
+      device.api_port,
+    ).catch(() => [] as RosRow[]);
     const managerIp = managerIpFromConntrack(
-      { mgmtConnections, managerLocalPort: client.localPort } as unknown as DeviceSnapshot, device.api_port);
-    const routes = await readCoveringRoutes(client, managerIp && ipToInt(managerIp) !== null ? managerIp : null);
+      { mgmtConnections, managerLocalPort: client.localPort } as unknown as DeviceSnapshot,
+      device.api_port,
+    );
+    const routes = await readCoveringRoutes(
+      client,
+      managerIp && ipToInt(managerIp) !== null ? managerIp : null,
+    );
 
     // Only the lists the filter names, each on its own and time-boxed: a
     // router can carry a blocklist of many thousands of entries, and one that
@@ -216,13 +241,29 @@ export async function captureSnapshot(device: GuardDevice): Promise<DeviceSnapsh
         );
         addressLists.push(...rows);
         addressListsRead.push(list);
-      } catch { /* left unread: rules using it evaluate as "maybe" */ }
+      } catch {
+        /* left unread: rules using it evaluate as "maybe" */
+      }
     }
 
     return {
-      addresses, interfaces, vlanInterfaces, bridges, bridgePorts,
-      bridgeVlans, bonds, routes, arp, bridgeHosts, services, firewallFilter, mgmtConnections,
-      addressLists, addressListsRead, interfaceLists, interfaceListMembers,
+      addresses,
+      interfaces,
+      vlanInterfaces,
+      bridges,
+      bridgePorts,
+      bridgeVlans,
+      bonds,
+      routes,
+      arp,
+      bridgeHosts,
+      services,
+      firewallFilter,
+      mgmtConnections,
+      addressLists,
+      addressListsRead,
+      interfaceLists,
+      interfaceListMembers,
       managerLocalPort: client.localPort,
       deviceMode: deviceModeRows[0] ?? null,
       switches,
@@ -239,7 +280,10 @@ export async function captureSnapshot(device: GuardDevice): Promise<DeviceSnapsh
 const stripCidr = (addr: string): string => (addr || '').split('/')[0].trim();
 const isTrue = (v: string | undefined): boolean => v === 'true' || v === 'yes';
 const csv = (v: string | undefined): string[] =>
-  (v || '').split(',').map((s) => s.trim()).filter(Boolean);
+  (v || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
 /**
  * Effective membership for a VLAN on a bridge. RouterOS exposes `current-tagged`
@@ -250,7 +294,7 @@ const csv = (v: string | undefined): string[] =>
 export function vlanMembership(
   snap: DeviceSnapshot,
   bridge: string,
-  vlanId: number
+  vlanId: number,
 ): {
   tagged: string[];
   untagged: string[];
@@ -272,8 +316,14 @@ export function vlanMembership(
     const t = row['current-tagged'] !== undefined ? row['current-tagged'] : row['tagged'];
     const u = row['current-untagged'] !== undefined ? row['current-untagged'] : row['untagged'];
     const isDynamic = isTrue(row['dynamic']);
-    for (const p of csv(t)) { tagged.add(p); if (!isDynamic) taggedStatic.add(p); }
-    for (const p of csv(u)) { untagged.add(p); if (!isDynamic) untaggedStatic.add(p); }
+    for (const p of csv(t)) {
+      tagged.add(p);
+      if (!isDynamic) taggedStatic.add(p);
+    }
+    for (const p of csv(u)) {
+      untagged.add(p);
+      if (!isDynamic) untaggedStatic.add(p);
+    }
   }
   return {
     tagged: [...tagged],
@@ -322,7 +372,11 @@ export function bareGateway(gw: string | undefined): string {
  * what the device does: a covering blackhole beats a default route, and the
  * caller must treat a winning discard as no way back (`routeDiscards`).
  */
-export function routeFor(snap: DeviceSnapshot, ip: string, table: string = MAIN_TABLE): RosRow | null {
+export function routeFor(
+  snap: DeviceSnapshot,
+  ip: string,
+  table: string = MAIN_TABLE,
+): RosRow | null {
   let best: RosRow | null = null;
   let bestLen = -1;
   let bestDist = Infinity;
@@ -335,7 +389,11 @@ export function routeFor(snap: DeviceSnapshot, ip: string, table: string = MAIN_
     if (len === 0 || inNetwork(ip, net, len)) {
       const dist = parseInt(r['distance'] || '', 10);
       const d = isNaN(dist) ? 255 : dist;
-      if (len > bestLen || (len === bestLen && d < bestDist)) { best = r; bestLen = len; bestDist = d; }
+      if (len > bestLen || (len === bestLen && d < bestDist)) {
+        best = r;
+        bestLen = len;
+        bestDist = d;
+      }
     }
   }
   return best;
@@ -352,18 +410,33 @@ export function resolveMgmtTable(
   mgmtInterfaces: (string | null)[],
 ): { table: string; certain: boolean; note: string | null } {
   const svc = snap.services.find(
-    (x) => /^api(-ssl)?$/.test(x['name'] || '') && !isTrue(x['disabled']) && parseInt(x['port'] || '', 10) === apiPort
+    (x) =>
+      /^api(-ssl)?$/.test(x['name'] || '') &&
+      !isTrue(x['disabled']) &&
+      parseInt(x['port'] || '', 10) === apiPort,
   );
   const svcVrf = (svc?.['vrf'] || '').trim();
   const ifaces = new Set(mgmtInterfaces.filter((x): x is string => !!x));
-  const ifaceVrf = (snap.vrfs ?? []).find((v) => csv(v['interfaces']).some((i) => ifaces.has(i)))?.['name']?.trim() || '';
+  const ifaceVrf =
+    (snap.vrfs ?? [])
+      .find((v) => csv(v['interfaces']).some((i) => ifaces.has(i)))
+      ?.['name']?.trim() || '';
 
   if (svcVrf && svcVrf !== MAIN_TABLE) {
     const known = snap.vrfsRead !== false;
     if (ifaceVrf && ifaceVrf !== svcVrf) {
-      return { table: svcVrf, certain: false, note: `The API service is bound to VRF ${svcVrf} but ${[...ifaces].join('/')} is in VRF ${ifaceVrf}; the table management uses is ambiguous.` };
+      return {
+        table: svcVrf,
+        certain: false,
+        note: `The API service is bound to VRF ${svcVrf} but ${[...ifaces].join('/')} is in VRF ${ifaceVrf}; the table management uses is ambiguous.`,
+      };
     }
-    if (!known) return { table: svcVrf, certain: false, note: `The API service is bound to VRF ${svcVrf}, but /ip/vrf could not be read to confirm it.` };
+    if (!known)
+      return {
+        table: svcVrf,
+        certain: false,
+        note: `The API service is bound to VRF ${svcVrf}, but /ip/vrf could not be read to confirm it.`,
+      };
     return { table: svcVrf, certain: true, note: null };
   }
   if (ifaceVrf && ifaceVrf !== MAIN_TABLE) return { table: ifaceVrf, certain: true, note: null };
@@ -381,8 +454,8 @@ function inNetwork(ip: string, net: string, prefixLen: number): boolean {
   const b = ipToInt(net);
   if (a === null || b === null) return false;
   if (prefixLen <= 0) return true;
-  const mask = prefixLen >= 32 ? 0xffffffff : ((0xffffffff << (32 - prefixLen)) >>> 0);
-  return ((a & mask) >>> 0) === ((b & mask) >>> 0);
+  const mask = prefixLen >= 32 ? 0xffffffff : (0xffffffff << (32 - prefixLen)) >>> 0;
+  return (a & mask) >>> 0 === (b & mask) >>> 0;
 }
 
 /**
@@ -404,7 +477,10 @@ export function managerIpFromConntrack(snap: DeviceSnapshot, apiPort: number): s
 }
 
 /** Source address and port of every TCP connection to the API port. */
-export function apiConnectionSources(snap: DeviceSnapshot, apiPort: number): { ip: string; port: number }[] {
+export function apiConnectionSources(
+  snap: DeviceSnapshot,
+  apiPort: number,
+): { ip: string; port: number }[] {
   const out: { ip: string; port: number }[] = [];
   for (const c of snap.mgmtConnections) {
     if ((c['protocol'] || '').toLowerCase() !== 'tcp') continue;
@@ -415,7 +491,8 @@ export function apiConnectionSources(snap: DeviceSnapshot, apiPort: number): { i
     const dstPort = c['dst-port'] ? parseInt(c['dst-port'], 10) : dst.port;
     if (dstPort !== apiPort) continue;
     const src = splitHostPort(c['src-address'] || '');
-    if (src.ip) out.push({ ip: src.ip, port: c['src-port'] ? parseInt(c['src-port'], 10) : src.port });
+    if (src.ip)
+      out.push({ ip: src.ip, port: c['src-port'] ? parseInt(c['src-port'], 10) : src.port });
   }
   return out;
 }
@@ -434,13 +511,18 @@ export function splitHostPort(v: string): { ip: string; port: number } {
     if (close < 0) return { ip: '', port: NaN };
     const ip = s.slice(1, close);
     const rest = s.slice(close + 1);
-    return { ip: isIP(ip) === 6 ? ip : '', port: rest.startsWith(':') ? portOf(rest.slice(1)) : NaN };
+    return {
+      ip: isIP(ip) === 6 ? ip : '',
+      port: rest.startsWith(':') ? portOf(rest.slice(1)) : NaN,
+    };
   }
   if (isIP(s)) return { ip: s, port: NaN };
   const colon = s.lastIndexOf(':');
-  if (colon > 0 && isIP(s.slice(0, colon)) === 4) return { ip: s.slice(0, colon), port: portOf(s.slice(colon + 1)) };
+  if (colon > 0 && isIP(s.slice(0, colon)) === 4)
+    return { ip: s.slice(0, colon), port: portOf(s.slice(colon + 1)) };
   const dot = s.lastIndexOf('.');
-  if (dot > 0 && isIP(s.slice(0, dot)) === 6) return { ip: s.slice(0, dot), port: portOf(s.slice(dot + 1)) };
+  if (dot > 0 && isIP(s.slice(0, dot)) === 6)
+    return { ip: s.slice(0, dot), port: portOf(s.slice(dot + 1)) };
   return { ip: '', port: NaN };
 }
 
@@ -457,15 +539,15 @@ export function resolveManagementPath(snap: DeviceSnapshot, device: GuardDevice)
 
   // 1. Which address object, and therefore which interface, serves the manager?
   const addrRow = snap.addresses.find(
-    (a) => !isTrue(a['disabled']) && !isTrue(a['invalid']) && stripCidr(a['address']) === mgmtIp
+    (a) => !isTrue(a['disabled']) && !isTrue(a['invalid']) && stripCidr(a['address']) === mgmtIp,
   );
   const mgmtInterface = addrRow
-    ? (addrRow['actual-interface'] || addrRow['interface'] || null)
+    ? addrRow['actual-interface'] || addrRow['interface'] || null
     : null;
 
   if (!addrRow) {
     warnings.push(
-      `No enabled /ip/address on the device matches ${mgmtIp}; the manager may be reaching it via NAT or a dynamic address.`
+      `No enabled /ip/address on the device matches ${mgmtIp}; the manager may be reaching it via NAT or a dynamic address.`,
     );
   } else {
     hops.push({
@@ -500,7 +582,11 @@ export function resolveManagementPath(snap: DeviceSnapshot, device: GuardDevice)
       if (parent && snap.bridges.some((b) => b['name'] === parent)) bridge = parent;
       else if (parent) {
         mgmtParent = parent;
-        hops.push({ kind: 'port', name: parent, reason: `${parent} is the physical parent of ${mgmtInterface}.` });
+        hops.push({
+          kind: 'port',
+          name: parent,
+          reason: `${parent} is the physical parent of ${mgmtInterface}.`,
+        });
       }
     } else if (snap.bridges.some((b) => b['name'] === mgmtInterface)) {
       bridge = mgmtInterface;
@@ -539,9 +625,12 @@ export function resolveManagementPath(snap: DeviceSnapshot, device: GuardDevice)
 
   // 3. Where does the manager's traffic physically enter?
   const managerIp = managerIpFromConntrack(snap, device.api_port);
-  if (!managerIp && new Set(apiConnectionSources(snap, device.api_port).map((c) => c.ip)).size > 1) {
+  if (
+    !managerIp &&
+    new Set(apiConnectionSources(snap, device.api_port).map((c) => c.ip)).size > 1
+  ) {
     warnings.push(
-      `Several hosts are connected to the API port, and the manager's own session couldn't be told apart, so the path is worked out from the default gateway instead.`
+      `Several hosts are connected to the API port, and the manager's own session couldn't be told apart, so the path is worked out from the default gateway instead.`,
     );
   }
   let managerGateway: string | null = null;
@@ -561,9 +650,15 @@ export function resolveManagementPath(snap: DeviceSnapshot, device: GuardDevice)
     lookupIp = onLink ? managerIp : gw;
     if (!onLink && gw && ipToInt(gw) !== null) managerGateway = gw;
   } else {
-    const defaultRoute = snap.routes.find((r) => (r['dst-address'] || '') === '0.0.0.0/0' && routeUsable(r, mgmtTable));
+    const defaultRoute = snap.routes.find(
+      (r) => (r['dst-address'] || '') === '0.0.0.0/0' && routeUsable(r, mgmtTable),
+    );
     const gw = defaultRoute?.['gateway'] ? bareGateway(defaultRoute['gateway']) || null : null;
-    if (gw && ipToInt(gw) !== null) { lookupIp = gw; viaDefaultGw = true; managerGateway = gw; }
+    if (gw && ipToInt(gw) !== null) {
+      lookupIp = gw;
+      viaDefaultGw = true;
+      managerGateway = gw;
+    }
   }
 
   let ingressPort: string | null = null;
@@ -578,14 +673,25 @@ export function resolveManagementPath(snap: DeviceSnapshot, device: GuardDevice)
       // known, count, and a MAC learned on two ports is ambiguous, not the first.
       const hostPorts = new Set(
         snap.bridgeHosts
-          .filter((h) => (h['mac-address'] || '').toLowerCase() === mac.toLowerCase() && !isTrue(h['local']))
+          .filter(
+            (h) =>
+              (h['mac-address'] || '').toLowerCase() === mac.toLowerCase() && !isTrue(h['local']),
+          )
           .filter((h) => !bridge || !h['bridge'] || h['bridge'] === bridge)
-          .filter((h) => mgmtVlanId == null || !taggedManagement || !h['vid'] || h['vid'] === String(mgmtVlanId))
+          .filter(
+            (h) =>
+              mgmtVlanId == null ||
+              !taggedManagement ||
+              !h['vid'] ||
+              h['vid'] === String(mgmtVlanId),
+          )
           .map((h) => h['on-interface'] || h['interface'] || '')
-          .filter(Boolean)
+          .filter(Boolean),
       );
       if (hostPorts.size > 1) {
-        warnings.push(`The next-hop MAC is learned on several ports (${[...hostPorts].join(', ')}), so the ingress port is ambiguous.`);
+        warnings.push(
+          `The next-hop MAC is learned on several ports (${[...hostPorts].join(', ')}), so the ingress port is ambiguous.`,
+        );
       }
       const port = hostPorts.size === 1 ? [...hostPorts][0] : null;
       if (port) {
@@ -613,7 +719,9 @@ export function resolveManagementPath(snap: DeviceSnapshot, device: GuardDevice)
       reason: `Management traffic arrives on ${ingressPort} — ${why}.`,
     });
   } else if (bridge) {
-    warnings.push(`Could not determine which port management arrives on; every port of ${bridge} is treated as potentially load-bearing.`);
+    warnings.push(
+      `Could not determine which port management arrives on; every port of ${bridge} is treated as potentially load-bearing.`,
+    );
   }
 
   // Untagged management: the VLAN is whatever PVID the ingress port stamps on.
@@ -629,10 +737,13 @@ export function resolveManagementPath(snap: DeviceSnapshot, device: GuardDevice)
   // PVID is the management VLAN carries it untagged (P2-7).
   let ingressTagged = taggedManagement;
   if (taggedManagement && bridge && ingressPort && mgmtVlanId != null) {
-    const portRow = snap.bridgePorts.find((p) => p['interface'] === ingressPort && p['bridge'] === bridge);
+    const portRow = snap.bridgePorts.find(
+      (p) => p['interface'] === ingressPort && p['bridge'] === bridge,
+    );
     const pvid = parseInt(portRow?.['pvid'] || '', 10);
     const m = vlanMembership(snap, bridge, mgmtVlanId);
-    if (pvid === mgmtVlanId && m.untagged.includes(ingressPort) && !m.tagged.includes(ingressPort)) ingressTagged = false;
+    if (pvid === mgmtVlanId && m.untagged.includes(ingressPort) && !m.tagged.includes(ingressPort))
+      ingressTagged = false;
   }
 
   // 4. Is management carried by a bond: the ingress port, the interface holding
@@ -641,7 +752,10 @@ export function resolveManagementPath(snap: DeviceSnapshot, device: GuardDevice)
   const isBond = (name: string | null): boolean =>
     !!name && snap.interfaces.some((i) => i['name'] === name && i['type'] === 'bond');
   for (const candidate of [ingressPort, mgmtParent, mgmtInterface]) {
-    if (isBond(candidate)) { ingressBond = candidate; break; }
+    if (isBond(candidate)) {
+      ingressBond = candidate;
+      break;
+    }
   }
   if (ingressBond) {
     hops.push({

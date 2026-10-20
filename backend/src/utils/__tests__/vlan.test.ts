@@ -1,4 +1,4 @@
-import { expandVlanIds, isMultiVlanSpec, aggregateBridgeVlans, portVlanMembership } from '../vlan';
+import { aggregateBridgeVlans, expandVlanIds, isMultiVlanSpec, portVlanMembership } from '../vlan';
 
 describe('expandVlanIds', () => {
   it('clamps ranges to 1-4094 so a hostile spec cannot exhaust memory', () => {
@@ -18,7 +18,7 @@ describe('expandVlanIds', () => {
     expect(expandVlanIds(undefined)).toEqual([]);
     expect(expandVlanIds('')).toEqual([]);
     expect(expandVlanIds('abc')).toEqual([]);
-    expect(expandVlanIds('20-10')).toEqual([]);   // inverted range
+    expect(expandVlanIds('20-10')).toEqual([]); // inverted range
   });
 
   it('identifies multi-VLAN specs', () => {
@@ -57,13 +57,20 @@ describe('aggregateBridgeVlans', () => {
    */
   it('excludes dynamic rows from membership but still lists the VLAN', () => {
     const out = aggregateBridgeVlans([
-      { bridge: 'bridge', 'vlan-ids': '1', tagged: '', untagged: 'bridge', dynamic: 'true',
-        comment: 'added by pvid', 'current-untagged': 'bridge' },
+      {
+        bridge: 'bridge',
+        'vlan-ids': '1',
+        tagged: '',
+        untagged: 'bridge',
+        dynamic: 'true',
+        comment: 'added by pvid',
+        'current-untagged': 'bridge',
+      },
       { bridge: 'bridge', 'vlan-ids': '1', tagged: '', untagged: 'sfp28-2', dynamic: 'false' },
     ]);
     expect(out).toHaveLength(1);
-    expect(out[0].untagged).toEqual(['sfp28-2']);   // not ['bridge', 'sfp28-2']
-    expect(out[0].rows).toHaveLength(2);            // both kept for config_json
+    expect(out[0].untagged).toEqual(['sfp28-2']); // not ['bridge', 'sfp28-2']
+    expect(out[0].rows).toHaveLength(2); // both kept for config_json
   });
 
   it('lists a VLAN that exists only dynamically, with no editable membership', () => {
@@ -87,8 +94,20 @@ describe('aggregateBridgeVlans', () => {
 
   it('takes the name from a static row, never from a dynamic one', () => {
     const out = aggregateBridgeVlans([
-      { bridge: 'bridge', 'vlan-ids': '1', untagged: 'bridge', dynamic: 'true', comment: 'added by pvid' },
-      { bridge: 'bridge', 'vlan-ids': '1', untagged: 'sfp28-2', dynamic: 'false', comment: 'Management' },
+      {
+        bridge: 'bridge',
+        'vlan-ids': '1',
+        untagged: 'bridge',
+        dynamic: 'true',
+        comment: 'added by pvid',
+      },
+      {
+        bridge: 'bridge',
+        'vlan-ids': '1',
+        untagged: 'sfp28-2',
+        dynamic: 'false',
+        comment: 'Management',
+      },
     ]);
     expect(out[0].name).toBe('Management');
   });
@@ -97,7 +116,13 @@ describe('aggregateBridgeVlans', () => {
 describe('portVlanMembership', () => {
   it('maps each port to the VLANs it is statically tagged and untagged in', () => {
     const m = portVlanMembership([
-      { bridge: 'bridge', 'vlan-ids': '10,20', tagged: 'sfp1', untagged: 'ether1', dynamic: 'false' },
+      {
+        bridge: 'bridge',
+        'vlan-ids': '10,20',
+        tagged: 'sfp1',
+        untagged: 'ether1',
+        dynamic: 'false',
+      },
       { bridge: 'bridge', 'vlan-ids': '30', tagged: 'sfp1', untagged: '', dynamic: 'false' },
     ]);
     expect(m.get('sfp1')).toEqual({ tagged: [10, 20, 30], untagged: [] });

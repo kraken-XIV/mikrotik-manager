@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
-import api, { previewChanges, devicesApi, networkServicesApi } from './api';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import api, { devicesApi, networkServicesApi, previewChanges } from './api';
 
 const sent: InternalAxiosRequestConfig[] = [];
 
@@ -9,20 +10,30 @@ beforeEach(() => {
   api.defaults.adapter = async (config) => {
     sent.push(config);
     const preview = config.headers['X-Preview-Changes'] === '1';
-    return { data: preview ? { preview: { steps: [], verdict: null } } : { message: 'applied' }, status: 200, statusText: 'OK', headers: {}, config };
+    return {
+      data: preview ? { preview: { steps: [], verdict: null } } : { message: 'applied' },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    };
   };
 });
 
 describe('previewChanges', () => {
   it('marks the request it wraps as a preview', async () => {
-    const p = await previewChanges(() => devicesApi.updateInterface(8, 'ether1', { comment: 'x' } as never));
+    const p = await previewChanges(() =>
+      devicesApi.updateInterface(8, 'ether1', { comment: 'x' } as never),
+    );
     expect(p).toEqual({ steps: [], verdict: null });
     expect(sent).toHaveLength(1);
     expect(sent[0].headers['X-Preview-Changes']).toBe('1');
   });
 
   it('works for a query-string device too', async () => {
-    await previewChanges(() => networkServicesApi.setNtp(8, { enabled: true, servers: ['pool.ntp.org'] } as never));
+    await previewChanges(() =>
+      networkServicesApi.setNtp(8, { enabled: true, servers: ['pool.ntp.org'] } as never),
+    );
     expect(sent[0].headers['X-Preview-Changes']).toBe('1');
   });
 
@@ -33,16 +44,20 @@ describe('previewChanges', () => {
   });
 
   it('refuses a call that does not send straight away, rather than letting it apply unmarked', async () => {
-    await expect(previewChanges(async () => {
-      await Promise.resolve();
-      return { data: {} };
-    })).rejects.toThrow("can't be previewed");
+    await expect(
+      previewChanges(async () => {
+        await Promise.resolve();
+        return { data: {} };
+      }),
+    ).rejects.toThrow("can't be previewed");
   });
 });
 
 describe('previewChanges with a form that rejects its own input', () => {
-  it('passes the form\'s reason through', async () => {
-    await expect(previewChanges(() => Promise.reject(new Error('SSID name is required')))).rejects.toThrow('SSID name is required');
+  it("passes the form's reason through", async () => {
+    await expect(
+      previewChanges(() => Promise.reject(new Error('SSID name is required'))),
+    ).rejects.toThrow('SSID name is required');
     expect(sent).toHaveLength(0);
   });
 });

@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Tag as TagIcon, X, Plus, Check } from 'lucide-react';
-import { tagsApi } from '../../services/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Check, Plus, Tag as TagIcon, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
 import { useCanWrite } from '../../hooks/useCanWrite';
+import { tagsApi } from '../../services/api';
 
 /**
  * Putting tags on a device.
@@ -93,7 +94,13 @@ export default function DeviceTagPicker({ deviceId }: Props) {
           style={{ borderColor: 'var(--line)', color: 'var(--ink-4)' }}
           title="Add a tag"
         >
-          {tags.length === 0 ? <><TagIcon className="w-3 h-3" /> Tag</> : <Plus className="w-3 h-3" />}
+          {tags.length === 0 ? (
+            <>
+              <TagIcon className="w-3 h-3" /> Tag
+            </>
+          ) : (
+            <Plus className="w-3 h-3" />
+          )}
         </button>
       )}
 
@@ -117,7 +124,10 @@ export default function DeviceTagPicker({ deviceId }: Props) {
                   className="w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px] hover:bg-black/5 dark:hover:bg-white/5"
                   style={{ color: 'var(--ink)' }}
                 >
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: t.color }} />
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ background: t.color }}
+                  />
                   <span className="flex-1 text-left truncate">{t.name}</span>
                   {on && <Check className="w-3.5 h-3.5 text-blue-500" />}
                 </button>

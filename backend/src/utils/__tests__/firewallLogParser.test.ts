@@ -41,8 +41,8 @@ describe('parseFirewallLog', () => {
   it('parses a UDP firewall log', () => {
     const event = parseFirewallLog(
       'FW-ACCEPT forward: in:vlan-source out:vlan-destination, ' +
-      'connection-state:new src-mac 02:00:00:00:00:01, proto UDP, ' +
-      '192.0.2.10:53000->198.51.100.20:53, len 60'
+        'connection-state:new src-mac 02:00:00:00:00:01, proto UDP, ' +
+        '192.0.2.10:53000->198.51.100.20:53, len 60',
     );
 
     expect(event?.action).toBe('accept');
@@ -54,8 +54,8 @@ describe('parseFirewallLog', () => {
   it('parses an ICMP firewall log without ports', () => {
     const event = parseFirewallLog(
       'FW-DROP forward: in:vlan-source out:vlan-destination, ' +
-      'connection-state:new src-mac 02:00:00:00:00:01, ' +
-      'proto ICMP (type 8, code 0), 192.0.2.10->198.51.100.20, len 60'
+        'connection-state:new src-mac 02:00:00:00:00:01, ' +
+        'proto ICMP (type 8, code 0), 192.0.2.10->198.51.100.20, len 60',
     );
 
     expect(event?.action).toBe('drop');
@@ -68,8 +68,8 @@ describe('parseFirewallLog', () => {
   it('parses an IPv6 TCP firewall log', () => {
     const event = parseFirewallLog(
       'FW-ACCEPT forward: in:wan out:lan, connection-state:new, ' +
-      'proto TCP (SYN), ' +
-      '[2001:db8:1::10]:54321->[2001:db8:2::20]:443, len 60'
+        'proto TCP (SYN), ' +
+        '[2001:db8:1::10]:54321->[2001:db8:2::20]:443, len 60',
     );
 
     expect(event?.action).toBe('accept');
@@ -83,7 +83,7 @@ describe('parseFirewallLog', () => {
   it('parses an ICMPv6 firewall log without ports', () => {
     const event = parseFirewallLog(
       'FW-DROP input: in:wan, proto ICMPv6 (type 128, code 0), ' +
-      '[2001:db8::10]->[2001:db8::1], len 64'
+        '[2001:db8::10]->[2001:db8::1], len 64',
     );
 
     expect(event?.action).toBe('drop');
@@ -96,8 +96,6 @@ describe('parseFirewallLog', () => {
   });
 
   it('returns null for a normal RouterOS log', () => {
-    expect(
-      parseFirewallLog('user operator logged in from 192.0.2.50 via api')
-    ).toBeNull();
+    expect(parseFirewallLog('user operator logged in from 192.0.2.50 via api')).toBeNull();
   });
 });

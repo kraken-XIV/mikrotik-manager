@@ -1,7 +1,7 @@
-import { connectPreferringSsl, describeSslFailure } from '../mikrotik/apiConnect';
-import { enableApiSsl, MTM_CERT_NAME, type ApiSslDevice } from '../apiSsl';
-import { RouterOSClient } from '../mikrotik/RouterOSClient';
 import { query } from '../../config/database';
+import { type ApiSslDevice, enableApiSsl, MTM_CERT_NAME } from '../apiSsl';
+import { connectPreferringSsl, describeSslFailure } from '../mikrotik/apiConnect';
+import { RouterOSClient } from '../mikrotik/RouterOSClient';
 
 jest.mock('../../config/database', () => ({ query: jest.fn(), queryOne: jest.fn() }));
 jest.mock('../../utils/crypto', () => ({ decrypt: (v: string) => v, encrypt: (v: string) => v }));
@@ -10,7 +10,11 @@ jest.mock('../mikrotik/RouterOSClient');
 const MockClient = RouterOSClient as jest.MockedClass<typeof RouterOSClient>;
 const mockQuery = query as jest.MockedFunction<typeof query>;
 
-type Exec = (cmd: string, params?: Record<string, string>, queries?: string[]) => Promise<Record<string, string>[]>;
+type Exec = (
+  cmd: string,
+  params?: Record<string, string>,
+  queries?: string[],
+) => Promise<Record<string, string>[]>;
 
 /** Make every client built for `port` connect (or fail) and answer `exec`. */
 function clients(behaviour: Record<number, { connect?: () => Promise<void>; exec?: Exec }>) {
@@ -29,7 +33,10 @@ function clients(behaviour: Record<number, { connect?: () => Promise<void>; exec
   return calls;
 }
 
-beforeEach(() => { jest.clearAllMocks(); mockQuery.mockResolvedValue([]); });
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockQuery.mockResolvedValue([]);
+});
 
 describe('connectPreferringSsl', () => {
   it('uses API-SSL when it answers', async () => {
@@ -47,10 +54,21 @@ describe('connectPreferringSsl', () => {
   });
 
   it('explains the common reasons API-SSL is unavailable in plain words', () => {
-    expect(describeSslFailure(new Error('error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:SSL alert number 40')))
-      .toMatch(/no certificate/);
-    expect(describeSslFailure(Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }))).toMatch(/turned off/);
-    expect(describeSslFailure(new Error('Connection timeout to 10.0.0.1:8729'))).toMatch(/firewall/);
+    expect(
+      describeSslFailure(
+        new Error(
+          'error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:SSL alert number 40',
+        ),
+      ),
+    ).toMatch(/no certificate/);
+    expect(
+      describeSslFailure(
+        Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' }),
+      ),
+    ).toMatch(/turned off/);
+    expect(describeSslFailure(new Error('Connection timeout to 10.0.0.1:8729'))).toMatch(
+      /firewall/,
+    );
   });
 
   it("reports the plain API's error when neither works", async () => {
@@ -64,7 +82,12 @@ describe('connectPreferringSsl', () => {
 
 describe('enableApiSsl', () => {
   const device: ApiSslDevice = {
-    id: 8, name: 'sw1', ip_address: '10.0.0.8', api_port: 8728, api_username: 'admin', api_password_encrypted: 'pw',
+    id: 8,
+    name: 'sw1',
+    ip_address: '10.0.0.8',
+    api_port: 8728,
+    api_username: 'admin',
+    api_password_encrypted: 'pw',
   };
   const signedCert = { '.id': '*C', name: MTM_CERT_NAME, 'private-key': 'true', expired: 'false' };
 
@@ -75,13 +98,21 @@ describe('enableApiSsl', () => {
     const calls = clients({
       8728: {
         exec: async (cmd) => {
-          if (cmd === '/ip/service/print') return [{ '.id': '*S', name: 'api-ssl', port: '8729', disabled: 'true', certificate: 'none' }];
+          if (cmd === '/ip/service/print')
+            return [
+              { '.id': '*S', name: 'api-ssl', port: '8729', disabled: 'true', certificate: 'none' },
+            ];
           if (cmd === '/certificate/print') {
             lookups++;
             if (lookups === 1) return [];
-            return signed ? [signedCert] : [{ '.id': '*C', name: MTM_CERT_NAME, 'private-key': 'false' }];
+            return signed
+              ? [signedCert]
+              : [{ '.id': '*C', name: MTM_CERT_NAME, 'private-key': 'false' }];
           }
-          if (cmd === '/certificate/sign') { signed = true; return []; }
+          if (cmd === '/certificate/sign') {
+            signed = true;
+            return [];
+          }
           if (cmd === '/system/identity/print') return [{ name: 'sw1' }];
           return [];
         },
@@ -96,15 +127,28 @@ describe('enableApiSsl', () => {
     const set = calls.find((c) => c.cmd === '/ip/service/set');
     expect(set?.params).toMatchObject({ '.id': '*S', certificate: MTM_CERT_NAME, disabled: 'no' });
     expect(calls.some((c) => c.port === 8729 && c.cmd === '/system/identity/print')).toBe(true);
-    expect(mockQuery).toHaveBeenCalledWith(expect.stringMatching(/UPDATE devices SET api_port/), [8729, 8]);
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringMatching(/UPDATE devices SET api_port/),
+      [8729, 8],
+    );
   });
 
   it('keeps a usable certificate already on api-ssl', async () => {
     const calls = clients({
       8728: {
         exec: async (cmd) => {
-          if (cmd === '/ip/service/print') return [{ '.id': '*S', name: 'api-ssl', port: '8729', disabled: 'false', certificate: 'mycert' }];
-          if (cmd === '/certificate/print') return [{ '.id': '*M', name: 'mycert', 'private-key': 'true' }];
+          if (cmd === '/ip/service/print')
+            return [
+              {
+                '.id': '*S',
+                name: 'api-ssl',
+                port: '8729',
+                disabled: 'false',
+                certificate: 'mycert',
+              },
+            ];
+          if (cmd === '/certificate/print')
+            return [{ '.id': '*M', name: 'mycert', 'private-key': 'true' }];
           return [];
         },
       },
@@ -119,12 +163,36 @@ describe('enableApiSsl', () => {
     const calls = clients({
       8728: {
         exec: async (cmd) => {
-          if (cmd === '/ip/service/print') return <Record<string, string>[]>[
-            { '.id': '*A', name: 'api', port: '8728', 'available-from': '10.0.0.0/8,192.168.0.0/24', disabled: 'false', dynamic: 'false' },
-            { '.id': '*S', name: 'api-ssl', port: '8729', 'available-from': '', disabled: 'false', certificate: 'mycert', dynamic: 'false' },
-            { '.id': '*2CA', name: 'api-ssl', port: '8729', remote: '10.0.0.5:5000', dynamic: 'true', disabled: 'false' },
-          ];
-          if (cmd === '/certificate/print') return [{ '.id': '*M', name: 'mycert', 'private-key': 'true' }];
+          if (cmd === '/ip/service/print')
+            return <Record<string, string>[]>[
+              {
+                '.id': '*A',
+                name: 'api',
+                port: '8728',
+                'available-from': '10.0.0.0/8,192.168.0.0/24',
+                disabled: 'false',
+                dynamic: 'false',
+              },
+              {
+                '.id': '*S',
+                name: 'api-ssl',
+                port: '8729',
+                'available-from': '',
+                disabled: 'false',
+                certificate: 'mycert',
+                dynamic: 'false',
+              },
+              {
+                '.id': '*2CA',
+                name: 'api-ssl',
+                port: '8729',
+                remote: '10.0.0.5:5000',
+                dynamic: 'true',
+                disabled: 'false',
+              },
+            ];
+          if (cmd === '/certificate/print')
+            return [{ '.id': '*M', name: 'mycert', 'private-key': 'true' }];
           return [];
         },
       },
@@ -136,15 +204,24 @@ describe('enableApiSsl', () => {
     expect(r.steps.join(' ')).toMatch(/Limited api-ssl/);
   });
 
-  it("keeps an allowed-addresses list already set on api-ssl", async () => {
+  it('keeps an allowed-addresses list already set on api-ssl', async () => {
     const calls = clients({
       8728: {
         exec: async (cmd) => {
-          if (cmd === '/ip/service/print') return <Record<string, string>[]>[
-            { '.id': '*A', name: 'api', port: '8728', address: '10.0.0.0/8', disabled: 'false' },
-            { '.id': '*S', name: 'api-ssl', port: '8729', address: '172.16.0.0/12', disabled: 'false', certificate: 'mycert' },
-          ];
-          if (cmd === '/certificate/print') return [{ '.id': '*M', name: 'mycert', 'private-key': 'true' }];
+          if (cmd === '/ip/service/print')
+            return <Record<string, string>[]>[
+              { '.id': '*A', name: 'api', port: '8728', address: '10.0.0.0/8', disabled: 'false' },
+              {
+                '.id': '*S',
+                name: 'api-ssl',
+                port: '8729',
+                address: '172.16.0.0/12',
+                disabled: 'false',
+                certificate: 'mycert',
+              },
+            ];
+          if (cmd === '/certificate/print')
+            return [{ '.id': '*M', name: 'mycert', 'private-key': 'true' }];
           return [];
         },
       },
@@ -157,8 +234,18 @@ describe('enableApiSsl', () => {
     clients({
       8728: {
         exec: async (cmd) => {
-          if (cmd === '/ip/service/print') return [{ '.id': '*S', name: 'api-ssl', port: '8729', disabled: 'false', certificate: 'mycert' }];
-          if (cmd === '/certificate/print') return [{ '.id': '*M', name: 'mycert', 'private-key': 'true' }];
+          if (cmd === '/ip/service/print')
+            return [
+              {
+                '.id': '*S',
+                name: 'api-ssl',
+                port: '8729',
+                disabled: 'false',
+                certificate: 'mycert',
+              },
+            ];
+          if (cmd === '/certificate/print')
+            return [{ '.id': '*M', name: 'mycert', 'private-key': 'true' }];
           return [];
         },
       },

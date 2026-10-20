@@ -24,13 +24,16 @@ export function legacyProfileName(iface: string): string {
  * rather than quietly downgraded.
  */
 export function legacyAuthTypes(requested: string | undefined): string {
-  const types = (requested ?? '').split(',').map((t) => t.trim()).filter(Boolean);
+  const types = (requested ?? '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
   if (types.length === 0) return 'wpa2-psk';
   const unsupported = types.filter((t) => t !== 'wpa-psk' && t !== 'wpa2-psk');
   if (unsupported.length > 0) {
     throw new Error(
       `The legacy wireless package on this device supports only wpa-psk and wpa2-psk, not ${unsupported.join(', ')}. ` +
-      'Choose WPA2, or upgrade the device to the wifi package for WPA3.'
+        'Choose WPA2, or upgrade the device to the wifi package for WPA3.',
     );
   }
   return types.join(',');

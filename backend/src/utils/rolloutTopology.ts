@@ -33,7 +33,7 @@
  * discovered links do.
  */
 
-import { resolveStpUpstreams, upstreamByDevice, type StpBridge } from './stpUpstream';
+import { resolveStpUpstreams, type StpBridge, upstreamByDevice } from './stpUpstream';
 
 export interface TopologyEdge {
   from_device_id: number;

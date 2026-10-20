@@ -17,7 +17,10 @@ export function usesRemoteLogFormat(actions: Record<string, string>[]): boolean 
   return actions.some((a) => 'remote-log-format' in a);
 }
 
-export function toSyslogActionParams(params: Record<string, string>, remoteLogFormat: boolean): Record<string, string> {
+export function toSyslogActionParams(
+  params: Record<string, string>,
+  remoteLogFormat: boolean,
+): Record<string, string> {
   if (!remoteLogFormat) return params;
   const { 'bsd-syslog': bsd, ...out } = params;
   const syslogStyle = bsd !== undefined || 'syslog-facility' in out || 'syslog-severity' in out;

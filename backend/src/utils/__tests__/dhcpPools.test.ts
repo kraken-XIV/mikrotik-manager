@@ -1,4 +1,4 @@
-import { poolSize, usedPerPool, poolState } from '../dhcpPools';
+import { poolSize, poolState, usedPerPool } from '../dhcpPools';
 
 describe('DHCP pool usage (#156)', () => {
   it('sizes pools the way RouterOS writes them', () => {
@@ -11,7 +11,11 @@ describe('DHCP pool usage (#156)', () => {
     expect(poolSize('10.0.0.20-10.0.0.10')).toBeNull();
   });
   it('counts used addresses per pool', () => {
-    const m = usedPerPool([{ pool: 'lan', address: '10.0.0.10' }, { pool: 'lan', address: '10.0.0.11' }, { pool: 'guest', address: '10.1.0.5' }]);
+    const m = usedPerPool([
+      { pool: 'lan', address: '10.0.0.10' },
+      { pool: 'lan', address: '10.0.0.11' },
+      { pool: 'guest', address: '10.1.0.5' },
+    ]);
     expect(m.get('lan')).toBe(2);
     expect(m.get('guest')).toBe(1);
   });
