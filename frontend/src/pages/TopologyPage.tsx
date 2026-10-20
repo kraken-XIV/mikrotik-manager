@@ -23,7 +23,7 @@ import { useSiteStore } from '../store/siteStore';
 import { nodesWithinHops } from '../utils/topologyFocus';
 import type { TopologyDevice, TopologyNode, HandLinkEnd } from '../types';
 import clsx from 'clsx';
-import { useThemeStore } from '../store/themeStore';
+import { useEffectiveTheme } from '../store/themeStore';
 import { buildTopologyGraph, endFor, type GraphEdge, type StpUpstream } from '../utils/topologyGraph';
 import type { BridgeInfo } from '../utils/stpRoot';
 import type { Side } from '../utils/topologyGeometry';
@@ -76,7 +76,7 @@ function toFlowEdge(e: GraphEdge, anchors: Anchors, colors: Record<string, strin
 }
 
 export default function TopologyPage() {
-  const theme = useThemeStore((s) => s.theme);
+  const theme = useEffectiveTheme();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   // Discover, links, nodes and the arrangement need write access on the server (U10).

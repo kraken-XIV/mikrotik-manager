@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Network, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { authApi, signOut } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { useThemeStore } from '../store/themeStore';
+import { useEffectiveTheme } from '../store/themeStore';
 import CircuitBackground from '../components/CircuitBackground';
 
 /**
@@ -19,7 +19,7 @@ export default function ChangePasswordPage() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme } = useThemeStore();
+  const theme = useEffectiveTheme();
   const isDark = theme === 'dark';
 
   const carried = (location.state as { currentPassword?: string } | null)?.currentPassword ?? '';

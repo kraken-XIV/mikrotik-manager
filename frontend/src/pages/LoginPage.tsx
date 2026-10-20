@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Network, Eye, EyeOff, AlertCircle, ShieldCheck, LogIn } from 'lucide-react';
 import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { useThemeStore } from '../store/themeStore';
+import { useEffectiveTheme } from '../store/themeStore';
+import ThemeMenu from '../components/common/ThemeMenu';
 import CircuitBackground from '../components/CircuitBackground';
 
 const SSO_ERRORS = new Map<string, string>([
@@ -35,7 +36,7 @@ export default function LoginPage() {
 
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useThemeStore();
+  const effectiveTheme = useEffectiveTheme();
 
   useEffect(() => {
     authApi.oidcStatus().then((r) => setSso(r.data)).catch(() => {});
@@ -101,31 +102,22 @@ export default function LoginPage() {
     }
   };
 
-  const isDark = theme === 'dark';
+  const isDark = effectiveTheme === 'dark';
 
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden"
       style={{ backgroundColor: isDark ? '#040c07' : '#e8f2f7' }}
     >
-      <CircuitBackground theme={theme} />
+      <CircuitBackground theme={effectiveTheme} />
 
-      {/* Theme toggle */}
-      <button
-        onClick={toggleTheme}
-        className={`absolute top-4 right-4 p-2 rounded-lg transition-colors z-10 ${
-          isDark
-            ? 'text-slate-400 hover:text-slate-200'
-            : 'text-slate-500 hover:text-slate-800'
-        }`}
-      >
-        {isDark ? '☀️' : '🌙'}
-      </button>
+      {/* Shared theme and accent controls; stay above the login card. */}
+      <div className="absolute top-4 right-4 z-20"><ThemeMenu /></div>
 
       <div className="w-full max-w-sm relative z-10">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className={`w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 ${
+          <div className={`w-14 h-14 bg-accent rounded-2xl flex items-center justify-center mb-4 ${
             isDark ? 'shadow-lg shadow-blue-900/50' : 'shadow-lg shadow-blue-400/40'
           }`}>
             <Network className="w-7 h-7 text-white" />
@@ -153,7 +145,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => { window.location.href = '/api/auth/oidc/login'; }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent hover:bg-accent-2 text-accent-fg font-medium rounded-lg transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 {sso.button_label || 'Sign in with SSO'}
@@ -273,7 +265,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || (totpToken ? totpCode.length !== 6 : !username || !password)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent hover:bg-accent-2 disabled:opacity-50 disabled:cursor-not-allowed text-accent-fg font-medium rounded-lg transition-colors"
             >
               {loading ? (
                 <>

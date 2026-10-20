@@ -12,6 +12,7 @@ import type { CertInfo, AlertRule, AlertChannel } from '../services/api';
 import PollerHealthCard from '../components/system/PollerHealthCard';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
+import AccentSwatches from '../components/common/AccentSwatches';
 import type { User, UserRole } from '../types';
 import {
   parseBackupCron, scheduleToCron, describeBackupSchedule, WEEKDAY_NAMES, ordinal,
@@ -541,31 +542,41 @@ export default function SettingsPage() {
         // Appearance does not leave a hole the height of its taller neighbour.
         <div className="max-w-6xl xl:columns-2 xl:gap-4 [&>*]:mb-4 [&>*]:break-inside-avoid">
           {isAdmin && <EncryptionKeyCard />}
-          <div className="card p-5">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Appearance</h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-slate-300">Theme</label>
-                <p className="text-xs text-gray-400 dark:text-slate-500">Choose your preferred color scheme</p>
+              <div className="card p-5">
+                <h3 className="font-semibold text-ink mb-4">Appearance</h3>
+                <div className="flex flex-col items-start gap-2">
+                  <div>
+                    <label className="text-sm font-medium text-ink-2">Theme</label>
+                    <p className="text-xs text-ink-3">Choose your preferred color scheme</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {(['light', 'dark', 'system'] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setTheme(t)}
+                        aria-pressed={theme === t}
+                        className={clsx(
+                          'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors capitalize',
+                          theme === t
+                            ? 'bg-accent text-accent-fg border-accent'
+                            : 'border-line text-ink-2',
+                        )}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col items-start gap-2 mt-4">
+                  <div>
+                    <label className="text-sm font-medium text-ink-2">Accent</label>
+                    <p className="text-xs text-ink-3">
+                      The colour used for buttons, links and highlights
+                    </p>
+                  </div>
+                  <AccentSwatches />
+                </div>
               </div>
-              <div className="flex gap-2">
-                {(['light', 'dark'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTheme(t)}
-                    className={clsx(
-                      'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors capitalize',
-                      theme === t
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400'
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
 
           <div className="card p-5">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Polling Intervals</h3>
