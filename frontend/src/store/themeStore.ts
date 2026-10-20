@@ -24,6 +24,14 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 /** What is actually on screen right now. */
 export type EffectiveTheme = 'light' | 'dark';
 
+/**
+ * A surface scheme sits on top of light/dark: 'high-contrast' strengthens
+ * ink and borders in both colour schemes, 'midnight' deepens the dark
+ * surfaces further. Orthogonal to the accent by design — schemes change
+ * neutrals, accents change the brand colour.
+ */
+export type SurfaceScheme = 'default' | 'high-contrast' | 'midnight';
+const SURFACE_SCHEMES: SurfaceScheme[] = ['default', 'high-contrast', 'midnight'];
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
@@ -49,11 +57,15 @@ function isAccentId(value: unknown): value is AccentId {
   return ACCENT_PRESETS.some((a) => a.id === value);
 }
 
+/** Type guard for the persisted surface scheme (localStorage is user-writable). */
+function isSurfaceScheme(value: unknown): value is SurfaceScheme {
+  return SURFACE_SCHEMES.includes(value as SurfaceScheme);
+}
 
 /** Select only validated data; persisted JSON must never replace action methods. */
 function readPreferences(
   value: unknown,
-): Pick<ThemeState, 'theme' | 'accent' | 'customColor'> {
+): Pick<ThemeState, 'theme' | 'accent' | 'scheme' | 'customColor'> {
   const stored =
     value && typeof value === 'object' && !Array.isArray(value)
       ? (value as Record<string, unknown>)
@@ -68,6 +80,7 @@ function readPreferences(
         : isAccentId(stored.accent)
           ? stored.accent
           : DEFAULT_ACCENT,
+    scheme: isSurfaceScheme(stored.scheme) ? stored.scheme : 'default',
   };
 }
 
@@ -105,16 +118,29 @@ function applyAccentVars(
   root.style.setProperty('--accent-fg', vars.accentFg);
 }
 
+/**
+ * Writes the surface scheme as a data attribute on <html>; 'default' removes
+ * it entirely so existing installs and the stylesheet defaults stay untouched.
+ * The scheme blocks in index.css scope themselves (high-contrast per scheme,
+ * midnight under .dark), so no scheme CSS lives anywhere else.
+ */
+function applySurfaceScheme(scheme: SurfaceScheme): void {
+  if (typeof document === 'undefined') return;
+  if (scheme === 'default') document.documentElement.removeAttribute('data-scheme');
+  else document.documentElement.setAttribute('data-scheme', scheme);
+}
 
 function applyAll(
   preference: ThemePreference,
   accent: AccentSelection,
+  scheme: SurfaceScheme = 'default',
   customColor = DEFAULT_CUSTOM_ACCENT,
 ): void {
   if (typeof document === 'undefined') return;
   const effective = resolveEffectiveTheme(preference, systemPrefersDark());
   document.documentElement.classList.toggle('dark', effective === 'dark');
   applyAccentVars(accent, effective, customColor);
+  applySurfaceScheme(scheme);
 }
 
 /**
@@ -131,10 +157,10 @@ function ensureSystemWatch(): void {
     return;
   watchedMedia = window.matchMedia(DARK_QUERY);
   const onChange = () => {
-    const { theme, accent, customColor } = useThemeStore.getState();
+    const { theme, accent, scheme, customColor } = useThemeStore.getState();
     // Re-apply the DOM regardless of preference: only 'system' changes the
     // colour scheme, but re-applying is idempotent and simpler to reason about.
-    applyAll(theme, accent, customColor);
+    applyAll(theme, accent, scheme, customColor);
     for (const notify of systemThemeSubscribers) notify();
   };
   if (typeof watchedMedia.addEventListener === 'function')
@@ -147,9 +173,11 @@ interface ThemeState {
   theme: ThemePreference;
   accent: AccentSelection;
   customColor: string;
+  scheme: SurfaceScheme;
   setTheme: (theme: ThemePreference) => void;
   setAccent: (accent: AccentSelection) => void;
   setCustomColor: (color: string) => void;
+  setScheme: (scheme: SurfaceScheme) => void;
   /** light → dark → system → light. Kept for the login-page quick toggle. */
   toggleTheme: () => void;
 }
@@ -160,19 +188,24 @@ export const useThemeStore = create<ThemeState>()(
       theme: 'light',
       accent: DEFAULT_ACCENT,
       customColor: DEFAULT_CUSTOM_ACCENT,
+      scheme: 'default',
       setTheme: (theme) => {
         set({ theme });
-        applyAll(theme, get().accent, get().customColor);
+        applyAll(theme, get().accent, get().scheme, get().customColor);
       },
       setAccent: (accent) => {
         set({ accent });
-        applyAll(get().theme, accent, get().customColor);
+        applyAll(get().theme, accent, get().scheme, get().customColor);
       },
       setCustomColor: (color) => {
         const customColor = normalizeCustomColor(color);
         if (!customColor) return;
         set({ customColor, accent: 'custom' });
-        applyAll(get().theme, 'custom', customColor);
+        applyAll(get().theme, 'custom', get().scheme, customColor);
+      },
+      setScheme: (scheme) => {
+        set({ scheme });
+        applyAll(get().theme, get().accent, scheme, get().customColor);
       },
       toggleTheme: () => {
         const order: ThemePreference[] = ['light', 'dark', 'system'];
@@ -184,15 +217,16 @@ export const useThemeStore = create<ThemeState>()(
       // Same key the light/dark toggle always used. Old payloads carry only
       // `theme` and still load; `accent` simply keeps its initial value.
       name: 'mikrotik-theme',
-      partialize: ({ theme, accent, customColor }) => ({
+      partialize: ({ theme, accent, scheme, customColor }) => ({
         theme,
         accent,
+        scheme,
         customColor,
       }),
       merge: (persisted, current) => ({ ...current, ...readPreferences(persisted) }),
       onRehydrateStorage: () => (state) => {
         if (state)
-          applyAll(state.theme, state.accent, state.customColor);
+          applyAll(state.theme, state.accent, state.scheme ?? 'default', state.customColor);
       },
     },
   ),
@@ -238,7 +272,7 @@ export function initThemeFromStorage(): void {
   } catch {
     // Storage may be unavailable or contain malformed JSON. Use safe defaults.
   }
-  applyAll(preferences.theme, preferences.accent, preferences.customColor);
+  applyAll(preferences.theme, preferences.accent, preferences.scheme, preferences.customColor);
   // Authenticated deep links may never mount a useEffectiveTheme consumer.
   // System tracking must therefore start at boot, not only on the login page.
   ensureSystemWatch();

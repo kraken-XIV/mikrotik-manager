@@ -33,6 +33,30 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test('Settings applies every surface scheme and preserves them on reload', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/settings');
+  await expect(page.getByRole('heading', { name: 'Appearance', exact: true })).toBeVisible();
+  const appearance = page
+    .locator('.card')
+    .filter({ has: page.getByRole('heading', { name: 'Appearance', exact: true }) });
+  await appearance.getByRole('button', { name: 'dark', exact: true }).click();
+  await appearance.getByRole('button', { name: 'Midnight', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-scheme', 'midnight');
+  await expect(page.locator('html')).toHaveCSS('--surface', '#0b0d11');
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.locator('html')).toHaveAttribute('data-scheme', 'midnight');
+  await appearance.getByRole('button', { name: 'High contrast', exact: true }).click();
+  await expect(page.locator('html')).toHaveCSS('--ink', '#ffffff');
+  await appearance.getByRole('button', { name: 'light', exact: true }).click();
+  await expect(page.locator('html')).toHaveCSS('--ink', '#000000');
+  await appearance.getByRole('button', { name: 'Default', exact: true }).click();
+  await expect(page.locator('html')).not.toHaveAttribute('data-scheme');
+  expect(errors).toEqual([]);
+});
+
 test('authenticated system-theme deep links follow OS changes without visiting Login', async ({
   page,
 }) => {
@@ -41,7 +65,7 @@ test('authenticated system-theme deep links follow OS changes without visiting L
       localStorage.setItem(
         'mikrotik-theme',
         JSON.stringify({
-          state: { theme: 'system', accent: 'rose' },
+          state: { theme: 'system', accent: 'rose', scheme: 'midnight' },
           version: 0,
         }),
       );
@@ -53,6 +77,7 @@ test('authenticated system-theme deep links follow OS changes without visiting L
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('html')).toHaveClass(/dark/);
   await expect(page.locator('html')).toHaveCSS('--accent', '#fb7185');
+  await expect(page.locator('html')).toHaveCSS('--surface', '#0b0d11');
 });
 
 test('Appearance controls fit a mobile viewport', async ({ page }) => {
@@ -71,6 +96,39 @@ test('Appearance controls fit a mobile viewport', async ({ page }) => {
     expect(box!.x + box!.width).toBeLessThanOrEqual(390);
   }
 
+  await appearance.getByRole('button', { name: 'High contrast', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-scheme', 'high-contrast');
+});
+
+test('high-contrast muted text meets AA on the darkest card surface in both modes', async ({
+  page,
+}) => {
+  await page.goto('/settings');
+  const appearance = page
+    .locator('.card')
+    .filter({ has: page.getByRole('heading', { name: 'Appearance', exact: true }) });
+  await appearance.getByRole('button', { name: 'High contrast', exact: true }).click();
+  for (const mode of ['light', 'dark']) {
+    await appearance.getByRole('button', { name: mode, exact: true }).click();
+    const ratio = await page.evaluate(() => {
+      const css = getComputedStyle(document.documentElement);
+      const luminance = (hex: string) => {
+        const rgb = hex
+          .trim()
+          .slice(1)
+          .match(/../g)!
+          .map((part) => {
+            const value = parseInt(part, 16) / 255;
+            return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+          });
+        return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
+      };
+      const ink = luminance(css.getPropertyValue('--ink-4'));
+      const surface = luminance(css.getPropertyValue('--surface-3'));
+      return (Math.max(ink, surface) + 0.05) / (Math.min(ink, surface) + 0.05);
+    });
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  }
 });
 
 test('accent bubbles match the actual UI accent in Light, Dark and live System mode', async ({
