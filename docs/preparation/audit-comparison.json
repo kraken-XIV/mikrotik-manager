@@ -1,0 +1,46 @@
+{
+  "baseline": {
+    "affectedPackageCounts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 5,
+      "high": 10,
+      "critical": 0,
+      "total": 15
+    },
+    "additionalAdvisoryIdentities": []
+  },
+  "theme": {
+    "affectedPackageCounts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 5,
+      "high": 10,
+      "critical": 0,
+      "total": 15
+    },
+    "additionalAdvisoryIdentities": []
+  },
+  "test": {
+    "affectedPackageCounts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 3,
+      "high": 10,
+      "critical": 0,
+      "total": 13
+    },
+    "additionalAdvisoryIdentities": []
+  },
+  "lint": {
+    "affectedPackageCounts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 5,
+      "high": 12,
+      "critical": 0,
+      "total": 17
+    },
+    "additionalAdvisoryIdentities": []
+  }
+}
