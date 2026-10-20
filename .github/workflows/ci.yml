@@ -53,7 +53,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Tests
-        run: npm test
+        run: npm run test:coverage
 
       - name: Build
         run: npm run build
@@ -105,7 +105,7 @@ jobs:
       # platform-backup round trip (backup, compare, restore, restore under a
       # new key) and site groups and access (#306), each in its own database.
       - name: Tests
-        run: npm test
+        run: npm run test:coverage
         env:
           PG_E2E_URL: postgres://postgres:e2e@localhost:5432/mtm_e2e
 
