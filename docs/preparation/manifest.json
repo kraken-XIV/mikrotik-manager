@@ -8,7 +8,7 @@
     {
       "workstream": "1",
       "branch": "prepare/v1-theme-core",
-      "head": "5e065c9dc8747e2c90f59a6ef164048f13330f88",
+      "head": "62250c9094a0f8d65781ab8fc19b7033cdffb2b7",
       "parent": "59704017a82987b655c08936164b4d754b4bc6d1",
       "changedFilesAgainstParent": 26,
       "scope": "Core themes, presets/custom picker, matching swatches and focused tests"
@@ -16,7 +16,7 @@
     {
       "workstream": "Follow-up",
       "branch": "prepare/v1-theme-surfaces",
-      "head": "dc49c33f8183b0dc4ca6e457f9075b7f604fa1df",
+      "head": "989c31a712511d056f874d872defa47902dea083",
       "parent": "prepare/v1-theme-core",
       "changedFilesAgainstParent": 6,
       "scope": "High-contrast and midnight surfaces"
@@ -24,7 +24,7 @@
     {
       "workstream": "Follow-up",
       "branch": "prepare/v1-theme-tokens-shared",
-      "head": "aa9c02c7fe88dad752c45d89168a7e5a82c3defe",
+      "head": "11d245e4475a057b19bd931dd0c7c26d3517358c",
       "parent": "prepare/v1-theme-core",
       "changedFilesAgainstParent": 60,
       "scope": "Shared components and settings/layout token migration"
@@ -32,7 +32,7 @@
     {
       "workstream": "Follow-up",
       "branch": "prepare/v1-theme-tokens-devices",
-      "head": "ac44e1fa2a4286c651e8d9991cb69ffa1ef3ec30",
+      "head": "f51d6a1dd4b805cf8f9f50f1e53a49f701780ae9",
       "parent": "prepare/v1-theme-core",
       "changedFilesAgainstParent": 26,
       "scope": "Device-detail token migration"
@@ -40,7 +40,7 @@
     {
       "workstream": "Follow-up",
       "branch": "prepare/v1-theme-tokens-pages",
-      "head": "23c8d5e7c4022e0592d39a3c11836deebb5e4d87",
+      "head": "73f7fc88f7646acb868e0003f1df4d508c7de89f",
       "parent": "prepare/v1-theme-core",
       "changedFilesAgainstParent": 32,
       "scope": "Page token migration"
@@ -48,7 +48,7 @@
     {
       "workstream": "Follow-up",
       "branch": "prepare/v1-theme-charts-topology",
-      "head": "e4b7474cffa19f6f8e3e2b7310e2b3c51f4c0909",
+      "head": "dc6528389bf1c627381db978447702edf727b41f",
       "parent": "prepare/v1-theme-core",
       "changedFilesAgainstParent": 11,
       "scope": "Primary chart series and STP root accent"
