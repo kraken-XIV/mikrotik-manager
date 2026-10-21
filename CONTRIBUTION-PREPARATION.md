@@ -19,4 +19,6 @@ The five theme follow-ups build on theme core. Lint/formatting and the general t
 
 **Known debt:** inherited dependency advisories remain; Stylelint adds dev-tool chains to an existing advisory. See [audit comparison](docs/preparation/audit-comparison.json). Exact branch heads and scopes are in the [manifest](docs/preparation/manifest.json).
 
+**AI-assisted development:** GPT 6.1 (OpenAI) and GLM 5.3 Flash (z.ai).
+
 **On hold:** scanners, runtime hardening and legacy login. No further work or upstream submissions without explicit approval.
