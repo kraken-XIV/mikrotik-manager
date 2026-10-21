@@ -6,4 +6,4 @@ Scope: system/light/dark, accent presets/custom picker, matching swatches, valid
 
 Extracted from kraken-XIV contribution bbe276f (original theme work), with minimal test tooling from 668bd93. Existing source attribution/license retained. The historical combined branch remains untouched.
 
-No upstream PRs until after v1.0 and Remco's separate direction.
+No upstream PRs until after v1.0 and the fork owner's explicit approval.
